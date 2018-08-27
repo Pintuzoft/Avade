@@ -45,6 +45,14 @@ of servers kept in services, and if a server is missing an IRCop will be able to
 This is something that no other services has as far as I know, and it can be very useful for larger networks where there
 might or probably will be difficult to figure out which servers actually is split and gone.
 
+#### Persistent services ID's
+
+As long as services is online it will store services ID's for all users. At times there might be a split, this will cause a
+user to be removed from services awareness, however a reconnecting server with identified users can retain their access to
+all identified nicks and channels as services will remember these sessions for a whole hour before cleaning them out. Other
+services might not figure out that an identified user is the same as the one that splitted and will only identify the user
+with the users current nick (+r). Avade however will keep track of the actual servicesID handled by bahamut.
+
 
 ### Command list
 
