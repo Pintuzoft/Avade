@@ -9,150 +9,150 @@ This includes the AKill, SQline, SGline, Auditorium mode and also new features i
 
 #### NickServ :
 
-  Help - Show help
+  Help           - Show help
 
-  Register - Register nick
+  Register       - Register nick
   
-  Identify Identify nick
+  Identify       - Identify nick
   
-  SIdentify - Silently identify nick
+  SIdentify      - Silently identify nick
   
-  Ghost - Kill ghost nick
+  Ghost          - Kill ghost nick
   
-  SET - Set nick options
+  SET            - Set nick options
   
-  Drop - Drop registered nick
+  Drop           - Drop registered nick
   
   --- IRCop---
   
-  List - List registered nicks
+  List           - List registered nicks
   
-  Mark - Lock ownership features
+  Mark           - Lock ownership features
   
-  Freeze - Freeze a nick from being used
+  Freeze         - Freeze a nick from being used
   
-  Hold - Deny a nick from expiring
+  Hold           - Deny a nick from expiring
   
-  Getpass - Show password log for nick
+  Getpass        - Show password log for nick
   
-  Getemail - Show email log for nick
+  Getemail       - Show email log for nick
   
-  Delete - Force drop a nick
+  Delete         - Force drop a nick
 
 
 #### ChanServ :
   
-  Help            Show help
+  Help           - Show help
   
-  Register        Register channel
+  Register       - Register channel
   
-  Identify        Identify channel
+  Identify       - Identify channel
   
-  Set             Set channel options
+  Set            - Set channel options
   
-  Info            Show info about a nick
+  Info           - Show info about a nick
   
-  AOP             Manage AOP list
+  AOP            - Manage AOP list
   
-  SOP             Manage SOP list
+  SOP            - Manage SOP list
   
-  AKICK           Manage AKICK list
+  AKICK          - Manage AKICK list
   
-  Op              Op nick
+  Op             - Op nick
   
-  Deop            Deop nick
+  Deop           - Deop nick
   
-  Unban           Remove all matching bans
+  Unban          - Remove all matching bans
   
-  Invite          Invite yourself
+  Invite         - Invite yourself
   
-  Why             Show why someone has access to a channel
+  Why            - Show why someone has access to a channel
   
-  Chanlist        Show all channels you have access to (founder, sop, aop)
+  Chanlist       - Show all channels you have access to (founder, sop, aop)
   
-  Mdeop           Mass deop channel
+  Mdeop          - Mass deop channel
   
-  Mkick           Mass kick channel
+  Mkick          - Mass kick channel
   
-  Drop            Drop registered channel
+  Drop           - Drop registered channel
   
-  Accesslog
+  Accesslog      - View SOP/AOP/AKICK logs
   
   --- IRCop ---
   
-  List            List registered channels
+  List           - List registered channels
   
-  Chanlist        Show all channels a user has access to (founder, sop, aop, akick)
+  Chanlist       - Show all channels a user has access to (founder, sop, aop, akick)
   
-  Mark            Lock ownership features
+  Mark           - Lock ownership features
   
-  Freeze          Freeze channel from being used
+  Freeze         - Freeze channel from being used
   
-  Close           Close channel
+  Close          - Close channel
   
-  Hold            Deny channel from expiring
+  Hold           - Deny channel from expiring
   
-  Auditorium      Makes a channel an auditorium
+  Auditorium     - Makes a channel an auditorium
   
-  Getpass         Show password log
+  Getpass        - Show password log
   
-  Delete          Force drop a channel
+  Delete         - Force drop a channel
   
   
 #### MemoServ :
   
-  Help            Show help
+  Help           - Show help
   
-  Send            Send a memo to a user
+  Send           - Send a memo to a user
   
-  Csend           Send a memo to a channel
+  Csend          - Send a memo to a channel
   
-  List            List memos
+  List           - List memos
   
-  Read            Read memo
+  Read           - Read memo
   
-  Del             Delete memo
+  Del            - Delete memo
   
 #### OperServ :
   
-  Help            Show help
+  Help           - Show help
   
-  Staff           Manage IRCop/SA/CSOP/SRA lists
+  Staff          - Manage IRCop/SA/CSOP/SRA lists
   
-  Global          Send global message
+  Global         - Send global message
   
-  Uinfo           Show debug information regarding a user
+  Uinfo          - Show debug information regarding a user
   
-  Cinfo           Show debug information regarding a channel
+  Cinfo          - Show debug information regarding a channel
   
-  Ulist           Show user map (use only on smaller networks)
+  Ulist          - Show user map (use only on smaller networks)
   
-  Uptime          Show uptime information
+  Uptime         - Show uptime information
   
-  Akill           Manage AKill list
+  Akill          - Manage AKill list
   
-  Searchlog       Show ownership events and comments for a nick or channel
+  Searchlog      - Show ownership events and comments for a nick or channel
   
-  Audit           Show staff events
+  Audit          - Show staff events
   
-  Comment         Attach a comment to a nick or channel
+  Comment        - Attach a comment to a nick or channel
   
-  Ignore          Manage the ignore list
+  Ignore         - Manage the ignore list
   
-  Sqline          Manage the SQline (restricted nick) list
+  Sqline         - Manage the SQline (restricted nick) list
   
-  Sgline          Manage the SGline (restricted gcos) list
+  Sgline         - Manage the SGline (restricted gcos) list
   
-  Jupe            Jupiter a server to prevent it from linking
+  Jupe           - Jupiter a server to prevent it from linking
   
-  Server          Serverlist purposed as missing server list (auto-populated)
+  Server         - Serverlist purposed as missing server list (auto-populated)
   
   
 #### RootServ :
   
-  Rehash          Re-read the services configuration file        
+  Rehash         - Re-read the services configuration file        
   
-  Sraw            Send a raw services command to the network
+  Sraw           - Send a raw services command to the network
   
   
 
