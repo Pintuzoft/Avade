@@ -24,9 +24,11 @@ to avoid losing data.
 #### Excessive logging
 
 Something that other services might not provide is a way to access logs which can describe how a nickname or channel
-has been used. This include logs for register, set email, set pass, freeze, hold, close, auditorium etc. Avade will also
-provide channel access logs in channels which will show when and who gave or removed access in the chan. The access log 
-for a channel is open for AOP+ and IRCops.
+has been used. This include logs for register, set email, set pass, freeze, hold, close, auditorium etc. This information
+is only available for IRCops.
+
+Avade will also provide channel access logs in channels which will show when and who gave or removed access in the 
+chan. The access log for a channel is open for AOP+ and IRCops.
 
 #### External mailing functionality
 
