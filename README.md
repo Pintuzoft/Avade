@@ -1,5 +1,5 @@
 # Avade
-Avade IRC Services
+# Avade IRC Services
 
 The Avade IRC Services is a new project made in Java solely for IRC networks running the bahamut IRCd. As Avade has
 been developed only for bahamut it the network will be able to get builtin features for the features bahamut offers.
@@ -8,22 +8,25 @@ This includes the AKill, SQline, SGline, Auditorium mode and also new features i
 Command list
 
 NickServ :
-  Help            Show help
-  Register        Register nick
-  Identify        Identify nick
-  SIdentify       Silently identify nick
-  Ghost           Kill ghost nick
-  SET             Set nick options
-  Drop            Drop registered nick
-  --- IRCop---
-  List            List registered nicks
-  Mark            Lock ownership features
-  Freeze          Freeze a nick from being used
-  Hold            Deny a nick from expiring
-  Getpass         Show password log for nick
-  Getemail        Show email log for nick
-  Delete          Force drop a nick
-  
+
+<table>
+  <tr><td></td><td>Help</td><td>Show help</td></tr>
+  <tr><td></td><td>Register</td><td>Register nick</td></tr>
+  <tr><td></td><td>Identify</td><td>Identify nick</td></tr>
+  <tr><td></td><td>SIdentify</td><td>Silently identify nick</td></tr>
+  <tr><td></td><td>Ghost</td><td>Kill ghost nick</td></tr>  
+  <tr><td></td><td>SET</td><td>Set nick options</td></tr>  
+  <tr><td></td><td>Drop</td><td>Drop registered nick</td></tr>
+  <tr><td></td><td>--- IRCop---</td><td></td></tr>
+  <tr><td></td><td>List</td><td>List registered nicks</td></tr>
+  <tr><td></td><td>Mark</td><td>Lock ownership features</td></tr>
+  <tr><td></td><td>Freeze</td><td>Freeze a nick from being used</td></tr>
+  <tr><td></td><td>Hold</td><td>Deny a nick from expiring</td></tr>
+  <tr><td></td><td>Getpass</td><td>Show password log for nick</td></tr>
+  <tr><td></td><td>Getemail</td><td>Show email log for nick</td></tr>
+  <tr><td></td><td>Delete</td><td>Force drop a nick</td></tr>
+</table>
+
 ChanServ :
   Help            Show help
   Register        Register channel
