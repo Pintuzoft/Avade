@@ -1,0 +1,1021 @@
+/* 
+ * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package chanserv;
+
+import channel.Topic;
+import core.Config;
+import core.Database;
+import core.LogEvent;
+import core.Proc;
+import java.sql.PreparedStatement;
+import nickserv.NickInfo;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.ArrayList;
+import operserv.OSLogEvent;
+import user.User;
+
+
+/**
+ *
+ * @author DreamHealer
+ */
+
+
+/*mysql> desc chan;
++-------------+--------------+------+-----+---------+-------+
+| Field       | Type         | Null | Key | Default | Extra |
++-------------+--------------+------+-----+---------+-------+
+| name        | varchar ( 33 )   | NO   | PRI |         |       |
+| founder     | varchar ( 32 )   | YES  |     | NULL    |       |
+| pass        | varchar ( 32 )   | YES  |     | NULL    |       |
+| description | varchar ( 128 )  | YES  |     | NULL    |       |
+| topic       | varchar ( 512 )  | YES  |     | NULL    |       |
+| regstamp    | int ( 11 )       | YES  |     | NULL    |       |
+| stamp       | int ( 11 )       | YES  |     | NULL    |       |
++-------------+--------------+------+-----+---------+-------+
+7 rows in set  ( 0.00 sec ) 
+* 
+* mysql> desc chansetting;
++------------+-------------+------+-----+---------+-------+
+| Field      | Type        | Null | Key | Default | Extra |
++------------+-------------+------+-----+---------+-------+
+| name       | varchar ( 33 )  | NO   | PRI |         |       |
+| keeptopic  | tinyint ( 1 )   | YES  |     | NULL    |       |
+| topiclock  | tinyint ( 1 )   | YES  |     | NULL    |       |
+| ident      | tinyint ( 1 )   | YES  |     | NULL    |       |
+| opguard    | tinyint ( 1 )   | YES  |     | NULL    |       |
+| restricted | tinyint ( 1 )   | YES  |     | NULL    |       |
+| verbose    | tinyint ( 1 )   | YES  |     | NULL    |       |
+| mailblock  | tinyint ( 1 )   | YES  |     | NULL    |       |
+| leaveops   | tinyint ( 1 )   | YES  |     | NULL    |       |
+| private    | tinyint ( 1 )   | YES  |     | NULL    |       |
++------------+-------------+------+-----+---------+-------+
+10 rows in set  ( 0.00 sec ) 
+* 
+* mysql> desc cflags;
++----------+--------------+------+-----+---------+-------+
+| Field    | Type         | Null | Key | Default | Extra |
++----------+--------------+------+-----+---------+-------+
+| name     | varchar ( 33 )   | YES  |     | NULL    |       |
+| type     | varchar ( 16 )   | YES  |     | NULL    |       |
+| reason   | varchar ( 256 )  | YES  |     | NULL    |       |
+| instater | varchar ( 32 )   | YES  |     | NULL    |       |
+| stamp    | int ( 11 )       | YES  |     | NULL    |       |
+| expire   | int ( 11 )       | YES  |     | NULL    |       |
++----------+--------------+------+-----+---------+-------+
+6 rows in set  ( 0.00 sec ) 
+*/
+
+
+
+
+public class CSDatabase extends Database {
+    private static Statement s;
+    private static ResultSet res;
+    private static ResultSet res2;
+    private static ResultSet res3;
+    private static PreparedStatement ps;
+
+      /* NickServ Methods */
+    public static int createChan ( ChanInfo ci )  {
+        Config config = Proc.getConf ( );
+        if ( ! activateConnection ( )  )  {
+            return -2;
+        } else if ( ci == null ) {
+            return -3;
+        } else if ( config == null ) {
+            return -4;
+        } else {
+            
+            try {
+                
+                String salt = config.get ( SECRETSALT );
+                String query = "INSERT INTO chan ( name, founder, pass, description, regstamp, stamp )  "
+                             + "VALUES  ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
+                ps = sql.prepareStatement ( query );
+                ps.setString  ( 1, ci.getString ( NAME ) );
+                ps.setString  ( 2, ci.getFounder().getName ( )  );
+                ps.setString  ( 3, ci.getPass ( ) );
+                ps.setString  ( 4, salt );             
+                ps.setString  ( 5, ci.getString ( DESCRIPTION )  );
+                ps.setString  ( 6, ci.getString ( REGTIME ) );
+                ps.setString  ( 7, ci.getString ( LASTSEEN ) );
+                ps.execute ( );
+                ps.close ( );
+                 
+                String topiclock = new String ( ); 
+                switch ( ci.getSettings ( ) .getTopicLock ( )  )  {
+                    case FOUNDER :
+                        topiclock = "founder";
+                        break;
+                        
+                    case SOP :
+                        topiclock = "sop";
+                        break;
+                        
+                    case AOP :
+                        topiclock = "aop";
+                        break;
+                        
+                    default :
+                        topiclock = "off";
+                        
+                } 
+                 
+                query = "INSERT INTO chansetting  ( name,keeptopic,topiclock,ident,opguard,restricted,verbose,mailblock,leaveops,modelock,freeze,close,hold,mark,auditorium )  "
+                      + "VALUES  ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
+                ps = sql.prepareStatement ( query );
+                ps.setString   ( 1,  ci.getString ( NAME )  );
+                ps.setInt      ( 2,  ci.getSettings().is ( KEEPTOPIC ) ? 1 : 0 );
+                ps.setString   ( 3,  topiclock );
+                ps.setInt      ( 4,  ci.getSettings().is ( IDENT ) ? 1 : 0 );
+                ps.setInt      ( 5,  ci.getSettings().is ( OPGUARD ) ? 1 : 0 );
+                ps.setInt      ( 6,  ci.getSettings().is ( RESTRICT ) ? 1 : 0 );
+                ps.setInt      ( 7,  ci.getSettings().is ( VERBOSE ) ? 1 : 0 );
+                ps.setInt      ( 8,  ci.getSettings().is ( MAILBLOCK ) ? 1 : 0 );
+                ps.setInt      ( 9,  ci.getSettings().is ( LEAVEOPS ) ? 1 : 0 );
+                ps.setString   ( 10, "+nt" );
+                                
+                if ( ! ci.getSettings().is ( MARKED ) ) {
+                    ps.setNull ( 11, Types.VARCHAR );
+                } else {
+                    ps.setString ( 11, ci.getSettings().getInstater ( MARK ) );
+                }
+                
+                if ( ! ci.getSettings().is ( FROZEN ) ) {
+                    ps.setNull ( 12, Types.VARCHAR );
+                } else {
+                    ps.setString ( 12, ci.getSettings().getInstater ( FREEZE ) );
+                }
+                
+                if ( ! ci.getSettings().is ( CLOSED ) ) {
+                    ps.setNull ( 13, Types.VARCHAR );
+                } else {
+                    ps.setString ( 13, ci.getSettings().getInstater ( CLOSE ) );
+                }
+                
+                if ( ! ci.getSettings().is ( HELD ) ) {
+                    ps.setNull ( 14, Types.VARCHAR );
+                } else {
+                    ps.setString ( 14, ci.getSettings().getInstater ( HOLD ) );
+                }
+                
+                if ( ! ci.getSettings().is ( AUDITORIUM ) ) {
+                    ps.setNull ( 15, Types.VARCHAR );
+                } else {
+                    ps.setString ( 15, ci.getSettings().getInstater ( AUDITORIUM ) );
+                }
+                
+                ps.execute ( );
+                ps.close ( );
+                
+                updateChanTopic ( ci );
+               
+                idleUpdate ( "createChan ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Nick already exists? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                return -1;
+            }
+        }
+        /* Nick was added */
+        return 1;
+    }
+     
+    /* NickServ Methods */
+    public static int updateChan ( ChanInfo ci )  { 
+        Config config = Proc.getConf ( );
+        if ( ! activateConnection ( )  )  {
+            /* No SQL connection */
+            return -2;
+        } else if ( ci == null ) {
+            return -3;
+        } else if ( config == null ) {
+            return -4;
+        } else {
+            /* Try add the chan */          
+            try {
+               
+                String salt = config.get ( SECRETSALT );
+                String query = "UPDATE chan SET "
+                             + "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = FROM_UNIXTIME(UNIX_TIMESTAMP()) "
+                             + "WHERE name = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setString  ( 1, ci.getFounder ( ) .getName ( )  );
+                ps.setString  ( 2, ci.getPass ( ) );
+                ps.setString  ( 3, salt );
+                ps.setString  ( 4, ci.getString ( DESCRIPTION )  );
+                ps.setString  ( 5, ci.getString ( NAME )  ); 
+                ps.executeUpdate ( );
+                ps.close ( );
+                 
+                idleUpdate ( "updateChan ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Was not updated? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                return -1;
+            }
+        }
+        /* Nick was added */
+        return 1;
+    }
+    public static int updateChanSettings ( ChanInfo ci )  { 
+        if ( ! activateConnection ( )  )  {
+            /* No SQL connection */
+            return -2;
+
+        } else if ( ci == null )  {
+            /* No valid nick was sent */
+            return -3;
+        } else {
+            /* Try add the chan */          
+            try { 
+                String topiclock = new String ( );
+                
+                switch ( ci.getSettings().getTopicLock ( ) ) {
+                    case FOUNDER :
+                        topiclock = "founder";
+                        break;
+                        
+                    case SOP :
+                        topiclock = "sop";
+                        break;
+                        
+                    case AOP :
+                        topiclock = "aop";
+                        break;
+                        
+                    default :
+                        topiclock = "off";
+                        
+                } 
+                
+                String query = "UPDATE chansetting SET "+
+                               "keeptopic = ?, topiclock = ?, ident = ?, opguard = ?,"+
+                               "restricted = ?, verbose = ?, mailblock = ?, leaveops = ?,"+
+                               "modelock = ?, mark = ?, freeze = ?, close = ?, hold = ?, auditorium = ? "+
+                               "WHERE name = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setInt      ( 1,  ci.getSettings().is ( KEEPTOPIC ) ? 1 : 0 );
+                ps.setString   ( 2,  topiclock );
+                ps.setInt      ( 3,  ci.getSettings().is ( IDENT ) ? 1 : 0 );
+                ps.setInt      ( 4,  ci.getSettings().is ( OPGUARD ) ? 1 : 0 );
+                ps.setInt      ( 5,  ci.getSettings().is ( RESTRICT ) ? 1 : 0 );
+                ps.setInt      ( 6,  ci.getSettings().is ( VERBOSE ) ? 1 : 0 );
+                ps.setInt      ( 7,  ci.getSettings().is ( MAILBLOCK ) ? 1 : 0 );
+                ps.setInt      ( 8,  ci.getSettings().is ( LEAVEOPS ) ? 1 : 0 );
+                ps.setString   ( 9, ci.getSettings().getModeLock().getModes ( ) );
+                
+                if ( ! ci.getSettings().is ( MARKED ) ) {
+                    ps.setNull ( 10, Types.VARCHAR );
+                } else {
+                    ps.setString ( 10, ci.getSettings().getInstater ( MARK ) );
+                }
+                
+                if ( ! ci.getSettings().is ( FROZEN ) ) {
+                    ps.setNull ( 11, Types.VARCHAR );
+                } else {
+                    ps.setString ( 11, ci.getSettings().getInstater ( FREEZE ) );
+                }
+                
+                if ( ! ci.getSettings().is ( CLOSED ) ) {
+                    ps.setNull ( 12, Types.VARCHAR );
+                } else {
+                    ps.setString ( 12, ci.getSettings().getInstater ( CLOSE ) );
+                }
+                
+                if ( ! ci.getSettings().is ( HELD ) ) {
+                    ps.setNull ( 13, Types.VARCHAR );
+                } else {
+                    ps.setString ( 13, ci.getSettings().getInstater ( HOLD ) );
+                }
+                
+                if ( ! ci.getSettings().is ( AUDITORIUM ) ) {
+                    ps.setNull ( 14, Types.VARCHAR );
+                } else {
+                    ps.setString ( 14, ci.getSettings().getInstater ( AUDITORIUM ) );
+                }
+                
+                ps.setString   ( 15, ci.getString ( NAME ) );
+                ps.executeUpdate ( );
+                ps.close ( );
+                 
+                idleUpdate ( "updateChanSettings ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Was not updated? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                return -1;
+            }
+        }
+        /* Nick was added */
+        return 1;
+    }
+    
+    public static boolean accesslogEvent ( CSAccessLogEvent log ) {
+        
+        if ( ! activateConnection ( )  )  {
+            return false;
+        }
+         
+        try {
+            String query = "insert into chanacclog ( name, target, access, instater, usermask, stamp ) "+
+                           "values ( ?, ?, ?, ?, ?, now() ) ";
+            ps = sql.prepareStatement ( query );
+            ps.setString   ( 1, log.getName() );
+            ps.setString   ( 2, log.getTarget() );
+            ps.setString   ( 3, log.getFlag() );
+            ps.setString   ( 4, log.getInstater() );
+            ps.setString   ( 5, log.getUsermask() );
+            ps.execute ( );
+            ps.close ( ); 
+            return true;
+            
+        } catch ( Exception ex ) {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+        }
+        return false;
+    }
+    
+    public static int updateChanTopic ( ChanInfo ci )  {
+        if ( ci.getTopic() == null ) {
+            return -4;
+        }
+        if ( ! activateConnection ( )  )  {
+            return -2;
+        } else if ( ci == null )  {
+            return -3;
+        } else {
+            /* Try add the chan */          
+            try {                     
+                String query = "INSERT INTO chantopic  ( name,setter,stamp,topic )  "
+                             + "VALUES  ( ?, ?, ?, ? )  "
+                             + "ON DUPLICATE KEY "
+                             + "UPDATE setter = ?,stamp = ?,topic = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setString   ( 1, ci.getName ( )  );
+                ps.setString   ( 2, ci.getTopic().getSetter ( ) );
+                ps.setLong     ( 3, ci.getTopic().getTime ( ) );
+                ps.setString   ( 4, ci.getTopic().getTopic ( ) );
+                ps.setString   ( 5, ci.getTopic().getSetter ( ) );
+                ps.setLong     ( 6, ci.getTopic().getTime ( ) );
+                ps.setString   ( 7, ci.getTopic().getTopic ( ) );
+                ps.execute ( );
+                ps.close ( ); 
+                
+                idleUpdate ( "updateChanTopic ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Was not updated? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                return -1;
+            }
+        }
+        /* Nick was added */
+        return 1;
+    }
+    
+    public static int addChanAccess ( ChanInfo ci, CSAccess op, int access )  {
+
+        if ( ! activateConnection ( )  )  {
+            /* No SQL connection */
+            return -2;
+
+        } else if ( ci == null )  {
+            /* No valid nick was sent */
+            return -3;
+        } else {
+            /* Try add the chan */          
+            try {                     
+          
+                String acc = new String ( );
+                switch ( access )  {
+                    case AKICK :
+                        acc = "akick";
+                        break; 
+                        
+                    case SOP :
+                        acc = "sop";
+                        break;
+                        
+                    case AOP :
+                        acc = "aop";
+                        break;
+                        
+                    default :
+                        
+                }
+                String query = "INSERT INTO chanaccess ( name,access,nick )  "
+                             + "VALUES  ( ?, ?, ? ) "
+                             + "ON DUPLICATE KEY "
+                             + "UPDATE access = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setString   ( 1, ci.getName ( )  );
+                ps.setString   ( 2, acc );
+                ps.setString   ( 3, op.getNick ( ) !=null ? op.getNick().getName ( ) : op.getMask ( ) );
+                ps.setString   ( 4, acc );
+                ps.execute ( );
+                ps.close ( );
+                 
+
+                idleUpdate ( "addChanAccess ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Was not updated? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                return -1;
+            }
+        }
+        /* Nick was added */
+        return 1;
+    }
+  
+       
+    public static int removeChanAccess ( ChanInfo ci, CSAccess access )  {
+
+        if ( ! activateConnection ( )  )  {
+            return -2;
+
+        } else if ( ci == null )  {
+            return -3;
+            
+        } else {
+            /* Try add the chan */          
+            try {    
+                String query = "DELETE FROM chanaccess "
+                             + "WHERE name = ? "
+                             + "AND nick = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setString   ( 1, ci.getName ( )  );
+                ps.setString   ( 2, access.getNick ( ) !=null ? access.getNick().getName ( ) : access.getMask ( ) );
+                ps.execute ( );
+                ps.close ( );
+                 
+                idleUpdate ( "removeChanAccess ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Was not updated? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                return -1;
+            }
+        }
+        /* Nick was added */
+        return 1;
+    }
+     
+    public static ChanInfo getChan ( String name )  {
+        ChanInfo ci;
+        ChanSetting settings;
+        Topic topic;
+        String[] buf;
+        Config config = Proc.getConf ( );
+
+        // chan  ( name, pass, desc, topic, regstamp, stamp ) 
+// chansetting  ( name,keeptopic,topiclock,ident,opguard,restrict,verbose,mailblock,leaveops ) 
+        if ( ! activateConnection ( )  )  {
+            return null;
+        }
+        
+        try {
+            String salt = config.get ( SECRETSALT );
+           
+            String query = "SELECT name,founder,AES_DECRYPT(pass,?),description,regstamp,stamp "
+                         + "FROM chan "
+                         + "WHERE name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, salt );
+            ps.setString  ( 2, name );
+            res = ps.executeQuery ( );
+
+            if ( res.next ( )  )  { 
+                settings        = getSettings ( res.getString ( 1 )  ); 
+                topic           = getChanTopic ( name );
+                if ( topic == null )  {
+                    topic = new Topic ( "","",Long.parseLong ( "0" )  );
+                }
+                ci = new ChanInfo ( res.getString ( 1 ), res.getString ( 2 ) ,res.getString ( 3 ),
+                                    res.getString ( 4 ), topic, res.getString ( 5 ),
+                                    res.getString ( 6 ), settings );
+
+                ci.setAccessList ( SOP, getChanAccess ( ci, SOP )  );
+                ci.setAccessList ( AOP, getChanAccess ( ci, AOP )  );
+                ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK )  );
+
+                res.close ( );
+                ps.close ( );
+                return ci;
+
+            }
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getChan ( ) " );
+            
+        } catch  ( SQLException | NumberFormatException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        }
+        
+        return null;
+    }
+    
+    /* Only used internally */
+    public static ArrayList<ChanInfo> getChansByNick ( NickInfo ni )  {
+        ChanInfo ci;
+        ArrayList<ChanInfo> cList = new ArrayList<> ( );
+        ChanSetting settings;
+        Topic topic;
+        String[] buf;
+        Config config = Proc.getConf ( );
+        if ( ! activateConnection ( )  )  {
+            return cList;
+        }
+        
+        try {
+            String salt = config.get ( SECRETSALT );
+           
+            String query = "SELECT C.name,C.founder,AES_DECRYPT(C.pass,?),C.description,C.regstamp,C.stamp "
+                         + "FROM chan AS C "
+                         + "LEFT JOIN chanaccess AS CA ON CA.name = C.name "
+                         + "WHERE CA.nick = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, salt );
+            ps.setString  ( 2, ni.getName ( ) );
+            res = ps.executeQuery ( );
+
+            while ( res.next ( )  )  { 
+                settings        = getSettings ( res.getString ( 1 )  ); 
+
+                ci = new ChanInfo ( res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ),
+                                    res.getString ( 4 ), new Topic ( "","",0 ), res.getString ( 5 ),
+                                    res.getString ( 6 ), settings );
+                ci.setAccessList ( SOP, getChanAccess ( ci, SOP )  );
+                ci.setAccessList ( AOP, getChanAccess ( ci, AOP )  );
+                ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK )  );
+                cList.add ( ci ); 
+            }
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getChansByNick ( ) " );
+            
+        } catch  ( SQLException | NumberFormatException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        } 
+        return cList;
+    }
+    
+    public static ArrayList<NickChanAccess> getNickChanAccessByNick ( NickInfo ni, String access )  {
+        ArrayList<NickChanAccess> ncaList = new ArrayList<> ( );
+        if ( ! activateConnection ( )  )  {
+            return ncaList;
+        }
+        try {
+            String query = "SELECT N.name,CA.name,CA.access "+
+                           "FROM nick AS N "+
+                           "JOIN chanaccess AS CA ON CA.nick = N.name "+
+                           "WHERE N.name = ? "+
+                           "AND CA.access = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ni.getName ( )  );
+            ps.setString  ( 2, access );
+            res = ps.executeQuery ( );
+            while  ( res.next ( )  )  {
+                ncaList.add ( new NickChanAccess ( res.getString ( 1 ) , res.getString ( 2 ) , res.getString ( 3 )  )  );
+            }
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getNickChanAccessByNick ( ) " );
+        } catch  ( SQLException | NumberFormatException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );     
+        }
+        return ncaList;
+    }
+    
+     /* Only used internally */
+    public static ArrayList<ChanInfo> getChansByFounderNick ( NickInfo ni )  {
+        ChanInfo ci;
+        ArrayList<ChanInfo> cList = new ArrayList<> ( );
+        ChanSetting settings;
+        Topic topic;
+        String[] buf;
+        Config config = Proc.getConf ( );
+        if ( ! activateConnection ( )  )  {
+            return cList;
+        }
+        try {    
+            String salt = config.get ( SECRETSALT );
+            String query = "SELECT C.name,C.founder,AES_DECRYPT(C.pass,?),C.description,C.regstamp,C.stamp "
+                         + "FROM chan AS C "
+                         + "WHERE C.founder = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, salt );
+            ps.setString  ( 2, ni.getName ( ) );
+            res = ps.executeQuery ( );
+
+            while ( res.next ( )  )  { 
+                settings        = getSettings ( res.getString ( 1 )  ); 
+
+                ci = new ChanInfo ( res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ),
+                                    res.getString ( 4 ), new Topic ( "","",0 ), res.getString ( 5 ),
+                                    res.getString ( 6 ), settings );
+                ci.setAccessList ( SOP, getChanAccess ( ci, SOP )  );
+                ci.setAccessList ( AOP, getChanAccess ( ci, AOP )  );
+                ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK )  );
+                cList.add ( ci ); 
+            }
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getChansByNick ( ) " );
+            
+        } catch  ( SQLException | NumberFormatException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        } 
+        return cList;
+    }
+    
+    
+     public static Topic getChanTopic ( String name )  {
+        String[] buf;
+        if ( ! activateConnection ( )  )  {
+            return null;
+        }
+        try { 
+            String query = "SELECT topic,setter,stamp "
+                         + "FROM chantopic "
+                         + "WHERE name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, name );
+            res3 = ps.executeQuery ( );
+
+            Topic topic;
+
+            if ( res3.next ( )  )  {  
+                topic = new Topic ( res3.getString ( 1 ), res3.getString ( 2 ), Long.parseLong ( res3.getString ( 3 ) ) ); 
+                return topic;
+            }
+            res3.close ( );
+            ps.close ( );
+            idleUpdate ( "getChanTopic ( ) " );
+           
+        } catch  ( SQLException | NumberFormatException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        }
+        return null;
+    }
+     
+    public static ArrayList<CSAccess> getChanAccess ( ChanInfo ci, int access )  {
+        String[] buf;
+        ArrayList<CSAccess> opList = new ArrayList<> ( );
+        if ( ! activateConnection ( )  )  {
+            return opList;
+        }
+        try {
+            CSAccess chanOp;
+            String acc = new String ( );
+            switch ( access )  {
+                case AKICK :
+                    acc = "akick";
+                    break;
+
+                case SOP :
+                    acc = "sop";
+                    break;
+
+                case AOP :
+                    acc = "aop";
+                    break;
+
+                default :
+            } 
+
+            String query = "SELECT nick "
+                         + "FROM chanaccess "
+                         + "WHERE name = ? "
+                         + "AND access = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 2, acc );
+            res3 = ps.executeQuery ( );
+
+            while ( res3.next ( )  )  { 
+                try {
+                    chanOp = new CSAccess ( res3.getString ( 1 ), access );
+                    opList.add ( chanOp );
+
+                } catch ( SQLException | NumberFormatException e )  {
+                    Proc.log ( CSDatabase.class.getName ( ) , e );
+                }
+            }
+            res3.close ( );
+            ps.close ( );
+            idleUpdate ( "getChanAccess ( ) " );
+            return opList;
+            
+        } catch  ( SQLException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+        } 
+        return null;
+    }
+    
+   
+    /* Delete a channel */
+    public static boolean deleteChan ( ChanInfo ci )  {
+        if ( ! activateConnection ( )  )  {
+            return false;
+        }
+        
+        try {
+            String query = "DELETE FROM chan WHERE name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName ( )  );
+            ps.execute ( );
+            ps.close ( );
+
+            query = "DELETE FROM chanaccess WHERE name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName ( )  );
+            ps.execute ( );
+            ps.close ( );
+
+            query = "DELETE FROM chansetting WHERE name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName ( )  );
+            ps.execute ( );
+            ps.close ( );
+
+            query = "DELETE FROM chantopic WHERE name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName ( )  );
+            ps.execute ( );
+            ps.close ( ); 
+             
+        } catch  ( SQLException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+            return false;
+        }
+        return true;
+
+     
+    }
+    /* End NickServ */
+
+    private static ChanSetting getSettings ( String name )  {
+        ChanSetting settings;
+        settings = new ChanSetting ( );
+        if ( ! activateConnection ( )  )  {
+            return settings;
+        }
+        try {
+            String query = "SELECT keeptopic,topiclock,ident,opguard,"+
+                           "restricted,verbose,mailblock,leaveops,"+
+                           "modelock,mark,freeze,close,hold,auditorium "+
+                           "FROM chansetting "+
+                           "WHERE name = ?;";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, name );
+            res2 = ps.executeQuery ( );
+
+            if ( res2.next ( )  )  {
+                if ( res2.getBoolean ( "keeptopic" )  == true )     { settings.set ( KEEPTOPIC, true ); }
+                switch ( res2.getString ( "topiclock" ) .toUpperCase ( ) .hashCode ( )  )  {
+                    case FOUNDER :
+                    case SOP :
+                    case AOP :
+                        settings.set( TOPICLOCK, res2.getString ( "topiclock" ) .toUpperCase ( ) .hashCode ( ) );
+                        break;
+
+                    default :
+                        settings.set ( TOPICLOCK, OFF );
+
+                }
+
+                settings.set ( IDENT,       res2.getBoolean ( "ident" )         );
+                settings.set ( OPGUARD,     res2.getBoolean ( "opguard" )       );
+                settings.set ( RESTRICT,    res2.getBoolean ( "restricted" )    );
+                settings.set ( VERBOSE,     res2.getBoolean ( "verbose" )       );
+                settings.set ( MAILBLOCK,   res2.getBoolean ( "mailblock" )     );
+                settings.set ( LEAVEOPS,    res2.getBoolean ( "leaveops" )      );
+                /* Oper only */
+                settings.set ( MARK,        res2.getString ( "mark" )           );
+                settings.set ( FREEZE,      res2.getString ( "freeze" )         );
+                settings.set ( CLOSE,       res2.getString ( "close" )          );
+                settings.set ( HOLD,        res2.getString ( "hold" )           );
+                settings.set ( AUDITORIUM,  res2.getString ( "auditorium" )     );
+                settings.setModeLock ( res2.getString ( "modelock" )            );
+
+            }
+            res2.close ( );
+            ps.close ( );
+            idleUpdate ( "getSettings ( chan ) " );
+             
+        } catch  ( SQLException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        } 
+        return settings;
+    }
+  
+    static boolean wipeAccessList ( ChanInfo ci, int access )  {
+        if ( ! activateConnection ( )  )  {
+            return false;
+        }
+        try {
+            String acc = new String ( );
+            switch ( access )  {
+                case SOP :
+                    acc = "sop";
+                    break;
+
+                case AOP :
+                    acc = "aop";
+                    break;
+
+                default :
+
+            }
+
+            String query = "DELETE FROM chanaccess "
+                         + "WHERE name = ? "
+                         + "AND access = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 2, acc );
+            ps.execute ( );
+            ps.close ( );
+
+            idleUpdate ( "wipeAccessList ( ) " );
+            
+        } catch  ( SQLException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+            return false;
+        }
+        return true;
+    } 
+ 
+    static ArrayList<ChanInfo> getAllChans ( )  {
+        ChanInfo ci;
+        ArrayList<ChanInfo> cList = new ArrayList<> ( );
+        ChanSetting settings;
+        Topic topic;
+        String[] buf;
+        Config config = Proc.getConf ( );
+        long now;
+        long now2;
+        if ( ! activateConnection ( )  )  {
+            return cList;
+        }
+        try { 
+            now = System.currentTimeMillis();
+            String salt = config.get ( SECRETSALT );
+            String query = "SELECT name,founder,AES_DECRYPT(pass,?) as pass,description,regstamp,stamp "
+                         + "FROM chan " 
+                         + "ORDER BY name";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, salt ); 
+            res = ps.executeQuery ( );
+
+            System.out.print("Loading Chans: ");
+            int $count = 0;
+            while ( res.next ( ) )  { 
+                settings        = getSettings ( res.getString ( 1 )  ); 
+                ci = new ChanInfo ( res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ),
+                                    res.getString ( 4 ), getChanTopic ( res.getString ( 1 ) ),
+                                    res.getString ( 5 ), res.getString ( 6 ), settings );
+                ci.setAccessList ( SOP, getChanAccess ( ci, SOP ) );
+                ci.setAccessList ( AOP, getChanAccess ( ci, AOP ) );
+                ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK ) );
+                ci.getFounder().addToAccessList ( FOUNDER, ci );
+                cList.add ( ci );
+                $count++;
+            }
+            now2 = System.currentTimeMillis();
+            System.out.print(".. "+$count+" chans loaded [took "+(now2-now)+"ms]\n");
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getAllChans ( ) " );
+            
+        } catch  ( SQLException | NumberFormatException ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        } 
+        return cList;
+    
+    }
+    
+    public static ArrayList<ChanInfo> getChanList ( String pattern )  {
+        ArrayList<ChanInfo> cList = new ArrayList<> ( );
+        ChanInfo ci; 
+        ChanSetting settings;
+        Config config = Proc.getConf ( );
+        
+        if ( pattern.isEmpty ( )  )  {
+            return null;
+        }
+        
+        pattern.replaceAll ( "\\'", "" );
+        pattern = pattern.replaceAll ( "\\*", " ( .* ) " );
+        pattern = pattern.replaceAll ( "\\?", " ( .? ) {0,1}" );
+        
+//public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, long regStamp, long lastSeen, ChanSetting settings, ChanFlags flags )  {
+        if ( ! activateConnection ( ) ) {
+            return cList;
+        }
+        try { 
+            String salt = config.get ( SECRETSALT );
+            String query = "SELECT C.name,C.founder,AES_DECRYPT(C.pass,?),C.description,C.regstamp,C.stamp,CT.topic "
+                         + "FROM chan AS C "
+                         + "LEFT JOIN chantopic AS CT ON CT.name = C.name "
+                         + "WHERE C.name RLIKE ? "
+                         + "OR CT.topic RLIKE ? "
+                         + "OR C.description RLIKE ? "
+                         + "ORDER BY C.name ASC";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, salt );
+            ps.setString  ( 2, "^"+pattern+"$" );
+            ps.setString  ( 3, "^"+pattern+"$" );
+            ps.setString  ( 4, "^"+pattern+"$" );
+            res = ps.executeQuery ( );
+
+            while ( res.next ( )  )  { 
+                settings        = getSettings ( res.getString ( 1 )  ); 
+                ci = new ChanInfo ( res.getString ( 1 ) , res.getString ( 2 ) , res.getString ( 3 ), 
+                                    res.getString ( 4 ) , getChanTopic ( res.getString ( 1 ) ), res.getString ( 5 ), 
+                                    res.getString ( 6 ), settings );
+                ci.setAccessList ( SOP, getChanAccess ( ci, SOP ) );
+                ci.setAccessList ( AOP, getChanAccess ( ci, AOP ) );
+                ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK ) );
+                ci.getFounder().addToAccessList ( FOUNDER, ci);
+                cList.add ( ci ); 
+            } 
+            res.close ( );
+            ps.close ( );
+             
+        } catch  ( Exception ex )  {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+        }
+        return cList;
+    }
+ 
+    public static ArrayList<CSAccessLogEvent> getChanAccLogList ( User user, ChanInfo ci ) {
+        ArrayList<CSAccessLogEvent> csaList = new ArrayList<>();
+        String query;
+        if ( ci == null || user == null ) {
+            return csaList;            
+        }
+        if ( ! activateConnection ( ) ) {
+            return csaList;
+        }
+        // | id | name              | target       | access | instater    | stamp               |
+        try {
+            if ( user.isAtleast ( IRCOP ) ) {
+                query = "select ca.name,ca.access,ca.target,ca.instater,ca.usermask,ca.stamp "+
+                           "from chanacclog as ca "+
+                           "left join chan as c on c.name = ca.name "+
+                           "where "+
+                           "ca.name = ? ";
+            } else {
+                query = "select ca.name,ca.access,ca.target,ca.instater,ca.usermask,ca.stamp "+
+                           "from chanacclog as ca "+
+                           "left join chan as c on c.name = ca.name "+
+                           "where "+
+                           "ca.name = ? "+
+                           "and ca.stamp >= c.regstamp";
+            }
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName() );
+            res = ps.executeQuery ( );
+            
+            while ( res.next ( ) ) {
+                csaList.add( new CSAccessLogEvent(res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ), res.getString ( 4 ), res.getString ( 5 ), res.getString ( 6 ) ) );
+            }
+            res.close ( );
+            ps.close ( );
+            
+        } catch ( Exception ex ) {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+        }
+        
+        return csaList;
+    }
+    
+    
+    public static int logEvent ( CSLogEvent log ) {
+        return Database.logEvent ( "chanlog", ( LogEvent ) log );
+    }
+    
+    public static void delLogEvent ( int id ) {
+        Database.delLogEvent ( "chanlog", id );
+    }
+
+
+}
