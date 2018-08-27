@@ -12,6 +12,7 @@ This includes the AKill, SQline, SGline, Auditorium mode and also new features i
 Some services has the bad habit of exiting when the link to the services hub goes down for various reasons. Avade IRC 
 services will notice this and try reconnect to the services hub if that happens.
 
+
 #### Reconnecting MySQL server
 
 Avade IRC services will also notice if the connection to the database goes down and work as normal until the connection 
@@ -20,6 +21,7 @@ that will not work is searching any type of logs. A nick or channel will however
 is down, and services will save information about what has changed, then push those changes to the database when the
 connection returns. This means you preferably want to avoid restarting services when there is no database connection
 to avoid losing data.
+
 
 #### Excessive logging
 
@@ -30,6 +32,7 @@ is only available for IRCops.
 Avade will also provide channel access logs in channels which will show when and who gave or removed access in the 
 chan. The access log for a channel is open for AOP+ and IRCops.
 
+
 #### External mailing functionality
 
 Something that has shown to have been working poorly in different versions of services is how mailing is handled when there
@@ -38,19 +41,23 @@ error during which it perhaps isnt doing anything else. This has been resolved b
 to its own small software. All this feature needs is a database connection, and as its java based aswell it can run offsite
 from services keeping the location of services hopefully a secret.
 
+
 #### Server command
 
 The server command is a new feature that works in a very simple and beautiful way. Avade will automatically populate a list
-of servers kept in services, and if a server is missing an IRCop will be able to list it using the missing server command. 
-This is something that no other services has as far as I know, and it can be very useful for larger networks where there
-might or probably will be difficult to figure out which servers actually is split and gone.
+of servers that has been seen connected to the network, and if a server is missing an IRCop will be able to list it using 
+the missing server command. This is something that no other services has as far as I know, and it can be very useful for 
+larger networks where there might or probably will be difficult to figure out which servers actually is split and gone.
+
 
 #### Persistent services ID's
 
 As long as services is online it will store services ID's for all users. At times there might be a split, this will cause a
 user to be removed from services awareness, however a reconnecting server with identified users can retain their access to
-all identified nicks and channels as services will remember these sessions for a whole hour before cleaning them out. Other
-services might not figure out that an identified user is the same as the one that splitted and will only identify the user
+all identified nicks and channels as services will remember these sessions for a whole hour before cleaning them out. If you
+have servers split more than an hour you might have serious issues with your network. 
+
+Other services might not figure out that an identified user is the same as the one that splitted and will only identify the user
 with the users current nick (+r). Avade however will keep track of the actual servicesID handled by bahamut.
 
 
