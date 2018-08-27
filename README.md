@@ -5,6 +5,45 @@ The Avade IRC Services is a new project made in Java solely for IRC networks run
 been developed only for bahamut it the network will be able to get builtin features for the features bahamut offers.
 This includes the AKill, SQline, SGline, Auditorium mode and also new features in the upcoming bahamut release.
 
+### Special features included in Avade:
+
+#### Reconnecting to services hub
+
+Some services has the bad habit of exiting when the link to the services hub goes down for various reasons. Avade IRC 
+services will notice this and try reconnect to the services hub if that happens.
+
+#### Reconnecting MySQL server
+
+Avade IRC services will also notice if the connection to the database goes down and work as normal until the connection 
+is re-established. Please note that not everything will work when the database connection is down. Example of something
+that will not work is searching any type of logs. A nick or channel will however work perfectly fine when the database
+is down, and services will save information about what has changed, then push those changes to the database when the
+connection returns. This means you preferably want to avoid restarting services when there is no database connection
+to avoid losing data.
+
+#### Excessive logging
+
+Something that other services might not provide is a way to access logs which can describe how a nickname or channel
+has been used. This include logs for register, set email, set pass, freeze, hold, close, auditorium etc. Avade will also
+provide channel access logs in channels which will show when and who gave or removed access in the chan. The access log 
+for a channel is open for AOP+ and IRCops.
+
+#### External mailing functionality
+
+Something that has shown to have been working poorly in different versions of services is how mailing is handled when there
+is a problem with the smtp server. This has been known to be causing services to sit and wait for a timeout or some other
+error during which it perhaps isnt doing anything else. This has been resolved by lifting out the mailing funcitonality
+to its own small software. All this feature needs is a database connection, and as its java based aswell it can run offsite
+from services keeping the location of services hopefully a secret.
+
+#### Server command
+
+The server command is a new feature that works in a very simple and beautiful way. Avade will automatically populate a list
+of servers kept in services, and if a server is missing an IRCop will be able to list it using the missing server command. 
+This is something that no other services has as far as I know, and it can be very useful for larger networks where there
+might or probably will be difficult to figure out which servers actually is split and gone.
+
+
 ### Command list
 
 #### NickServ :
