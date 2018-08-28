@@ -5,6 +5,8 @@ The Avade IRC Services is a project made in Java solely for IRC networks running
 been developed only for bahamut it the network will be able to get builtin features for the features bahamut offers.
 This includes the AKill, SQline, SGline, Auditorium mode and also new features in the upcoming bahamut release.
 
+./DreamHealer
+
 ### Special features included in Avade:
 
 #### Reconnecting to services hub
