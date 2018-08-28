@@ -214,6 +214,19 @@ will still be able to identify the user.
   
   
 
+## Contributing to the project
 
+### Code
+
+If you downloaded Avade and made changes to it to make it better or adding features to it, I do want you to take a diff and
+send me the changes. If the changes is appealing and interesting I might add it to the project. People who submit code will
+be credited for it. Send code to: dreamhealer [AT] avade [DOT] net
+
+### Donating
+
+This is a project that is worked on on my spare time, so any contributions are welcome. Donating to the project will be a 
+boost for motivation and might be used for paying various bills as hosting fees etc, or they might go towards beer who 
+knows ;). For donations use paypal and send it to: dreamhealer [AT] avade [DOT] net, any and all contributions are 
+appreciated.
 
 
