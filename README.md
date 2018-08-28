@@ -1,7 +1,7 @@
 # Avade
 ## Avade IRC Services
 
-The Avade IRC Services is a new project made in Java solely for IRC networks running the bahamut IRCd. As Avade has
+The Avade IRC Services is a project made in Java solely for IRC networks running the bahamut IRCd. As Avade has
 been developed only for bahamut it the network will be able to get builtin features for the features bahamut offers.
 This includes the AKill, SQline, SGline, Auditorium mode and also new features in the upcoming bahamut release.
 
@@ -58,7 +58,9 @@ all identified nicks and channels as services will remember these sessions for a
 have servers split more than an hour you might have serious issues with your network. 
 
 Other services might not figure out that an identified user is the same as the one that splitted and will only identify the user
-with the users current nick (+r). Avade however will keep track of the actual servicesID handled by bahamut.
+with the users current nick (+r). Avade however will keep track of the actual servicesID handled by bahamut and treat that
+services ID as an actual user session. This means of course that a user can use a different nick after a split and services
+will still be able to identify the user.
 
 
 ### Command list
