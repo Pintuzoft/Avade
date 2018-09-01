@@ -93,7 +93,7 @@ will still be able to identify the user.
   
   Hold           - OperFlag to deny a nick from expiring
   
-  NOGHOST        - OperFlag to deny a nick from being ghosted
+  NoGhost        - OperFlag to deny a nick from being ghosted
   
   Getpass        - Show password log for nick
   
