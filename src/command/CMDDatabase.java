@@ -47,7 +47,7 @@ public class CMDDatabase extends Database {
             return cList;
         }
         try {
-            String query = "SELECT id, target, targettype, command "
+            String query = "SELECT id, target, targettype, command, extra "
                          + "FROM command "
                          + "ORDER BY id ASC;";
             preparedStmt = sql.prepareStatement ( query );
@@ -55,9 +55,17 @@ public class CMDDatabase extends Database {
 
             while ( res.next ( )  )  {
                 try {
-                    if ( res.getString(3).toUpperCase().hashCode ( ) == NICKINFO ) {
+                    if ( res.getString(3).toUpperCase().hashCode ( ) == 1 ) {
                         if (  ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
-                            cList.add ( new Command ( res.getString ( 1 ), ni, NICKINFO, res.getString(4).toUpperCase().hashCode ( ) ) );
+                            cList.add ( 
+                                new Command ( 
+                                    res.getString ( 1 ), 
+                                    ni, 
+                                    11, 
+                                    res.getString(4).toUpperCase().hashCode ( ), 
+                                    res.getString(5)
+                                )
+                            );
                         }
                     }
                 } catch ( SQLException e ) {
@@ -87,7 +95,7 @@ public class CMDDatabase extends Database {
             preparedStmt.execute ( );
             preparedStmt.close ( );
 
-            idleUpdate ( "deleteCommand ( ) " ); 
+            idleUpdate ( "deleteCommand ( ) " );
 
         } catch  ( SQLException ex )  {
             Proc.log ( CMDDatabase.class.getName ( ) , ex );

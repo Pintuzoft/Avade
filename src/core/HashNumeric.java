@@ -104,6 +104,9 @@ public abstract class HashNumeric extends TextFormat {
     public final static int AUTH                        = 2020776;
     public final static int NICKINFO                    = 853181073;
     public final static int DROP                        = 2107119;
+    
+    public final static int AUTHMAIL                    = -2079342753;
+    public final static int AUTHPASS                    = -2079253063;
 
     public final static int UNSET                       = 80904969;
     public final static int EMAIL                       = 66081660;
@@ -218,6 +221,8 @@ public abstract class HashNumeric extends TextFormat {
     public final static int UNMARK                      = -1787095834;
     public final static int FREEZE                      = 2081894039;
     public final static int UNFREEZE                    = 402727536;
+    public final static int NOGHOST                     = -1459660466;
+    public final static int UNNOGHOST                   = -1974214507;
     public final static int CLOSE                       = 64218584;
     public final static int REOPEN                      = -1881221379;
     public final static int HELD                        = 2213685;

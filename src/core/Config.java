@@ -82,6 +82,7 @@ public class Config extends HashNumeric {
     private int freeze = 5;
     private int hold = 5;
     private int mark = 5;
+    private int noghost = 5;
     private int getpass = 5;
     private int getemail = 5;
     private int akill = 5;
@@ -379,6 +380,10 @@ public class Config extends HashNumeric {
             case MARK :
                 this.mark = access;
                 break;
+                    
+            case NOGHOST :
+                this.noghost = access;
+                break;
                 
             case GETPASS :
                 this.getpass = access;
@@ -566,6 +571,9 @@ public class Config extends HashNumeric {
                
             case MARK :
                 return this.mark;
+                     
+            case NOGHOST :
+                return this.noghost;
                 
             case AUDITORIUM :
                 return this.auditorium;

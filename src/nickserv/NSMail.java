@@ -32,6 +32,7 @@ public class NSMail {
     public NSMail ( String nick, String mail ) {
         this.nick = nick;
         this.mail = mail;
+        this.hash();
     }
     
     public NSMail ( String nick, String mail, String auth, String stamp ) {

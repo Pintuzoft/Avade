@@ -17,6 +17,7 @@
  */
 package nickserv;
 
+import command.Command;
 import core.Config;
 import core.Expire;
 import core.Database;
@@ -95,18 +96,27 @@ public class NSDatabase extends Database {
         try {
             String salt = config.get ( SECRETSALT );
             
-            String query = "insert into nick  ( name, hashcode, mask, pass, auth, regstamp, stamp )  "
-                          +"values  ( ?, ?, ?, aes_encrypt(?,?), ?, now(), now() )";
+            /* NICK */
+            String query = "insert into nick  ( name, hashcode, mask, regstamp, stamp )  "
+                          +"values  ( ?, ?, ?, now(), now() )";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getString ( NAME )                                     );
-            ps.setInt      ( 2, ni.getHashName ( )                                        );
-            ps.setString   ( 3, ni.getString ( USER ) +"@"+ni.getString ( IP )            );
-            ps.setString   ( 4, ni.getPass ( )                                            );
-            ps.setString   ( 5, salt                                                      );
-            ps.setString   ( 6, ni.getString ( AUTH )                                     );
+            ps.setString   ( 1, ni.getString ( NAME ) );
+            ps.setInt      ( 2, ni.getHashName ( ) );
+            ps.setString   ( 3, ni.getString ( USER ) +"@"+ni.getString ( IP ) );
             ps.execute ( );
             ps.close ( );
 
+            /* PASS */
+            query = "insert into passlog (nick,pass,stamp) "+
+                    "values (?,aes_encrypt(?,?),now())";
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, ni.getName() );
+            ps.setString ( 2, ni.getPass() );
+            ps.setString ( 3, salt );
+            ps.execute();
+            ps.close();
+            
+            /* MAIL */
             query = "insert into maillog (nick,mail,stamp) "+
                     "values (?,aes_encrypt(?,?),now())";
             ps = sql.prepareStatement ( query );
@@ -116,6 +126,7 @@ public class NSDatabase extends Database {
             ps.execute();
             ps.close();
             
+            /* SETTINGS */
             query = "insert into nicksetting  ( name,noop,neverop,mailblock,showemail,showhost )  "
                   + "values ( ?, ?, ?, ?, ?, ? );";
             ps = sql.prepareStatement ( query );
@@ -140,6 +151,10 @@ public class NSDatabase extends Database {
     /* NickServ Methods */
     public static int updateNick ( NickInfo ni )  {
         Config config = Proc.getConf ( );
+        ni.getChanges().printChanges();
+        if ( ! ni.getChanges().changed ( ) ) {
+            return 1;
+        }
         
         if ( ! activateConnection ( ) ) {
             return -2;
@@ -153,51 +168,113 @@ public class NSDatabase extends Database {
         System.out.println("updateNick1: "+ni.getString ( IP ) );
         System.out.println("updateNick2: "+ni.getString ( NAME ) );
         
-        /* Try update the nick */
+        /* Try change the nick */
         try {
-            String salt = config.get ( SECRETSALT );
-            String query = "update nick "
-                          +"set mask = ?, pass = AES_ENCRYPT(?,?), stamp = now() "
-                          +"where name = ?";
-            ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getString ( USER ) +"@"+ni.getString ( IP )            );
-            ps.setString   ( 2, ni.getPass ( )                                            );
-            ps.setString   ( 3, salt                                                      );
-            ps.setString   ( 4, ni.getString ( NAME )                                     );
-            ps.executeUpdate ( );
-            ps.close ( );
+            /*
+                private boolean lastseen;   v
+                private boolean pass;       v
+                private boolean fullmask;   v
+                
+                private boolean freeze;     v
+                private boolean mark;       v
+                private boolean hold;       v
+                private boolean mail;       
+                private boolean noop;       v
+                private boolean neverop;    v
+                private boolean mailblock;  v
+                private boolean showemail;  v
+                private boolean showhost;   v
+            */           
+            String salt = config.get ( SECRETSALT ); 
+            String query;
+            
+            if ( ni.getChanges().hasChanged(FULLMASK) ||
+                 ni.getChanges().hasChanged(LASTSEEN) ) {
+                query = "update nick "
+                       +"set mask = ?, stamp = now() "
+                       +"where name = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setString   ( 1, ni.getString ( USER ) +"@"+ni.getString ( IP )            );
+                ps.setString   ( 2, ni.getString ( NAME )                                     );
+                ps.executeUpdate ( );
+                ps.close ( );
 
-            query = "update nicksetting "
-                  + "set noop = ?, neverop = ?, mailblock = ?, showemail = ?, showhost = ?, auth = ?, mark = ?, freeze = ?, hold = ? "
-                  + "where name = ?";
-            ps = sql.prepareStatement ( query );
-            ps.setInt      ( 1, ni.getSettings().is ( NOOP ) ? 1 : 0                     );
-            ps.setInt      ( 2, ni.getSettings().is ( NEVEROP ) ? 1 : 0                  );
-            ps.setInt      ( 3, ni.getSettings().is ( MAILBLOCKED ) ? 1 : 0              );
-            ps.setInt      ( 4, ni.getSettings().is ( SHOWEMAIL ) ? 1 : 0                );
-            ps.setInt      ( 5, ni.getSettings().is ( SHOWHOST ) ? 1 : 0                 );
-            ps.setInt      ( 6, ni.getSettings().is ( AUTH ) ? 1 : 0                     );
-            
-            if ( ! ni.getSettings().is ( MARK ) ) {
-                ps.setNull ( 7, Types.VARCHAR );
-            } else {
-                ps.setString   ( 7, ni.getSettings().getInstater( MARK ) );
             }
             
-            if ( ! ni.getSettings().is ( FREEZE ) ) {
-                ps.setNull ( 8, Types.VARCHAR );
-            } else {
-                ps.setString   ( 8, ni.getSettings().getInstater( FREEZE ) );
-            }
+            String changes = new String ( );
             
-            if ( ! ni.getSettings().is ( HOLD ) ) {
-                ps.setNull ( 9, Types.VARCHAR );
-            } else {
-                ps.setString   ( 9, ni.getSettings().getInstater( HOLD ) );
-            }
+            if ( ni.getChanges().hasChanged ( NOOP ) )
+                changes = addToQuery ( changes, "noop" );
+            if ( ni.getChanges().hasChanged ( NEVEROP ) )
+                changes = addToQuery ( changes, "neverop");
+            if ( ni.getChanges().hasChanged ( MAILBLOCK ) )
+                changes = addToQuery ( changes, "mailblock");
+            if ( ni.getChanges().hasChanged ( SHOWEMAIL ) )
+                changes = addToQuery ( changes, "showemail");
+            if ( ni.getChanges().hasChanged ( SHOWHOST ) )
+                changes = addToQuery ( changes, "showhost");
+            if ( ni.getChanges().hasChanged ( MARK ) )
+                changes = addToQuery ( changes, "mark");
+            if ( ni.getChanges().hasChanged ( FREEZE ) )
+                changes = addToQuery ( changes, "freeze");
+            if ( ni.getChanges().hasChanged ( HOLD ) )
+                changes = addToQuery ( changes, "hold");
+            if ( ni.getChanges().hasChanged ( NOGHOST ) )
+                changes = addToQuery ( changes, "noghost");
+                        
+            if ( changes.length() > 0 ) {
+                
+                query = "update nicksetting "
+                      + "set "+changes+" "
+                      + "where name = ?";
+                System.out.println("DEBUG: "+query);
+                ps = sql.prepareStatement ( query );
+                 int index = 1;
+                 ni.getChanges().printChanges();
+                if ( ni.getChanges().hasChanged ( NOOP ) )
+                    ps.setInt ( index++, ni.getSettings().is ( NOOP ) ? 1 : 0 );
+                if ( ni.getChanges().hasChanged ( NEVEROP ) )
+                    ps.setInt ( index++, ni.getSettings().is ( NEVEROP ) ? 1 : 0 );
+                if ( ni.getChanges().hasChanged ( MAILBLOCK ) )
+                    ps.setInt ( index++, ni.getSettings().is ( MAILBLOCK ) ? 1 : 0 );
+                if ( ni.getChanges().hasChanged ( SHOWEMAIL ) )
+                    ps.setInt ( index++, ni.getSettings().is ( SHOWEMAIL ) ? 1 : 0 );
+                if ( ni.getChanges().hasChanged ( SHOWHOST ) )
+                    ps.setInt ( index++, ni.getSettings().is ( SHOWHOST ) ? 1 : 0 );
 
-            ps.setString   ( 10, ni.getString ( NAME )                                    );
-            ps.executeUpdate ( );
+                if ( ni.getChanges().hasChanged ( MARK ) ) {
+                    if ( ! ni.getSettings().is ( MARK ) ) {
+                        ps.setNull ( index++, Types.VARCHAR );
+                    } else {
+                        ps.setString ( index++, ni.getSettings().getInstater( MARK ) );
+                    }
+                }
+                if ( ni.getChanges().hasChanged ( FREEZE ) ) {
+                    if ( ! ni.getSettings().is ( FREEZE ) ) {
+                        ps.setNull ( index++, Types.VARCHAR );
+                    } else {
+                        ps.setString ( index++, ni.getSettings().getInstater( FREEZE ) );
+                    }                
+                }
+
+                if ( ni.getChanges().hasChanged ( HOLD ) ) {
+                    if ( ! ni.getSettings().is ( HOLD ) ) {
+                        ps.setNull ( index++, Types.VARCHAR );
+                    } else {
+                        ps.setString ( index++, ni.getSettings().getInstater( HOLD ) );
+                    }                
+                }
+                if ( ni.getChanges().hasChanged ( NOGHOST ) ) {
+                    if ( ! ni.getSettings().is ( NOGHOST ) ) {
+                        ps.setNull ( index++, Types.VARCHAR );
+                    } else {
+                        ps.setString ( index++, ni.getSettings().getInstater ( NOGHOST ) );
+                    }                
+                }
+
+                ps.setString   ( index, ni.getString ( NAME )                                    );
+                ps.executeUpdate ( );
+            }
             ps.close ( ); 
 
             idleUpdate ( "updateNick ( ) " );
@@ -209,6 +286,15 @@ public class NSDatabase extends Database {
             return -1;
         }
         return 1;
+    }
+    
+    /* Add key to query */
+    private static String addToQuery ( String data, String key ) {
+        if ( data.length() > 0 ) {
+            return data+", "+key+" = ?";
+        } else {
+            return data+key+" = ?";
+        }
     }
     
     public static int setVar ( NickInfo ni, int var, boolean enable )  {
@@ -330,9 +416,8 @@ public class NSDatabase extends Database {
             String query = "select n.name,"+
                            "  n.hashcode,"+
                            "  n.mask,"+
-                           "  aes_decrypt(n.pass,?) as pass,"+
-                           "  (select aes_decrypt(mail,?) from maillog where nick=n.name order by stamp desc limit 1) as mail,"+
-                           "  n.auth,"+
+                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name and auth is null order by stamp desc limit 1) as pass,"+
+                           "  (select aes_decrypt(mail,?) from maillog where nick=n.name and auth is null order by stamp desc limit 1) as mail,"+
                            "  n.regstamp,"+
                            "  n.stamp "+
                            "from nick as n "+
@@ -360,8 +445,7 @@ public class NSDatabase extends Database {
                     res.getString ( 4 ), 
                     res.getString ( 5 ),
                     res.getString ( 6 ),
-                    res.getString ( 7 ), 
-                    res.getString ( 8 ),
+                    res.getString ( 7 ),
                     settings,
                     exp
                 );
@@ -426,7 +510,7 @@ public class NSDatabase extends Database {
             return settings;
         }
         try {
-            String query = "select noop,neverop,mailblock,showemail,showhost,auth,mark,freeze,hold "
+            String query = "select noop,neverop,mailblock,showemail,showhost,mark,freeze,hold,noghost "
                          + "from nicksetting "
                          + "where name = ? "
                          + "limit 1";
@@ -440,10 +524,10 @@ public class NSDatabase extends Database {
                 if ( res2.getBoolean ( "mailblock" )  )      { settings.set ( MAILBLOCK, true );       }
                 if ( res2.getBoolean ( "showemail" )  )      { settings.set ( SHOWEMAIL, true );       }
                 if ( res2.getBoolean ( "showhost" )  )       { settings.set ( SHOWHOST, true );        }
-                if ( res2.getBoolean ( "auth" )  )           { settings.set ( AUTH, true );            }
                 settings.set ( MARK, res2.getString ( "mark" ) );
                 settings.set ( FREEZE, res2.getString ( "freeze" ) );
                 settings.set ( HOLD, res2.getString ( "hold" ) );
+                settings.set ( NOGHOST, res2.getString ( "noghost" ) );
             } 
             res2.close ( );
             ps.close ( );
@@ -454,22 +538,23 @@ public class NSDatabase extends Database {
         return settings;
     }
   
-    public static boolean authNick ( NickInfo ni )  {
-        if ( ! activateConnection ( )  )  {
+    public static boolean authMail ( NickInfo ni, Command command )  {
+        if ( ! activateConnection ( ) ) {
             return false;
         }
 
         try {
-            String query = "update nicksetting "
-                         + "set auth = ? "
-                         + "where name = ?";
+            String query = "update maillog "+
+                           "set auth = null "+
+                           "where name = ? "+
+                           "and auth = ?";
             ps = sql.prepareStatement ( query );
-            ps.setInt      ( 1, 1 );
-            ps.setString   ( 2, ni.getName ( )  );
+            ps.setString   ( 1, ni.getName ( )  );
+            ps.setString   ( 2, command.getExtra() );
             ps.executeUpdate ( );
             ps.close ( );
 
-            idleUpdate ( "authNick ( ) " );
+            idleUpdate ( "authMail ( ) " );
             return true;
         } catch ( SQLException e )  {
             Proc.log ( NSDatabase.class.getName ( ) , e );
@@ -504,70 +589,6 @@ public class NSDatabase extends Database {
         }
         return false;
     }
-
-  
-    public static ArrayList<NickInfo> getUnAuthNickList ( )  {
-        NickSetting settings;
-        String[] buf;
-        ArrayList<NickInfo> niList = new ArrayList<> ( );
-        Expire exp;
-        Config config = Proc.getConf ( );
-
-        if  ( ! activateConnection ( ) ) {
-            return niList;
-        }
-            
-        try {
-            String salt = config.get ( SECRETSALT );
-
-            String query = "select n.name,"+
-                           "  n.hashcode,"+
-                           "  n.mask,"+
-                           "  aes_decrypt(n.pass,?) as pass,"+
-                           "  (select aes_decrypt(mail,?) from maillog where nick=n.name order by stamp desc limit 1) as mail,"+
-                           "  n.auth,"+
-                           "  n.regstamp,"+
-                           "  n.stamp "+
-                           "from nick as n "+
-                           "where auth != null "+
-                           "and regstamp > ( UNIX_TIMESTAMP ( ) + ( 60*60*24*3 ) )";
-
-            ps = sql.prepareStatement (  query  );
-            ps.setString   (  1, salt   );
-            ps.setString   (  2, salt   );
-            res = ps.executeQuery ( );
-
-            if  (  res.next ( )   )  { 
-                buf             = res.getString ( 3 ) .split ( Pattern.quote ( "@" )  );
-                //if ( buf.length == 1 )  { buf = new String[] { buf[0], "Unknown" }; }
-
-                settings        = getSettings ( res.getString ( 1 )  ); 
-                exp             = getNickExp ( res.getString ( 1 )  );
-
-                niList.add ( 
-                    new NickInfo ( 
-                        res.getString ( 1 ),
-                        buf[0],
-                        buf[1],
-                        res.getString ( 4 ),
-                        res.getString ( 5 ),
-                        res.getString ( 6 ),
-                        res.getString ( 7 ),
-                        res.getString ( 8 ),
-                        settings,
-                        exp
-                    )
-                );
-
-            }
-            res.close ( );
-            ps.close ( );
-        } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
-        }
-        return niList;
-    }
-
     
     static ArrayList<NSMail> getMailsByNick ( String nick ) {
         ArrayList<NSMail> eList = new ArrayList<>();
@@ -603,7 +624,37 @@ public class NSDatabase extends Database {
         }
         return eList;
     }
-
+    
+    static String getMailByNick ( String nick ) {
+        String mail = null;
+        if ( ! activateConnection ( ) ) {
+            return mail;
+        }
+        
+        String query = "select aes_decrypt(mail,?) as mail "+
+                       "from maillog "+
+                       "where nick = ? "+
+                       "and auth is null "+
+                       "order by stamp asc "+
+                       "limit 1";
+        
+        try {
+            String salt = Proc.getConf().get ( SECRETSALT );
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, salt );
+            ps.setString ( 2, nick );
+            res = ps.executeQuery ( );
+            if ( res.next ( ) ) {
+                mail = res.getString("mail");
+            }
+            res.close();
+            ps.close();
+            
+        } catch ( Exception ex ) {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+        }
+        return mail;
+    }
     static boolean addMail ( NSMail mail ) {
         if ( ! activateConnection() ) {
             return false;
@@ -649,9 +700,8 @@ public class NSDatabase extends Database {
             String query = "select n.name,"+
                            "  n.hashcode,"+
                            "  n.mask,"+
-                           "  aes_decrypt(n.pass,?) as pass,"+
+                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name order by stamp desc limit 1) as pass,"+
                            "  (select aes_decrypt(mail,?) from maillog where nick=n.name order by stamp desc limit 1) as mail,"+
-                           "  n.auth,"+
                            "  n.regstamp,"+
                            "  n.stamp "+
                            "from nick as n "+
@@ -682,7 +732,6 @@ public class NSDatabase extends Database {
                     res.getString ( 5 ),
                     res.getString ( 6 ),
                     res.getString ( 7 ),
-                    res.getString ( 8 ),
                     settings,
                     exp
                 );
@@ -708,5 +757,6 @@ public class NSDatabase extends Database {
     static void delLogEvent ( int id ) {
         Database.delLogEvent( "nicklog", id );
     }
+ 
 }
    

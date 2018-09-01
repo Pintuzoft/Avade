@@ -124,11 +124,11 @@ public class RootServ extends Service {
             NSDatabase.createNick ( ni );
             NickServ.addNick ( ni );
             user.getSID().add ( ni );
-            Handler.getNickServ().authorizeNick ( ni );
+            //    Handler.getNickServ().authorizeNick ( ni );
             NickServ.fixIdentState ( user ); 
             newNick = true;
         }
-          
+         
         if ( ! RSDatabase.isMaster ( master ) ) {
             OSLogEvent log;
             ArrayList<NickInfo> nList = RSDatabase.setMaster ( master );
@@ -144,7 +144,7 @@ public class RootServ extends Service {
                 ni.setOper ( OSDatabase.getOper ( master ) );
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
-                    Handler.getRootServ().sendMsg ( user, "Please set a valid email on the Master nick and change password." );
+                    Handler.getRootServ().sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );
                     Handler.getRootServ().sendMsg ( user, "NOTE: losing access of the master nick can cause inconvenience as only the master can manage the SRA list, and no SRA can add a new master." );
                 }
             }

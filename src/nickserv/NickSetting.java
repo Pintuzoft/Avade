@@ -51,6 +51,7 @@ public class NickSetting extends HashNumeric {
     private String mark;
     private String freeze;
     private String hold;
+    private String noghost;
      
  
     public NickSetting ( )  {
@@ -90,6 +91,9 @@ public class NickSetting extends HashNumeric {
             case HOLD :
                 return this.hold.length() > 0;
 
+            case NOGHOST :
+                return this.noghost.length() > 0;
+            
             default: 
                 return false;
 
@@ -122,8 +126,6 @@ public class NickSetting extends HashNumeric {
                this.auth = state;
                break;
 
-
-
             default :
 
          }
@@ -146,6 +148,10 @@ public class NickSetting extends HashNumeric {
                this.hold = instater;
                break;
                
+            case NOGHOST :
+               this.noghost = instater;
+               break;
+               
             default :
                 
         }
@@ -163,6 +169,9 @@ public class NickSetting extends HashNumeric {
             case HELD :
                 return this.hold;
                 
+            case NOGHOST :
+                return this.noghost;
+            
             default :
                 return "Unknown";
         }
@@ -192,6 +201,9 @@ public class NickSetting extends HashNumeric {
                  
              case HOLD :
                  return "Held";
+                 
+             case NOGHOST :
+                 return "NoGhost";
                  
              default:
                  return "";
@@ -256,6 +268,12 @@ public class NickSetting extends HashNumeric {
             first = true;
         }
          
+        if ( is ( NOGHOST )  )  {
+            buf += this.isFirst ( first ); 
+            buf += this.modeString ( NOGHOST );
+            first = true;
+        }
+         
         return buf; 
     }  
  
@@ -270,6 +288,7 @@ public class NickSetting extends HashNumeric {
         this.mark       = new String ( );
         this.freeze     = new String ( );
         this.hold       = new String ( );
+        this.noghost    = new String ( );
     }
 
     boolean getAuth ( )  {
@@ -295,6 +314,7 @@ public class NickSetting extends HashNumeric {
         System.out.println ( "NickSetting Mark: "+this.mark );
         System.out.println ( "NickSetting Freeze: "+this.freeze );
         System.out.println ( "NickSetting Hold: "+this.hold );
+        System.out.println ( "NickSetting NoGhost: "+this.noghost );
     }
 }
  

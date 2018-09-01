@@ -27,6 +27,7 @@ public class NSChanges extends Changes {
     private boolean freeze;
     private boolean mark;
     private boolean hold;
+    private boolean noghost;
     private boolean pass;
     private boolean fullmask;
     private boolean mail;
@@ -42,10 +43,11 @@ public class NSChanges extends Changes {
         clean ( );
     }
     
-    private void clean ( ) {
+    public void clean ( ) {
         this.freeze = false;
         this.mark = false;
         this.hold = false;
+        this.noghost = false;
         this.pass = false;
         this.fullmask = false;
         this.mail = false;
@@ -58,7 +60,7 @@ public class NSChanges extends Changes {
         this.changed = false;
     }
     
-    public boolean changed ( int what ) {
+    public boolean hasChanged ( int what ) {
         switch ( what ) {
             case FREEZE :
                 return this.freeze;
@@ -69,29 +71,32 @@ public class NSChanges extends Changes {
             case HOLD :
                 return this.hold;
 
+            case NOGHOST :
+                return this.noghost;
+
             case PASS :
-                return this.hold;
+                return this.pass;
 
             case FULLMASK :
                 return this.fullmask;
 
             case MAIL :
-                return this.hold;
+                return this.mail;
 
             case LASTSEEN :
-                return this.hold;
+                return this.lastseen;
 
             case NOOP :
-                return this.hold;
+                return this.noop;
 
             case NEVEROP :
-                return this.hold;
+                return this.neverop;
 
             case MAILBLOCK :
-                return this.hold;
+                return this.mailblock;
 
             case SHOWEMAIL :
-                return this.hold;
+                return this.showemail;
 
             case SHOWHOST :
                 return this.showhost;
@@ -101,7 +106,7 @@ public class NSChanges extends Changes {
         }
     }
     
-    public void update ( int what ) {
+    public void change ( int what ) {
         switch ( what ) {
             case FREEZE :
                 this.freeze = true;
@@ -115,6 +120,11 @@ public class NSChanges extends Changes {
 
             case HOLD :
                 this.hold = true;
+                this.changed = true;
+                break;
+                
+            case NOGHOST :
+                this.noghost = true;
                 this.changed = true;
                 break;
                 
@@ -168,6 +178,38 @@ public class NSChanges extends Changes {
         }
     }
     
+    public void printChanges ( ) {
+        System.out.println("***** Changes *****");
+        if ( this.freeze ) 
+            System.out.println("Changes: freeze!");
+        if ( this.mark ) 
+            System.out.println("Changes: mark!");
+        if ( this.hold ) 
+            System.out.println("Changes: hold!");
+        if ( this.noghost ) 
+            System.out.println("Changes: noghost!");
+        if ( this.pass ) 
+            System.out.println("Changes: pass!");
+        if ( this.fullmask ) 
+            System.out.println("Changes: fullmask!");
+        if ( this.mail ) 
+            System.out.println("Changes: mail!");
+        if ( this.lastseen ) 
+            System.out.println("Changes: lastseen!");
+        if ( this.noop ) 
+            System.out.println("Changes: noop!");
+        if ( this.neverop ) 
+            System.out.println("Changes: neverop!");
+        if ( this.mailblock ) 
+            System.out.println("Changes: mailblock!");
+        if ( this.showemail ) 
+            System.out.println("Changes: showemail!");
+        if ( this.showhost ) 
+            System.out.println("Changes: showhost!");
+        if ( this.changed ) 
+            System.out.println("Changes: changed!");
+       
+    }
 
     
 }

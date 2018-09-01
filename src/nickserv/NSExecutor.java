@@ -17,6 +17,7 @@
  */
 package nickserv;
 
+import command.Command;
 import core.Executor;
 import core.Handler;
 import core.Proc;
@@ -96,6 +97,10 @@ import java.util.regex.Pattern;
                 
             case HOLD :
                 this.changeFlag ( HOLD, user, cmd );
+                break;
+                
+            case NOGHOST :
+                this.changeFlag ( NOGHOST, user, cmd );
                 break;
                 
             case GETPASS :
@@ -205,7 +210,7 @@ import java.util.regex.Pattern;
         user.getSID().add ( ni );          /* Add nick to user sid */
         NickServ.fixIdentState ( user );
         ni.getNickExp().reset ( );
-        ni.getChanges().changed ( LASTSEEN );
+        ni.getChanges().hasChanged ( LASTSEEN );
         NickServ.addToWorkList ( CHANGE, ni );
     }
  
@@ -354,7 +359,7 @@ import java.util.regex.Pattern;
         }
         user.getSID().add ( ni );
         NickServ.fixIdentState ( user );
-        ni.getChanges().changed ( LASTSEEN );
+        ni.getChanges().hasChanged ( LASTSEEN );
         NickServ.addToWorkList ( CHANGE, ni );
     }
 
@@ -365,15 +370,13 @@ import java.util.regex.Pattern;
         String pass = new String ( );
         
         CmdData cmdData = this.validateCommandData ( user, GHOST, cmd );
-
-        
+ 
         if ( cmdData.getStatus ( ) != SYNTAX_ERROR )  {
             /* We know where data is */
             nick        = cmd[4];       
             pass        = cmd[5];
             cmd[5]      = "HIDDEN";
         }
-        
         switch ( cmdData.getStatus ( )  )  {
             case SYNTAX_ERROR : 
                 this.service.sendMsg ( user, output ( SYNTAX_GHOST_ERROR, "" ) );
@@ -388,12 +391,17 @@ import java.util.regex.Pattern;
                 this.snoop.msg ( false, cmdData.getNick().getName ( ), user, cmd );
                 return;
             
-            case NO_SUCH_TARGET : 
-                this.service.sendMsg ( user, output ( NO_SUCH_TARGET, cmdData.getString1 ( ) ) );
+            case NO_SUCH_NICK : 
+                this.service.sendMsg ( user, output ( NO_SUCH_NICK, cmdData.getString1 ( ) ) );
                 return;
             
             case IS_FROZEN : 
                 this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
+                return;
+            
+            case IS_NOGHOST : 
+                this.service.sendMsg ( user, output ( IS_NOGHOST, cmdData.getString1 ( ) ) );
+                this.service.sendGlobOp ( output ( GLOB_IS_NOGHOST, user.getFullMask(), cmdData.getString1 ( ) ) );
                 return;
             
             default:
@@ -401,11 +409,11 @@ import java.util.regex.Pattern;
         }
         ni = cmdData.getNick ( );
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
-        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSKILL "+ni.getName ( ) +" :Ghost exorcised by: "+user.getString ( NAME )  ); /* kill the ghosted nick */
+        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSKILL "+ni.getName ( ) +" :Ghost exorcised by: "+user.getString ( NAME ) ); /* kill the ghosted nick */
         this.snoop.msg ( true, ni.getName ( ), user, cmd );
         NickServ.fixIdentState ( user );
         user.getSID().add ( ni );
-        ni.getChanges().changed ( LASTSEEN );
+        ni.getChanges().hasChanged ( LASTSEEN );
         NickServ.addToWorkList ( CHANGE, ni );
     }
     
@@ -445,17 +453,17 @@ import java.util.regex.Pattern;
             if ( ni.is(FROZEN) || ni.is(MARKED) || ni.is(HELD) ) {
                 this.service.sendMsg ( user, f.b ( ) +"   --- IRCop ---" );
             }
-            if ( ! ni.getSettings().is ( AUTH ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"Nick has not yet been authorized ( "+ ( ni.getAuth ( ) ? 1 : 0 ) +" ) " );  
-            } 
             if ( ni.is ( FROZEN ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"      FROZEN: "+ni.getSettings().getInstater ( FREEZE ) );
+                this.service.sendMsg ( user, f.b ( ) +"      Frozen: "+ni.getSettings().getInstater ( FREEZE ) );
             }
             if ( ni.is ( MARKED ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"      MARKED: "+ni.getSettings().getInstater ( MARK ) );
+                this.service.sendMsg ( user, f.b ( ) +"      Marked: "+ni.getSettings().getInstater ( MARK ) );
             }
             if ( ni.is ( HELD ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"        HELD: "+ni.getSettings().getInstater ( HOLD ) );
+                this.service.sendMsg ( user, f.b ( ) +"        Held: "+ni.getSettings().getInstater ( HOLD ) );
+            }
+            if ( ni.is ( NOGHOST ) ) {
+                this.service.sendMsg ( user, f.b ( ) +"     NoGhost: "+ni.getSettings().getInstater ( NOGHOST ) );
             }
         }
         this.showEnd ( user, "Info" );
@@ -561,6 +569,7 @@ import java.util.regex.Pattern;
         NSLogEvent log;
         
         switch ( command ) {
+            case UNNOGHOST :
             case UNMARK :
             case UNFREEZE :
             case UNHOLD :
@@ -570,7 +579,7 @@ import java.util.regex.Pattern;
                     return;
                 }
                 ni.getSettings().set ( flag, "" );
-                ni.getChanges().changed ( flag );
+                ni.getChanges().change ( flag );
                 NickServ.addToWorkList ( CHANGE, ni );
                 log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
                 NickServ.addLog ( log );
@@ -578,11 +587,12 @@ import java.util.regex.Pattern;
                 this.service.sendGlobOp ( "Nick "+ni.getName()+" has been Un"+ni.getSettings().modeString(flag)+" by "+oper.getName() );
                 break;
                 
+            case NOGHOST :
             case MARK :
             case FREEZE :
             case HOLD :
                 ni.getSettings().set ( flag, oper.getName() );
-                ni.getChanges().changed ( flag ); 
+                ni.getChanges().change ( flag ); 
                 NickServ.addToWorkList ( CHANGE, ni );
                 log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
                 NickServ.addLog ( log );
@@ -657,7 +667,8 @@ import java.util.regex.Pattern;
         } else {
             ArrayList<NSMail> eList = NSDatabase.getMailsByNick ( ni.getName() );
             for ( NSMail mail : eList ) {
-                this.service.sendMsg ( user, output ( NICK_GETEMAIL, mail.getStamp(), mail.getMail() ) );
+                String auth = ( mail.getAuth() == null ? "A" : "N" );
+                this.service.sendMsg ( user, output ( NICK_GETEMAIL, mail.getStamp(), auth, mail.getMail() ) );
             }
         }       
         this.service.sendMsg ( user, "*** End of log ***" );
@@ -672,7 +683,8 @@ import java.util.regex.Pattern;
         if ( cmd == SHOWHOST )  {
             ni.fixHost ( );
         }
-        ni.getChanges().changed ( cmd );
+        System.out.println("DEBUG: changed item: "+cmd);
+        ni.getChanges().change ( cmd );
         NickServ.addToWorkList ( CHANGE, ni );
     }
 
@@ -682,7 +694,7 @@ import java.util.regex.Pattern;
         
         CmdData cmdData = this.validateCommandData ( user, hash, cmd );
 
-        switch ( cmdData.getCommand() ) {
+        switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET EMAIL <pass> <email>" ) );
                 return;
@@ -712,10 +724,15 @@ import java.util.regex.Pattern;
         }
         NickInfo ni = cmdData.getNick();
         String email = cmdData.getString1();
+        System.out.println("debug setemail: "+email);
+        if ( ni == null ) {
+            System.out.println("debug setemail: ni == null");
+        } else {
+            System.out.println("debug setemail: ni != null");
+        }
         NSMail mail = new NSMail ( ni.getName(), email );
-        mail.hash ( );
         NickServ.addNewMail ( mail );
-        ni.getChanges().changed ( MAIL );
+        ni.getChanges().hasChanged ( MAIL );
         NickServ.addToWorkList ( CHANGE, ni );
         NSLogEvent log = new NSLogEvent ( ni.getName(), MAIL, user.getFullMask(), null );
         NickServ.addLog ( log );
@@ -750,17 +767,22 @@ import java.util.regex.Pattern;
     }
 
     /* EXTERNAL COMMANDS */
-    public boolean authNick ( NickInfo ni )  { 
+    public boolean authMail ( NickInfo ni, Command command )  { 
         ArrayList<User> uList;
-        ni.getSettings().set ( AUTH, true );
-        ni.getChanges().changed ( AUTH );
-        NickServ.addToWorkList ( CHANGE, ni );
-        if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
-            for ( User u : uList )  {
-                this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getName ( )  )  );
+        //ni.getSettings().set ( AUTH, true );
+        //ni.getChanges().hasChanged ( AUTH );
+        //NickServ.addToWorkList ( CHANGE, ni );
+        
+        if ( NSDatabase.authMail ( ni, command ) ) {
+             if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
+                for ( User u : uList )  {
+                    this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getName ( )  )  );
+                }
             }
+            ni.setEmail( NSDatabase.getMailByNick ( ni.getName() ) );
+            return true;
         }
-        return true;
+        return false;
     }
  
     private boolean isGuestNick ( User user ) {
@@ -830,19 +852,21 @@ import java.util.regex.Pattern;
                 break; 
                 
             case GHOST :
-                if ( isShorterThanLen ( 5, cmd )  )  {
+                if ( isShorterThanLen ( 6, cmd )  )  {
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     cmdData.setStatus ( NICK_NOT_REGGED );
+                } else if ( ( target = Handler.findUser ( cmd[4] ) ) == null ) {
+                    cmdData.setString1 ( cmd[4] );
+                    cmdData.setStatus ( NO_SUCH_NICK );    
                 } else if ( ni.is ( FROZEN ) ) {
                     cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN ); 
+                    cmdData.setStatus ( IS_FROZEN );
+                } else if ( ni.is ( NOGHOST ) ) {
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_NOGHOST ); 
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
                     cmdData.setStatus ( IDENTIFY_FAIL );
-                } else if ( ( target = Handler.findUser ( cmd[4] ) ) == null ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( NO_SUCH_TARGET );
                 } else {
                     cmdData.setNick ( ni );
                 }
@@ -875,7 +899,8 @@ import java.util.regex.Pattern;
                     cmdData.setStatus ( ACCESS_DENIED );
                 } 
                 break;
-                
+               
+            case NOGHOST :
             case MARK :    
             case FREEZE :
             case HOLD :
@@ -926,8 +951,8 @@ import java.util.regex.Pattern;
             case SETEMAIL :
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     cmdData.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
-                    cmdData.setString1 ( cmd[4] );
+                } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
+                    cmdData.setString1 ( user.getString(NAME) );
                     cmdData.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ni.is ( FROZEN ) ) {
                     cmdData.setNick ( ni );
@@ -936,6 +961,7 @@ import java.util.regex.Pattern;
                     cmdData.setNick ( ni );
                     cmdData.setStatus ( IS_MARKED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
+                    cmdData.setNick ( ni );
                     cmdData.setStatus ( IDENTIFY_FAIL );
                 } else if ( ! validEmail ( cmd[6] )  )  {
                     cmdData.setString1 ( cmd[6] );
@@ -979,6 +1005,8 @@ import java.util.regex.Pattern;
                 return REOPEN;
             case HOLD :
                 return UNHOLD;
+            case NOGHOST :
+                return UNNOGHOST;
             default :
                 return 0;
         }
@@ -993,6 +1021,8 @@ import java.util.regex.Pattern;
                 return "Closed";
             case HOLD :
                 return "Held";
+            case NOGHOST :
+                return "NoGhost";
             default :
                 return "";
         }
@@ -1089,13 +1119,19 @@ import java.util.regex.Pattern;
                 return "Password is: "+args[0]+".";
                       
             case NICK_GETEMAIL :
-                return "["+args[0]+"] "+args[1]+"";
+                return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+"";
                        
             case IS_MARKED :
                 return "Error: Nick "+args[0]+" is MARKed by a network staff blocking certain functionality.";
                         
             case IS_FROZEN :
                 return "Error: Nick "+args[0]+" is frozen by a network staff and cannot be used.";
+ 
+            case IS_NOGHOST :
+                return "Error: Nick "+args[0]+" is set noghost by a network staff and cannot be ghosted.";
+ 
+            case GLOB_IS_NOGHOST :
+                return args[0]+" tried using GHOST on NOGHOST nick "+args[1]+".";
  
             case NICKDROPPED :
                 return "Nick: "+args[0]+" was successfully dropped.";                    
@@ -1155,6 +1191,8 @@ import java.util.regex.Pattern;
     private final static int NICK_GETEMAIL            = 1814;
     private final static int IS_MARKED                = 2401; 
     private final static int IS_FROZEN                = 2402; 
+    private final static int IS_NOGHOST               = 2403; 
+    private final static int GLOB_IS_NOGHOST          = 2404; 
 
     private final static int NICKDROPPED              = 2501; 
     private final static int NICKDELETED              = 2502; 

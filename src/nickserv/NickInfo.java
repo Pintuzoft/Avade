@@ -30,6 +30,8 @@ import server.ServSock;
 import user.User;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
@@ -49,7 +51,6 @@ public class NickInfo extends HashNumeric {
     private int                     hashMask;       /* Integer representation of user@mask */ 
     private String                  pass;
     private String                  mail; 
-    private String                  auth; 
     private NickSetting             settings;
     private String                  regTime;
     private String                  lastSeen; 
@@ -62,9 +63,10 @@ public class NickInfo extends HashNumeric {
     private ArrayList<ChanInfo>     aopList = new ArrayList<>();
     private ArrayList<ChanInfo>     sopList = new ArrayList<>();
     private ArrayList<ChanInfo>     founderList = new ArrayList<>();
+    private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /* DATABASE */
-    public NickInfo ( String name, String user, String host, String pass, String mail, String auth, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
+    public NickInfo ( String name, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
         // System.out.println ( "Debug: NickInfo ( "+name+" )" );
         this.name       = name;
         this.hashName   = name.toUpperCase ( ) .hashCode ( );
@@ -75,7 +77,6 @@ public class NickInfo extends HashNumeric {
         this.oper       = null; 
         this.pass       = pass;
         this.mail       = mail; 
-        this.auth       = auth; 
         this.regTime    = regStamp.substring(0,19);
         this.lastSeen   = lastSeen.substring(0,19);
         this.settings   = settings;
@@ -96,10 +97,10 @@ public class NickInfo extends HashNumeric {
         this.hashMask   = ( user.getString ( USER ) +"@"+user.getString ( IP )  ) .toUpperCase ( ) .hashCode ( ); 
         this.pass       = pass;
         this.mail       = mail; 
-        this.auth       = Hash.md5 ( this.name ); 
         this.settings   = new NickSetting ( );
-        this.regTime    = null;
-        this.lastSeen   = null; 
+        String date = this.dateFormat.format ( new Date ( ) );
+        this.regTime    = date;
+        this.lastSeen   = date; 
         this.date       = new Date ( );
         this.oper       = null;
         this.changes    = new NSChanges ( );
@@ -121,9 +122,9 @@ public class NickInfo extends HashNumeric {
             this.host       = u.getString ( HOST );
             this.hashMask   = ( this.user +"@"+this.ip ) .toUpperCase ( ) .hashCode ( ); 
             this.mail       = "master@localhost";
-            this.auth       = Hash.md5 ( this.name );
-            this.regTime    = null;
-            this.lastSeen   = null;
+            String date = this.dateFormat.format ( new Date ( ) );
+            this.regTime    = date;
+            this.lastSeen   = date;
             this.date       = new Date ( );
             this.oper       = new Oper ( u.getString ( NAME ), 5, "" );
             this.exp        = new Expire ( );
@@ -184,7 +185,7 @@ public class NickInfo extends HashNumeric {
         this.ip         = user.getString ( HOST );
         this.hashMask   =  ( user.getString ( USER )+"@"+user.getString ( HOST ) ).toUpperCase().hashCode ( );
         this.fixHost ( );
-        this.changes.changed ( FULLMASK );
+        this.changes.hasChanged ( FULLMASK );
     }
  
     /* Identify nick in user */
@@ -210,10 +211,7 @@ public class NickInfo extends HashNumeric {
                 
             case MAIL :
                 return this.mail;
-                
-            case AUTH :
-                return this.auth;
-                
+            
             case FULLMASK :
                 return this.name+"!"+this.user+"@"+this.host;
                 
@@ -266,7 +264,7 @@ public class NickInfo extends HashNumeric {
         }
         
         if ( this.pass.compareTo ( pass ) == 0 )  {
-            this.changes.changed ( LASTSEEN );
+            this.changes.hasChanged ( LASTSEEN );
             return true;
         }
         return false;
@@ -275,7 +273,7 @@ public class NickInfo extends HashNumeric {
     public boolean setPass ( String oldPass, String newPass )  {
         if ( this.pass.compareTo ( oldPass ) == 0 )  {
             this.pass = newPass;
-            this.changes.changed ( PASS );
+            this.changes.hasChanged ( PASS );
             return true;
         }
         return false;

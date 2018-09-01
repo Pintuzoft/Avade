@@ -22,6 +22,7 @@ import chanserv.CSDatabase;
 import chanserv.CSLogEvent;
 import chanserv.ChanInfo;
 import chanserv.ChanServ;
+import command.Command;
 import core.CommandInfo;
 import core.Handler;
 import core.Proc;
@@ -93,6 +94,7 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "MARK",     CMDAccess ( MARK ),     "Mark nick" )                   );
         cmdList.add ( new CommandInfo ( "FREEZE",   CMDAccess ( FREEZE ),   "Freeze nick" )                 );
         cmdList.add ( new CommandInfo ( "HOLD",     CMDAccess ( HOLD ),     "Hold nick" )                   );
+        cmdList.add ( new CommandInfo ( "NOGHOST",  CMDAccess ( NOGHOST ),  "Deactivate ghost for nick" )   );
         cmdList.add ( new CommandInfo ( "GETPASS",  CMDAccess ( GETPASS ),  "Get nick password" )           );
         cmdList.add ( new CommandInfo ( "GETEMAIL", CMDAccess ( GETEMAIL ), "Get nick email" )              );
         cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Get nick email" )              );
@@ -233,6 +235,7 @@ public class NickServ extends Service {
             ArrayList<NickInfo> nicks = new ArrayList<>();
             for ( NickInfo ni : changeList ) {
                 if ( NSDatabase.updateNick ( ni ) == 1 ) {
+                    ni.getChanges().clean();
                     nicks.add ( ni );
                 }
             }
@@ -355,16 +358,16 @@ public class NickServ extends Service {
     }
     
     /* auth a nick and send message to all identified nicks currently online */
-    public boolean authorizeNick ( NickInfo ni )  {
+    public boolean authorizeNick ( NickInfo ni, Command command )  {
         User user;
         
-        if ( ni == null ) {
+        if ( ni == null || command == null ) {
             return false;
         }         
         
         user = Handler.findUser ( ni.getName ( ) );
         
-        if ( this.executor.authNick ( ni ) ) {
+        if ( this.executor.authMail ( ni, command ) ) {
             if ( user != null )  {
                 if ( user.getSID().isIdentified ( ni )  )  {
                     fixIdentState ( user );

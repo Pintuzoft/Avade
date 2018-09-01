@@ -88,10 +88,10 @@ public class Queue extends HashNumeric {
             NickInfo ni =  ( NickInfo )  command.getTarget ( );
             NickInfo ni2;
             switch ( command.getCommand ( )  )  {
-                case AUTH: { 
+                case AUTHMAIL : { 
                     ni2 = NickServ.findNick ( ni.getName ( )  );                  
-                    res = Handler.getNickServ ( ) .authorizeNick ( ni2 );
-                    System.out.println ( "debug: nickname: "+ni2.getName ( ) +" ( "+ni2.getSettings ( ) .is ( AUTH ) +" ) " );
+                    res = Handler.getNickServ().authorizeNick ( ni2, command );
+                    System.out.println ( "debug: nickname: "+ni2.getName ( ) +" ( "+ni2.getSettings().is ( AUTH ) +" ) " );
                 }
             } 
         }
