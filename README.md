@@ -87,11 +87,13 @@ will still be able to identify the user.
   
   List           - List registered nicks
   
-  Mark           - Lock ownership features
+  Mark           - OperFlag to lock ownership functionality
   
-  Freeze         - Freeze a nick from being used
+  Freeze         - OperFlag to freeze a nick from being used
   
-  Hold           - Deny a nick from expiring
+  Hold           - OperFlag to deny a nick from expiring
+  
+  NOGHOST        - OperFlag to deny a nick from being ghosted
   
   Getpass        - Show password log for nick
   
