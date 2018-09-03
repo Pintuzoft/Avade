@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import operserv.OSDatabase;
+import user.User;
 
 /**
  *
@@ -391,74 +392,52 @@ public class NSDatabase extends Database {
         
     }
    
-    /* Get nick from hashcode */
-    /* Get nick from hashcode */
-    public static ArrayList<NickInfo> getNickList ( String pattern )  {
-        ArrayList<NickInfo> nList = new ArrayList<> ( );
-        NickInfo ni;
-        String[] buf, buf2;
-        NickSetting settings;
-        Expire exp;
-        Config config = Proc.getConf ( );
-        if ( pattern.isEmpty ( ) ) {
-            return null;
+    static NSAuth fetchAuth ( User user, String code ) {
+        NSAuth auth = null;
+        if ( ! activateConnection ( ) )  {
+            return auth;
         }
-        if ( ! activateConnection ( ) ) {
-            return null;
-        }
-        
-        pattern.replaceAll ( "\\'", "" );
-        pattern = pattern.replaceAll ( "\\*", "(.*)" );
-        pattern = pattern.replaceAll ( "\\?", "(.?){0,1}" );
-        
+        String query;
+        String salt = Proc.getConf().get ( SECRETSALT );
         try {
-            String salt = config.get ( SECRETSALT );
-            String query = "select n.name,"+
-                           "  n.hashcode,"+
-                           "  n.mask,"+
-                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name and auth is null order by stamp desc limit 1) as pass,"+
-                           "  (select aes_decrypt(mail,?) from maillog where nick=n.name and auth is null order by stamp desc limit 1) as mail,"+
-                           "  n.regstamp,"+
-                           "  n.stamp "+
-                           "from nick as n "+
-                           "where name rlike ? "+
-                           "or mask rlike ? "+
-                           "order by name asc";
-
+            query = "select nick,aes_decrypt(mail,?) as mail,null as pass,auth,stamp "+
+                    "from maillog "+
+                    "where auth = ? "+
+                    "and nick = ? "+
+                    
+                    "union "+
+                    
+                    "select nick,null as mail,aes_decrypt(pass,?) as pass,auth,stamp "+
+                    "from passlog "+
+                    "where auth = ? "+
+                    "and nick = ?";
+            
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, salt            );
-            ps.setString  ( 2, salt            );
-            ps.setString  ( 3, "^"+pattern+"$" );
-            ps.setString  ( 4, "^"+pattern+"$" );
-            res = ps.executeQuery ( );
-
-            while ( res.next ( )  )  { 
-                buf = res.getString ( 3 ) .split ( Pattern.quote ( "@" )  );
-                //if ( buf.length == 1 )  { buf = new String[] { buf[0], "Unknown" }; }
-                settings = getSettings ( res.getString ( 1 )  ); 
-                exp      = getNickExp ( res.getString ( 1 )  );
-                exp      = ( exp!=null?exp:new Expire ( )  );
-                ni = new NickInfo ( 
-                    res.getString ( 1 ),
-                    buf[0],
-                    buf[1],
-                    res.getString ( 4 ), 
-                    res.getString ( 5 ),
-                    res.getString ( 6 ),
-                    res.getString ( 7 ),
-                    settings,
-                    exp
-                );
-                nList.add ( ni ); 
+            ps.setString ( 1, salt );
+            ps.setString ( 2, code );
+            ps.setString ( 3, user.getString ( NAME ) );
+            ps.setString ( 4, salt );
+            ps.setString ( 5, code );
+            ps.setString ( 6, user.getString ( NAME ) );
+            res2 = ps.executeQuery ( );
+            
+            if ( res2.next() ) {
+                if ( res2.getString("mail") != null ) {
+                    auth = new NSAuth ( MAIL, res2.getString ( "nick" ), res2.getString ( "mail" ), res2.getString ( "auth" ), res2.getString ( "stamp" ) );
+                } else {
+                    auth = new NSAuth ( PASS, res2.getString ( "nick" ), res2.getString ( "pass" ), res2.getString ( "auth" ), res2.getString ( "stamp" ) );
+                }
             }
-            res.close ( );
-            ps.close ( );
-        } catch  ( NumberFormatException | SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            res2.close();
+            ps.close();
+            
+        } catch ( Exception ex ) {
+            Proc.log ( NSDatabase.class.getName ( ), ex );
         }
-        return nList;
+        return auth;
     }
-  
+     
+     
     public static boolean deleteNick ( NickInfo ni )  { 
         if ( ! activateConnection ( ) || ni == null || ni.getName ( ) == null )  {
             return false;
@@ -471,7 +450,7 @@ public class NSDatabase extends Database {
             ps.close ( ); 
             return true;
         } catch ( SQLException e )  {
-            Proc.log ( NSDatabase.class.getName ( ) , e );
+            Proc.log ( NSDatabase.class.getName ( ), e );
         }
         return false;
     }
@@ -542,12 +521,12 @@ public class NSDatabase extends Database {
         if ( ! activateConnection ( ) ) {
             return false;
         }
-
+        String query;
         try {
-            String query = "update maillog "+
-                           "set auth = null "+
-                           "where name = ? "+
-                           "and auth = ?";
+            query = "update maillog "+
+                    "set auth = null "+
+                    "where name = ? "+
+                    "and auth = ?";
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, ni.getName ( )  );
             ps.setString   ( 2, command.getExtra() );
@@ -561,7 +540,43 @@ public class NSDatabase extends Database {
         }
         return false;
     }
+    
+    static String tableByAuth ( NSAuth auth ) {
+        switch ( auth.getType() ) {
+            case MAIL :
+                return "maillog";
+            case PASS :
+                return "passlog";
+                
+            default :
+                return "";
+        }
+    }
+    
+    static boolean addFullAuth ( NSAuth auth ) {
+        if ( ! activateConnection ( ) ) {
+            return false;
+        }
+        String table = tableByAuth ( auth );
+        String query;
+        try {
+            query = "update "+table+" "+
+                    "set auth = null "+
+                    "where auth = ? "+
+                    "and nick = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, auth.getAuth ( ) );
+            ps.setString ( 2, auth.getNick ( ) );
+            ps.executeUpdate ( );
+            ps.close ( );
 
+            return true;
+            
+        } catch ( SQLException ex ) {
+            Proc.log ( NSDatabase.class.getName ( ), ex );
+            return false;
+        }
+    }
     
     public static boolean saveNickExp ( NickInfo ni )  {
         if  ( ! activateConnection ( )   )  {
@@ -574,24 +589,24 @@ public class NSDatabase extends Database {
                          + "on duplicate key "
                          + "update lastsent = ?, mailcount = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString   (  1, ni.getName ( )   );
-            ps.setLong     (  2, ni.getNickExp ( ) .getLastSent ( )   );
-            ps.setInt      (  3, ni.getNickExp ( ) .getMailCount ( )   );
-            ps.setLong     (  4, ni.getNickExp ( ) .getLastSent ( )   );
-            ps.setInt      (  5, ni.getNickExp ( ) .getMailCount ( )   );
+            ps.setString   ( 1, ni.getName ( ) );
+            ps.setLong     ( 2, ni.getNickExp().getLastSent ( ) );
+            ps.setInt      ( 3, ni.getNickExp().getMailCount ( ) );
+            ps.setLong     ( 4, ni.getNickExp().getLastSent ( ) );
+            ps.setInt      ( 5, ni.getNickExp().getMailCount ( ) );
             ps.executeUpdate ( );
             ps.close ( );
 
             idleUpdate  (  "saveNickExp ( ) "  );
             return true;
-        } catch  (  SQLException e  )  {
-            Proc.log  (  NSDatabase.class.getName ( ) , e  );
+        } catch ( SQLException ex ) {
+            Proc.log ( NSDatabase.class.getName ( ), ex );
         }
         return false;
     }
     
-    static ArrayList<NSMail> getMailsByNick ( String nick ) {
-        ArrayList<NSMail> eList = new ArrayList<>();
+    static ArrayList<NSAuth> getMailsByNick ( String nick ) {
+        ArrayList<NSAuth> eList = new ArrayList<>();
         
         if ( ! activateConnection ( ) ) {
             return eList;
@@ -609,7 +624,8 @@ public class NSDatabase extends Database {
             ps.setString ( 2, nick );
             res = ps.executeQuery ( );
             while ( res.next ( ) ) {
-                eList.add ( new NSMail ( 
+                eList.add ( new NSAuth (
+                    MAIL,
                     res.getString("nick"), 
                     res.getString("mail"), 
                     res.getString("auth"), 
@@ -655,7 +671,7 @@ public class NSDatabase extends Database {
         }
         return mail;
     }
-    static boolean addMail ( NSMail mail ) {
+    static boolean addMail ( NSAuth mail ) {
         if ( ! activateConnection() ) {
             return false;
         }
@@ -666,7 +682,7 @@ public class NSDatabase extends Database {
             String salt = Proc.getConf().get ( SECRETSALT );
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, mail.getNick() );
-            ps.setString ( 2, mail.getMail() );
+            ps.setString ( 2, mail.getValue() );
             ps.setString ( 3, salt );
             ps.setString ( 4, mail.getAuth() );
             ps.execute();
@@ -757,6 +773,6 @@ public class NSDatabase extends Database {
     static void delLogEvent ( int id ) {
         Database.delLogEvent( "nicklog", id );
     }
- 
+
 }
    

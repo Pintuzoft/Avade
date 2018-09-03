@@ -75,6 +75,10 @@ public class NSHelper extends Helper {
                 this.doSet ( user, cmd );
                 break;
                 
+            case AUTH :
+                this.doAuth ( user );
+                break;
+                
             case INFO :
                 this.doInfo ( user );
                 break;
@@ -268,6 +272,31 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
         this.service.sendMsg ( user, "   If sensitive information is showing up on your nick info"                                      );
         this.service.sendMsg ( user, "   please use "+f.b ( ) +"/NickServ HELP SET"+f.b ( ) +" to find a solution for it."              );
+        this.showEnd ( user );
+    }
+     
+    public void doAuth ( User user ) {
+        this.showStart ( user, "Info" );
+        this.service.sendMsg ( user, "   "                                                                                              );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ AUTH <code>"+f.b ( ) +""                                         );
+        this.service.sendMsg ( user, "   "                                                                                              );
+        this.service.sendMsg ( user, "   Authorize a newly added mail or password for current nickname. Note that it will only"         );
+        this.service.sendMsg ( user, "   allow current nick to authorize an auth object this means theres no way to auth a new"         );
+        this.service.sendMsg ( user, "   password or mail using a different nickname."                                                  );
+        this.service.sendMsg ( user, "   "                                                                                              );
+        this.service.sendMsg ( user, "   After the pass or mail has been fully authed it will be added to the nick. If there are"       );
+        this.service.sendMsg ( user, "   several users online currently identified to the nick when a new pass is authorized then"      );
+        this.service.sendMsg ( user, "   users except for the one actually currently holding the nick will be unidentified from"        );
+        this.service.sendMsg ( user, "   the nick and they will need to identify to the nick again to re-gain any access they "         );
+        this.service.sendMsg ( user, "   got from the nick."                                                                            );
+        this.service.sendMsg ( user, "   "                                                                                              );
+        this.service.sendMsg ( user, "   Please note that all users identified to the nick will be notified by services telling"        );
+        this.service.sendMsg ( user, "   them that a new mail or pass has been fully added to the nick."                                );
+        this.service.sendMsg ( user, "   "                                                                                              );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
+        this.service.sendMsg ( user, "   Theres a point of not sharing your mail or password around. Add an unknown mail to your"       );
+        this.service.sendMsg ( user, "   nick and a password you dont use anywhere else. Setting a new pass and authing it will"        );
+        this.service.sendMsg ( user, "   make anyone currently logged in using it to get logged out from it."                           );
         this.showEnd ( user );
     }
  

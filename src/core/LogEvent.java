@@ -60,8 +60,11 @@ public abstract class LogEvent extends HashNumeric {
     
     static public String getNickFlagByHash ( int hash ) {
         switch ( hash ) {
-            case AUTH :
-                return "a";
+            case AUTHMAIL :
+                return "Am";
+                
+            case AUTHPASS :
+                return "Ap";
                 
             case DROP :
                 return "D";

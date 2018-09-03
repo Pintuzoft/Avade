@@ -55,7 +55,8 @@ public class NickServ extends Service {
     private static ArrayList<NickInfo>      niList  = new ArrayList<> ( ); /* List of focused regged nicknames */  
     private static TextFormat               f       = new TextFormat ( );;
 
-    private static ArrayList<NSMail>        newMailList = new ArrayList<>();
+    private static ArrayList<NSAuth>        newAuthList = new ArrayList<>();
+    private static ArrayList<NSAuth>        newFullAuthList = new ArrayList<>();
     private static ArrayList<NickInfo>      changeList = new ArrayList<>();
     private static ArrayList<NickInfo>      regList = new ArrayList<>();
     private static ArrayList<NickInfo>      deleteList = new ArrayList<>();
@@ -85,6 +86,7 @@ public class NickServ extends Service {
         cmdList = new ArrayList<> ( );
         cmdList.add ( new CommandInfo ( "HELP",     0,   "Show help information" )                          );
         cmdList.add ( new CommandInfo ( "REGISTER", 0,   "Register a nickname" )                            );
+        cmdList.add ( new CommandInfo ( "AUTH",     0,   "Authorize a mail or pass" )                       );
         cmdList.add ( new CommandInfo ( "IDENTIFY", 0,   "Identify as owner of a nick" )                    );
         cmdList.add ( new CommandInfo ( "GHOST",    0,   "Kill the ghost using your nick" )                 );
         cmdList.add ( new CommandInfo ( "SET",      0,   "Set nick options" )                               );
@@ -137,7 +139,7 @@ public class NickServ extends Service {
         } 
     }
       
-        /* Registered entities */
+    /* Registered entities */
     public static NickInfo findNick ( String source )  {
         int hashCode;
         NickInfo ni2;
@@ -155,8 +157,6 @@ public class NickServ extends Service {
         }
         return null; 
     }
-    
-  
     
     /* Registered entities */
     public static NickInfo findNick ( int hashCode )  {
@@ -196,6 +196,30 @@ public class NickServ extends Service {
         }
     }
  
+    /* Ownership messages */
+    public static void notifyIdentifiedUsers ( NickInfo ni, String message ) {
+        if ( ni == null ) {
+            return;
+        }
+        for ( User user : Handler.findUsersByNick ( ni ) ) {
+            Handler.getNickServ().sendMsg ( user, message );
+        }
+    }
+    
+    static void unIdentifyAllButOne ( NickInfo ni ) {
+        if ( ni == null ) {
+            return;
+        }
+        for ( User user : Handler.findUsersByNick(ni) ) {
+            if ( ni.getHashName() != user.getHash() ) {
+                user.getSID().del ( ni );
+                Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
+            }
+        }
+        
+    }
+
+    
     public static void maintenance ( ) {
         for ( NickInfo ni : niList ) {
             if ( ni.isState ( OLD ) ) {
@@ -208,13 +232,48 @@ public class NickServ extends Service {
         }
         handleRegNicks ( );
         handleChangedNicks ( );
-        writeNewMails ( );
+        handleNewAuths ( );
+        handleFullNewAuths ( );
         handleDeletedNicks ( );
     }
  
     
     /*** HANDLE PENDING NICKS ***/
     
+    /* Insert new auths */
+    private static void handleNewAuths ( ) {
+        if ( NSDatabase.activateConnection() && newAuthList.size() > 0 ) {
+            ArrayList<NSAuth> auths = new ArrayList<>();
+            for ( NSAuth mail : newAuthList ) {
+                switch ( mail.getType() ) {
+                    case MAIL :
+                        if ( NSDatabase.addMail ( mail ) ) {
+                            auths.add ( mail );
+                        }
+                        break;
+                        
+                }
+            }
+            for ( NSAuth mail : auths ) {
+                newAuthList.remove ( mail );
+            }
+        }
+    }
+        /* Insert new auths */
+    private static void handleFullNewAuths ( ) {
+        if ( NSDatabase.activateConnection() && newFullAuthList.size() > 0 ) {
+            ArrayList<NSAuth> auths = new ArrayList<>();
+            for ( NSAuth auth : newFullAuthList ) {
+                if ( NSDatabase.addFullAuth ( auth ) ) {
+                    auths.add ( auth );
+                }
+            }
+            for ( NSAuth auth : auths ) {
+                newFullAuthList.remove ( auth );
+            }
+        }
+    }
+   
     private static void handleRegNicks ( ) {
         if ( NSDatabase.activateConnection() && regList.size() > 0 ) {
             ArrayList<NickInfo> nicks = new ArrayList<>();            
@@ -305,23 +364,11 @@ public class NickServ extends Service {
         }
     }
     
-    /* Update Changed Nick */
-    private static void writeNewMails ( ) {
-        if ( NSDatabase.activateConnection() && newMailList.size() > 0 ) {
-            ArrayList<NSMail> mails = new ArrayList<>();
-            for ( NSMail mail : newMailList ) {
-                if ( NSDatabase.addMail ( mail ) ) {
-                    mails.add ( mail );
-                }
-            }
-            for ( NSMail mail : mails ) {
-                newMailList.remove ( mail );
-            }
-        }
+    static void addNewAuth ( NSAuth mail ) {
+        newAuthList.add ( mail );
     }
-    
-    static void addNewMail ( NSMail mail ) {
-        newMailList.add ( mail );
+    static void addNewFullAuth ( NSAuth mail ) {
+        newFullAuthList.add ( mail );
     }
     
     public void snoopAndLog ( User user, String[] cmd )  {
@@ -429,7 +476,7 @@ public class NickServ extends Service {
     
     public void dropNick ( NickInfo ni ) {
         /* Message all currently idented users then unident them */
-        ArrayList<User> uList = Handler.findIdentifiedUsersByNick ( ni );
+        ArrayList<User> uList = Handler.findUsersByNick ( ni );
         ArrayList<ChanInfo> cList;
         int[] lists = { SOP, AOP, AKICK };
         HashMap<Integer,Integer> map = new HashMap ( );

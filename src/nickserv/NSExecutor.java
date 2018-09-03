@@ -66,6 +66,10 @@ import java.util.regex.Pattern;
                 this.identify ( user, cmd );
                 break;
                 
+             case AUTH :
+                this.auth ( user, cmd );
+                break;
+                
             case DROP :
                 this.drop ( user, cmd );
                 break;
@@ -634,6 +638,58 @@ import java.util.regex.Pattern;
         this.service.sendMsg ( user, output ( NICK_GETPASS, ni.getPass() ) );
         this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ni.getName() );
     }
+
+    private void auth ( User user, String[] cmd ) {
+        CmdData cmdData = this.validateCommandData ( user, AUTH, cmd );
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" )  );
+                return;
+                
+            case NICK_NOT_REGGED :
+                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
+                return;
+                     
+            case NO_AUTH_FOUND :
+                this.service.sendMsg ( user, output ( NO_AUTH_FOUND, "" ) );
+                return;
+                     
+            case IS_MARKED :
+                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
+                return;     
+            
+            case IS_FROZEN :
+                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getNick().getName ( ) ) ); 
+                return;
+            
+            default : 
+        
+        }
+        
+        NickInfo ni = cmdData.getNick();
+        NSAuth auth = cmdData.getAuth();
+        NickServ.addNewFullAuth ( auth );
+        NSLogEvent log;
+        switch ( auth.getType() ) {
+            case MAIL :
+                ni.setEmail ( auth.getValue() );
+                log = new NSLogEvent ( ni.getName(), AUTHMAIL, user, null );
+                NickServ.addLog ( log );
+                NickServ.notifyIdentifiedUsers ( ni, "A new mail has been fully authed and added to nick: "+ni.getName() );
+                break;
+            case PASS :
+                ni.setPass ( auth.getValue() );
+                log = new NSLogEvent ( ni.getName(), AUTHPASS, user, null );
+                NickServ.addLog ( log );
+                NickServ.notifyIdentifiedUsers ( ni, "A new password has been fully authed and added to nick: "+ni.getName() );
+                NickServ.unIdentifyAllButOne ( ni );
+                break;
+                
+            default :
+                
+        }
+    }
+
     
     private void getEmail ( User user, String[] cmd ) {
         CmdData cmdData = this.validateCommandData ( user, GETEMAIL, cmd );
@@ -665,10 +721,10 @@ import java.util.regex.Pattern;
         if ( ! NSDatabase.checkConn() ) {
             this.service.sendMsg ( user, "No mails currently available as no database connection is present." );
         } else {
-            ArrayList<NSMail> eList = NSDatabase.getMailsByNick ( ni.getName() );
-            for ( NSMail mail : eList ) {
+            ArrayList<NSAuth> eList = NSDatabase.getMailsByNick ( ni.getName() );
+            for ( NSAuth mail : eList ) {
                 String auth = ( mail.getAuth() == null ? "A" : "N" );
-                this.service.sendMsg ( user, output ( NICK_GETEMAIL, mail.getStamp(), auth, mail.getMail() ) );
+                this.service.sendMsg ( user, output ( NICK_GETEMAIL, mail.getStamp(), auth, mail.getValue() ) );
             }
         }       
         this.service.sendMsg ( user, "*** End of log ***" );
@@ -730,8 +786,8 @@ import java.util.regex.Pattern;
         } else {
             System.out.println("debug setemail: ni != null");
         }
-        NSMail mail = new NSMail ( ni.getName(), email );
-        NickServ.addNewMail ( mail );
+        NSAuth mail = new NSAuth ( MAIL, ni.getName(), email );
+        NickServ.addNewAuth ( mail );
         ni.getChanges().hasChanged ( MAIL );
         NickServ.addToWorkList ( CHANGE, ni );
         NSLogEvent log = new NSLogEvent ( ni.getName(), MAIL, user.getFullMask(), null );
@@ -847,6 +903,30 @@ import java.util.regex.Pattern;
                     cmdData.setNick ( ni );
                     cmdData.setStatus ( IDENTIFY_FAIL ); 
                 } else {
+                    cmdData.setNick ( ni );
+                }
+                break;
+                
+            case AUTH :
+                /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :auth <authcode>          */
+                /*      0          1               2                 3     4        = 5      */
+                NSAuth auth;
+                
+                if ( isShorterThanLen ( 5, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
+                    cmdData.setString1 ( user.getString ( NAME ) );
+                    cmdData.setStatus ( NICK_NOT_REGGED );
+                } else if ( ni.is ( FROZEN ) ) {
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_FROZEN ); 
+                } else if ( ni.is ( MARKED ) ) {
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_MARKED ); 
+                } else if ( ( auth = NSDatabase.fetchAuth ( user, cmd[4] ) ) == null ) {
+                    cmdData.setStatus ( NO_AUTH_FOUND );
+                } else {
+                    cmdData.setAuth ( auth );
                     cmdData.setNick ( ni );
                 }
                 break; 
@@ -1092,6 +1172,9 @@ import java.util.regex.Pattern;
             
             case NICK_AUTHED : 
                 return "The nickname "+args[0]+" is now fully registered and authorized.";
+                      
+            case NO_AUTH_FOUND : 
+                return "The authcode you provided did not match any pending objects.";
            
             case NICK_NEW_MASK : 
                 return "Last login from "+args[0]+".";
@@ -1179,6 +1262,7 @@ import java.util.regex.Pattern;
     
     private final static int NICK_AUTHED              = 1601;
     private final static int NICK_NEW_MASK            = 1602;
+    private final static int NO_AUTH_FOUND            = 1651;
     
     /*** OPER MESSAGES ***/
     private final static int IDENT_NICK_DELETED       = 1801;

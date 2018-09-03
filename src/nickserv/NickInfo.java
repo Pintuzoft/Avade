@@ -69,8 +69,8 @@ public class NickInfo extends HashNumeric {
     public NickInfo ( String name, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
         // System.out.println ( "Debug: NickInfo ( "+name+" )" );
         this.name       = name;
-        this.hashName   = name.toUpperCase ( ) .hashCode ( );
-        this.hashMask   =  ( user+"@"+host ) .toUpperCase ( ) .hashCode ( );
+        this.hashName   = name.toUpperCase().hashCode ( );
+        this.hashMask   =  ( user+"@"+host ).toUpperCase().hashCode ( );
         this.user       = user;
         //this.ip         = ip;
         this.date       = new Date ( );
@@ -93,8 +93,8 @@ public class NickInfo extends HashNumeric {
         this.user       = user.getString ( USER );
         this.host       = user.getString ( HOST );
         this.ip         = user.getString ( IP );
-        this.hashName   = this.name.toUpperCase ( ) .hashCode ( );
-        this.hashMask   = ( user.getString ( USER ) +"@"+user.getString ( IP )  ) .toUpperCase ( ) .hashCode ( ); 
+        this.hashName   = this.name.toUpperCase().hashCode ( );
+        this.hashMask   = ( user.getString(USER)+"@"+user.getString(IP) ).toUpperCase().hashCode ( ); 
         this.pass       = pass;
         this.mail       = mail; 
         this.settings   = new NickSetting ( );
@@ -117,10 +117,10 @@ public class NickInfo extends HashNumeric {
             this.name       = name;
             this.pass       = passwd;
             this.ip         = u.getString ( IP );
-            this.hashName   = this.name.toUpperCase ( ) .hashCode ( );
+            this.hashName   = this.name.toUpperCase().hashCode ( );
             this.user       = u.getString ( USER );
             this.host       = u.getString ( HOST );
-            this.hashMask   = ( this.user +"@"+this.ip ) .toUpperCase ( ) .hashCode ( ); 
+            this.hashMask   = ( this.user +"@"+this.ip ).toUpperCase().hashCode ( ); 
             this.mail       = "master@localhost";
             String date = this.dateFormat.format ( new Date ( ) );
             this.regTime    = date;
@@ -154,7 +154,7 @@ public class NickInfo extends HashNumeric {
                 Proc.log ( User.class.getName ( ) , ex );
             }
 
-            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSHOST "+u.getString ( NAME ) +" :"+this.host ); /* services Send modes and serviceID to user */ 
+            ServSock.sendCmd ( ":"+Proc.getConf().get(NAME)+" SVSHOST "+u.getString(NAME)+" :"+this.host ); /* services Send modes and serviceID to user */ 
         } else {
             if ( u.isAtleast ( IRCOP ) ) {
                 this.host = u.getOper().getName()+".ircop";
@@ -183,7 +183,7 @@ public class NickInfo extends HashNumeric {
     public void setUserMask ( User user )  {
         this.user       = user.getString ( USER );
         this.ip         = user.getString ( HOST );
-        this.hashMask   =  ( user.getString ( USER )+"@"+user.getString ( HOST ) ).toUpperCase().hashCode ( );
+        this.hashMask   =  ( user.getString(USER)+"@"+user.getString(HOST) ).toUpperCase().hashCode ( );
         this.fixHost ( );
         this.changes.hasChanged ( FULLMASK );
     }
@@ -270,13 +270,8 @@ public class NickInfo extends HashNumeric {
         return false;
     }
  
-    public boolean setPass ( String oldPass, String newPass )  {
-        if ( this.pass.compareTo ( oldPass ) == 0 )  {
-            this.pass = newPass;
-            this.changes.hasChanged ( PASS );
-            return true;
-        }
-        return false;
+    public void setPass ( String newPass ) {
+        this.pass = newPass;
     }
       
     public boolean isPass ( String pass )  {

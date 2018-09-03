@@ -23,40 +23,46 @@ import security.Hash;
  *
  * @author Fredrik Karlsson aka DreamHealer & avade.net
  */
-public class NSMail {
-    private String mail;
+public class NSAuth {
+    private int type;
+    private String value;
     private String nick;
     private String auth;
     private String stamp;
     
-    public NSMail ( String nick, String mail ) {
+    public NSAuth ( int type, String nick, String value ) {
+        this.type = type;
         this.nick = nick;
-        this.mail = mail;
+        this.value = value;
         this.hash();
     }
     
-    public NSMail ( String nick, String mail, String auth, String stamp ) {
+    public NSAuth ( int type, String nick, String value, String auth, String stamp ) {
+        this.type = type;
         this.nick = nick;
-        this.mail = mail;
+        this.value = value;
         this.auth = auth;
         this.stamp = stamp;
     }
     
     public void hash ( ) {
-        String buf = this.nick+this.mail+System.currentTimeMillis();
+        String buf = this.nick+this.value+System.currentTimeMillis();
         this.auth = Hash.md5 ( buf );
     }
 
-    public String getMail ( ) {
-        return mail;
+    public int getType ( ) {
+        return this.type;
+    }
+    public String getValue ( ) {
+        return this.value;
     }
 
     public String getNick ( ) {
-        return nick;
+        return this.nick;
     }
 
     public String getAuth ( ) {
-        return auth;
+        return this.auth;
     }
     
     public String getStamp ( ) {

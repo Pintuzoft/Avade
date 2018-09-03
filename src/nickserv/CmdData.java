@@ -27,6 +27,7 @@ public class CmdData {
     private NickInfo        nick;
     private int             status;
     private String          str1;
+    private NSAuth          auth;
     private int command;
 
     public CmdData ( )  {
@@ -46,6 +47,10 @@ public class CmdData {
         this.status = status;
     }    
     
+    public void setAuth ( NSAuth auth ) { 
+        this.auth = auth;
+    }    
+    
     public NickInfo getNick ( ) { 
         return this.nick;
     }
@@ -56,6 +61,10 @@ public class CmdData {
     
     public String getString1 ( ) { 
         return this.str1;
+    }
+    
+    public NSAuth getAuth ( ) { 
+        return this.auth;
     }
 
     int getCommand ( ) {

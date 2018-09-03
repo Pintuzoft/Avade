@@ -859,7 +859,7 @@ public class Handler extends HashNumeric {
     private void sendNoSuchNick ( User user, String name )  {
         ServSock.sendCmd ( ":"+config.get ( NAME ) +" 371 "+user.getString ( NAME ) +" :"+name+" has been disabled, try again later." ); 
     }
-    
+     
     public static ArrayList<User> findUsersByNick ( NickInfo ni )  {
         ArrayList<User> ul = new ArrayList<> ( );
         for  (  User user : uList  )  {
@@ -1015,16 +1015,6 @@ public class Handler extends HashNumeric {
         ArrayList<User> iList = new ArrayList<>();
         for ( User user : uList ) {
             if ( user.isIdented ( ci ) ) {
-                iList.add ( user );
-            }
-        }
-        return iList;
-    }
-
-    public static ArrayList<User> findIdentifiedUsersByNick ( NickInfo ni ) {
-        ArrayList<User> iList = new ArrayList<>();
-        for ( User user : uList ) {
-            if ( user.isIdented ( ni ) ) {
                 iList.add ( user );
             }
         }

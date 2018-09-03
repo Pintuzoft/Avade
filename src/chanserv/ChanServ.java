@@ -556,7 +556,7 @@ public class ChanServ extends Service {
             this.sendMsg ( user, "You have now been unidentified from channel: "+ci.getName());
             user.unIdentify ( ci );
         }
-        uList.addAll ( Handler.findIdentifiedUsersByNick ( ci.getFounder() ) );
+        uList.addAll ( Handler.findUsersByNick ( ci.getFounder() ) );
         for ( User user : uList ) {
             this.sendMsg ( user, "Channel "+ci.getName()+" which you have been found to be associated with has now been dropped");
         }
