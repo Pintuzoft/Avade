@@ -652,44 +652,31 @@ public class CSDatabase extends Database {
         
         String query;
         try { 
-        System.out.println("1:");
             query = "SELECT topic,setter,unix_timestamp(stamp) "+
                     "FROM topiclog "+
                     "WHERE name = ? "+
                     "order by stamp desc "+
                     "limit 1";
-        System.out.println("2:");
             ps = sql.prepareStatement ( query );
-        System.out.println("3:");
             ps.setString ( 1, name );
-        System.out.println("4:");
             res3 = ps.executeQuery ( );
-        System.out.println("5:");
             
             if ( res3.next ( )  ) {
-        System.out.println("6:");
                 topic = new Topic ( 
                         res3.getString ( 1 ), 
                         res3.getString ( 2 ),
                         Long.parseLong ( res3.getString ( 3 ) )
                 ); 
-        System.out.println("7:");
             }
-        System.out.println("8:");
             
             res3.close ( );
-        System.out.println("9:");
             ps.close ( );
-        System.out.println("10:");
             idleUpdate ( "getChanTopic ( ) " );
-        System.out.println("11:");
             
         } catch  ( SQLException | NumberFormatException ex )  {
             Proc.log ( CSDatabase.class.getName ( ) , ex );    
-        System.out.println("12:");
             return null;
         }
-        System.out.println("13:");
         return topic;
     }
      
