@@ -17,6 +17,10 @@
  */
 package channel;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  *
  * @author DreamHealer
@@ -24,14 +28,18 @@ package channel;
 public class Topic {
     private String topic;
     private String setter;
-    private long   time;
+    private String timeStr;
+    private long stamp;
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
-    public Topic ( String topic, String setter, long time )  {
+    public Topic ( String topic, String setter, long stamp )  {
         this.topic              = topic;
         this.setter             = setter;
-        this.time               = time;
+        this.stamp              = stamp;
+        this.timeStr            = dateFormat.format ( new Date ( ) );
+         System.out.print("DEBUG: Topic(0) -> "+this.timeStr);
     }
-
+ 
     public String getTopic ( ) { 
         return topic;
     } 
@@ -40,8 +48,12 @@ public class Topic {
         return setter;
     } 
     
-    public long getTime ( ) {
-        return time;
+    public long getStamp ( ) {
+        return this.stamp;
+    } 
+
+    public String getTimeStr ( ) {
+        return this.timeStr;
     } 
 
     public void setTopic ( String topic ) { 
@@ -52,8 +64,8 @@ public class Topic {
         this.setter = setter;
     } 
     
-    public void setTime ( long time ) { 
-        this.time = time;
+    public void setStamp ( long stamp ) { 
+        this.stamp = stamp;
     }
      
 }

@@ -238,7 +238,7 @@ public class ChanServ extends Service {
             } else {
                 if ( ci.is ( TOPICLOCK )  || ci.is ( KEEPTOPIC )  )  {
                     c.setTopic ( ci.getTopic ( )  );
-                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getTime ( ) +" :"+ci.getTopic().getTopic ( ) );
+                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
                 }
                 if ( ci.is ( AUDITORIUM ) ) {
                     this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :+A" );
@@ -282,19 +282,19 @@ public class ChanServ extends Service {
                     }
                
                     if ( updTopic )  {
-                        if ( c.getTopic().getTime ( )  != ci.getTopic().getTime ( ) ) {
+                        if ( c.getTopic().getStamp ( )  != ci.getTopic().getStamp ( ) ) {
                             ci.setTopic ( c.getTopic ( ) );
                         }
                         return true;
                     } else {
                         c.setTopic ( ci.getTopic ( ) );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getTime ( ) +" :"+ci.getTopic().getTopic ( ) );
+                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
                         return false;
                     }
             
                 } else {
                     c.setTopic ( ci.getTopic ( )  );
-                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getTime ( ) +" :"+ci.getTopic().getTopic ( ) );
+                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
                     return false;
                 }
             } else {

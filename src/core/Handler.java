@@ -23,7 +23,6 @@ import server.Server;
 import monitor.Snoop;
 import channel.Chan;
 import channel.Topic;
-import chanserv.CSAccessLogEvent;
 import chanserv.CSDatabase;
 import chanserv.CSLogEvent;
 import chanserv.ChanInfo;
@@ -41,8 +40,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.regex.Pattern;
-import nickserv.NSDatabase;
-import operserv.OSDatabase;
 
 /**
  *
@@ -818,7 +815,7 @@ public class Handler extends HashNumeric {
         //     0   1      2      3                             4        5  =6
         Chan c = findChan ( data[2] );
         String topicData = Handler.cutArrayIntoString ( data, 5 );
-        Topic topic = new Topic ( topicData, user.getString ( NAME ) , Long.parseLong ( data[4] )  );
+        Topic topic = new Topic ( topicData, user.getString ( FULLMASK ), Long.parseLong ( data[4] )  );
         if ( c != null )  {
             c.setTopic ( topic );
             //chan.checkTopic ( user, c );
@@ -828,7 +825,7 @@ public class Handler extends HashNumeric {
             /* The channel is registered, lets check if access is needed then set a new topic on it */
               
             /* Save topic only if its goes through the checks */
-            if ( chan.checkTopic ( user, c )  )  {
+            if ( chan.checkTopic ( user, c ) ) {
                 CSDatabase.updateChanTopic ( ci );
             }
         }

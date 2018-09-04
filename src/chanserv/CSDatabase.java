@@ -363,20 +363,16 @@ public class CSDatabase extends Database {
         } else if ( ci == null )  {
             return -3;
         } else {
-            /* Try add the chan */          
-            try {                     
-                String query = "INSERT INTO chantopic  ( name,setter,stamp,topic )  "
-                             + "VALUES  ( ?, ?, ?, ? )  "
-                             + "ON DUPLICATE KEY "
-                             + "UPDATE setter = ?,stamp = ?,topic = ?";
+            /* Try add the chan */
+            System.out.println("DEBUG: "+ci.getTopic().getTimeStr ( ));
+            try {             
+                String query = "INSERT INTO topiclog ( name,setter,stamp,topic )  "
+                             + "VALUES  ( ?, ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, ci.getName ( )  );
                 ps.setString   ( 2, ci.getTopic().getSetter ( ) );
-                ps.setLong     ( 3, ci.getTopic().getTime ( ) );
+                ps.setString   ( 3, ci.getTopic().getTimeStr ( ) );
                 ps.setString   ( 4, ci.getTopic().getTopic ( ) );
-                ps.setString   ( 5, ci.getTopic().getSetter ( ) );
-                ps.setLong     ( 6, ci.getTopic().getTime ( ) );
-                ps.setString   ( 7, ci.getTopic().getTopic ( ) );
                 ps.execute ( );
                 ps.close ( ); 
                 
@@ -645,34 +641,56 @@ public class CSDatabase extends Database {
         return cList;
     }
     
-    
-     public static Topic getChanTopic ( String name )  {
+    public static Topic getChanTopic ( String name )  {
+        Topic topic = null;
         String[] buf;
+        
+        System.out.println("0:");
         if ( ! activateConnection ( )  )  {
-            return null;
+            return topic;
         }
+        
+        String query;
         try { 
-            String query = "SELECT topic,setter,stamp "
-                         + "FROM chantopic "
-                         + "WHERE name = ?";
+        System.out.println("1:");
+            query = "SELECT topic,setter,unix_timestamp(stamp) "+
+                    "FROM topiclog "+
+                    "WHERE name = ? "+
+                    "order by stamp desc "+
+                    "limit 1";
+        System.out.println("2:");
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, name );
+        System.out.println("3:");
+            ps.setString ( 1, name );
+        System.out.println("4:");
             res3 = ps.executeQuery ( );
-
-            Topic topic;
-
-            if ( res3.next ( )  )  {  
-                topic = new Topic ( res3.getString ( 1 ), res3.getString ( 2 ), Long.parseLong ( res3.getString ( 3 ) ) ); 
-                return topic;
+        System.out.println("5:");
+            
+            if ( res3.next ( )  ) {
+        System.out.println("6:");
+                topic = new Topic ( 
+                        res3.getString ( 1 ), 
+                        res3.getString ( 2 ),
+                        Long.parseLong ( res3.getString ( 3 ) )
+                ); 
+        System.out.println("7:");
             }
+        System.out.println("8:");
+            
             res3.close ( );
+        System.out.println("9:");
             ps.close ( );
+        System.out.println("10:");
             idleUpdate ( "getChanTopic ( ) " );
-           
+        System.out.println("11:");
+            
         } catch  ( SQLException | NumberFormatException ex )  {
             Proc.log ( CSDatabase.class.getName ( ) , ex );    
+        System.out.println("12:");
+            return null;
         }
-        return null;
+        System.out.println("13:");
+        return topic;
     }
      
     public static ArrayList<CSAccess> getChanAccess ( ChanInfo ci, int access )  {
@@ -754,12 +772,6 @@ public class CSDatabase extends Database {
             ps.setString  ( 1, ci.getName ( )  );
             ps.execute ( );
             ps.close ( );
-
-            query = "DELETE FROM chantopic WHERE name = ?";
-            ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName ( )  );
-            ps.execute ( );
-            ps.close ( ); 
              
         } catch  ( SQLException ex )  {
             Proc.log ( CSDatabase.class.getName ( ) , ex );    
@@ -932,18 +944,15 @@ public class CSDatabase extends Database {
         }
         try { 
             String salt = config.get ( SECRETSALT );
-            String query = "SELECT C.name,C.founder,AES_DECRYPT(C.pass,?),C.description,C.regstamp,C.stamp,CT.topic "
+            String query = "SELECT C.name,C.founder,AES_DECRYPT(C.pass,?),C.description,C.regstamp,C.stamp "
                          + "FROM chan AS C "
-                         + "LEFT JOIN chantopic AS CT ON CT.name = C.name "
                          + "WHERE C.name RLIKE ? "
-                         + "OR CT.topic RLIKE ? "
                          + "OR C.description RLIKE ? "
                          + "ORDER BY C.name ASC";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, salt );
             ps.setString  ( 2, "^"+pattern+"$" );
             ps.setString  ( 3, "^"+pattern+"$" );
-            ps.setString  ( 4, "^"+pattern+"$" );
             res = ps.executeQuery ( );
 
             while ( res.next ( )  )  { 
