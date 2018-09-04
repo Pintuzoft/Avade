@@ -244,18 +244,23 @@ public class NickServ extends Service {
     private static void handleNewAuths ( ) {
         if ( NSDatabase.activateConnection() && newAuthList.size() > 0 ) {
             ArrayList<NSAuth> auths = new ArrayList<>();
-            for ( NSAuth mail : newAuthList ) {
-                switch ( mail.getType() ) {
+            for ( NSAuth auth : newAuthList ) {
+                switch ( auth.getType() ) {
                     case MAIL :
-                        if ( NSDatabase.addMail ( mail ) ) {
-                            auths.add ( mail );
+                        if ( NSDatabase.addMail (auth ) ) {
+                            auths.add (auth );
                         }
                         break;
                         
+                    case PASS :
+                        if ( NSDatabase.addPass (auth ) ) {
+                            auths.add (auth );
+                        }
+                        break;
                 }
             }
-            for ( NSAuth mail : auths ) {
-                newAuthList.remove ( mail );
+            for ( NSAuth auth : auths ) {
+                newAuthList.remove ( auth );
             }
         }
     }

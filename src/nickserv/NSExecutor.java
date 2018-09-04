@@ -132,7 +132,7 @@ import java.util.regex.Pattern;
     }
 
     public void register ( User user, String[] cmd )  { /* DONE? */
-        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :register pass email
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :register pass value
         //       0         1              2                     3      4    5 = 6
 
         CmdData cmdData = this.validateCommandData ( user, REGISTER, cmd );
@@ -532,6 +532,10 @@ import java.util.regex.Pattern;
                 case EMAIL :
                     doSetString ( SETEMAIL, "Email", user, cmd );
                     break;
+                             
+                case PASSWD :
+                    doSetString ( SETPASSWD, "Passwd", user, cmd );
+                    break;
                     
                 default : 
                     this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] )  );
@@ -608,6 +612,8 @@ import java.util.regex.Pattern;
                 
         } 
     }
+    
+    /* Can possibly merge getPass and getEmail methods in the future */
     private void getPass ( User user, String[] cmd ) {
         CmdData cmdData = this.validateCommandData ( user, GETPASS, cmd );
         switch ( cmdData.getStatus ( ) ) {
@@ -633,12 +639,66 @@ import java.util.regex.Pattern;
         NickInfo ni = cmdData.getNick ( ); 
         NickInfo oper = user.getOper().getNick ( );
         int command = cmdData.getCommand ( );
+        this.service.sendMsg ( user, "*** Password log of "+ni.getName()+":" );
+        if ( ! NSDatabase.checkConn() ) {
+            this.service.sendMsg ( user, "No passwords currently available as no database connection is present." );
+        } else {
+            ArrayList<NSAuth> pList = NSDatabase.getAuthsByNick ( PASS, ni.getName() );
+            for ( NSAuth pass : pList ) {
+                String auth = ( pass.getAuth() == null ? "A" : "N" );
+                this.service.sendMsg ( user, output ( NICK_GETEMAIL, pass.getStamp(), auth, pass.getValue() ) );
+            }
+        }       
+        this.service.sendMsg ( user, "*** End of log ***" );
         NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
         NickServ.addLog ( log );
-        this.service.sendMsg ( user, output ( NICK_GETPASS, ni.getPass() ) );
         this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ni.getName() );
     }
-
+ 
+    private void getEmail ( User user, String[] cmd ) {
+        CmdData cmdData = this.validateCommandData ( user, GETEMAIL, cmd );
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" )  );
+                return;
+                
+            case ACCESS_DENIED :
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
+                return;     
+                           
+            case NICK_NOT_REGGED :
+                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
+                return;
+                     
+            case IS_MARKED :
+                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
+                return;     
+            
+            default : 
+        
+        }
+        NickInfo ni = cmdData.getNick ( ); 
+        NickInfo oper = user.getOper().getNick ( );
+        int command = cmdData.getCommand ( );
+        this.service.sendMsg ( user, "*** Email log of "+ni.getName()+":" );
+        
+        if ( ! NSDatabase.checkConn() ) {
+            this.service.sendMsg ( user, "No mails currently available as no database connection is present." );
+        } else {
+            ArrayList<NSAuth> eList = NSDatabase.getAuthsByNick ( MAIL, ni.getName() );
+            for ( NSAuth mail : eList ) {
+                String auth = ( mail.getAuth() == null ? "A" : "N" );
+                this.service.sendMsg ( user, output ( NICK_GETEMAIL, mail.getStamp(), auth, mail.getValue() ) );
+            }
+        }       
+        this.service.sendMsg ( user, "*** End of log ***" );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
+        NickServ.addLog ( log );
+        this.service.sendGlobOp ( oper.getName()+" used GETEMAIL on: "+ni.getName() );
+    }
+ 
+    
+    
     private void auth ( User user, String[] cmd ) {
         CmdData cmdData = this.validateCommandData ( user, AUTH, cmd );
         switch ( cmdData.getStatus ( ) ) {
@@ -691,48 +751,6 @@ import java.util.regex.Pattern;
     }
 
     
-    private void getEmail ( User user, String[] cmd ) {
-        CmdData cmdData = this.validateCommandData ( user, GETEMAIL, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" )  );
-                return;
-                
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
-                return;     
-                           
-            case NICK_NOT_REGGED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
-                return;
-                     
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                return;     
-            
-            default : 
-        
-        }
-        NickInfo ni = cmdData.getNick ( ); 
-        NickInfo oper = user.getOper().getNick ( );
-        int command = cmdData.getCommand ( );
-        this.service.sendMsg ( user, "*** Email log of "+ni.getName()+":" );
-        
-        if ( ! NSDatabase.checkConn() ) {
-            this.service.sendMsg ( user, "No mails currently available as no database connection is present." );
-        } else {
-            ArrayList<NSAuth> eList = NSDatabase.getMailsByNick ( ni.getName() );
-            for ( NSAuth mail : eList ) {
-                String auth = ( mail.getAuth() == null ? "A" : "N" );
-                this.service.sendMsg ( user, output ( NICK_GETEMAIL, mail.getStamp(), auth, mail.getValue() ) );
-            }
-        }       
-        this.service.sendMsg ( user, "*** End of log ***" );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
-        NickServ.addLog ( log );
-        this.service.sendGlobOp ( oper.getName()+" used GETEMAIL on: "+ni.getName() );
-    }
-     
     public void doSetBoolean ( int cmd, String command, User user, NickInfo ni, boolean enable )  {
         this.sendIsOutput ( user, enable, command );
         ni.getSettings().set ( cmd, enable );
@@ -745,14 +763,24 @@ import java.util.regex.Pattern;
     }
 
     public void doSetString ( int hash, String command, User user, String[] cmd ) {
-        /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :set email <pass> <newemail>          */
+        /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :set value <pass> <newemail>          */
         /*      0          1               2                 3     4      5           6 = 7      */
         
         CmdData cmdData = this.validateCommandData ( user, hash, cmd );
 
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET EMAIL <pass> <email>" ) );
+                switch ( hash ) {
+                    case SETEMAIL :
+                        this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET EMAIL <pass> <email>" ) );
+                        break;
+                    case SETPASSWD :
+                        this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET PASSWD <current-pass> <new-pass>" ) );
+                        break;
+                        
+                    default :
+
+                }
                 return;
                 
             case NICK_NOT_REGGED :
@@ -775,24 +803,43 @@ import java.util.regex.Pattern;
                 this.service.sendMsg ( user, output ( INVALID_EMAIL, cmdData.getString1() )  );
                 return;
                 
+            case INVALID_PASS :
+                this.service.sendMsg ( user, output ( INVALID_PASS, "" )  );
+                return;
+                
             default :
 
         }
         NickInfo ni = cmdData.getNick();
-        String email = cmdData.getString1();
-        System.out.println("debug setemail: "+email);
-        if ( ni == null ) {
-            System.out.println("debug setemail: ni == null");
-        } else {
-            System.out.println("debug setemail: ni != null");
+        String value = cmdData.getString1();
+        NSAuth auth;
+        NSLogEvent log;
+        
+        switch ( hash ) {
+            case SETEMAIL :
+                auth = new NSAuth ( MAIL, ni.getName(), value );
+                NickServ.addNewAuth ( auth );
+                ni.getChanges().hasChanged ( MAIL );
+                NickServ.addToWorkList ( CHANGE, ni );
+                log = new NSLogEvent ( ni.getName(), MAIL, user.getFullMask(), null );
+                NickServ.addLog ( log );
+                this.service.sendMsg ( user, "New mail has been set. A verification mail will shortly be sent, please follow the instruction in that mail." );
+                break;
+                
+            case SETPASSWD :
+                auth = new NSAuth ( PASS, ni.getName(), value );
+                NickServ.addNewAuth ( auth );
+                ni.getChanges().hasChanged ( PASS );
+                NickServ.addToWorkList ( CHANGE, ni );
+                log = new NSLogEvent ( ni.getName(), PASS, user.getFullMask(), null );
+                NickServ.addLog ( log );
+                this.service.sendMsg ( user, "New password has been set. A verification mail will shortly be sent, please follow the instruction in that mail." );
+                break;
+                
+            default :
+                
         }
-        NSAuth mail = new NSAuth ( MAIL, ni.getName(), email );
-        NickServ.addNewAuth ( mail );
-        ni.getChanges().hasChanged ( MAIL );
-        NickServ.addToWorkList ( CHANGE, ni );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), MAIL, user.getFullMask(), null );
-        NickServ.addLog ( log );
-        this.service.sendMsg ( user, "New mail has been set. A verification mail will shortly be sent, please follow the instruction in that mail." );
+        
     }
 
     public void sendIsOutput ( User user, boolean enable, String str )  {
@@ -1052,6 +1099,38 @@ import java.util.regex.Pattern;
                 }
                 break;
                 
+            case SETPASSWD :
+                System.out.println("0:");
+                if ( isShorterThanLen ( 7, cmd ) ) {
+                System.out.println("1:");
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
+                System.out.println("2:");
+                    cmdData.setString1 ( user.getString(NAME) );
+                    cmdData.setStatus ( NICK_NOT_REGISTERED );
+                } else if ( ni.is ( FROZEN ) ) {
+                System.out.println("3:");
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_FROZEN );
+                } else if ( ni.is ( MARK ) ) {
+                System.out.println("4:");
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_MARKED );
+                } else if ( ! ni.identify ( user, cmd[5] )  )  {
+                System.out.println("5:");
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IDENTIFY_FAIL );
+                } else if ( cmd[6].length() < 8 ) {
+                System.out.println("6:");
+                    cmdData.setStatus ( INVALID_PASS );
+                } else {
+                System.out.println("7:");
+                    cmdData.setString1 ( cmd[6] );
+                    cmdData.setNick ( ni );
+                }
+                System.out.println("8:");
+                break;
+                
             case DELETE : 
                  cmdData.setCommand ( command );
                 if ( isShorterThanLen ( 5, cmd ) ) {
@@ -1136,6 +1215,9 @@ import java.util.regex.Pattern;
            
             case INVALID_EMAIL : 
                 return "Error: "+args[0]+" is not a valid email-adress";
+           
+            case INVALID_PASS : 
+                return "Error: password is not valid, it might be too short or too easy.";
            
             case INVALID_NICK : 
                 return "Error: "+args[0]+" is not a valid nick for registration";
@@ -1251,7 +1333,8 @@ import java.util.regex.Pattern;
     private final static int PASSWD_ERROR             = 1301;
     private final static int INVALID_EMAIL            = 1302;
     private final static int INVALID_NICK             = 1303;
-    
+    private final static int INVALID_PASS             = 1304;
+
     private final static int PASSWD_ACCEPTED          = 1351;
  
     private final static int DB_ERROR                 = 1401;

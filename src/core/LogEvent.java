@@ -81,6 +81,9 @@ public abstract class LogEvent extends HashNumeric {
             case MAIL :
                 return "m";
             
+            case PASS :
+                return "p";
+            
             case MARK :
                 return "M+";
             

@@ -541,12 +541,23 @@ public class NSDatabase extends Database {
         return false;
     }
     
-    static String tableByAuth ( NSAuth auth ) {
-        switch ( auth.getType() ) {
+    static String tableByHash ( int hash ) {
+        switch ( hash ) {
             case MAIL :
                 return "maillog";
             case PASS :
                 return "passlog";
+                
+            default :
+                return "";
+        }
+    }
+    static String fieldByHash ( int hash ) {
+        switch ( hash ) {
+            case MAIL :
+                return "mail";
+            case PASS :
+                return "pass"; 
                 
             default :
                 return "";
@@ -557,7 +568,7 @@ public class NSDatabase extends Database {
         if ( ! activateConnection ( ) ) {
             return false;
         }
-        String table = tableByAuth ( auth );
+        String table = tableByHash ( auth.getType() );
         String query;
         try {
             query = "update "+table+" "+
@@ -605,18 +616,20 @@ public class NSDatabase extends Database {
         return false;
     }
     
-    static ArrayList<NSAuth> getMailsByNick ( String nick ) {
-        ArrayList<NSAuth> eList = new ArrayList<>();
+    static ArrayList<NSAuth> getAuthsByNick ( int hash, String nick ) {
+        ArrayList<NSAuth> aList = new ArrayList<>();
         
         if ( ! activateConnection ( ) ) {
-            return eList;
+            return aList;
         }
-        
-        String query = "select nick,aes_decrypt(mail,?) as mail,auth,stamp "+
-                       "from maillog "+
-                       "where nick = ? "+
-                       "order by stamp asc";
-        
+        String query;
+        String table = tableByHash ( hash );
+        String field = fieldByHash ( hash );
+        query= "select nick,aes_decrypt("+field+",?) as value,auth,stamp "+
+                "from "+table+" "+
+                "where nick = ? "+
+                "order by stamp asc";
+ 
         try {
             String salt = Proc.getConf().get ( SECRETSALT );
             ps = sql.prepareStatement ( query );
@@ -624,10 +637,10 @@ public class NSDatabase extends Database {
             ps.setString ( 2, nick );
             res = ps.executeQuery ( );
             while ( res.next ( ) ) {
-                eList.add ( new NSAuth (
+                aList.add ( new NSAuth (
                     MAIL,
                     res.getString("nick"), 
-                    res.getString("mail"), 
+                    res.getString("value"), 
                     res.getString("auth"), 
                     res.getString("stamp") )
                 );
@@ -638,7 +651,7 @@ public class NSDatabase extends Database {
         } catch ( Exception ex ) {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
         }
-        return eList;
+        return aList;
     }
     
     static String getMailByNick ( String nick ) {
@@ -685,6 +698,30 @@ public class NSDatabase extends Database {
             ps.setString ( 2, mail.getValue() );
             ps.setString ( 3, salt );
             ps.setString ( 4, mail.getAuth() );
+            ps.execute();
+            ps.close();
+            
+        } catch ( SQLException ex ) {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+        
+    static boolean addPass ( NSAuth pass ) {
+        if ( ! activateConnection() ) {
+            return false;
+        }
+        String query = "insert into passlog "+
+                       "(nick,pass,auth,stamp) "+
+                       "values ( ?, aes_encrypt(?,?), ?, now() )";
+        try {
+            String salt = Proc.getConf().get ( SECRETSALT );
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, pass.getNick() );
+            ps.setString ( 2, pass.getValue() );
+            ps.setString ( 3, salt );
+            ps.setString ( 4, pass.getAuth() );
             ps.execute();
             ps.close();
             

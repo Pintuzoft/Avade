@@ -110,8 +110,10 @@ public abstract class HashNumeric extends TextFormat {
 
     public final static int UNSET                       = 80904969;
     public final static int EMAIL                       = 66081660;
+    public final static int PASSWD                      = -1942051170;
     public final static int SETEMAIL                    = -2091455366;
-
+    public final static int SETPASSWD                   = -106222240;
+    
     public static final int ON                          = 2527;
     public static final int OFF                         = 78159;
     

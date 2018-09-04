@@ -35,7 +35,7 @@ public class NSLogEvent extends LogEvent {
     }
     
     public NSLogEvent ( String name, int flag, User user, NickInfo oper ) {
-        super ( name, user.getFullMask(), oper.getName() );
+        super ( name, user.getFullMask(), (oper == null ? "" : oper.getName() ) );
         this.setFlag ( flag );
     }
     
