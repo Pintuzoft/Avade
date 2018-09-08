@@ -106,7 +106,6 @@ public class CSDatabase extends Database {
         } else {
             
             try {
-                
                 String salt = config.get ( SECRETSALT );
                 String query = "INSERT INTO chan ( name, founder, pass, description, regstamp, stamp )  "
                              + "VALUES  ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
@@ -120,75 +119,7 @@ public class CSDatabase extends Database {
                 ps.setString  ( 7, ci.getString ( LASTSEEN ) );
                 ps.execute ( );
                 ps.close ( );
-                 
-                String topiclock = new String ( ); 
-                switch ( ci.getSettings ( ) .getTopicLock ( )  )  {
-                    case FOUNDER :
-                        topiclock = "founder";
-                        break;
-                        
-                    case SOP :
-                        topiclock = "sop";
-                        break;
-                        
-                    case AOP :
-                        topiclock = "aop";
-                        break;
-                        
-                    default :
-                        topiclock = "off";
-                        
-                } 
-                 
-                query = "INSERT INTO chansetting  ( name,keeptopic,topiclock,ident,opguard,restricted,verbose,mailblock,leaveops,modelock,freeze,close,hold,mark,auditorium )  "
-                      + "VALUES  ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
-                ps = sql.prepareStatement ( query );
-                ps.setString   ( 1,  ci.getString ( NAME )  );
-                ps.setInt      ( 2,  ci.getSettings().is ( KEEPTOPIC ) ? 1 : 0 );
-                ps.setString   ( 3,  topiclock );
-                ps.setInt      ( 4,  ci.getSettings().is ( IDENT ) ? 1 : 0 );
-                ps.setInt      ( 5,  ci.getSettings().is ( OPGUARD ) ? 1 : 0 );
-                ps.setInt      ( 6,  ci.getSettings().is ( RESTRICT ) ? 1 : 0 );
-                ps.setInt      ( 7,  ci.getSettings().is ( VERBOSE ) ? 1 : 0 );
-                ps.setInt      ( 8,  ci.getSettings().is ( MAILBLOCK ) ? 1 : 0 );
-                ps.setInt      ( 9,  ci.getSettings().is ( LEAVEOPS ) ? 1 : 0 );
-                ps.setString   ( 10, "+nt" );
-                                
-                if ( ! ci.getSettings().is ( MARKED ) ) {
-                    ps.setNull ( 11, Types.VARCHAR );
-                } else {
-                    ps.setString ( 11, ci.getSettings().getInstater ( MARK ) );
-                }
                 
-                if ( ! ci.getSettings().is ( FROZEN ) ) {
-                    ps.setNull ( 12, Types.VARCHAR );
-                } else {
-                    ps.setString ( 12, ci.getSettings().getInstater ( FREEZE ) );
-                }
-                
-                if ( ! ci.getSettings().is ( CLOSED ) ) {
-                    ps.setNull ( 13, Types.VARCHAR );
-                } else {
-                    ps.setString ( 13, ci.getSettings().getInstater ( CLOSE ) );
-                }
-                
-                if ( ! ci.getSettings().is ( HELD ) ) {
-                    ps.setNull ( 14, Types.VARCHAR );
-                } else {
-                    ps.setString ( 14, ci.getSettings().getInstater ( HOLD ) );
-                }
-                
-                if ( ! ci.getSettings().is ( AUDITORIUM ) ) {
-                    ps.setNull ( 15, Types.VARCHAR );
-                } else {
-                    ps.setString ( 15, ci.getSettings().getInstater ( AUDITORIUM ) );
-                }
-                
-                ps.execute ( );
-                ps.close ( );
-                
-                updateChanTopic ( ci );
-               
                 idleUpdate ( "createChan ( ) " );
             } catch  ( SQLException ex )  {
                 /* Nick already exists? return -1 */
@@ -213,20 +144,143 @@ public class CSDatabase extends Database {
         } else {
             /* Try add the chan */          
             try {
-               
-                String salt = config.get ( SECRETSALT );
-                String query = "UPDATE chan SET "
-                             + "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = FROM_UNIXTIME(UNIX_TIMESTAMP()) "
-                             + "WHERE name = ?";
-                ps = sql.prepareStatement ( query );
-                ps.setString  ( 1, ci.getFounder ( ) .getName ( )  );
-                ps.setString  ( 2, ci.getPass ( ) );
-                ps.setString  ( 3, salt );
-                ps.setString  ( 4, ci.getString ( DESCRIPTION )  );
-                ps.setString  ( 5, ci.getString ( NAME )  ); 
-                ps.executeUpdate ( );
-                ps.close ( );
-                 
+                String query;
+                if ( ci.getChanges().hasChanged ( FOUNDER ) ||
+                     ci.getChanges().hasChanged ( DESCRIPTION ) ||
+                     ci.getChanges().hasChanged ( LASTOPED ) ) {
+                    String salt = config.get ( SECRETSALT );
+                    query = "UPDATE chan SET "+
+                            "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = FROM_UNIXTIME(UNIX_TIMESTAMP()) "+
+                            "WHERE name = ?";
+                    ps = sql.prepareStatement ( query );
+                    ps.setString  ( 1, ci.getFounder ( ) .getName ( )  );
+                    ps.setString  ( 2, ci.getPass ( ) );
+                    ps.setString  ( 3, salt );
+                    ps.setString  ( 4, ci.getString ( DESCRIPTION )  );
+                    ps.setString  ( 5, ci.getString ( NAME )  ); 
+                    ps.executeUpdate ( );
+                    ps.close ( );
+                }
+                
+                String changes = new String ( );
+            
+                if ( ci.getChanges().hasChanged ( KEEPTOPIC ) )
+                    changes = addToQuery ( changes, "keeptopic" );
+                if ( ci.getChanges().hasChanged ( IDENT ) )
+                    changes = addToQuery ( changes, "ident" );
+                if ( ci.getChanges().hasChanged ( OPGUARD ) )
+                    changes = addToQuery ( changes, "opguard" );
+                if ( ci.getChanges().hasChanged ( RESTRICT ) )
+                    changes = addToQuery ( changes, "restricted" );
+                if ( ci.getChanges().hasChanged ( VERBOSE ) )
+                    changes = addToQuery ( changes, "verbose" );
+                if ( ci.getChanges().hasChanged ( MAILBLOCK ) )
+                    changes = addToQuery ( changes, "mailblock" );
+                if ( ci.getChanges().hasChanged ( LEAVEOPS ) )
+                    changes = addToQuery ( changes, "leaveops" );
+                if ( ci.getChanges().hasChanged ( MODELOCK ) )
+                    changes = addToQuery ( changes, "modelock" );
+                if ( ci.getChanges().hasChanged ( TOPICLOCK ) )
+                    changes = addToQuery ( changes, "topiclock" );
+                if ( ci.getChanges().hasChanged ( MARK ) )
+                    changes = addToQuery ( changes, "mark" );
+                if ( ci.getChanges().hasChanged ( FREEZE ) )
+                    changes = addToQuery ( changes, "freeze" );
+                if ( ci.getChanges().hasChanged ( CLOSE ) )
+                    changes = addToQuery ( changes, "close" );
+                if ( ci.getChanges().hasChanged ( HOLD ) )
+                    changes = addToQuery ( changes, "hold" );
+                if ( ci.getChanges().hasChanged ( AUDITORIUM ) )
+                    changes = addToQuery ( changes, "auditorium" );
+                
+                
+                if ( changes.length() > 0 ) {
+                
+                    query = "update chansetting "+
+                            "set "+changes+" "+
+                            "where name = ?";
+                    
+                    System.out.println("DEBUG: "+query);
+                    ps = sql.prepareStatement ( query );
+                    int index = 1;
+                    ci.getChanges().printChanges();
+                    if ( ci.getChanges().hasChanged ( KEEPTOPIC ) )
+                        ps.setInt ( index++, ci.getSettings().is ( KEEPTOPIC ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( IDENT ) )
+                        ps.setInt ( index++, ci.getSettings().is ( IDENT ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( OPGUARD ) )
+                        ps.setInt ( index++, ci.getSettings().is ( OPGUARD ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( RESTRICT ) )
+                        ps.setInt ( index++, ci.getSettings().is ( RESTRICT ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( VERBOSE ) )
+                        ps.setInt ( index++, ci.getSettings().is ( VERBOSE ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( MAILBLOCK ) )
+                        ps.setInt ( index++, ci.getSettings().is ( MAILBLOCK ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( LEAVEOPS ) )
+                        ps.setInt ( index++, ci.getSettings().is ( LEAVEOPS ) ? 1 : 0 );
+                    if ( ci.getChanges().hasChanged ( MODELOCK ) )
+                        ps.setString ( index++, ci.getSettings().getModeLock().getModes ( ) );
+                    if ( ci.getChanges().hasChanged ( TOPICLOCK ) )
+                        ps.setString ( index++, hashToTopiclockString ( ci.getSettings().getTopicLock ( ) ) );
+                     
+                    if ( ci.getChanges().hasChanged ( MARK ) ) { 
+                        if ( ! ci.getSettings().is ( MARKED ) ) {
+                            ps.setNull ( index++, Types.VARCHAR );
+                        } else {
+                            ps.setString ( index++, ci.getSettings().getInstater ( MARK ) );
+                        }
+                    }
+                    if ( ci.getChanges().hasChanged ( FREEZE ) ) { 
+                        if ( ! ci.getSettings().is ( FROZEN ) ) {
+                            ps.setNull ( index++, Types.VARCHAR );
+                        } else {
+                            ps.setString ( index++, ci.getSettings().getInstater ( FREEZE ) );
+                        }
+                    }
+                    if ( ci.getChanges().hasChanged ( CLOSE ) ) {
+                        if ( ! ci.getSettings().is ( CLOSED ) ) {
+                            ps.setNull ( index++, Types.VARCHAR );
+                        } else {
+                            ps.setString ( index++, ci.getSettings().getInstater ( CLOSE ) );
+                        }
+                    }
+                    if ( ci.getChanges().hasChanged ( HELD ) ) {
+                        if ( ! ci.getSettings().is ( HELD ) ) {
+                            ps.setNull ( index++, Types.VARCHAR );
+                        } else {
+                            ps.setString ( index++, ci.getSettings().getInstater ( HOLD ) );
+                        }
+                    }
+                    if ( ci.getChanges().hasChanged ( AUDITORIUM ) ) {
+                        if ( ! ci.getSettings().is ( AUDITORIUM ) ) {
+                            ps.setNull ( index++, Types.VARCHAR );
+                        } else {
+                            ps.setString ( index++, ci.getSettings().getInstater ( AUDITORIUM ) );
+                        }
+                    }
+                    
+                    ps.setString   ( index++, ci.getString ( NAME ) );
+                    ps.executeUpdate ( );
+                    ps.close ( );
+                    
+                } 
+                
+                if ( ci.getChanges().hasChanged ( TOPIC ) ) {
+                    if ( ci.getTopic().getTopic().length() > 0 ) {
+                        query = "INSERT INTO topiclog ( name,setter,stamp,topic ) "+
+                                "VALUES  ( ?, ?, ?, ? )";
+                        ps = sql.prepareStatement ( query );
+                        ps.setString ( 1, ci.getName ( ) );
+                        ps.setString ( 2, ci.getTopic().getSetter ( ) );
+                        ps.setString ( 3, ci.getTopic().getTimeStr ( ) );
+                        ps.setString ( 4, ci.getTopic().getTopic ( ) );
+                        ps.execute ( );
+                        ps.close ( );
+                    }
+                }
+                
+                ci.getChanges().clean ( );
+                
                 idleUpdate ( "updateChan ( ) " );
             } catch  ( SQLException ex )  {
                 /* Was not updated? return -1 */
@@ -237,98 +291,32 @@ public class CSDatabase extends Database {
         /* Nick was added */
         return 1;
     }
-    public static int updateChanSettings ( ChanInfo ci )  { 
-        if ( ! activateConnection ( )  )  {
-            /* No SQL connection */
-            return -2;
-
-        } else if ( ci == null )  {
-            /* No valid nick was sent */
-            return -3;
-        } else {
-            /* Try add the chan */          
-            try { 
-                String topiclock = new String ( );
-                
-                switch ( ci.getSettings().getTopicLock ( ) ) {
-                    case FOUNDER :
-                        topiclock = "founder";
-                        break;
-                        
-                    case SOP :
-                        topiclock = "sop";
-                        break;
-                        
-                    case AOP :
-                        topiclock = "aop";
-                        break;
-                        
-                    default :
-                        topiclock = "off";
-                        
-                } 
-                
-                String query = "UPDATE chansetting SET "+
-                               "keeptopic = ?, topiclock = ?, ident = ?, opguard = ?,"+
-                               "restricted = ?, verbose = ?, mailblock = ?, leaveops = ?,"+
-                               "modelock = ?, mark = ?, freeze = ?, close = ?, hold = ?, auditorium = ? "+
-                               "WHERE name = ?";
-                ps = sql.prepareStatement ( query );
-                ps.setInt      ( 1,  ci.getSettings().is ( KEEPTOPIC ) ? 1 : 0 );
-                ps.setString   ( 2,  topiclock );
-                ps.setInt      ( 3,  ci.getSettings().is ( IDENT ) ? 1 : 0 );
-                ps.setInt      ( 4,  ci.getSettings().is ( OPGUARD ) ? 1 : 0 );
-                ps.setInt      ( 5,  ci.getSettings().is ( RESTRICT ) ? 1 : 0 );
-                ps.setInt      ( 6,  ci.getSettings().is ( VERBOSE ) ? 1 : 0 );
-                ps.setInt      ( 7,  ci.getSettings().is ( MAILBLOCK ) ? 1 : 0 );
-                ps.setInt      ( 8,  ci.getSettings().is ( LEAVEOPS ) ? 1 : 0 );
-                ps.setString   ( 9, ci.getSettings().getModeLock().getModes ( ) );
-                
-                if ( ! ci.getSettings().is ( MARKED ) ) {
-                    ps.setNull ( 10, Types.VARCHAR );
-                } else {
-                    ps.setString ( 10, ci.getSettings().getInstater ( MARK ) );
-                }
-                
-                if ( ! ci.getSettings().is ( FROZEN ) ) {
-                    ps.setNull ( 11, Types.VARCHAR );
-                } else {
-                    ps.setString ( 11, ci.getSettings().getInstater ( FREEZE ) );
-                }
-                
-                if ( ! ci.getSettings().is ( CLOSED ) ) {
-                    ps.setNull ( 12, Types.VARCHAR );
-                } else {
-                    ps.setString ( 12, ci.getSettings().getInstater ( CLOSE ) );
-                }
-                
-                if ( ! ci.getSettings().is ( HELD ) ) {
-                    ps.setNull ( 13, Types.VARCHAR );
-                } else {
-                    ps.setString ( 13, ci.getSettings().getInstater ( HOLD ) );
-                }
-                
-                if ( ! ci.getSettings().is ( AUDITORIUM ) ) {
-                    ps.setNull ( 14, Types.VARCHAR );
-                } else {
-                    ps.setString ( 14, ci.getSettings().getInstater ( AUDITORIUM ) );
-                }
-                
-                ps.setString   ( 15, ci.getString ( NAME ) );
-                ps.executeUpdate ( );
-                ps.close ( );
-                 
-                idleUpdate ( "updateChanSettings ( ) " );
-            } catch  ( SQLException ex )  {
-                /* Was not updated? return -1 */
-                Proc.log ( CSDatabase.class.getName ( ) , ex );
-                return -1;
-            }
-        }
-        /* Nick was added */
-        return 1;
-    }
     
+    /* Add key to query */
+    private static String addToQuery ( String data, String key ) {
+        if ( data.length() > 0 ) {
+            return data+", "+key+" = ?";
+        } else {
+            return data+key+" = ?";
+        }
+    }
+    private static String hashToTopiclockString ( int hash ) {
+        switch ( hash ) {
+            case FOUNDER :
+                return "founder";
+                 
+            case SOP :
+                return "sop";
+                 
+            case AOP :
+                return "aop";
+                 
+            default :
+                return "off";
+
+        }
+    }
+      
     public static boolean accesslogEvent ( CSAccessLogEvent log ) {
         
         if ( ! activateConnection ( )  )  {
@@ -353,40 +341,7 @@ public class CSDatabase extends Database {
         }
         return false;
     }
-    
-    public static int updateChanTopic ( ChanInfo ci )  {
-        if ( ci.getTopic() == null ) {
-            return -4;
-        }
-        if ( ! activateConnection ( )  )  {
-            return -2;
-        } else if ( ci == null )  {
-            return -3;
-        } else {
-            /* Try add the chan */
-            System.out.println("DEBUG: "+ci.getTopic().getTimeStr ( ));
-            try {             
-                String query = "INSERT INTO topiclog ( name,setter,stamp,topic )  "
-                             + "VALUES  ( ?, ?, ?, ? )";
-                ps = sql.prepareStatement ( query );
-                ps.setString   ( 1, ci.getName ( )  );
-                ps.setString   ( 2, ci.getTopic().getSetter ( ) );
-                ps.setString   ( 3, ci.getTopic().getTimeStr ( ) );
-                ps.setString   ( 4, ci.getTopic().getTopic ( ) );
-                ps.execute ( );
-                ps.close ( ); 
-                
-                idleUpdate ( "updateChanTopic ( ) " );
-            } catch  ( SQLException ex )  {
-                /* Was not updated? return -1 */
-                Proc.log ( CSDatabase.class.getName ( ) , ex );
-                return -1;
-            }
-        }
-        /* Nick was added */
-        return 1;
-    }
-    
+     
     public static int addChanAccess ( ChanInfo ci, CSAccess op, int access )  {
 
         if ( ! activateConnection ( )  )  {

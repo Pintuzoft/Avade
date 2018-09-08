@@ -369,8 +369,7 @@ import java.util.Random;
     public void register ( User user, String[] cmd )  { /* DONE? */
         // :DreamHea1er PRIVMSG ChanServ@services.sshd.biz :register chan pass description
         //       0         1              2                     3      4    5      6        = 7
-        
- 
+         
         int result;
         CmdData cmdData = this.validateCommandData ( user, REGISTER, cmd );
   
@@ -404,9 +403,19 @@ import java.util.Random;
         String description = Handler.cutArrayIntoString ( cmd, 6 );
         
         ci = new ChanInfo ( c.getString(NAME), ni, cmd[5], description, c.getTopic ( ) );
-        ci.getSettings().setModeLock("+nt");
         ChanServ.addToWorkList ( REGISTER, ci );
         ChanServ.addChan ( ci );
+        
+        ci.getSettings().setModeLock("+nt");
+        ci.getChanges().change ( MODELOCK );
+        ci.getSettings().set ( TOPICLOCK, OFF );
+        ci.getChanges().change ( TOPICLOCK );
+        ci.getSettings().set ( IDENT, ON );
+        ci.getChanges().change ( IDENT );
+        ci.getSettings().set ( OPGUARD, ON );
+        ci.getChanges().change ( OPGUARD );
+        ci.getChanges().change ( TOPIC );
+        ChanServ.addToWorkList ( CHANGE, ci );
         
         CSLogEvent log = new CSLogEvent ( ci.getName(), REGISTER, ci.getFounder().getString ( FULLMASK ), ci.getFounder().getName() );
         ChanServ.addLog ( log );
@@ -577,24 +586,18 @@ import java.util.Random;
         this.service.sendMsg ( user, "    Lastseen: "+ci.getString ( LASTSEEN ) );
  
         if ( user.isAtleast ( IRCOP ) ) {
-            if ( ci.is ( FROZEN ) || ci.is ( MARKED ) || ci.is ( HELD ) || ci.is ( CLOSED ) || ci.is ( AUDITORIUM ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"   --- IRCop ---" );
-            }
-            if ( ci.is ( FROZEN ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"      FROZEN: "+ci.getSettings().getInstater ( FREEZE ) );
-            }
-            if ( ci.is ( MARKED ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"      MARKED: "+ci.getSettings().getInstater ( MARK ) );
-            }
-            if ( ci.is ( CLOSE ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"      CLOSED: "+ci.getSettings().getInstater ( CLOSE ) );
-            }
-            if ( ci.is ( HELD ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"        HELD: "+ci.getSettings().getInstater ( HOLD ) );
-            }
-            if ( ci.is ( AUDITORIUM ) ) {
-                this.service.sendMsg ( user, f.b ( ) +"  AUDITORIUM: "+ci.getSettings().getInstater ( AUDITORIUM ) );
-            }
+            if ( ci.is ( FROZEN ) || ci.is ( MARKED ) || ci.is ( HELD ) || ci.is ( CLOSED ) || ci.is ( AUDITORIUM ) ) 
+                this.service.sendMsg ( user, f.b()+"   --- IRCop ---" );
+            if ( ci.is ( FROZEN ) )
+                this.service.sendMsg ( user, f.b()+"      FROZEN: "+ci.getSettings().getInstater ( FREEZE ) );
+            if ( ci.is ( MARKED ) )
+                this.service.sendMsg ( user, f.b()+"      MARKED: "+ci.getSettings().getInstater ( MARK ) );
+            if ( ci.is ( CLOSE ) )
+                this.service.sendMsg ( user, f.b()+"      CLOSED: "+ci.getSettings().getInstater ( CLOSE ) );
+            if ( ci.is ( HELD ) )
+                this.service.sendMsg ( user, f.b()+"        HELD: "+ci.getSettings().getInstater ( HOLD ) );
+            if ( ci.is ( AUDITORIUM ) ) 
+                this.service.sendMsg ( user, f.b()+"  AUDITORIUM: "+ci.getSettings().getInstater ( AUDITORIUM ) );
         }
         
         this.showEnd ( user, "Info" );
@@ -1196,58 +1199,68 @@ import java.util.Random;
         switch ( cmd[5].toUpperCase().hashCode ( ) ) {
             case DESCRIPTION :
                 doDescription ( user, ci, cmd );
+                ci.getChanges().change ( DESCRIPTION );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case TOPICLOCK :
                 doTopicLock ( user, ci, setting );
+                ci.getChanges().change ( TOPICLOCK );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
             
             case MODELOCK :
                 doModeLock ( user, ci, cmd );
+                ci.getChanges().change ( MODELOCK );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case KEEPTOPIC :
                 this.sendWillOutput ( user, flag, "keep your topic if channel goes empty.", "forget the topic if the channel goes empty." );
                 ci.getSettings().set ( KEEPTOPIC, flag );
+                ci.getChanges().change ( KEEPTOPIC );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case IDENT :
                 this.sendWillOutput ( user, flag, "require channel ops to identify to their nicks.", "require channel ops to identify to their nicks." );
                 ci.getSettings().set ( IDENT, flag );
+                ci.getChanges().change ( IDENT );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case OPGUARD :
                 this.sendWillOutput ( user, flag, "guard channel ops.", "require ops to identify to their nicks." );
                 ci.getSettings().set ( OPGUARD, flag );
+                ci.getChanges().change ( OPGUARD );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case RESTRICT :
                 this.sendWillOutput ( user, flag, "restrict users from entering the channel.", "restrict users from entering the channel." );
                 ci.getSettings().set ( RESTRICT, flag );
+                ci.getChanges().change ( RESTRICT );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case VERBOSE :
                 this.sendWillOutput ( user, flag, "notify current ops of channel changes.", "notify current ops of channel changes." );
                 ci.getSettings().set ( VERBOSE, flag );
+                ci.getChanges().change ( VERBOSE );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case MAILBLOCK :
                 this.sendWillOutput ( user, flag, "deny the channel password to be mailed to the founders email.", "deny the channel password to be mailed to the founders mail." );
                 ci.getSettings().set ( MAILBLOCK, flag );
+                ci.getChanges().change ( MAILBLOCK );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
 
             case LEAVEOPS :
                 this.sendWillOutput ( user, flag, "leave ops ( @ )  to the first user entering the channel after its been empty.", "leave ops(@)." );
                 ci.getSettings().set ( LEAVEOPS, flag );
+                ci.getChanges().change ( LEAVEOPS );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
  
@@ -1348,7 +1361,8 @@ import java.util.Random;
                     return;
                 }
                 ci.getSettings().set ( flag, "" );
-                CSDatabase.updateChanSettings ( ci );
+                ci.getChanges().change ( flag );
+                ChanServ.addToWorkList ( CHANGE, ci );
                 log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getName() );
                 ChanServ.addLog ( log );
                 this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getName(), "Un"+ci.getSettings().modeString ( flag ) ) );
@@ -1383,7 +1397,8 @@ import java.util.Random;
             case CLOSE :
             case HOLD :
                 ci.getSettings().set ( flag, oper.getName() );
-                CSDatabase.updateChanSettings ( ci );
+                ci.getChanges().change ( flag );
+                ChanServ.addToWorkList ( CHANGE, ci );
                 log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getName() );
                 ChanServ.addLog ( log );
                 this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getName(), ci.getSettings().modeString ( flag ) )  );

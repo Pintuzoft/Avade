@@ -243,6 +243,8 @@ public abstract class HashNumeric extends TextFormat {
     public final static int WIPEAKICK                   = 64984608;
     public final static int TOPICNICK                   = -1119206158;
 
+    public final static int LASTOPED                    = -675975722;
+
     
     /* NICKSETTING */
     public final static int ENFORCED                    = -1714819902;

@@ -826,7 +826,8 @@ public class Handler extends HashNumeric {
               
             /* Save topic only if its goes through the checks */
             if ( chan.checkTopic ( user, c ) ) {
-                CSDatabase.updateChanTopic ( ci );
+                ci.getChanges().change ( TOPIC );
+                ChanServ.addToWorkList ( CHANGE, ci );
             }
         }
     }

@@ -33,11 +33,11 @@ public class Topic {
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     public Topic ( String topic, String setter, long stamp )  {
-        this.topic              = topic;
-        this.setter             = setter;
-        this.stamp              = stamp;
-        this.timeStr            = dateFormat.format ( new Date ( ) );
-         System.out.print("DEBUG: Topic(0) -> "+this.timeStr);
+        topic = topic.replaceAll("^:", "");
+        this.topic = topic;
+        this.setter = setter;
+        this.stamp = stamp;
+        this.timeStr = dateFormat.format ( new Date ( ) );
     }
  
     public String getTopic ( ) { 
@@ -57,6 +57,7 @@ public class Topic {
     } 
 
     public void setTopic ( String topic ) { 
+        topic = topic.replaceAll("^:", "");
         this.topic = topic;
     } 
     

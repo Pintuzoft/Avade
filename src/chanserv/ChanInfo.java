@@ -32,6 +32,7 @@ import operserv.Oper;
 import user.User;
 import java.util.ArrayList;
 import java.util.Date;
+import nickserv.NSChanges;
 
 /**
  *  create table nick  ( name varchar ( 32 ) , mask varchar ( 128 ) ,pass varchar ( 32 ) ,mail varchar ( 64 ) ,regstamp int ( 11 ) , stamp int ( 11 ) , primary key  ( name )  )  ENGINE=InnoDB;
@@ -54,7 +55,7 @@ public class ChanInfo extends HashNumeric {
     private ArrayList<CSAccess> addAccList;
     private ArrayList<CSAccess> remAccList;
     private ArrayList<CSAccessLogEvent> newLogList;
-    
+    private CSChanges       changes = new CSChanges ( );
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, String regStamp, String lastSeen, ChanSetting settings )  {
@@ -634,5 +635,8 @@ public class ChanInfo extends HashNumeric {
     
     public void changed ( ) {
         ChanServ.addToWorkList ( CHANGE, this );
+    }
+    public CSChanges getChanges ( ) {
+        return this.changes;
     }
 }

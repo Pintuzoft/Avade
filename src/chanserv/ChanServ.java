@@ -45,7 +45,7 @@ public class ChanServ extends Service {
     private static ArrayList<ChanInfo> changeList = new ArrayList<>();
     private static ArrayList<ChanInfo> deleteList = new ArrayList<>();
     
-    private static ArrayList<ChanInfo> ciList = new ArrayList<>( ); /* List of focused regged channels */
+    private static ArrayList<ChanInfo> ciList = new ArrayList<>( ); /* List of regged channels */
 
     
     
@@ -497,9 +497,7 @@ public class ChanServ extends Service {
         if ( CSDatabase.activateConnection() && changeList.size() > 0 ) {
             ArrayList<ChanInfo> chans = new ArrayList<>();
             for ( ChanInfo ci : changeList.subList ( 0, getIndexFromSize ( changeList.size() ) ) ) {
-                if ( CSDatabase.updateChan ( ci ) == 1 &&
-                     CSDatabase.updateChanSettings ( ci ) == 1 &&
-                     CSDatabase.updateChanTopic ( ci ) == 1 ) {
+                if ( CSDatabase.updateChan ( ci ) == 1 ) {
                     chans.add ( ci );
                 }
                 ci.maintenence ( );
