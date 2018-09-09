@@ -170,54 +170,29 @@ public class ChanServ extends Service {
     public void checkUser ( Chan c, User user )  {
         ChanInfo ci;
         NickInfo ni;
-        CSAccess access;
+        CSAcc access;
         int akick;
-        
-        try { 
-            if ( ( ci = findChan ( c.getString ( NAME ) ) ) != null ) { /* Channel is registered */
-                if  ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
-                    return;
-                }
-                if ( ( ni = ci.getNickByUser ( user ) ) != null ) { /* Idented nick */
-                    if ( ci.isAccess ( AOP, ni )  || ci.isAccess ( SOP, ni )  || ci.isFounder ( ni )  )  { /* Nick based */
-                        if ( ! ni.getSettings().is ( NEVEROP )  )  {
-                            opUser ( c, user );
-                        }
-                        return;
-                    } else if ( ci.isAccess ( AOP, user )  || ci.isAccess ( SOP, user )  )  { /* User based */
-                        if ( ! ni.getSettings().is ( NEVEROP )  )  {
-                            opUser ( c, user );
-                        }
-                        return;
-                    }
-                } else {
-                    /* No access */
-                    if ( ci.getSettings().is ( RESTRICT )  )  {
-                        /* chan is restricted */
-                        this.banUser ( c, user, null );
-                        this.kickUser ( c, user );
-                        
-                    } else if ( ci.getSettings().is ( OPGUARD )  )  {
-                        /* opguard is active */
-                        this.deOpUser ( c, user );
-                    }
-                }
-
-                akick = ci.isAkick ( user );
-                if ( akick > 0 )  {
-                     access = ci.getAkickAccess ( user );
-                     if ( akick == 1 )  {
-                        this.banUser ( c, user, "*!"+access.getNick ( ) .getString ( USER ) +"@"+access.getNick ( ) .getString ( HOST )  );
-                    } else if ( akick == 2 )  {
-                        this.banUser ( c, user, access.getMask ( )  );
-                    }
-                    this.kickUser ( c, user );
-                }
+        if ( ( ci = findChan ( c.getString ( NAME ) ) ) != null ) {
+            if ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
+                return;
             }
-        } catch ( Exception e )  {
-            Proc.log ( ChanServ.class.getName ( ) , e );
+
+            if ( ci.isAtleastAop ( user ) ) {
+                ni = ci.getNickByUser ( user );
+                if ( ni == null || ( ni != null && ! ni.is ( NEVEROP ) ) ) {
+                    opUser ( c, user );
+                }
+                
+            } else if ( ci.isAkick ( user ) || ci.is ( RESTRICT )  ) {
+                banUser ( c, user, null );
+                kickUser ( c, user );
+            
+            } else if ( c.isOp ( user ) && ci.is ( OPGUARD ) ) {
+                this.deOpUser ( c, user );
+            }
         }
     }
+    
     public void banUser ( Chan c, User user, String mask )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( mask == null )  {
@@ -317,7 +292,7 @@ public class ChanServ extends Service {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( ! c.isOp ( user )  )  {
             this.sendCmd ( "MODE "+c.getString ( NAME )+" +o "+user.getString ( NAME )  );
-            c.chModeUser ( user.getString ( NAME ) , OP, OP, false );
+            c.chModeUser ( user, OP, OP, false );
         }
     }
     
@@ -325,7 +300,7 @@ public class ChanServ extends Service {
         // :Pintuz MODE #avade 0 -o Pintuz
         if ( c.isOp ( user )  )  {
             this.sendCmd ( "MODE "+c.getString ( NAME ) +" -o "+user.getString ( NAME )  );
-            c.chModeUser ( user.getString ( NAME ) , OP, USER, false );
+            c.chModeUser ( user, OP, USER, false );
         }
     }
   

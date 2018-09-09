@@ -20,6 +20,7 @@ package chanserv;
 import channel.Topic;
 import core.Config;
 import core.Database;
+import core.Handler;
 import core.LogEvent;
 import core.Proc;
 import java.sql.PreparedStatement;
@@ -29,6 +30,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import nickserv.NickServ;
 import operserv.OSLogEvent;
 import user.User;
 
@@ -342,7 +344,7 @@ public class CSDatabase extends Database {
         return false;
     }
      
-    public static int addChanAccess ( ChanInfo ci, CSAccess op, int access )  {
+    public static int addChanAccess ( ChanInfo ci, CSAcc op, int access )  {
 
         if ( ! activateConnection ( )  )  {
             /* No SQL connection */
@@ -397,7 +399,7 @@ public class CSDatabase extends Database {
     }
   
        
-    public static int removeChanAccess ( ChanInfo ci, CSAccess access )  {
+    public static int removeChanAccess ( ChanInfo ci, CSAcc access )  {
 
         if ( ! activateConnection ( )  )  {
             return -2;
@@ -635,14 +637,14 @@ public class CSDatabase extends Database {
         return topic;
     }
      
-    public static ArrayList<CSAccess> getChanAccess ( ChanInfo ci, int access )  {
+    public static ArrayList<CSAcc> getChanAccess ( ChanInfo ci, int access )  {
         String[] buf;
-        ArrayList<CSAccess> opList = new ArrayList<> ( );
+        ArrayList<CSAcc> opList = new ArrayList<> ( );
         if ( ! activateConnection ( )  )  {
             return opList;
         }
         try {
-            CSAccess chanOp;
+            CSAcc chanOp;
             String acc = new String ( );
             switch ( access )  {
                 case AKICK :
@@ -671,7 +673,13 @@ public class CSDatabase extends Database {
 
             while ( res3.next ( )  )  { 
                 try {
-                    chanOp = new CSAccess ( res3.getString ( 1 ), access );
+                    NickInfo ni = NickServ.findNick( res3.getString ( 1 ) );
+                    if ( ni != null ) {
+                        chanOp = new CSAcc ( ni, access );
+                    } else {
+                        System.out.println("DEBUG!!!!!: "+res3.getString ( 1 ) );
+                        chanOp = new CSAcc ( res3.getString ( 1 ), access );
+                    }
                     opList.add ( chanOp );
 
                 } catch ( SQLException | NumberFormatException e )  {

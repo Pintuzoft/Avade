@@ -426,4 +426,7 @@ public class NickInfo extends HashNumeric {
     public NSChanges getChanges ( ) {
         return this.changes;
     }
+    public boolean isAuth ( ) {
+        return this.mail.length() > 0;
+    }
 }

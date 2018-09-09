@@ -732,10 +732,10 @@ import java.util.Random;
                 accStr = accessToString ( access );
 
                 this.showStart ( true, user, ci, f.b ( ) +accStr+" list for: "+f.b ( )  ); 
-                ArrayList<CSAccess> list = ci.getAccessList ( access );
+                ArrayList<CSAcc> list = ci.getAccessList ( access );
                  
                 int j = 0;
-                for ( CSAccess acc : list )  {     
+                for ( CSAcc acc : list )  {     
                     if ( acc.getNick ( ) != null )  {
                         this.service.sendMsg ( user,  ( ++j ) +" -   "+acc.getNick ( ) .getString ( NAME ) +"  ( "+acc.getNick ( ) .getString ( FULLMASK ) +" ) " );
                     } else {
@@ -889,14 +889,23 @@ import java.util.Random;
         NickInfo ni = cmdData.getNick ( );
         NickInfo ni2 = cmdData.getNick2 ( );
         ChanInfo ci = cmdData.getChanInfo ( );
-
+        String mask = cmdData.getString1 ( );
         switch ( command ) {
             case ADD :
-                ci.addAccess ( AOP, ni2 );
-                ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAOP, ni2.getName ( ), user ) );
-                this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ) , "Aop" )  );
-                if ( ci.getSettings().is ( VERBOSE ) ) {
-                    this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , ni2.getString ( NAME ) , "Aop" )  );
+                if ( ni2 != null ) {
+                    ci.addAccess ( AOP, ni2 );
+                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAOP, ni2.getName ( ), user ) );
+                    this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ) , "Aop" )  );
+                    if ( ci.getSettings().is ( VERBOSE ) ) {
+                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , ni2.getString ( NAME ) , "Aop" )  );
+                    }
+                } else {
+                    ci.addAccess ( AOP, mask );
+                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAOP, mask, user ) );
+                    this.service.sendMsg ( user, output ( NICK_ADDED, mask, "Aop" )  );
+                    if ( ci.getSettings().is ( VERBOSE ) ) {
+                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , mask , "Aop" )  );
+                    }
                 }
                 ci.changed();
                 break;
@@ -1123,8 +1132,8 @@ import java.util.Random;
         }
         ChanInfo ci = cmdData.getChanInfo ( );
         User target = cmdData.getTarget ( );
-        String access = ci.getAccessByUser ( user );
-        String aNick = ci.getAccessHolderByUser ( user );
+        String access = ci.getAccessByUser ( target );
+        String aNick = ci.getAccessHolderByUser ( target );
 
         if ( aNick == null )  {
             this.service.sendMsg ( user, "User "+target.getString ( NAME ) +" has no access to channel "+ci.getName ( )  );
@@ -1714,63 +1723,58 @@ import java.util.Random;
                 }
                 break; 
                 
+            case AOP :
             case AKICK : 
+                //:DreamHealer PRIVMSG ChanServ@services.avade.net :akick #friends add *!*@10.0.1/24
+                //           0       1                           2      3        4   5             6
+                System.out.println("0:");
                 if ( isShorterThanLen ( 7, cmd ) ) {
+                System.out.println("1:");
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } 
+                System.out.println("2:");
                 ci = ChanServ.findChan ( cmd[4] );
                 ni = ci.getNickByUser ( user );
-                command = cmd[5].toUpperCase ( ) .hashCode ( );
-                switch ( command ) {
-                    case ADD :
-                        ni2 = NickServ.findNick ( cmd[6] );
-                        if ( ni2 == null )  { 
-                            if ( ci.validMask ( cmd[6] )  )  {
-                                mask = cmd[6];
-                            }
-                        }
-                        break;
-                        
-                    case DEL :
-                        try {
-                            num = Integer.parseInt ( cmd[6] );
-                            if (  ( ni2  = ci.getAccessList(AKICK).get(num-1).getNick ( )  )  == null )  {
-                                mask = ci.getAccessList(AKICK).get(num-1).getMask ( );
-                            }
-                        } catch ( NumberFormatException e )  {
-                            if (  ( ni2  = NickServ.findNick ( cmd[6] )  )  == null )  { 
-                                if ( ci.validMask ( cmd[6] )  )  {
-                                    mask = cmd[6];
-                                }
-                            }
-                        }
-                        break;
-                        
-                    default :
+                
+                if ( ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
+                    mask = cmd[6];
                 }
-                if ( command != ADD && command != DEL ) {
+                
+                subcommand = cmd[5].toUpperCase().hashCode ( );
+                System.out.println("3:");
+                 
+                if ( subcommand != ADD && subcommand != DEL ) {
+                System.out.println("4:");
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } else if ( ni2 == null && mask == null ) {
+                System.out.println("5:");
                     cmdData.setString1 ( cmd[6] );
                     cmdData.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ci == null ) {
+                System.out.println("6:");
                     cmdData.setString1 ( cmd[4] );
                     cmdData.setStatus ( CHAN_NOT_REGISTERED );
                 } else if ( ci.getSettings().is ( FROZEN ) ) {
                     cmdData.setChanInfo ( ci );
+                System.out.println("7:");
                     cmdData.setStatus ( CHAN_IS_FROZEN );  
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
+                System.out.println("8:");
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( CHAN_IS_CLOSED );  
                 } else if ( ni == null || ! ci.isAtleastSop ( ni ) ) {
+                System.out.println("9:");
                     cmdData.setString1 ( user.getString ( NAME ) );
                     cmdData.setStatus ( ACCESS_DENIED );
-                } else if ( ni2 != null && ! ni2.getSettings ( ) .is ( AUTH ) ) {
+                } else if ( ni2 != null && ! ni2.isAuth ( ) ) {
+                System.out.println("10:");
                     cmdData.setNick2 ( ni2 );
                     cmdData.setStatus ( NICK_NOT_AUTHED );
-                } else if ( ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
+                } else if ( ni2 != null && ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
+                System.out.println("11:");
                     cmdData.setStatus ( NOT_ENOUGH_ACCESS );
                 } else {
+                System.out.println("12:");
                     cmdData.setChanInfo ( ci );
                     cmdData.setNick ( ni );
                     if ( ni2 != null ) {
@@ -1778,41 +1782,9 @@ import java.util.Random;
                     } else {
                         cmdData.setString1(mask);
                     }
-                    cmdData.setCommand ( command );
-                }
-                break;            
-            
-            case AOP :
-                if ( isShorterThanLen ( 7, cmd ) || ( subcommand = isAddOrDel ( cmd[5] ) ) == 0 ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ci = ChanServ.findChan ( cmd[4] )  )  == null ) {
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( CHAN_NOT_REGISTERED );
-                } else if ( ci.getSettings().is ( FROZEN ) ) {
-                    cmdData.setChanInfo ( ci );
-                    cmdData.setStatus ( CHAN_IS_FROZEN );  
-                } else if ( ci.getSettings().is ( CLOSED ) ) {
-                    cmdData.setChanInfo ( ci );
-                    cmdData.setStatus ( CHAN_IS_CLOSED );  
-                } else if ( ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ( ni = ci.getTopNickByUser ( user ) ) == null || ( ! ci.isAtleastSop ( ni ) ) ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( ACCESS_DENIED );
-                } else if ( ! ni2.getSettings().is ( AUTH ) ) {
-                    cmdData.setNick2 ( ni2 );
-                    cmdData.setStatus ( NICK_NOT_AUTHED );
-                } else if ( ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
-                    cmdData.setNick2 ( ni2 );
-                    cmdData.setStatus ( NOT_ENOUGH_ACCESS );
-                } else {
-                    cmdData.setChanInfo ( ci );
-                    cmdData.setNick ( ni );
-                    cmdData.setNick2 ( ni2 );
                     cmdData.setCommand ( subcommand );
                 }
-                break;
+                break;            
                        
             case SOP :
                 if ( isShorterThanLen ( 7, cmd ) || ( subcommand = isAddOrDel ( cmd[5] ) ) == 0 ) {

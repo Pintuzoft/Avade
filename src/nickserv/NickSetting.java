@@ -75,10 +75,7 @@ public class NickSetting extends HashNumeric {
 
             case SHOWHOST :
                 return this.showHost;
-
-            case AUTH :
-                return this.auth;
-
+ 
             /* Oper */
             case MARK :
                 return this.mark.length() > 0;

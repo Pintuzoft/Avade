@@ -109,12 +109,13 @@ public class Chan extends HashNumeric {
         }
     }
       
-    public void chMode ( String[] cmd, boolean check )  {
+    public void chMode ( String[] cmd )  {
         // :DreamHealer MODE #friends 1374147654 +oooo Guest33015 Guest33015 Guest33015 Guest33015
         //      0        1      2       3         4      5+
         boolean state = false;
         User u;
         for ( int i=0, m=1; i < cmd[4].length ( ); i++ ) {
+            u = Handler.findUser ( cmd[4+m] );
             switch ( ( ""+cmd[4].charAt(i)).hashCode ( ) ) {
                case MODE_PLUS :
                    state = true;
@@ -125,12 +126,12 @@ public class Chan extends HashNumeric {
                    break;
                    
                case MODE_o :
-                   this.chModeUser ( cmd[4+m], OP, ( state ? OP : USER ), check );
+                   this.chModeUser ( u, OP, ( state ? OP : USER ), u.isAtleast ( IRCOP ) );
                    m++;
                    break;
                    
                case MODE_v :
-                   this.chModeUser ( cmd[4+m], VOICE, ( state ? VOICE : USER ), check ); 
+                   this.chModeUser ( u, VOICE, ( state ? VOICE : USER ), u.isAtleast ( IRCOP ) ); 
                    m++;
                    break;
                    
@@ -139,9 +140,8 @@ public class Chan extends HashNumeric {
            } 
         }
     }
-    public void chModeUser ( String source, int mode, int acc, boolean check )  { 
+    public void chModeUser ( User user, int mode, int acc, boolean isIRCop )  { 
         try {            
-            User user = Handler.findUser ( source );
             if ( user == null )  {
                  return;
             }
@@ -180,7 +180,7 @@ public class Chan extends HashNumeric {
                     }
                 }
             } 
-            if ( this.isOp ( user ) && check )  {
+            if ( this.isOp ( user ) && ! isIRCop )  {
                  Handler.getChanServ().checkUser ( this, user );
             }
         } catch ( Exception e )  {
@@ -213,7 +213,7 @@ public class Chan extends HashNumeric {
 
             default :
         } 
-        Handler.getChanServ ( ) .checkUser ( this, u );
+        Handler.getChanServ().checkUser ( this, u );
         /* Make ChanServ check user access */
     }
     

@@ -515,7 +515,7 @@ public class Handler extends HashNumeric {
             if ( c != null ) {
                 ChanInfo ci = ChanServ.findChan ( c.getString ( NAME ) );
                 c.getModes().set ( MODE, this.data );
-                c.chMode ( this.data, ! user.isAtleast ( SA ) );
+                c.chMode ( this.data );
                 Handler.getChanServ().checkModes ( c, ci );
             }
         } else {

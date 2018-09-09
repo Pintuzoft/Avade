@@ -17,6 +17,7 @@
  */
 package memoserv;
 
+import chanserv.CSAcc;
 import chanserv.CSAccess;
 import chanserv.ChanInfo;
 import chanserv.ChanServ;
@@ -169,10 +170,10 @@ import user.User;
                 /* Allow memo through */
                 this.sendToNick ( user, ni, ci.getFounder ( ), cmd );
                 
-                for ( CSAccess op : ci.getAccessList ( SOP ) ) {
+                for ( CSAcc op : ci.getAccessList ( SOP ) ) {
                     this.sendToNick ( user, ni, op.getNick ( ), cmd );
                 }
-                for ( CSAccess op : ci.getAccessList ( AOP ) ) {
+                for ( CSAcc op : ci.getAccessList ( AOP ) ) {
                     this.sendToNick ( user, ni, op.getNick ( ), cmd );
                 }
                 
