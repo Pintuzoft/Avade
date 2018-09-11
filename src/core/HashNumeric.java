@@ -160,6 +160,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int HOST                        = 2223528;
     public final static int REALHOST                    = -76922810;
     public final static int IP                          = 2343;
+    public final static int SERVICESID                  = -1239651847;
     
     /* CHAN */
     public final static int OP                          = 2529;

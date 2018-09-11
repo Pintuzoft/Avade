@@ -57,14 +57,12 @@ public class Handler extends HashNumeric {
     private Services                        services;
     private Snoop                           snoop;
     private Config                          config; 
-    private static ArrayList<User>          uList;
-    private static ArrayList<User>          uSplitList;
-    private static ArrayList<Chan>          cList;
-    private static ArrayList<Server>        sList;
-    private static ArrayList<ServicesID>    sidList; 
-    private static ArrayList<NickInfo>      niChangeList; 
-    private static ArrayList<ChanInfo>      ciChangeList; 
-    private static ArrayList<ChanInfo>      ciRegList; 
+    private static ArrayList<User>          uList = new ArrayList<>();
+    private static ArrayList<ServicesID>    splitSIDs = new ArrayList<>();
+    private static ArrayList<ServicesID>    updServicesID = new ArrayList<>();
+    private static ArrayList<Chan>          cList = new ArrayList<>();
+    private static ArrayList<Server>        sList = new ArrayList<>();
+    private static ArrayList<ServicesID>    sidList = new ArrayList<>();
     private static Database                 db; 
     private String[]                        data; 
     private String                          source;
@@ -84,43 +82,26 @@ public class Handler extends HashNumeric {
     
     public Handler ( )  { 
         this.config = Proc.getConf ( );
-        
         db              = new Database ( );
-
         this.initServices ( );
-        
         this.services   = new Services ( );
-
         date            = new Date ( );
-
         timeZone        = new SimpleTimeZone ( 0, "GMT" );
         locale          = new Locale ( "en", "GB" );
         sdf             = new SimpleDateFormat ( "EEE dd MMMM yyyy HH:mm:ss zzz", locale );
         sdf.setTimeZone ( timeZone );
-
         dbDelay         = System.currentTimeMillis ( ) + ( 60 * DB_DELAY );
-
-        uList           = new ArrayList<>();
-        cList           = new ArrayList<>();
-        sList           = new ArrayList<>();
-        sidList         = new ArrayList<>();
-        uSplitList      = new ArrayList<>();
-        
-        niChangeList    = new ArrayList<>();
-        ciChangeList    = new ArrayList<>();
-        ciRegList       = new ArrayList<>();
-        
         this.cmdQueue   = new Queue ( )  {};
     }
     
     public static void initServices ( )  {
         initService ( ROOTSERV, root );
         initService ( OPERSERV, oper );
+        initService ( GUESTSERV, guest );
         initService ( NICKSERV, nick );
         initService ( CHANSERV, chan );
         initService ( MEMOSERV, memo );
         initService ( GLOBAL, global );
-        initService ( GUESTSERV, guest );
         sanity = true;
         Database.activateConnection();
     }
@@ -408,40 +389,71 @@ public class Handler extends HashNumeric {
     }
     
     
-    private static User findSplitUser ( long serviceID ) {
-        User user = null;
-        for ( User u : uSplitList ) {
-            if ( u.getSID().getID() == serviceID ) {
-                user = u;
+    private static ServicesID findSplitSID ( long servicesID ) {
+    System.out.println(" - 0:"+servicesID);
+        ServicesID sid = null;
+    System.out.println(" - 1:");
+        for ( ServicesID s : splitSIDs ) {
+    System.out.println(" - 2: comp: "+s.getID()+" = "+servicesID );
+            if ( s.getID() == servicesID ) {
+    System.out.println(" - 3:");
+                sid = s;
+    System.out.println(" - 4:");
             }
+    System.out.println(" - 5:");
         }
-        if ( user != null ) {
-            uSplitList.remove ( user );
+    System.out.println(" - 6:");
+        if ( sid != null ) {
+    System.out.println(" - 7:");
+            splitSIDs.remove ( sid );
+    System.out.println(" - 8:");
         }
-        return user;
+    System.out.println(" - 9:");
+        return sid;
     }
 
     
     /* New nick on the network */
     private void doNick ( )  {
-        User u = null;
+        User u = new User ( this.data );
+        ServicesID sid = null;
+
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
+        System.out.println("0:");
         try {
+        System.out.println("1:");
             long serviceID = Long.parseLong ( this.data[8] );
+        System.out.println("2:");
             if ( serviceID > 999 ) {
-                u = Handler.findSplitUser ( serviceID );
-            } 
+        System.out.println("3:");
+                u.setSID ( Handler.findSplitSID ( serviceID ) );
+        System.out.println("4: sid:"+( u.getSID() == null ? "null" : "not null:"+u.getSID().getID() ));
+            }
+        System.out.println("5:");
             
         } catch ( NumberFormatException ex ) {
-            Proc.log ( Handler.class.getName ( ) , ex );
+        System.out.println("6:");
+            Proc.log ( Handler.class.getName ( ), ex );
+        System.out.println("7:");
         }
-        if ( u == null ) {
-            u = new User ( this.data );
+        System.out.println("8:");
+        
+        if ( u.getSID() == null ) {
+        System.out.println("9:");
+            u.setSID ( new ServicesID ( ) );
+        System.out.println("10:");
         }
+        System.out.println("11:");
+        this.updServicesID.add ( u.getSID ( ) );
+        System.out.println("12:");
+        
         System.out.println("User: "+u.getString(NAME));
+        System.out.println("13:");
 
         NickServ.fixIdentState ( u );
+        System.out.println("14:");
         uList.add ( u );
+        System.out.println("15:");
 
         Server s = findServer ( this.data[7] );
         if ( s != null ) {
@@ -650,9 +662,9 @@ public class Handler extends HashNumeric {
 
     public static void squitUser ( User user )  {
         try {
-            user.setSplitExpire ( );
+            user.getSID().setSplitExpire ( );
             user.partAll ( );
-            uSplitList.add ( user );
+            splitSIDs.add ( user.getSID ( ) );
             uList.remove ( user );
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -699,8 +711,18 @@ public class Handler extends HashNumeric {
 
     public static ServicesID findSid ( long id )  {
         try {
+            ServicesID split = null;
+            for ( ServicesID s : splitSIDs ) {
+                if ( s.getID ( ) == id ) {
+                    split = s;
+                }
+            }
+            if ( split != null ) {
+                splitSIDs.remove ( split );
+                return split;
+            }
             for ( ServicesID s : sidList )  {
-                if ( s.getID ( )  == id )  {
+                if ( s.getID ( ) == id )  {
                     return s;
                 }
             } 
@@ -717,10 +739,24 @@ public class Handler extends HashNumeric {
             user.secMaintenence ( );
         }
         /* Database updates */
+        updateServicesIDs();
         NickServ.maintenance ( );
         ChanServ.maintenance ( );
     }
-    
+    private void updateServicesIDs ( ) {
+        if ( ! Database.activateConnection() ) {
+            return;
+        }
+        ArrayList<ServicesID> sids = new ArrayList<>(); 
+        for ( ServicesID sid : updServicesID ) {
+            if ( Database.updateServicesID ( sid ) ) {
+                sids.add ( sid );
+            }
+        } 
+        for ( ServicesID sid : sids ) {
+            updServicesID.remove ( sid );
+        }
+    }
     public void runMinuteMaintenance ( )  {
         try {
             initServices ( ); /* make sure everything is running */
@@ -736,18 +772,18 @@ public class Handler extends HashNumeric {
         }
     }
     public void runHourMaintenance ( )  {
-        ArrayList<User> splitExpire = new ArrayList<>();
+        ArrayList<ServicesID> splitExpire = new ArrayList<>();
         try {
             initServices ( ); /* make sure everything is running */
             NickServ.maintenance ( );
             ChanServ.maintenance ( );
-            for ( User u : uSplitList ) {
-                if ( u.timeToExpire ( ) ) {
-                    splitExpire.add ( u );
+            for ( ServicesID s : splitSIDs ) {
+                if ( s.timeToExpire ( ) ) {
+                    splitExpire.add ( s );
                 }
             }
-            for ( User u : splitExpire ) {
-                uSplitList.remove ( u );
+            for ( ServicesID s : splitExpire ) {
+                splitSIDs.remove ( s );
             }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -1019,4 +1055,16 @@ public class Handler extends HashNumeric {
         return iList;
     }
  
+    public static void addSplitSID ( ServicesID sid ) {
+        splitSIDs.add ( sid );
+    }
+    
+    public static void printSIDs ( ) {
+        for ( ServicesID sid : splitSIDs ) {
+            System.out.println("splitSID: id:"+sid.getID() );
+        }
+    }
+
+
+    
 }

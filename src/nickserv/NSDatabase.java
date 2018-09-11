@@ -171,21 +171,6 @@ public class NSDatabase extends Database {
         
         /* Try change the nick */
         try {
-            /*
-                private boolean lastseen;   v
-                private boolean pass;       v
-                private boolean fullmask;   v
-                
-                private boolean freeze;     v
-                private boolean mark;       v
-                private boolean hold;       v
-                private boolean mail;       
-                private boolean noop;       v
-                private boolean neverop;    v
-                private boolean mailblock;  v
-                private boolean showemail;  v
-                private boolean showhost;   v
-            */           
             String salt = config.get ( SECRETSALT ); 
             String query;
             
@@ -277,7 +262,7 @@ public class NSDatabase extends Database {
                 ps.executeUpdate ( );
             }
             ps.close ( ); 
-
+ 
             idleUpdate ( "updateNick ( ) " );
             NSDatabase.saveNickExp ( ni );
 

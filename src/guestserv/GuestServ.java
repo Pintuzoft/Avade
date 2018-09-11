@@ -39,20 +39,22 @@ public class GuestServ extends Service {
     }
     
     public void addNick ( User user, NickInfo ni )  {
-        if ( !user.isIdented ( ni )  )  {
+        if ( ! user.isIdented ( ni ) ) {
             Timer adTimer = new Timer ( true );
             Calendar now = Calendar.getInstance ( );
             
             /* Send Reminder */
             now.setTimeInMillis ( now.getTimeInMillis ( ) + ( 1*1000 ) );
             adTimer.schedule ( new GuestAdTask ( user ) , now.getTime ( ) );
-            user.getSID ( ) .addAdTimer ( adTimer );
+            System.out.println("0: user:"+(user==null?"null":"not null"));
+            System.out.println("1: sid:"+(user.getSID()==null?"null":"not null"));
+            user.getSID().addAdTimer ( adTimer );
         
             /* Change nick after 1 minute */
             Timer timer = new Timer ( true );
             now.setTimeInMillis ( now.getTimeInMillis ( ) + ( 60*1000 ) );
             timer.schedule ( new GuestTask ( user ) , now.getTime ( ) );
-            user.getSID ( ) .addTimer ( timer );
+            user.getSID().addTimer ( timer );
         }
     }
 } 

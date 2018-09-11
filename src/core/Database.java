@@ -18,13 +18,18 @@
 package core;
 
 import chanserv.CSDatabase;
+import chanserv.ChanInfo;
+import chanserv.ChanServ;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import nickserv.NickInfo;
+import nickserv.NickServ;
 import operserv.OSLogEvent;
 
 /**
@@ -40,7 +45,8 @@ public class Database extends HashNumeric {
     private static long lastConnectAttempt;
     private static long lastGlobops;
     private static int attempts;
-    
+    private static ResultSet res;
+
     public Database ( )  {
         try {
             if ( sql != null )  {
@@ -250,5 +256,113 @@ public class Database extends HashNumeric {
         }
     }
     
+    public static boolean updateServicesID ( ServicesID sid ) {
+        if ( ! activateConnection() || sid == null ) {
+            return false;
+        }
+        String query;
+        String nicks = nicksToString ( 128, sid.getNiList() );
+        String chans = chansToString ( 128, sid.getCiList() );
+        try {
+            query = "insert into servicesid "+
+                    "( id, stamp, nicks, chans ) "+
+                    "values ( ?, now(), ?, ? ) "+
+                    "on duplicate key update stamp=now(), nicks = ?, chans = ? ";
+            ps = sql.prepareStatement ( query );  
+            ps.setLong   ( 1, sid.getID() );
+            ps.setString ( 2, nicks );
+            ps.setString ( 3, chans );
+            ps.setString ( 4, nicks );
+            ps.setString ( 5, chans );
+            ps.execute ( );
+            ps.close ( ); 
+            
+        } catch ( Exception ex ) {
+            return false;
+        }
+        return true;             
+    }
+    public static void loadSIDs() {
+        if ( ! activateConnection() ) {
+            return;
+        }
+        String query;
+        ServicesID sid;
+        ArrayList<NickInfo> nList;
+        ArrayList<ChanInfo> cList;
+        try {
+            query = "select id,stamp,nicks,chans "+
+                    "from servicesid";
+            ps = sql.prepareStatement ( query );
+            res = ps.executeQuery ( );
+            while ( res.next() ) {
+                sid = new ServicesID ( res.getLong("id") );
+                if ( res.getString("nicks") != null ) {
+                    nList = stringToNicks ( res.getString("nicks") );
+                    sid.setNiList ( nList );
+                }
+                if ( res.getString("nicks") != null ) {
+                    cList = stringToChans ( res.getString("chans") );
+                    sid.setCiList ( cList );
+                }
+                Handler.addSplitSID ( sid );
+            }
+            ps.close ( );
+            
+        } catch ( Exception ex ) {
+            Proc.log ( Database.class.getName ( ) , ex );
+
+        }
+    }
     
+    private static ArrayList<NickInfo> stringToNicks ( String in ) {
+        ArrayList<NickInfo> nList = new ArrayList<>();
+        NickInfo ni;
+        String[] nicks = in.split(",");
+        for ( String nick : nicks ) {
+            if ( ( ni = NickServ.findNick ( nick ) ) != null ) {
+                nList.add ( ni );
+            }
+        }
+        return nList;
+    }
+    private static ArrayList<ChanInfo> stringToChans ( String in ) {
+        ArrayList<ChanInfo> cList = new ArrayList<>();
+        ChanInfo ci;
+        String[] chans = in.split(",");
+        for ( String chan : chans ) {
+            if ( ( ci = ChanServ.findChan ( chan ) ) != null ) {
+                cList.add ( ci );
+            }
+        }
+        return cList;
+    }
+    
+    private static String nicksToString ( int max, ArrayList<NickInfo> list ) {
+        String buf = "";
+        for ( NickInfo ni : list ) {
+            if ( ( buf.length() + ni.getName().length() + 1 ) < max ) {
+                if ( buf.length() > 0 ) {
+                    buf += ","+ni.getName();
+                } else {
+                    buf = ni.getName();
+                }
+            }
+        }
+        return buf;
+    }
+    private static String chansToString ( int max, ArrayList<ChanInfo> list ) {
+        String buf = "";
+        for ( ChanInfo ci : list ) {
+            if ( ( buf.length() + ci.getName().length() + 1 ) < max ) {
+                if ( buf.length() > 0 ) {
+                    buf += ","+ci.getName();
+                } else {
+                    buf = ci.getName();
+                }
+            }
+        }
+        return buf;
+    }
+     
 }
