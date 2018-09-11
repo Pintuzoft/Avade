@@ -25,6 +25,19 @@ connection returns. This means you preferably want to avoid restarting services 
 to avoid losing data.
 
 
+#### Persistent user sessions
+
+Bahamut uses a simple tagging of users to keep track of which nicks and channels a user has access to. These are called
+services ID's and is set using usermode +d. Avade IRC Services now correctly track these "sessions" by making them
+persistent. What this means is that a user can identify more than nicks than current nick and channels and will be able
+to keep being identified to these nicks and channels during splits. Infact Avade will be able to restore a users access
+to nicks and channels even after services restarts which makes it very unique. 
+
+Usually a services will forget all nicks and channels a user has identified to after a split or services restart and only
+trust usermode +r and automatically identify current nick only. Avade IRC Services will not work like these other services
+and rather trust the services id set on a user making Avade alot more user friendly.
+
+
 #### Excessive logging
 
 Something that other services might not provide is a way to access logs which can describe how a nickname or channel

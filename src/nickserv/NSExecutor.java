@@ -18,6 +18,7 @@
 package nickserv;
 
 import command.Command;
+import core.Database;
 import core.Executor;
 import core.Handler;
 import core.Proc;
@@ -216,6 +217,7 @@ import java.util.regex.Pattern;
         ni.getNickExp().reset ( );
         ni.getChanges().hasChanged ( LASTSEEN );
         NickServ.addToWorkList ( CHANGE, ni );
+        Database.updateServicesID ( user.getSID() );
     }
  
     private void drop ( User user, String[] cmd ) {
@@ -754,9 +756,6 @@ import java.util.regex.Pattern;
     public void doSetBoolean ( int cmd, String command, User user, NickInfo ni, boolean enable )  {
         this.sendIsOutput ( user, enable, command );
         ni.getSettings().set ( cmd, enable );
-        if ( cmd == SHOWHOST )  {
-            ni.fixHost ( );
-        }
         System.out.println("DEBUG: changed item: "+cmd);
         ni.getChanges().change ( cmd );
         NickServ.addToWorkList ( CHANGE, ni );
@@ -774,6 +773,7 @@ import java.util.regex.Pattern;
                     case SETEMAIL :
                         this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET EMAIL <pass> <email>" ) );
                         break;
+                        
                     case SETPASSWD :
                         this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET PASSWD <current-pass> <new-pass>" ) );
                         break;

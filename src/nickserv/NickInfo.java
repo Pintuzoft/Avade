@@ -83,7 +83,6 @@ public class NickInfo extends HashNumeric {
         this.exp        = exp;
         this.changes    = new NSChanges ( );
         this.attachMemos ( ); 
-        this.fixHost ( );
      }
 
     /* REGISTER */
@@ -133,49 +132,10 @@ public class NickInfo extends HashNumeric {
             this.userIdent ( u );
             this.attachMemos ( );
             this.settings = new NickSetting ( );
-            this.fixHost ( );
             Handler.getRootServ().sendMsg ( u, "Nick: "+u.getString ( NAME )+" has been registered to you using password: "+passwd );
         }
     }
-    
-    public void fixHost ( ) {
-        User u;
-        u = Handler.findUser ( this.name );
-        if ( u == null ) {
-            return;
-        }
-         
-        if ( this.getSettings ( ) .is ( SHOWHOST )  )  {
-            /* unset SVSHOST */
-            try {
-                this.iNet = InetAddress.getByName ( this.ip );
-                this.host = this.iNet.getHostAddress();
-            } catch ( UnknownHostException ex ) {
-                Proc.log ( User.class.getName ( ) , ex );
-            }
-
-            ServSock.sendCmd ( ":"+Proc.getConf().get(NAME)+" SVSHOST "+u.getString(NAME)+" :"+this.host ); /* services Send modes and serviceID to user */ 
-        } else {
-            if ( u.isAtleast ( IRCOP ) ) {
-                this.host = u.getOper().getName()+".ircop";
-            } else {
-                if ( u.getModes().is ( IDENT ) ) {
-                    this.host = u.getString(NAME)+".user";
-                } else {
-                    try {
-                        this.iNet = InetAddress.getByName ( this.ip );
-                        this.host = this.iNet.getHostAddress();
-                    } catch ( UnknownHostException ex ) {
-                        Proc.log ( User.class.getName ( ) , ex );                
-                    }
-                }
-            }
-            ServSock.sendCmd ( ":"+Proc.getConf().get( NAME ) +" SVSHOST "+u.getString ( NAME ) +" :"+this.host );
-//            ServSock.sendCmd ( ":"+Proc.getConf ( ) .get ( NAME ) +" SVSHOST "+u.getString ( NAME ) +" :"+this.getName ( ) +"."+ (  ( u.getSID ( ) .getOper ( ) !=null ) ?u.getSID ( ) .getOper ( ) .getString ( ACCSTRINGSHORT ) :"User" ) +"."+Proc.getConf ( ) .get ( DOMAIN )  ); /* services Send modes and serviceID to user */ 
-//           :OperServ SVSHOST DreamHealer :DreamHealer.user.avade.net
-        }
-    }
- 
+   
     private void attachMemos ( )  {
         this.mList = MSDatabase.getMemosByNick ( this.name );
     }
@@ -184,7 +144,6 @@ public class NickInfo extends HashNumeric {
         this.user       = user.getString ( USER );
         this.ip         = user.getString ( HOST );
         this.hashMask   =  ( user.getString(USER)+"@"+user.getString(HOST) ).toUpperCase().hashCode ( );
-        this.fixHost ( );
         this.changes.hasChanged ( FULLMASK );
     }
  

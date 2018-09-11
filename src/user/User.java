@@ -54,9 +54,7 @@ public class User extends HashNumeric {
     private HostInfo                    hi;
     
     private UserFlood                   flood;
-    
-    private long                        splitExpire;
-    
+     
     /* STATIC */
     //public static Comparator<User>      comparator =  ( User u1, User u2 )  -> { return u1.hashCode ( )  - u2.hashCode ( ); };
     
@@ -96,7 +94,7 @@ public class User extends HashNumeric {
         
         //this.realHost   = this.ipToHost ( );
         
-        if ( sidBuf > 999 )  {
+/*        if ( sidBuf > 999 )  {
             this.sid = Handler.findSid ( sidBuf );
             if ( this.sid == null )  {
                 this.sid = new ServicesID ( sidBuf );
@@ -104,14 +102,14 @@ public class User extends HashNumeric {
         } else {
             this.sid = new ServicesID ( );
         }
-        
+  */      
         /* identify user if +r is set */
         if ( this.modes.is ( IDENT )  )  {
             NickInfo ni = NickServ.findNick ( this.name );
             this.sid.addUser ( this );
             this.sid.add ( ni );
         } 
-        this.sid.printSID();
+    //    this.sid.printSID();
         this.flood = new UserFlood ( this );
     }
 
@@ -377,15 +375,8 @@ public class User extends HashNumeric {
         this.flood.maintenence();
     }
 
-    /* Set 1 hour limit */
-    public void setSplitExpire ( ) {
-        this.splitExpire = ( System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ) ) ;
+    public void setSID ( ServicesID sid ) {
+        this.sid = sid;
     }
-
-    /* Return true if expire time is in the past */
-    public boolean timeToExpire() {
-        return System.currentTimeMillis() > this.splitExpire;
-    }
-
     
 }

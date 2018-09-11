@@ -170,8 +170,6 @@ public class ChanServ extends Service {
     public void checkUser ( Chan c, User user )  {
         ChanInfo ci;
         NickInfo ni;
-        CSAcc access;
-        int akick;
         if ( ( ci = findChan ( c.getString ( NAME ) ) ) != null ) {
             if ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
                 return;

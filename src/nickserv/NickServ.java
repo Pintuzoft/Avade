@@ -24,6 +24,7 @@ import chanserv.ChanInfo;
 import chanserv.ChanServ;
 import command.Command;
 import core.CommandInfo;
+import core.Database;
 import core.Handler;
 import core.Proc;
 import core.Service;
@@ -74,6 +75,8 @@ public class NickServ extends Service {
         this.helper     = new NSHelper ( this, this.snoop ); 
         NSDatabase.fixDBHash ( ); /* Fix hashnames in table nick */
         this.loadNicks ( ); /* Load all nicks */
+        Database.loadSIDs ( );
+        Handler.printSIDs ( );
         this.expireUnAuth = System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ); /* check unauthed nicks in 1 hour */
         this.setCommands();
     }
@@ -451,18 +454,15 @@ public class NickServ extends Service {
         ni = NickServ.findNick ( u.getHash ( ) );
         
         if ( ni != null ) {
-            if ( u.getSID().isIdentified ( ni ) ) {
+            if ( u.getSID() != null && u.getSID().isIdentified ( ni ) ) {
                 u.getSID().resetTimers ( );
-                if ( ni.getSettings().is ( AUTH ) ) {
-                    /* services Send modes and serviceID to user */                         
+                if ( ni.isAuth ( ) ) {
+                    /* Send ident mode and serviceID to user */                         
                     ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 +rd "+u.getSID().getID ( ) ); 
-                    
-                    /* Fix host */
-                    ni.fixHost ( );
-                    
+                  
                 } else {
                     ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 +d "+u.getSID().getID ( ) ); 
-                    /* services Send modes and serviceID to user */                          
+                    /* Send serviceID to user */                          
                 }
                 u.getModes().set ( IDENT, true );
                 Handler.getMemoServ().checkNick ( ni, u );

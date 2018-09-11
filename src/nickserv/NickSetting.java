@@ -90,7 +90,9 @@ public class NickSetting extends HashNumeric {
 
             case NOGHOST :
                 return this.noghost.length() > 0;
+           
             
+                
             default: 
                 return false;
 

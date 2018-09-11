@@ -38,6 +38,7 @@ public class ServicesID extends HashNumeric {
     private long                    stamp;     /* timestamp  ( seconds )  lastseen */
     private Timer                   timer;
     private Timer                   adTimer;
+    private long                    splitExpire;
     
     public ServicesID ( )  {
         this.rand       = new Random ( );
@@ -155,6 +156,13 @@ public class ServicesID extends HashNumeric {
         return this.ciList;
     }  
 
+    public void setNiList ( ArrayList<NickInfo> niList ) { 
+        this.niList = niList;
+    }
+    public void setCiList ( ArrayList<ChanInfo> ciList ) { 
+        this.ciList = ciList;
+    }  
+
     public void printSID ( )  {
         System.out.println ( "ServicesID ( "+this.id+" )  {" );
         System.out.println ( "    niList ( "+this.niList.size ( ) +" ) " );
@@ -231,4 +239,16 @@ public class ServicesID extends HashNumeric {
     public void unIdentify(NickInfo ni) {
         niList.remove ( ni );
     }
+    
+    /* Set 1 hour limit */
+    public void setSplitExpire ( ) {
+        this.splitExpire = ( System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ) ) ;
+    }
+
+    /* Return true if expire time is in the past */
+    public boolean timeToExpire() {
+        return System.currentTimeMillis() > this.splitExpire;
+    }
+
+
 }
