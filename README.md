@@ -9,6 +9,16 @@ This includes the AKill, SQline, SGline, Auditorium mode and also new features i
 
 ### Special features included in Avade:
 
+- Reconnecting to services hub
+- Reconnecting MySQL server
+- Persistent user sessions / services ID's
+- Excessive logging
+- Server command / list missing servers
+- External mailing functionality
+- NoGhost nickflag
+- Auditorium channel option / mode
+
+
 #### Reconnecting to services hub
 
 Some services has the bad habit of exiting when the link to the services hub goes down for various reasons. Avade IRC 
@@ -25,7 +35,7 @@ connection returns. This means you preferably want to avoid restarting services 
 to avoid losing data.
 
 
-#### Persistent user sessions
+#### Persistent user sessions / services ID's
 
 Bahamut uses a simple tagging of users to keep track of which nicks and channels a user has access to. These are called
 services ID's and is set using usermode +d. Avade IRC Services now correctly track these "sessions" by making them
@@ -38,7 +48,7 @@ trust usermode +r and automatically identify current nick only. Avade IRC Servic
 and rather trust the services id set on a user making Avade alot more user friendly.
 
 
-#### Excessive logging
+#### Excessive logging / list missing servers
 
 Something that other services might not provide is a way to access logs which can describe how a nickname or channel
 has been used. This include logs for register, set email, set pass, freeze, hold, close, auditorium etc. This information
@@ -64,55 +74,50 @@ of servers that has been seen connected to the network, and if a server is missi
 the missing server command. This is something that no other services has as far as I know, and it can be very useful for 
 larger networks where there might or probably will be difficult to figure out which servers actually is split and gone.
 
+#### NoGhost flag
 
-#### Persistent services ID's
+The NoGhost flag is a very specific flag. It specifically disables a nickname from being ghosted, so if a user is in a 
+ownership disspute where someone else knows the password and is trying to take over a nick that is in used an active oper
+is able to stop the take over by applying the flag. When the flag is set all other functionality of the nickis still 
+available. Basically if a user is in a pickle and an oper is trying to help by trying to figure out whats going on and 
+make sure the nick isnt gonna get taken over, the oper can stop that and have a normal conversation with the user.
 
-As long as services is online it will store services ID's for all users. At times there might be a split, this will cause a
-user to be removed from services awareness, however a reconnecting server with identified users can retain their access to
-all identified nicks and channels as services will remember these sessions for a whole hour before cleaning them out. If you
-have servers split more than an hour you might have serious issues with your network. 
+#### Auditorium chanflag
 
-Other services might not figure out that an identified user is the same as the one that splitted and will only identify the user
-with the users current nick (+r). Avade however will keep track of the actual servicesID handled by bahamut and treat that
-services ID as an actual user session. This means of course that a user can use a different nick after a split and services
-will still be able to identify the user.
+IRC operators are able to enable the auditorium flag on a channel. The funcationality in services will automatically do
+some initial checks and then register the relay channel as "#channame-relay" for where chat from regular users (-ov) will
+end up. The +A channel mode will then be applied to the main channel.
 
 
 ### Command list
 
 #### NickServ :
 
-  Help           - Show help
-
-  Register       - Register nick
-  
-  Identify       - Identify nick
-  
-  SIdentify      - Silently identify nick
-  
-  Ghost          - Kill ghost nick
-  
-  SET            - Set nick options
-  
-  Drop           - Drop registered nick
+- Help           - Show help
+- Register       - Register nick
+- Identify       - Identify nick
+- SIdentify      - Silently identify nick
+- Ghost          - Kill ghost nick
+- SET            - Set nick options
+- Drop           - Drop registered nick
   
   --- IRCop---
   
-  List           - List registered nicks
+ - List           - List registered nicks
   
-  Mark           - OperFlag to lock ownership functionality
+ - Mark           - OperFlag to lock ownership functionality
   
-  Freeze         - OperFlag to freeze a nick from being used
+ - Freeze         - OperFlag to freeze a nick from being used
   
-  Hold           - OperFlag to deny a nick from expiring
+ - Hold           - OperFlag to deny a nick from expiring
   
-  NoGhost        - OperFlag to deny a nick from being ghosted
+ - NoGhost        - OperFlag to deny a nick from being ghosted
   
-  Getpass        - Show password log for nick
+ - Getpass        - Show password log for nick
   
-  Getemail       - Show email log for nick
+ - Getemail       - Show email log for nick
   
-  Delete         - Force drop a nick
+ - Delete         - Force drop a nick
 
 
 #### ChanServ :
