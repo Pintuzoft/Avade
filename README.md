@@ -94,6 +94,8 @@ Ofcourse IRC is a text based power struggle game, and this also applies to your 
 you will be able to get information about when and how a staff member has been added/removed and also what the staff has
 been upto.
 
+
+
 ### Command list
 
 #### NickServ :

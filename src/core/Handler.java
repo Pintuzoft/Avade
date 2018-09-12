@@ -390,25 +390,15 @@ public class Handler extends HashNumeric {
     
     
     private static ServicesID findSplitSID ( long servicesID ) {
-    System.out.println(" - 0:"+servicesID);
         ServicesID sid = null;
-    System.out.println(" - 1:");
         for ( ServicesID s : splitSIDs ) {
-    System.out.println(" - 2: comp: "+s.getID()+" = "+servicesID );
             if ( s.getID() == servicesID ) {
-    System.out.println(" - 3:");
                 sid = s;
-    System.out.println(" - 4:");
             }
-    System.out.println(" - 5:");
         }
-    System.out.println(" - 6:");
         if ( sid != null ) {
-    System.out.println(" - 7:");
             splitSIDs.remove ( sid );
-    System.out.println(" - 8:");
         }
-    System.out.println(" - 9:");
         return sid;
     }
 
@@ -419,51 +409,41 @@ public class Handler extends HashNumeric {
         ServicesID sid = null;
 
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
-        System.out.println("0:");
         try {
-        System.out.println("1:");
             long serviceID = Long.parseLong ( this.data[8] );
-        System.out.println("2:");
             if ( serviceID > 999 ) {
-        System.out.println("3:");
                 u.setSID ( Handler.findSplitSID ( serviceID ) );
-        System.out.println("4: sid:"+( u.getSID() == null ? "null" : "not null:"+u.getSID().getID() ));
             }
-        System.out.println("5:");
             
         } catch ( NumberFormatException ex ) {
-        System.out.println("6:");
             Proc.log ( Handler.class.getName ( ), ex );
-        System.out.println("7:");
         }
-        System.out.println("8:");
         
         if ( u.getSID() == null ) {
-        System.out.println("9:");
             u.setSID ( new ServicesID ( ) );
-        System.out.println("10:");
-        }
-        System.out.println("11:");
-        this.updServicesID.add ( u.getSID ( ) );
-        System.out.println("12:");
+        }  
         
-        System.out.println("User: "+u.getString(NAME));
-        System.out.println("13:");
-
+        NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
+        
+        if ( ni != null && u.getModes().is ( IDENT ) ) {
+            u.getSID().add ( ni );
+        } else {
+            Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
+            u.getModes().set ( IDENT, false );
+        }
+        
         NickServ.fixIdentState ( u );
-        System.out.println("14:");
         uList.add ( u );
-        System.out.println("15:");
-
+        
+        
+        
         Server s = findServer ( this.data[7] );
         if ( s != null ) {
             s.addUser ( u );
         }
-        NickInfo ni;
-        if ( ( ni = NickServ.findNick ( u.getString ( NAME ) ) ) == null ) {
-            Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
-            u.getModes().set ( IDENT, false );
-        }
+//        NickInfo ni;
+  //      if ( () == null ) {
+    //    }
         this.oper.checkUser ( u ); /* Add user in OperServ check queue (akills etc) */
     }
     
@@ -693,7 +673,7 @@ public class Handler extends HashNumeric {
     public void doRecursiveUList ( User u )  { 
         try {
             Config conf = Proc.getConf ( );
-            Server sHub = this.getServer ( conf.get (CONNNAME )  );
+            Server sHub = this.getServer ( conf.get ( CONNNAME )  );
             if ( sHub != null )  {
                 sHub.recursiveUserList ( u, "" );
             }
@@ -749,7 +729,8 @@ public class Handler extends HashNumeric {
         }
         ArrayList<ServicesID> sids = new ArrayList<>(); 
         for ( ServicesID sid : updServicesID ) {
-            if ( Database.updateServicesID ( sid ) ) {
+            if ( ( sid.getNiList().size() == 0 && sid.getCiList().size() == 0 ) ||
+                 Database.updateServicesID ( sid ) ) {
                 sids.add ( sid );
             }
         } 
@@ -1065,6 +1046,11 @@ public class Handler extends HashNumeric {
         }
     }
 
-
+    public static ArrayList<ServicesID> getSIDs ( ) {
+        return sidList;
+    }
+    public static ArrayList<ServicesID> getSplitSIDs ( ) {
+        return splitSIDs;
+    }
     
 }

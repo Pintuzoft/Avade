@@ -102,15 +102,16 @@ public class User extends HashNumeric {
         } else {
             this.sid = new ServicesID ( );
         }
-  */      
+  */       
+        this.flood = new UserFlood ( this );
         /* identify user if +r is set */
-        if ( this.modes.is ( IDENT )  )  {
+/*        if ( this.modes.is ( IDENT )  )  {
             NickInfo ni = NickServ.findNick ( this.name );
             this.sid.addUser ( this );
             this.sid.add ( ni );
-        } 
+        } */
     //    this.sid.printSID();
-        this.flood = new UserFlood ( this );
+       
     }
 
     public User ( int code )  {

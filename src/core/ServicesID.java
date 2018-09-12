@@ -42,7 +42,7 @@ public class ServicesID extends HashNumeric {
     
     public ServicesID ( )  {
         this.rand       = new Random ( );
-        this.id         = this.rand.nextInt ( 999999 ) +1000;
+        this.id         = this.getUniqueID ( );
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
         this.stamp = 0;
@@ -56,6 +56,30 @@ public class ServicesID extends HashNumeric {
         this.stamp = 0;
     }
      
+    private long getUniqueID ( ) {
+        long id;
+        while ( true ) {
+            id = this.rand.nextInt ( ) + (long) ( 1L << 31 );
+            if ( this.isUnique ( id ) ) {
+                return id;
+            }
+        }
+    }
+    private boolean isUnique ( long id ) {
+        for ( ServicesID sid : Handler.getSIDs ( ) ) {
+            if ( sid.getID() == id ) {
+                return false;
+            }
+        }
+        for ( ServicesID sid : Handler.getSplitSIDs ( ) ) {
+            if ( sid.getID() == id ) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    
     public void updateStamp ( ) {
         if ( this.user != null ) {
             this.stamp = 0;
