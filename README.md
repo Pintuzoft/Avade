@@ -17,7 +17,7 @@ This includes the AKill, SQline, SGline, Auditorium mode and also new features i
 - External mailing functionality
 - NoGhost nickflag
 - Auditorium channel option / mode
-
+- Audit staff
 
 #### Reconnecting to services hub
 
@@ -88,6 +88,11 @@ IRC operators are able to enable the auditorium flag on a channel. The funcation
 some initial checks and then register the relay channel as "#channame-relay" for where chat from regular users (-ov) will
 end up. The +A channel mode will then be applied to the main channel.
 
+#### Audit staff
+
+Ofcourse IRC is a text based power struggle game, and this also applies to your staff members. Using the audit command
+you will be able to get information about when and how a staff member has been added/removed and also what the staff has
+been upto.
 
 ### Command list
 
