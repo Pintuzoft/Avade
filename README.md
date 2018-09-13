@@ -154,6 +154,7 @@ of abuse using the channel topic.
   
 - List           - List registered channels
 - Chanlist       - Show all channels a user has access to (founder, sop, aop, akick)
+- Topiclog       - Show last 100 topics set in the channel
 - Mark           - Lock ownership features
 - Freeze         - Freeze channel from being used
 - Close          - Close channel
