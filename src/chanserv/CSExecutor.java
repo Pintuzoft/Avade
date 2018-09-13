@@ -124,6 +124,10 @@ import java.util.Random;
             case ACCESSLOG :
                 this.accesslog ( user, cmd );
                 break; 
+           
+            case TOPICLOG :
+                this.topiclog ( user, cmd );
+                break; 
                 
             case CHANLIST :
                 this.chanList ( user, cmd );
@@ -1675,6 +1679,41 @@ import java.util.Random;
          
     }
  
+    private void topiclog ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :ACCESSLOG #chan
+        // 0            1       2                          3          4       = 5
+        if ( ! CSDatabase.checkConn() ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+        }
+        CmdData cmdData = this.validateCommandData ( user, TOPICLOG, cmd );
+
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "ACCESSLOG <chan>" ) ); 
+                return;
+
+            case CHAN_NOT_REGISTERED :
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1() ) );
+                return;
+                
+            case CHAN_IS_CLOSED :
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                return;
+                
+            default :
+                
+        }
+        NickInfo ni = cmdData.getNick ( );
+        ChanInfo ci = cmdData.getChanInfo ( );
+        ArrayList<Topic> tList = CSDatabase.getTopicList ( ci );
+        this.service.sendMsg(user, "*** Access Log for "+ci.getName()+":");
+        for ( Topic topic : tList ) {
+            this.service.sendMsg ( user, output ( SHOWTOPICLOG, topic.getTimeStr(), topic.getSetter(), topic.getTopic() ) );
+        }
+        
+        this.service.sendMsg ( user, "*** End of Logs ***" );
+
+    }
     
     
     private CmdData validateCommandData ( User user, int command, String[] cmd )  {
@@ -1720,6 +1759,20 @@ import java.util.Random;
                 } else {
                     cmdData.setChanInfo ( ci );
                     cmdData.setNick ( ni );
+                }
+                break; 
+                
+             case TOPICLOG :
+                if ( isShorterThanLen ( 5, cmd) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
+                    cmdData.setString1 ( cmd[4] );
+                    cmdData.setStatus ( CHAN_NOT_REGISTERED );
+                } else if ( ci.getSettings().is ( CLOSED ) ) {
+                    cmdData.setChanInfo ( ci );
+                    cmdData.setStatus ( CHAN_IS_CLOSED );
+                } else {
+                    cmdData.setChanInfo ( ci );
                 }
                 break; 
                 
@@ -2388,6 +2441,9 @@ import java.util.Random;
             case SHOWACCESSLOGOPER :
                 return "["+args[0]+"] "+args[1]+" "+args[2]+" - "+args[3]+" ["+args[4]+"]";
                 
+            case SHOWTOPICLOG :
+                return "["+args[0]+"] "+args[1]+" : "+args[2];
+                
             case CHANNELDROPPED :
                 return "Channel: "+args[0]+" was successfully dropped.";
                 
@@ -2491,7 +2547,8 @@ import java.util.Random;
  
     private final static int SHOWACCESSLOG              = 2501; 
     private final static int SHOWACCESSLOGOPER          = 2502; 
-    
+    private final static int SHOWTOPICLOG               = 2511; 
+
     private final static int CHANNELDROPPED             = 2601; 
     private final static int CHANNELDELETED             = 2602; 
 

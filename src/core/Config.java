@@ -68,6 +68,7 @@ public class Config extends HashNumeric {
     private String snoopChanServ;
     private String snoopMemoServ;
     
+    /* COMMANDS */
     private int rehash = 5;
     private int sraw = 5;
     private int uinfo = 5;
@@ -98,6 +99,7 @@ public class Config extends HashNumeric {
     private int searchlog = 5;
     private int uptime = 5;
     private int comment = 5;
+    private int topiclog = 5;
     
     public Config ( ) { 
         fileName = "services.conf"; 
@@ -444,6 +446,10 @@ public class Config extends HashNumeric {
             case COMMENT :
                 this.comment = access;
                 break;
+            
+            case TOPICLOG :
+                this.topiclog = access;
+                break;
 
             default :
                 
@@ -580,6 +586,9 @@ public class Config extends HashNumeric {
                     
             case DELETE :
                 return this.delete;
+                
+            case TOPICLOG :
+                return this.topiclog;
                 
             default : 
                 return -1;

@@ -123,6 +123,10 @@ public class CSHelper extends Helper {
                 this.accesslog ( user );
                 break;
                 
+            case TOPICLOG :
+                this.topiclog ( user );
+                break;
+                
             case FREEZE :
                 this.freeze ( user );
                 break;
@@ -654,6 +658,21 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   This command is available to all AOP+ in a channel and IRCop's."                           );
+        this.showEnd ( user );  
+    }
+    private void topiclog ( User user ) {
+        this.showStart ( user, "TopicLog" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ TOPICLOG <#chan>"+f.b ( ) +""                               );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The topic log is for IRC operators to keep track of when and who added specific topics"    );
+        this.service.sendMsg ( user, "   in a channel. Old topics are otherwise forgotten if a new topic is set so this is a"       );
+        this.service.sendMsg ( user, "   nice command to check the temperature of a channel or finding abuse or network violations" );
+        this.service.sendMsg ( user, "   shared through the topics of a channel."                                                        );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
+        this.service.sendMsg ( user, "   This command may show sensitive information. Only share information which the user can"    );
+        this.service.sendMsg ( user, "   retrieve themselfs and only IRCop's can access this information."                     );
         this.showEnd ( user );  
     }
 

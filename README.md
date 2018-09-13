@@ -18,6 +18,7 @@ This includes the AKill, SQline, SGline, Auditorium mode and also new features i
 - NoGhost nickflag
 - Auditorium channel option / mode
 - Audit staff
+- Topic logs
 
 #### Reconnecting to services hub
 
@@ -93,6 +94,14 @@ end up. The +A channel mode will then be applied to the main channel.
 Ofcourse IRC is a text based power struggle game, and this also applies to your staff members. Using the audit command
 you will be able to get information about when and how a staff member has been added/removed and also what the staff has
 been upto.
+
+
+#### Topic logs
+
+Tired of hearing rumours about whats going on in a channel and when you check someone already changed the topic and 
+everyone is super nice?, well Avade IRC Services will log topics and list them back to a staff member in a chronical 
+order so you will not need to trust shady logs to determine if a channel has been violated network rules or other types 
+of abuse using the channel topic.
 
 
 

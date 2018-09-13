@@ -66,8 +66,8 @@ public class ChanInfo extends HashNumeric {
         this.pass       = pass;
         this.desc       = desc;
         this.topic      = topic;
-        this.regTime    = regStamp;
-        this.lastSeen   = lastSeen;
+        this.regTime    = regStamp.substring(0,19);
+        this.lastSeen   = lastSeen.substring(0,19);
         this.settings   = settings;
         this.attachFounder ( founder );
         this.klist      = new ArrayList<>();

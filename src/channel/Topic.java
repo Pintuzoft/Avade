@@ -39,6 +39,13 @@ public class Topic {
         this.stamp = stamp;
         this.timeStr = dateFormat.format ( new Date ( ) );
     }
+    public Topic ( String topic, String setter, long stamp, String timeStr )  {
+        topic = topic.replaceAll("^:", "");
+        this.topic = topic;
+        this.setter = setter;
+        this.stamp = stamp;
+        this.timeStr = timeStr.substring(0,19);
+    }
  
     public String getTopic ( ) { 
         return topic;

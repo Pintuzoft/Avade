@@ -637,6 +637,44 @@ public class CSDatabase extends Database {
         return topic;
     }
      
+    static ArrayList<Topic> getTopicList(ChanInfo ci) {
+        ArrayList<Topic> tList = new ArrayList<>();
+        if ( ! activateConnection ( )  )  {
+            return tList;
+        }
+        
+        String query;
+        try {
+            query = "select topic,setter,unix_timestamp(stamp),stamp "+
+                    "from topiclog "+
+                    "where name = ? "+
+                    "order by stamp asc "+
+                    "limit 100";
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, ci.getName() );
+            res3 = ps.executeQuery ( );
+            while ( res3.next( ) ) {
+                tList.add(
+                    new Topic (
+                        res3.getString ( 1 ), 
+                        res3.getString ( 2 ),
+                        Long.parseLong ( res3.getString ( 3 ) ),
+                        res3.getString ( 4 )
+                    )
+                );
+            }
+            res3.close ( );
+            ps.close ( );
+            idleUpdate ( "getTopicList ( ) " );
+            
+        } catch ( Exception ex ) {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+        }
+        return tList;
+    }
+
+
+    
     public static ArrayList<CSAcc> getChanAccess ( ChanInfo ci, int access )  {
         String[] buf;
         ArrayList<CSAcc> opList = new ArrayList<> ( );
