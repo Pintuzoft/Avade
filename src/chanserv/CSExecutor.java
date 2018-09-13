@@ -24,11 +24,14 @@ import core.Executor;
 import core.Handler;
 import core.Proc;
 import core.TextFormat;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import user.User;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -39,6 +42,7 @@ import java.util.Random;
  public class CSExecutor extends Executor {
     private CSSnoop snoop;
     private TextFormat f;
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
  
     public CSExecutor ( ChanServ service, CSSnoop snoop )  {
@@ -588,7 +592,8 @@ import java.util.Random;
         this.service.sendMsg ( user, "    Settings: "+ci.getSettings().getInfoStr ( ) );
         this.service.sendMsg ( user, "  Registered: "+ci.getString ( REGTIME ) );
         this.service.sendMsg ( user, "    Lastseen: "+ci.getString ( LASTSEEN ) );
- 
+        this.service.sendMsg ( user, "    Time now: "+dateFormat.format ( new Date ( ) ) );
+  
         if ( user.isAtleast ( IRCOP ) ) {
             if ( ci.is ( FROZEN ) || ci.is ( MARKED ) || ci.is ( HELD ) || ci.is ( CLOSED ) || ci.is ( AUDITORIUM ) ) 
                 this.service.sendMsg ( user, f.b()+"   --- IRCop ---" );
