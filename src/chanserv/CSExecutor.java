@@ -86,15 +86,15 @@ import java.util.Random;
                 break;
                 
             case SOP :
-                this.sop ( user, cmd );
+                this.access ( SOP, user, cmd );
                 break;
                
             case AOP :
-                this.aop ( user, cmd );
+                this.access ( AOP, user, cmd );
                 break;
                 
             case AKICK :
-                this.akick ( user, cmd );
+                this.access ( AKICK, user, cmd );
                 break;
                 
             case OP :
@@ -614,53 +614,22 @@ import java.util.Random;
     
     }
 
-    private void sop ( User user, String[] cmd )  { 
+    private void access ( int access, User user, String[] cmd ) {
         switch ( cmd[5].toUpperCase().hashCode ( ) ) {
             case LIST :
-                doListAccess ( user, cmd, SOP );
+                doListAccess ( user, cmd, access );
                 break;
                 
             case WIPE :
-                doWipeAccess ( user, cmd, SOP );
+                doWipeAccess ( user, cmd, access );
                 break;
                 
             default:
-                doSop ( user, cmd );
+                doAccess ( access, user, cmd );
             
-        }
+        } 
     }
-    private void aop ( User user, String[] cmd )  { 
-        switch ( cmd[5].toUpperCase().hashCode ( ) ) {
-            case LIST : 
-                doListAccess ( user, cmd, AOP ); 
-                break;
-                
-            case WIPE :
-                doWipeAccess ( user, cmd, AOP );
-                break;
-                
-            default:
-                doAop ( user, cmd );
-           
-        }
-    }
-        
-    private void akick ( User user, String[] cmd )  { 
-        switch ( cmd[5].toUpperCase ( ) .hashCode ( )  )  {
-            case LIST :
-                doListAccess ( user, cmd, AKICK );
-                break;
-                
-            case WIPE :
-                doWipeAccess ( user, cmd, AKICK );
-                break;
-                
-            default:
-                doAkick ( user, cmd );
-            
-        }
-    }
-    
+     
     public void doWipeAccess ( User user, String[] cmd, int access )  {
         //:Pintuz PRIVMSG ChanServ@services.avade.net :aop #avade list
         //   0       1        2                         3    4     5   = 6
@@ -755,17 +724,53 @@ import java.util.Random;
             }
         } 
     }
-    
-    private void doAkick ( User user, String[] cmd ) {
+    private String getListName ( int access ) {
+        switch ( access ) {
+            case SOP :
+                return "Sop";
+            case AOP : 
+                return "Aop";
+            case AKICK : 
+                return "AKick";
+            default :
+                return "";
+        }
+    }    
+    private int getAddList ( int access ) {
+        switch ( access ) {
+            case SOP :
+                return ADDSOP;
+            case AOP : 
+                return ADDAOP;
+            case AKICK : 
+                return ADDAKICK;
+            default :
+                return 0;
+        }
+    }
+    private int getDelList ( int access ) {
+        switch ( access ) {
+            case SOP :
+                return DELSOP;
+            case AOP : 
+                return DELAOP;
+            case AKICK : 
+                return DELAKICK;
+            default :
+                return 0;
+        }
+    }
+    private void doAccess ( int access, User user, String[] cmd ) {
         //:Pintuz PRIVMSG ChanServ@services.avade.net :akick #avade add <nick|fullmask>
         //:DreamH PRIVMSG ChanServ@services.avade.net :akick #friends del 2
         //   0       1        2                         3     4       5   6    = 7
   
-        CmdData cmdData = this.validateCommandData ( user, AKICK, cmd );
-
+        CmdData cmdData = this.validateCommandData ( user, access, cmd );
+        String listName = getListName ( access );
+        
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "AKICK <#Chan> <add|del|list> <nick|mask|#num>" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, listName+" <#Chan> <add|del|list> <nick|mask|#num>" ) ); 
                 return;
                  
             case NICK_NOT_REGISTERED :
@@ -773,11 +778,11 @@ import java.util.Random;
                 return;                 
             
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan ( ) .getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
                 return;
                 
             case CHAN_IS_FROZEN : 
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
                 return;
 
             case CHAN_IS_CLOSED : 
@@ -809,18 +814,18 @@ import java.util.Random;
         switch ( command ) {
             case ADD :
                 if ( ni2 != null )  {
-                    ci.addAccess ( AKICK, ni2 );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAKICK, ni2.getName ( ), user ) );
-                    this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ), "AKick" ) );
+                    ci.addAccess ( access, ni2 );
+                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getAddList(access), ni2.getName ( ), user ) );
+                    this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ), listName ) );
                     if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), ni2.getString ( NAME ), "AKick" ) );
+                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), ni2.getString ( NAME ), listName ) );
                     }
                 } else if ( mask != null ) {
-                    ci.addAccess ( AKICK, mask );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAKICK, mask, user ) );
-                    this.service.sendMsg ( user, output ( NICK_ADDED, mask, "AKick" ) );
+                    ci.addAccess ( access, mask );
+                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getAddList(access), mask, user ) );
+                    this.service.sendMsg ( user, output ( NICK_ADDED, mask, listName ) );
                     if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), mask, "AKick" ) );
+                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), mask, listName ) );
                     }
                 }
                 ci.changed();
@@ -828,18 +833,18 @@ import java.util.Random;
                 
             case DEL :
                 if ( ni2 != null ) {
-                    ci.delAccess ( AKICK, ni2 );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), DELAKICK, ni2.getName ( ), user ) );
-                    this.service.sendMsg ( user, output ( NICK_DELETED, ni2.getString ( NAME ), "AKick" ) );
+                    ci.delAccess ( access, ni2 );
+                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getDelList(access), ni2.getName ( ), user ) );
+                    this.service.sendMsg ( user, output ( NICK_DELETED, ni2.getString ( NAME ), listName ) );
                     if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni2.getString ( NAME ), ni2.getString ( NAME ), "AKick" ) );
+                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni2.getString ( NAME ), ni2.getString ( NAME ), listName ) );
                     }
                 } else if ( mask != null )  {
                     ci.delAkick ( mask );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), DELAKICK, mask, user ) );
-                    this.service.sendMsg ( user, output ( NICK_DELETED, mask, "AKick" ) );
+                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getDelList(access), mask, user ) );
+                    this.service.sendMsg ( user, output ( NICK_DELETED, mask, listName ) );
                     if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni2.getString ( NAME ), mask, "AKick" ) );
+                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni2.getString ( NAME ), mask, listName ) );
                     }
                 }
                 ci.changed();
@@ -850,175 +855,6 @@ import java.util.Random;
         }
         
     }
-    
-       
-    private void doAop ( User user, String[] cmd )  {
-        //:Pintuz PRIVMSG ChanServ@services.avade.net :aop #avade add fredde
-        //   0       1        2                         3    4     5    6    = 7
-   
-        CmdData cmdData = this.validateCommandData ( user, AOP, cmd );
- 
-        switch ( cmdData.getStatus() ) {
-            case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "AOP <#Chan> <add|del|list> [<nick|#num>]" ) ); 
-                return;
-            
-            case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
-                return;
-                    
-            case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
-                return;
-                       
-            case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
-                return;
-
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED ) );
-                return;
-            
-            case NICK_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                return;
-                
-            case NICK_NOT_AUTHED :
-                this.service.sendMsg ( user, output ( NICK_NOT_AUTHED, cmdData.getNick2 ( ).getName ( ) ) );
-                return;
-                
-            case NOT_ENOUGH_ACCESS :
-                this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, "" ) );
-                return;
-                
-            default :
-                
-        }
-        int command = cmdData.getCommand ( );
-        NickInfo ni = cmdData.getNick ( );
-        NickInfo ni2 = cmdData.getNick2 ( );
-        ChanInfo ci = cmdData.getChanInfo ( );
-        String mask = cmdData.getString1 ( );
-        switch ( command ) {
-            case ADD :
-                if ( ni2 != null ) {
-                    ci.addAccess ( AOP, ni2 );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAOP, ni2.getName ( ), user ) );
-                    this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ) , "Aop" )  );
-                    if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , ni2.getString ( NAME ) , "Aop" )  );
-                    }
-                } else {
-                    ci.addAccess ( AOP, mask );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAOP, mask, user ) );
-                    this.service.sendMsg ( user, output ( NICK_ADDED, mask, "Aop" )  );
-                    if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , mask , "Aop" )  );
-                    }
-                }
-                ci.changed();
-                break;
-
-            case DEL :
-                try {
-                    int buf = Integer.parseInt ( cmd[6] );
-                    ni2  = ci.getAccessList(AOP).get(buf-1).getNick ( );
-                } catch ( NumberFormatException e )  {
-                    ni2  = NickServ.findNick ( cmd[6] );        
-                }
-                ci.delAccess ( AOP, ni2 );
-                ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), DELAOP, ni2.getName ( ), user ) );
-                this.service.sendMsg ( user, output ( NICK_DELETED, ni2.getString ( NAME ) , "Aop" )  );
-                if ( ci.getSettings().is ( VERBOSE )  )  {
-                    this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni.getString ( NAME ) , ni2.getString ( NAME ) , "Aop"  )  );
-                }
-                ci.changed();
-                break;
-
-            default :
-
-        }
-    }
-    
-    private void doSop ( User user, String[] cmd )  {
-        //:Pintuz PRIVMSG ChanServ@services.avade.net :aop #avade add fredde
-        //   0       1        2                         3    4     5    6    = 7
-
-        CmdData cmdData = this.validateCommandData ( user, SOP, cmd );
- 
-        switch ( cmdData.getStatus() ) {
-            case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SOP <#Chan> <add|del|list> [<nick|#num>]" ) ); 
-                return;
-            
-            case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
-                return;
-                    
-            case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
-                return;
-                       
-            case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
-                return;
-
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED , "" ) );
-                return;
-            
-            case NICK_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                return;
-                
-            case NICK_NOT_AUTHED :
-                this.service.sendMsg ( user, output ( NICK_NOT_AUTHED, cmdData.getNick2 ( ).getName ( ) ) );
-                return;
-                
-            case NOT_ENOUGH_ACCESS :
-                this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, "" ) );
-                return;
-                
-            default :
-        
-        }
-        int command = cmdData.getCommand ( );
-        NickInfo ni = cmdData.getNick ( );
-        NickInfo ni2 = cmdData.getNick2 ( );
-        ChanInfo ci = cmdData.getChanInfo ( );
-
-        switch ( command ) {
-            case ADD :
-                ci.addAccess ( SOP, ni2 );
-                ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDSOP, ni2.getName ( ), user ) );
-                this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ) , "Sop" )  );
-                if ( ci.getSettings().is ( VERBOSE ) ) {
-                    this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , ni2.getString ( NAME ) , "Sop" )  );
-                }
-                ci.changed();
-                break;
-
-            case DEL :
-                try {
-                    int buf = Integer.parseInt ( cmd[6] );
-                    ni2  = ci.getAccessList(SOP).get(buf-1).getNick ( );
-                } catch ( NumberFormatException e )  {
-                    ni2  = NickServ.findNick ( cmd[6] );        
-                }
-                ci.delAccess ( SOP, ni2 );
-                ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), DELSOP, ni2.getName ( ), user ) );
-                this.service.sendMsg ( user, output ( NICK_DELETED, ni2.getString ( NAME ) , "Sop" )  );
-                if ( ci.getSettings().is ( VERBOSE )  )  {
-                    this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni.getString ( NAME ) , ni2.getString ( NAME ) , "Sop"  )  );
-                }
-                ci.changed();
-                break;
-
-            default :
-
-        }
-    }
-      
     
     private void unban ( User user, String[] cmd )  {
         //:Pintuz PRIVMSG ChanServ@services.avade.net :unban #avade fredde
@@ -1781,16 +1617,14 @@ import java.util.Random;
                 }
                 break; 
                 
+            case SOP :
             case AOP :
             case AKICK : 
                 //:DreamHealer PRIVMSG ChanServ@services.avade.net :akick #friends add *!*@10.0.1/24
                 //           0       1                           2      3        4   5             6
-                System.out.println("0:");
                 if ( isShorterThanLen ( 7, cmd ) ) {
-                System.out.println("1:");
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } 
-                System.out.println("2:");
                 ci = ChanServ.findChan ( cmd[4] );
                 ni = ci.getNickByUser ( user );
                 
@@ -1799,83 +1633,42 @@ import java.util.Random;
                 }
                 
                 subcommand = cmd[5].toUpperCase().hashCode ( );
-                System.out.println("3:");
                  
                 if ( subcommand != ADD && subcommand != DEL ) {
-                System.out.println("4:");
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } else if ( ni2 == null && mask == null ) {
-                System.out.println("5:");
                     cmdData.setString1 ( cmd[6] );
                     cmdData.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ci == null ) {
-                System.out.println("6:");
                     cmdData.setString1 ( cmd[4] );
                     cmdData.setStatus ( CHAN_NOT_REGISTERED );
                 } else if ( ci.getSettings().is ( FROZEN ) ) {
                     cmdData.setChanInfo ( ci );
-                System.out.println("7:");
                     cmdData.setStatus ( CHAN_IS_FROZEN );  
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
-                System.out.println("8:");
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( CHAN_IS_CLOSED );  
                 } else if ( ni == null || ! ci.isAtleastSop ( ni ) ) {
-                System.out.println("9:");
                     cmdData.setString1 ( user.getString ( NAME ) );
                     cmdData.setStatus ( ACCESS_DENIED );
                 } else if ( ni2 != null && ! ni2.isAuth ( ) ) {
-                System.out.println("10:");
                     cmdData.setNick2 ( ni2 );
                     cmdData.setStatus ( NICK_NOT_AUTHED );
-                } else if ( ni2 != null && ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
-                System.out.println("11:");
+                } else if ( ni2 != null && 
+                            ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
                     cmdData.setStatus ( NOT_ENOUGH_ACCESS );
                 } else {
-                System.out.println("12:");
                     cmdData.setChanInfo ( ci );
                     cmdData.setNick ( ni );
                     if ( ni2 != null ) {
                         cmdData.setNick2 ( ni2 );
                     } else {
-                        cmdData.setString1(mask);
+                        cmdData.setString1 ( mask );
                     }
                     cmdData.setCommand ( subcommand );
                 }
                 break;            
-                       
-            case SOP :
-                if ( isShorterThanLen ( 7, cmd ) || ( subcommand = isAddOrDel ( cmd[5] ) ) == 0 ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ci = ChanServ.findChan ( cmd[4] )  )  == null ) {
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( CHAN_NOT_REGISTERED );
-                } else if ( ci.getSettings().is ( FROZEN ) ) {
-                    cmdData.setChanInfo ( ci );
-                    cmdData.setStatus ( CHAN_IS_FROZEN );  
-                } else if ( ci.getSettings().is ( CLOSED ) ) {
-                    cmdData.setChanInfo ( ci );
-                    cmdData.setStatus ( CHAN_IS_CLOSED );  
-                } else if ( ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ( ni = ci.getTopNickByUser ( user ) ) == null || ( ! ci.isFounder ( ni ) ) ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( ACCESS_DENIED );
-                } else if ( ! ni2.getSettings().is ( AUTH ) ) {
-                    cmdData.setNick2 ( ni2 );
-                    cmdData.setStatus ( NICK_NOT_AUTHED );
-                } else if ( ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
-                    cmdData.setNick2 ( ni2 );
-                    cmdData.setStatus ( NOT_ENOUGH_ACCESS );
-                } else {
-                    cmdData.setChanInfo ( ci );
-                    cmdData.setNick ( ni );
-                    cmdData.setNick2 ( ni2 );
-                    cmdData.setCommand ( subcommand );
-                }
-                break;
-            
+                   
             case LIST :
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     cmdData.setStatus ( SYNTAX_ERROR );
@@ -1903,7 +1696,6 @@ import java.util.Random;
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( ACCESS_DENIED );
                 } else {
-                    System.out.println ( "DEBUG: ci:"+ci.getName() );
                     cmdData.setChanInfo ( ci );
                     cmdData.setNick ( ni );
                 }
