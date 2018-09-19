@@ -141,7 +141,7 @@ public class RootServ extends Service {
             log = new OSLogEvent ( ni.getName(), "ADDMASTER", "new!master@services", "Services config" );
             OSDatabase.logEvent ( log );
             if ( user != null ) {
-                ni.setOper ( OSDatabase.getOper ( master ) );
+                ni.setOper ( OperServ.getOper ( master ) );
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
                     Handler.getRootServ().sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );

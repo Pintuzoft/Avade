@@ -34,7 +34,7 @@ public class Oper extends HashNumeric {
  
     private int             access;
     private String          name;
-    private int             hashCode;
+    private int             hash;
     private String          instater;
     private String[]        levels;
     private String[]        shortLevels;
@@ -64,11 +64,11 @@ public class Oper extends HashNumeric {
             /* We got a nick from the database, so lets turn it into an object.. */
             res.first ( );
             this.name           = res.getString ( "name" );
+            this.hash           = this.name.toUpperCase().hashCode();
             this.access         = res.getInt ( "access" );
             this.instater       = res.getString ( "instater" );
             this.levels         = OPER_LEVEL;
             this.shortLevels    = OPER_LEVEL_SHORT;
-            this.hashCode       = this.name.toUpperCase ( ) .hashCode ( );
 
         } catch ( SQLException ex )  {
             Logger.getLogger ( Oper.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
@@ -82,7 +82,7 @@ public class Oper extends HashNumeric {
         this.instater        = instater;
         this.levels          = OPER_LEVEL;
         this.shortLevels     = OPER_LEVEL_SHORT;
-        this.hashCode        = this.name.toUpperCase().hashCode ( );
+        this.hash            = this.name.toUpperCase().hashCode ( );
     }
     
     /* user without access */
@@ -92,7 +92,7 @@ public class Oper extends HashNumeric {
         this.instater       = "";
         this.levels         = OPER_LEVEL;
         this.shortLevels    = OPER_LEVEL_SHORT;
-        this.hashCode       = this.name.toUpperCase().hashCode ( );
+        this.hash           = this.name.toUpperCase().hashCode ( );
     }
     
     public int getAccess ( ) {
@@ -101,6 +101,10 @@ public class Oper extends HashNumeric {
         } else {
             return 0;
         }
+    }
+
+    public int getHashCode ( ) {
+        return this.hash;
     }
     
     public String getString ( int var )  {

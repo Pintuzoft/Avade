@@ -23,7 +23,6 @@ import server.Server;
 import monitor.Snoop;
 import channel.Chan;
 import channel.Topic;
-import chanserv.CSDatabase;
 import chanserv.CSLogEvent;
 import chanserv.ChanInfo;
 import rootserv.RootServ;
@@ -273,7 +272,7 @@ public class Handler extends HashNumeric {
                 /* We are getting  */
                 switch ( this.data[0].hashCode ( )  )  {
                         case SERVER :
-                            this.doServer ( );
+                            sList.add ( new Server ( this.data )  );
                             break;
                             
                         case SJOIN :
@@ -366,11 +365,7 @@ public class Handler extends HashNumeric {
                 
         }
     }
-    
-    private void doServer ( ) {
-        sList.add ( new Server ( this.data )  );
-    }
-    
+
     private void doSquit ( )  {
         Server s = findServer ( this.data[1] );
         if ( s != null )  {

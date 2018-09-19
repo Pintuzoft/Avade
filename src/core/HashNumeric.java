@@ -69,6 +69,7 @@ public abstract class HashNumeric extends TextFormat {
     
     /* HANDLER */
     public static final int SERVER                      = -1852497085;
+    public static final int SERVICES                    = -2133131170;
     public static final int SJOIN                       = 78935037;
     public static final int SQUIT                       = 79149346;
     public static final int SVINFO                      = -1837073007;
@@ -133,6 +134,7 @@ public abstract class HashNumeric extends TextFormat {
     public static final int CINFO                       = 64127857;
     public static final int SINFO                       = 78904193;
     public static final int ULIST                       = 80836211;
+    public static final int SLIST                       = 78989169;
     public static final int UPTIME                      = -1785032728;
     public static final int IGNORE                      = -2137067054;
 
@@ -146,6 +148,8 @@ public abstract class HashNumeric extends TextFormat {
     public static final int DELSA                       = 64930681;
     public static final int ADDIRCOP                    = -444027974;
     public static final int DELIRCOP                    = 1605972624;
+    public static final int HUB                         = 71893;
+    public static final int LEAF                        = 2332510;
     
     
     /* ROOTSERV */
@@ -324,6 +328,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int BANLOG                      = 1951952085;
     public final static int SQLINE                      = -1841605806;
     public final static int SGLINE                      = -1850841016;
+    public final static int SPAM                        = 2551625;
     public final static int JUPE                        = 2288768;
     public final static int MISSING                     = 1787432262;
 

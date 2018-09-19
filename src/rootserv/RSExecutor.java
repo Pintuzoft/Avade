@@ -22,7 +22,6 @@ import core.Handler;
 import core.Proc;
 import nickserv.NickInfo;
 import nickserv.NickServ;
-import operserv.OSDatabase;
 import operserv.Oper;
 import operserv.OperServ;
 import user.User;
@@ -164,9 +163,9 @@ public class RSExecutor extends Executor {
         System.out.println ( "debug ( doListSra );" );
 
         this.service.sendMsg ( user, "Services Root Admin list:" );
-        OSDatabase.getRootAdmins ( ).forEach ( ( sra ) -> {
+        for ( Oper sra : OperServ.getRootAdmins() ) {
             this.service.sendMsg ( user, "    "+sra.getString ( NAME ) +"  ( Instated by: "+sra.getString ( INSTATER ) +" ) " );
-        });
+        }
         this.service.sendMsg ( user, "*** End of List ***" );
     }
     /* END SRA */

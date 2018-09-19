@@ -29,7 +29,7 @@ import operserv.OperServ;
  * @author DreamHealer
  */
 public class Proc extends HashNumeric {
-    private static final Version        version = new Version ( "AServices", 1, 0.15, "2018-Jul" ); /* Services-1.0.5 */
+    private static Version              version = new Version ( ); /* Services-1.0.5 */
  
    // private ServSock                    conn;
     private static ServSock             conn;

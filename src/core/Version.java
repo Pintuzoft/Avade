@@ -24,17 +24,18 @@ package core;
 public class Version extends HashNumeric {
     private String          name;
     private int             generation;
-    private double          version;
+    private int             version;
+    private int             subversion;
     private String          date;
     
-    public Version ( String name, int generation, double version, String date )  {
-        this.name           = name;
-        this.generation     = generation;
-        this.version        = version;
-        this.date           = date;
+    public Version ( )  {
+        this.name           = "Avade";
+        this.generation     = 1;
+        this.version        = 0;
+        this.subversion     = 20;
+        this.date           = "2018-Sep";
     }
-    
     public String getVersion ( )  {
-        return this.name+"-"+this.generation+"."+this.version+"  ( "+this.date+" ) ";
+        return this.name+"-"+this.generation+"."+this.version+"-"+this.subversion+"  ( "+this.date+" ) ";
     } 
 }

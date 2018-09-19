@@ -59,22 +59,65 @@ public class SExecutor extends Executor {
             default : 
         } 
     }
-
+    
+    public int nameToService ( String name ) {
+        if ( iCmp ( name, this.services.getString ( NAME ) ) ) {
+            return SERVICES;
+        } else if ( iCmp ( name, this.services.getString ( STATS ) ) ) {
+            return STATS;
+        }
+        return 0;
+    }
+    
     public void doMotd ( User user, String[] cmd )  { 
-        if ( iCmp ( cmd[2], this.services.getString ( NAME )  )  )             { this.servicesMOTD ( user ); }
-        else if ( iCmp ( cmd[2], this.services.getString ( STATS )  )  )       { this.statsMOTD ( user ); }         
+        int hash = nameToService ( cmd[2] );
+        switch ( hash ) {
+            case SERVICES :
+                this.servicesMOTD ( user );
+                break;
+                
+            case STATS :
+                this.statsMOTD ( user );
+                break;
+                
+            default : 
+                this.servicesMOTD ( user );
+                
+        }         
     }
-    
-    public void doVersion ( User user, String[] cmd )  {
-        if ( iCmp ( cmd[2], this.services.getString ( NAME )  )  )             { this.servicesVersion ( user ); }
-        else if ( iCmp ( cmd[2], this.services.getString ( STATS )  )  )       { this.statsVersion ( user ); }   
+    public void doVersion ( User user, String[] cmd )  { 
+        int hash = nameToService ( cmd[2] );
+        switch ( hash ) {
+            case SERVICES :
+                this.servicesVersion ( user );
+                break;
+                
+            case STATS :
+                this.statsVersion ( user );
+                break;
+                
+            default : 
+                this.servicesVersion ( user );
+                
+        }         
     }
-    
-    public void doInfo ( User user, String[] cmd )  {
-        if ( iCmp ( cmd[2], this.services.getString ( NAME )  )  )             { this.servicesInfo ( user ); }
-        else if ( iCmp ( cmd[2], this.services.getString ( STATS )  )  )       { this.statsInfo ( user ); }   
+    public void doInfo ( User user, String[] cmd )  { 
+        int hash = nameToService ( cmd[2] );
+        switch ( hash ) {
+            case SERVICES :
+                this.servicesInfo ( user );
+                break;
+                
+            case STATS :
+                this.statsInfo ( user );
+                break;
+                
+            default : 
+                this.servicesInfo ( user );
+                
+        }         
     }
-    
+   
     public void doStats ( User user, String[] cmd )  {
         System.out.println ( "DEBUG: doStats!: "+cmd[2] );
         switch ( cmd[2].toUpperCase ( ) .hashCode ( )  )  {
@@ -107,24 +150,23 @@ public class SExecutor extends Executor {
            
         }
     }
-     
+    
     /***  MOTD  ***/
     public void servicesMOTD ( User user )  {
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTDSTART,  "***  ( Services )  Message of the day ***"                                   );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     Services was created as a network bot to allow registration and"        );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     administrating of nicks and channels. Without it any nick could"        );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     used by anyone and users would not be able to maintain op(@) in"        );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     their channels."                               );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     Avade IRC Services was created to assist users and staff with their"    );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     daily interactions with the network allowing users to register nicks"   );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     and channels while also assist staff to run and help users."            );
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "                                                                       );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     For help with ownership issues speak to one of the CSop's in the"       );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     list below. For help with floods or other disruptive issues feel"       );
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     free to message a services admin."                                      );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     Below is listed staff members who may assist users with ownership"      );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     questions. Feel free to contact one of the staff members if you have"   );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     any question regarding ownership of nicks and channel or the network"   );
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "                                                                       );
 
         /* CSOP */
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "+b ( ) +"ChanServ Operators ( CSop )"+b ( )                        );
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "+b ( ) +"ChanServ Operators (CSop)"+b ( )                        );
         String opers = new String ( );
-        for ( Oper oper : OSDatabase.getCSopsPlus ( ) )  {
+        for ( Oper oper : OperServ.getStaffPlus ( CSOP ) )  {
             if ( opers.length ( ) > 60 )  {
                 this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "      "+opers                                                          );
                 opers = "";
@@ -133,22 +175,8 @@ public class SExecutor extends Executor {
         } 
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "      "+opers                                                              );        
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "                                                                       );
-        
-        /* SA */
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "+b ( ) +"Services Admins ( SA ) "+b ( )                             );
-        opers = new String ( );
-        for ( Oper oper : OperServ.findServicesAdmins ( )  )  {
-            if ( opers.length ( ) > 60 )  {
-                this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "      "+opers                                                          );
-                opers = "";
-            }
-            opers += " "+oper.getString ( NAME );
-        }
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "      "+opers                                                               );        
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "                                                                      );
-        
-        
-        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     Avade Services :"                                                      );
+         
+        this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     Avade IRC Services :"                                                      );
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "        Version: "+Proc.getVersion().getVersion()                           );
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "          Coder: DreamHealer"                                               );
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "         Uptime: "+Proc.getUptime ( )                                       );
@@ -163,20 +191,20 @@ public class SExecutor extends Executor {
 
     /***  MOTD  ***/
     public void servicesVersion ( User user )  {
-        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade Services  ( aservices )  Version"                                      );
-        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion ( ) .getVersion ( )                                         );
+        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade IRC Services (Avade) Version"                                      );
+        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion().getVersion ( )                                         );
     }
     public void statsVersion ( User user )  {
-        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade Services  ( aservices )  Version"                                      );
-        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion ( ) .getVersion ( )                                         );
+        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade IRC Services (Avade) Version"                                      );
+        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion().getVersion ( )                                         );
     }
 
     /***  INFO  ***/
     public void servicesInfo ( User user )  {
         this.services.sendServicesCMD ( user, Numeric.RPL_INFOSTART,  "***  ( Services )  Information ***"                                                      );
-        this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Avade Services  ( aservices )  User Services  ( NickServ, ChanServ, MemoServ ) "    );
-        this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Version: qwerty"                                                                    );
-        this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Developed by: DreamHealer  ( dreamhealer@avade.net ) "                              );
+        this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Avade IRC Services (Avade) User Services (NickServ, ChanServ, MemoServ) "         );
+        this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Version: "+Proc.getVersion().getVersion ( )                                         );
+        this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Developed by: DreamHealer (dreamhealer@avade.net) "                              );
         this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     "                                                                                   );
         this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     For services related assistance please join:"                                       );
         this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "           #Help"                                                                        );
@@ -189,13 +217,13 @@ public class SExecutor extends Executor {
     }
     public void statsInfo ( User user )  {
         this.services.sendStatsCMD ( user, Numeric.RPL_INFOSTART,     "***  ( Stats )  Information ***"                                                         );
-        this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Avade Services  ( aservices )  IRC Operator Services  ( OperServ, RootServ ) "      );
-        this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Developed by: DreamHealer  ( dreamhealer@avade.net ) "                              );
+        this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Avade IRC Services (Avade) IRC Operator Services (OperServ, RootServ)"              );
+        this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Developed by: DreamHealer (dreamhealer@avade.net) "                                 );
         this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     "                                                                                   );
         this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     For IRC Operator assistance please join:"                                           );
         this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "           #OperHelp"                                                                    );
         this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     " );
-        this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Services uptime: "+Proc.getUptime ( )                                              );
+        this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Services uptime: "+Proc.getUptime ( )                                               );
         this.services.sendStatsCMD ( user, Numeric.RPL_INFOEND,       "*** End of Info ***"                                                                     );
     }
 }

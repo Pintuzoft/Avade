@@ -41,7 +41,7 @@ public class OSDatabase extends Database {
     private static ResultSet            res2;
     private static PreparedStatement    ps;
 
-    public static Oper getOper ( String nick )  {
+/*    public static Oper getOper ( String nick )  {
         Oper oper = new Oper ( );
         if ( ! activateConnection ( )  )  {
             return null;
@@ -68,10 +68,34 @@ public class OSDatabase extends Database {
         }  
         return oper;
     }
+*/
+    public static ArrayList<Oper> getAllStaff ( )  {
+        Oper oper;
+        if ( ! activateConnection ( )  )  {
+            return null;
+        }
+        ArrayList<Oper> staff = new ArrayList<>();
+        try { 
+            String query = "select name,access,instater "+
+                           "from oper ";
+                            
+            ps = sql.prepareStatement ( query );
+            res = ps.executeQuery ( );
 
-    
-
-
+            while ( res.next ( )  )  {
+                oper = new Oper ( res.getString(1), res.getInt(2), res.getString(3) );
+                staff.add ( oper );
+            } 
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getOper ( ) " );
+       
+        } catch  ( SQLException ex )  {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );   
+        }  
+        return staff;
+    }
+ 
     /* NickServ Methods */
     /*public boolean storeChan ( ChanInfo chan )  {
 
@@ -92,29 +116,6 @@ public class OSDatabase extends Database {
     }*/
     /* End NickServ */
  
-    public static ArrayList<Oper> getStaffByAccess ( int access )  {
-        ArrayList<Oper> oList = new ArrayList<> ( );
-        if ( ! activateConnection ( ) )  {
-            return oList;
-        }
-        try {
-            String query = "SELECT name,instater FROM oper WHERE access = ?;";
-            ps = sql.prepareStatement ( query );
-            ps.setInt  ( 1, access );
-            res2 = ps.executeQuery ( );
-
-            while ( res2.next ( ) ) {
-                oList.add ( new Oper ( res2.getString ( "name" ) , access, res2.getString ( "instater" )  )  );
-            }
-            res2.close ( );
-            ps.close ( );
-            idleUpdate ( "getStaffByAccess ( ) " );
-            
-         } catch  ( SQLException ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );   
-        } 
-        return oList;
-    }
 /* mysql> desc ban;
 +----------+--------------+------+-----+---------+----------------+
 | Field    | Type         | Null | Key | Default | Extra          |
@@ -489,23 +490,25 @@ public class OSDatabase extends Database {
         return lsList;
     }
 
-    static ArrayList<String> getServerList ( boolean missing ) {
-        ArrayList<String> sList = new ArrayList<>();
+    static ArrayList<NetServer> getServerList ( ) {
+        ArrayList<NetServer> sList = new ArrayList<>();
         if ( ! activateConnection ( ) ) {
             return sList;
         }   
         String query;
         try {
-            if ( missing )  {
-                query = "select name from server where lastseen < now() - interval 2 minute order by name asc";
-            } else {
-                query = "select name from server order by name asc";                
-            }
+            query = "select name,primaryhub,secondaryhub "+
+                    "from server "+
+                    "order by name asc";                
+           
             ps = sql.prepareStatement ( query );
             res = ps.executeQuery ( );
-            
+            NetServer server;
             while ( res.next ( ) ) {
-                sList.add( res.getString ( 1 ) );
+                server = new NetServer ( res.getString ( 1 ),
+                                         res.getString ( 2 ),
+                                         res.getString ( 3 ) );
+                sList.add ( server );
             }
             res2.close ( );
             ps.close ( );
@@ -522,7 +525,8 @@ public class OSDatabase extends Database {
             return false;
         }
          
-        String query = "delete from server where name = ?";
+        String query = "delete from server "+
+                       "where name = ?";
         try {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, name );
@@ -539,24 +543,27 @@ public class OSDatabase extends Database {
         return deleted;
     }
 
-    public static void addServer ( String name ) {
+    public static boolean addServer ( String name ) {
         if ( ! activateConnection ( ) ) {
-            return;
+            return false;
         }
         
-        String query = "insert into server ( name, lastseen ) "+
-                       "values (?, now()) "+
-                       "on duplicate key update lastseen=now()";
+        String query = "insert into server ( name ) "+
+                       "values ( ? ) "+
+                       "on duplicate key update name = ?";
         try {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, name );
+            ps.setString ( 2, name );
             ps.execute();
 
             res2.close ( );
             ps.close ( );
+            return true;
             
         } catch ( SQLException ex ) {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );
+//            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
         }
     }
     
@@ -566,7 +573,9 @@ public class OSDatabase extends Database {
             return false;
         }
         
-        String query = "select name from server where name = ?";
+        String query = "select name "+
+                       "from server "+
+                       "where name = ?";
         
         try {   
             ps = sql.prepareStatement ( query );
@@ -582,35 +591,7 @@ public class OSDatabase extends Database {
         }
         return found;
     }
-
-    static void updateServers ( ) {
-        if ( ! activateConnection ( ) ) {
-            return;
-        }
-        
-        String names = "";
-        for ( Server server : Handler.getServerList ( ) ) {
-            if ( names.length() == 0 ) {
-                names += "'"+server.getName()+"'";
-            } else {
-                names += ",'"+server.getName()+"'";
-            }
-        }
-        
-        String query = "update server "+
-                       "set lastseen=now() "+
-                       "where name in ( "+names+" )";
-        try {
-            ps = sql.prepareStatement ( query );
-            ps.execute ( );
-            res2.close ( );
-            ps.close ( );
-            
-        } catch ( Exception ex ) {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );
-        } 
-    }
-    
+ 
     static ArrayList<Comment> getCommentList ( String target, boolean full ) {
         ArrayList<Comment> cList = new ArrayList<>();
         Comment comment;
@@ -620,7 +601,8 @@ public class OSDatabase extends Database {
             return cList;
         }
         
-        query = "select name,instater,comment,stamp from comment "+
+        query = "select name,instater,comment,stamp "+
+                "from comment "+
                 "where name = ? "+
                 ( ! full ? "and stamp > now() - interval 1 year " : "")+
                 "order by stamp asc";
@@ -769,7 +751,7 @@ public class OSDatabase extends Database {
             ps.setString   ( 5, user.getOper().getName ( ) );
             ps.execute ( );
             ps.close ( );
-            oper = getOper ( ni.getName() );
+            oper = OperServ.getOper ( ni.getName() );
             idleUpdate ( "addStaff ( ) " );
         
         } catch  ( SQLException ex )  {
@@ -792,7 +774,7 @@ public class OSDatabase extends Database {
             ps.setInt      ( 2, access               );
             ps.execute ( );
             ps.close ( );
-            oper = getOper ( ni.getName() );
+            oper = OperServ.getOper ( ni.getName() );
             idleUpdate ( "delCSop ( ) " );
                      
         } catch  ( SQLException ex )  {
@@ -843,47 +825,6 @@ public class OSDatabase extends Database {
         }
     }
   */   
-    public static ArrayList<Oper> getMaster ( ) {
-        return getStaffByAccess ( 5 );
-    }
-    public static ArrayList<Oper> getRootAdmins ( ) { 
-        return getStaffByAccess ( 4 ); 
-    }
-    public static ArrayList<Oper> getCSops ( ) {
-        return getStaffByAccess ( 3 );
-    } 
-    public static ArrayList<Oper> getServicesAdmins ( ) {
-        return getStaffByAccess ( 2 );
-    }
-    public static ArrayList<Oper> getIRCops() {
-        return getStaffByAccess ( 1 );
-    }
-    
-    public static ArrayList<Oper> getSRAPlus ( )             { 
-        ArrayList<Oper> oList = new ArrayList<> ( );
-        oList.addAll ( OSDatabase.getMaster ( )  ); 
-        oList.addAll ( OSDatabase.getRootAdmins ( )  ); 
-        return oList;
-    }
-    
-    public static ArrayList<Oper> getCSopsPlus ( )             { 
-        ArrayList<Oper> oList = new ArrayList<> ( );
-        oList.addAll ( OSDatabase.getMaster ( )  ); 
-        oList.addAll ( OSDatabase.getRootAdmins ( )  ); 
-        oList.addAll ( OSDatabase.getCSops ( )  );
-        return oList;
-    }
-    
-    public static ArrayList<Oper> getServicesAdminsPlus ( )             { 
-        ArrayList<Oper> oList = new ArrayList<>( );
-        System.out.println ( "DEBUG: getServicesAdminsPlus ( );" );
-        oList.addAll ( OSDatabase.getMaster ( )  ); 
-        oList.addAll ( OSDatabase.getRootAdmins ( )  ); 
-        oList.addAll ( OSDatabase.getCSops ( )  );
-        oList.addAll ( OSDatabase.getServicesAdmins ( )  );
-        return oList;
-    }
-
   
     /* LOG EVENT */
     static public int logEvent ( OSLogEvent log ) {

@@ -22,7 +22,7 @@ import core.Proc;
 import core.HashNumeric;
 import user.User;
 import java.util.ArrayList;
-import operserv.OSDatabase;
+import operserv.OperServ;
 
 /**
  *
@@ -67,7 +67,7 @@ public class Server extends HashNumeric {
                     this.link.addServer ( this );
                 }
         } 
-        OSDatabase.addServer ( this.name );
+        OperServ.addServer ( this.name );
         this.hashName = this.name.toUpperCase ( ) .hashCode ( );
     }
     

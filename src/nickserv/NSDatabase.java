@@ -33,7 +33,7 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import operserv.OSDatabase;
+import operserv.OperServ;
 import user.User;
 
 /**
@@ -334,7 +334,7 @@ public class NSDatabase extends Database {
         return 1;
     }
     public static int setVar ( NickInfo ni, int var, String nick )  {
-        String variable = new String ( );
+        String variable;
         switch ( var ) {
             case MARK :
                 variable = "mark";
@@ -416,7 +416,7 @@ public class NSDatabase extends Database {
             res2.close();
             ps.close();
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( NSDatabase.class.getName ( ), ex );
         }
         return auth;
@@ -633,7 +633,7 @@ public class NSDatabase extends Database {
             res.close();
             ps.close();
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
         }
         return aList;
@@ -664,7 +664,7 @@ public class NSDatabase extends Database {
             res.close();
             ps.close();
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
         }
         return mail;
@@ -773,7 +773,7 @@ public class NSDatabase extends Database {
                     settings,
                     exp
                 );
-                ni.setOper ( OSDatabase.getOper ( ni.getName() ) );
+                ni.setOper ( OperServ.getOper ( ni.getName() ) );
                 nList.add ( ni );
                 $count++; 
             } 

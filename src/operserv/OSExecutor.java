@@ -66,6 +66,10 @@ public class OSExecutor extends Executor {
             case ULIST :
                 this.doUList ( user ); 
                 break;
+            
+            case SLIST :
+                this.doSList ( user ); 
+                break;
                 
             case UPTIME :
                 this.doUpTime ( user );
@@ -229,9 +233,21 @@ public class OSExecutor extends Executor {
     }
 
     private void doUList ( User user )  {
-        Server s = Handler.findServer ( Proc.getConf ( ) .get ( CONNNAME )  );
-        if ( ! OperServ.enoughAccess ( user, UINFO )  )  { return; }
+        Server s = Handler.findServer ( Proc.getConf().get ( CONNNAME ) );
+        if ( ! OperServ.enoughAccess ( user, UINFO ) ) {
+            return;
+        }
         s.recursiveUserList ( user, " " );
+    }
+    private void doSList ( User user )  {
+        if ( ! OperServ.enoughAccess ( user, UINFO ) ) {
+            return;
+        }
+        this.service.sendMsg ( user, "*** Server List:" ); 
+        for ( Server server : Handler.getServerList() ) {
+            this.service.sendMsg ( user, "  "+server.getName() );
+        }
+        this.service.sendMsg ( user, "*** End of List ***" );
     }
     private void doUpTime ( User user )  { 
         this.service.sendMsg ( user, "Uptime: "+Proc.getUptime ( ) ); 
@@ -718,7 +734,7 @@ public class OSExecutor extends Executor {
         Handler.getOperServ().sendServ("SERVER "+name+" 1 :Jupitered by: "+user.getOper().getName() );
         this.service.sendMsg (user, "Server "+name+" has been Jupitered." );
     }
-
+    
     private void doServer(User user, String[] cmd) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <DEL> <SERVERNAME> 
         //            0       1                          2       3     4            5     < 7
@@ -727,20 +743,25 @@ public class OSExecutor extends Executor {
             return;
         }  
         
-        ArrayList<String> sList;
+        ArrayList<NetServer> sList;
         
         switch ( cmd[4].toUpperCase().hashCode() ) {
             case LIST :
-                sList = OSDatabase.getServerList ( false );
                 this.service.sendMsg ( user, "*** Server List:");
-                for ( String name : sList ) {
-                    this.service.sendMsg ( user, "  "+name );
+                this.service.sendMsg ( user, "  Hub(s):");
+                for ( NetServer server : OperServ.getServers ( HUB, false ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
                 }
+                this.service.sendMsg ( user, "  Leaf(s):");
+                for ( NetServer server : OperServ.getServers ( LEAF, false ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
+                }
+                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
                 this.service.sendMsg ( user, "*** End of List ***");
                 break;
                 
             case DEL :
-                if ( cmd.length == 6 && OSDatabase.delServer ( cmd[5] ) ) {
+                if ( cmd.length == 6 && OperServ.addDelServer ( cmd[5] ) ) {
                     this.service.sendMsg ( user, "Server "+cmd[5]+" was successfully removed from list.");
                 } else {
                     this.service.sendMsg ( user, "Error: Server "+cmd[5]+" was not removed from list.");
@@ -748,11 +769,16 @@ public class OSExecutor extends Executor {
                 break;
                 
             case MISSING :
-                sList = OSDatabase.getServerList ( true );
                 this.service.sendMsg ( user, "*** Missing Servers:");
-                for ( String name : sList ) {
-                    this.service.sendMsg ( user, "  "+name );
+                this.service.sendMsg ( user, "  Hub(s):");
+                for ( NetServer server : OperServ.getServers ( HUB, true ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
                 }
+                this.service.sendMsg ( user, "  Leaf(s):");
+                for ( NetServer server : OperServ.getServers ( LEAF, true ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
+                }
+                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
                 this.service.sendMsg ( user, "*** End of List ***");
                 break;
                 
@@ -797,10 +823,10 @@ public class OSExecutor extends Executor {
                 return;
                 
             case SHOWLIST :
-                ArrayList<Oper> sraList = OSDatabase.getRootAdmins();
-                ArrayList<Oper> csopList = OSDatabase.getCSops();
-                ArrayList<Oper> saList = OSDatabase.getServicesAdmins();
-                ArrayList<Oper> ircopList = OSDatabase.getIRCops();
+                ArrayList<Oper> sraList = OperServ.getRootAdmins();
+                ArrayList<Oper> csopList = OperServ.getCSops();
+                ArrayList<Oper> saList = OperServ.getServicesAdmins();
+                ArrayList<Oper> ircopList = OperServ.getIRCops();
                 
                 this.service.sendMsg(user, "--- Services Root Admins (SRA) ---");
                 for ( Oper oper : sraList ) {

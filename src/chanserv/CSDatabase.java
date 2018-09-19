@@ -20,7 +20,6 @@ package chanserv;
 import channel.Topic;
 import core.Config;
 import core.Database;
-import core.Handler;
 import core.LogEvent;
 import core.Proc;
 import java.sql.PreparedStatement;
@@ -31,7 +30,6 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import nickserv.NickServ;
-import operserv.OSLogEvent;
 import user.User;
 
 
@@ -338,7 +336,7 @@ public class CSDatabase extends Database {
             ps.close ( ); 
             return true;
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
         }
         return false;
@@ -667,7 +665,7 @@ public class CSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "getTopicList ( ) " );
             
-        } catch ( Exception ex ) {
+        } catch ( NumberFormatException | SQLException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
         }
         return tList;
@@ -957,7 +955,7 @@ public class CSDatabase extends Database {
             res.close ( );
             ps.close ( );
              
-        } catch  ( Exception ex )  {
+        } catch  ( SQLException ex )  {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
         }
         return cList;
@@ -998,7 +996,7 @@ public class CSDatabase extends Database {
             res.close ( );
             ps.close ( );
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
         }
         

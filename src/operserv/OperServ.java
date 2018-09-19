@@ -36,12 +36,19 @@ import server.Server;
 public class OperServ extends Service {
     private static boolean              is = false; 
     
-    private static ArrayList<ServicesBan>     akills = new ArrayList<> ( );   /* persistent */
-    private static ArrayList<ServicesBan>     ignores = new ArrayList<> ( );   /* persistent */
-    private static ArrayList<ServicesBan>     sqlines = new ArrayList<> ( );   /* persistent */
-    private static ArrayList<ServicesBan>     sglines = new ArrayList<> ( );   /* persistent */
+    private static ArrayList<ServicesBan> akills = new ArrayList<> ( );   /* AutoKills */
+    private static ArrayList<ServicesBan> ignores = new ArrayList<> ( );   /* Services Ignores */
+    private static ArrayList<ServicesBan> sqlines = new ArrayList<> ( );   /* SQLines */
+    private static ArrayList<ServicesBan> sglines = new ArrayList<> ( );   /* SGLines */
+    private static ArrayList<ServicesBan> spams = new ArrayList<> ( );   /* SPAM list */
     
-    private ArrayList<User>             chList = new ArrayList<>();     /* users who are schedualed for ban checks */
+    private static ArrayList<NetServer> servers = new ArrayList<> ( );   /* Server list */
+    private static ArrayList<NetServer> remServers = new ArrayList<> ( );   /* Remove Server list */
+    private static ArrayList<NetServer> addServers = new ArrayList<> ( );   /* Remove Server list */
+
+    private static ArrayList<Oper> staff = new ArrayList<> ( );   /* Staff list */
+    
+    private ArrayList<User> chList = new ArrayList<>();     /* users who are schedualed for ban checks */
     
     private OSExecutor                  executor;   /* Object that parse and execute commands */
     private OSHelper                    helper;     /* Object that parse and respond to help queries */
@@ -62,6 +69,9 @@ public class OperServ extends Service {
         ignores         = OSDatabase.getServicesBans ( IGNORE );
         sqlines         = OSDatabase.getServicesBans ( SQLINE );
         sglines         = OSDatabase.getServicesBans ( SGLINE );
+        spams           = OSDatabase.getServicesBans ( SPAM );
+        staff           = OSDatabase.getAllStaff ( );
+        servers           = OSDatabase.getServerList ( );
         setCommands ( );
     }
 
@@ -75,6 +85,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "UINFO",    CMDAccess ( UINFO ) ,   "Show user information" )                 );
         cmdList.add ( new CommandInfo ( "CINFO",    CMDAccess ( CINFO ) ,   "Show channel information" )              );
         cmdList.add ( new CommandInfo ( "ULIST",    CMDAccess ( ULIST ) ,   "Show user list" )                        );
+        cmdList.add ( new CommandInfo ( "SLIST",    CMDAccess ( ULIST ) ,   "Show server list" )                        );
         cmdList.add ( new CommandInfo ( "UPTIME",   CMDAccess ( UPTIME ) ,  "Show uptime" )                           );
         cmdList.add ( new CommandInfo ( "AKILL",    CMDAccess ( AKILL ) ,   "Manage the AKill list" )                 );
         cmdList.add ( new CommandInfo ( "STAFF",    CMDAccess ( STAFF ) ,   "Manage the Staff list" )                 );
@@ -86,6 +97,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "BANLOG",   CMDAccess ( BANLOG ),   "Search services ban log" )               );
         cmdList.add ( new CommandInfo ( "SQLINE",   CMDAccess ( SQLINE ),   "Manage the services Q-line list" )       );
         cmdList.add ( new CommandInfo ( "SGLINE",   CMDAccess ( SGLINE ),   "Manage the services G-line list" )       );
+        cmdList.add ( new CommandInfo ( "SPAM",     CMDAccess ( SPAM ),     "Manage the network SPAM list" )          );
         cmdList.add ( new CommandInfo ( "JUPE",     CMDAccess ( JUPE ),     "Jupiter a server" )                      );
         cmdList.add ( new CommandInfo ( "SERVER",   CMDAccess ( SERVER ),   "Jupiter a server" )                      );
     }
@@ -101,7 +113,6 @@ public class OperServ extends Service {
     public boolean checkAccess ( User user, int hashName ) {
         int access              = user.getAccess ( );
         CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
-      //  System.out.println("DEBUG: access:cmdaccess  - "+access+":"+cmdInfo.getAccess ( ));
         if ( access >= cmdInfo.getAccess ( ) )  {
             return true;
         }
@@ -113,9 +124,42 @@ public class OperServ extends Service {
     }
     public void secMaintenance ( ) {  
         this.checkUserList ( );
+        this.checkAddServers ( );
+        this.checkRemServers ( );
+        
     }
     public void minMaintenance ( ) {  
-        OSDatabase.updateServers ( );       
+             
+    }
+    
+    public void checkRemServers ( ) {
+        if ( remServers.size() == 0 || ! OSDatabase.checkConn() ) {
+            return;
+        }
+        ArrayList<NetServer> sList = new ArrayList<>();
+        for ( NetServer server : remServers ) {
+            if ( OSDatabase.delServer ( server.getName() ) ) {
+                sList.add ( server );
+            }
+        }
+        for ( NetServer server : sList ) {
+            remServers.remove ( server );
+        }
+    }
+    
+    public void checkAddServers ( ) {
+        if ( addServers.size() == 0 || ! OSDatabase.checkConn() ) {
+            return;
+        }
+        ArrayList<NetServer> sList = new ArrayList<>();
+        for ( NetServer server : addServers ) {
+            if ( OSDatabase.addServer ( server.getName() ) ) {
+                sList.add ( server );
+            }
+        }
+        for ( NetServer server : sList ) {
+            addServers.remove ( server );
+        }
     }
     
     private void checkUserList ( ) {
@@ -246,33 +290,25 @@ public class OperServ extends Service {
         }
     }
      // public void sendSnoop ( String msg )  { this.snoop.msg ( msg ); }
-
-
-    public static Oper findDBOper ( NickInfo ni )  {
-        if ( ! is ) {
-            return null;
-        }
-        return OSDatabase.getOper ( ni.getString ( NickInfo.NAME )  );
-    }
-    
+ 
     public static ArrayList<Oper> findRootAdmins ( )  {
         if ( ! is ) {
             return null;
         }
-        return OSDatabase.getRootAdmins ( );
+        return getRootAdmins ( );
     }
     public static ArrayList<Oper> findCSOps ( )  {
         if ( ! is ) {
             return null;
         }
-        return OSDatabase.getCSops ( );
+        return getCSops ( );
     }
     
     public static ArrayList<Oper> findServicesAdmins ( )  {
         if ( ! is )  {
             return null;
         }
-        return OSDatabase.getServicesAdmins ( );
+        return getServicesAdmins ( );
     }
 
     
@@ -317,7 +353,7 @@ public class OperServ extends Service {
     private void unBan ( int command, ServicesBan ban )  {
         switch ( command ) {
             case AKILL :
-                this.sendServ ("RAKILL " + ban.getHost ( ) + " " + ban.getUser ( ) );
+                this.sendServ ( "RAKILL " + ban.getHost ( ) + " " + ban.getUser ( ) );
                 break;
                 
             case SQLINE :
@@ -527,6 +563,161 @@ public class OperServ extends Service {
         return false;
     }
 
+    /**
+     *
+     * @param type
+     * @return
+     */
+    public static ArrayList<NetServer> getServers ( int type, boolean missing ) {
+        ArrayList<NetServer> sList = new ArrayList<>();
+        int pHash;
+        int sHash;
+        int hash;
+        System.out.println("DEBUG: servers: "+servers.size());
+        switch ( type ) {
+            case HUB :
+                for ( NetServer server : servers ) {
+                    hash = server.getName().toUpperCase().hashCode();
+                    for ( NetServer server2 : servers ) {
+                        pHash = server2.getPrimary().toUpperCase().hashCode();
+                        sHash = server2.getSecondary().toUpperCase().hashCode();
+                        if ( hash == pHash || hash == sHash ) {
+                            sList.add ( server );
+                        }
+                    }
+                }
+                break;
+                
+            case LEAF :
+                sList.addAll ( servers );
+                ArrayList<NetServer> remList = new ArrayList<>();
+                for ( NetServer server : servers ) {
+                    hash = server.getName().toUpperCase().hashCode();
+                    for ( NetServer server2 : servers ) {
+                        pHash = server2.getPrimary().toUpperCase().hashCode();
+                        sHash = server2.getSecondary().toUpperCase().hashCode();
+                        if ( hash == pHash || hash == sHash ) {
+                            sList.remove ( server );
+                        }
+                    }
+                }
+                break;
+                
+            default :
+                
+        }
+        if ( missing ) {
+            ArrayList<Server> online = Handler.getServerList ( );
+            ArrayList<NetServer> rem = new ArrayList<>();
 
+            for ( Server server : online ) {
+                for ( NetServer server2 : sList ) {
+                    if ( server2.getHashCode ( ) == server.getHashName ( ) ) {
+                        rem.add ( server2 );
+                    }
+                }
+                for ( NetServer r : rem ) {
+                    sList.remove ( r );
+                }
+            }
+        }
+        return sList;         
+    }
+    
+    public static boolean addDelServer ( String name ) {
+        int hash = name.toUpperCase().hashCode();
+        NetServer rem = null;
+        for ( NetServer server : servers ) {
+            if ( server.getHashCode() == hash ) {
+                rem = server;
+            }
+        }
+        if ( rem != null ) {
+            servers.remove ( rem );
+            remServers.add ( rem );
+            return true;
+        }
+        return false;
+    }
+    public static void addServer ( String name ) {
+        int hash = name.toUpperCase().hashCode();
+        for ( NetServer s : servers ) {
+            if ( s.getHashCode() == hash ) {
+                return;
+            }
+        }
+        NetServer server = new NetServer ( name, null, null );
+        addServers.add ( server );
+    }
+    
+    
+    public static ArrayList<Oper> getStaffPlus ( int hash ) {
+        ArrayList<Oper> oList = new ArrayList<> ( );
+        int access = hashToAccess ( hash );
+        for ( Oper o : staff ) {
+            if ( o.getAccess() >= access ) {
+                oList.add ( o );
+            }
+        }
+        return oList;
+    }
+    
+    public static int hashToAccess ( int hash ) {
+        switch ( hash ) {
+            case IRCOP :
+                return 1;
+
+            case SA :
+                return 2;
+
+            case CSOP :
+                return 3;
+
+            case SRA :
+                return 4;
+
+            case MASTER :
+                return 5;
+
+            default :
+                return 0;
+        }
+    }
+    
+    public static ArrayList<Oper> getStaffByAccess ( int access )  {
+        ArrayList<Oper> oList = new ArrayList<> ( );
+        for ( Oper o : staff ) {
+            if ( o.getAccess() == access ) {
+                oList.add ( o );
+            }
+        }
+        return oList;
+    }
+    public static ArrayList<Oper> getMaster ( ) {
+        return getStaffByAccess ( 5 );
+    }
+    public static ArrayList<Oper> getRootAdmins ( ) { 
+        return getStaffByAccess ( 4 ); 
+    }
+    public static ArrayList<Oper> getCSops ( ) {
+        return getStaffByAccess ( 3 );
+    } 
+    public static ArrayList<Oper> getServicesAdmins ( ) {
+        return getStaffByAccess ( 2 );
+    }
+    public static ArrayList<Oper> getIRCops() {
+        return getStaffByAccess ( 1 );
+    }
+    
+    public static Oper getOper ( String name ) {
+        int hash = name.toUpperCase().hashCode();
+        for ( Oper oper : staff ) {
+            if ( oper.getHashCode() == hash ) {
+                return oper;
+            }
+        }
+        return new Oper ( );
+    }
+    
 }
    
