@@ -81,6 +81,10 @@ import java.util.Random;
                 this.set ( user, cmd );
                 break;
                 
+            case CHANFLAG :
+                this.chanFlag ( user, cmd );
+                break;
+                
             case INFO :
                 this.info ( user, cmd );
                 break;
@@ -423,7 +427,11 @@ import java.util.Random;
         ci.getSettings().set ( OPGUARD, ON );
         ci.getChanges().change ( OPGUARD );
         ci.getChanges().change ( TOPIC );
+        ci.setChanFlag( new CSFlag ( ci.getName() ) );
+        
         ChanServ.addToWorkList ( CHANGE, ci );
+        
+        
         
         CSLogEvent log = new CSLogEvent ( ci.getName(), REGISTER, ci.getFounder().getString ( FULLMASK ), ci.getFounder().getName() );
         ChanServ.addLog ( log );
@@ -1557,6 +1565,141 @@ import java.util.Random;
     }
     
     
+    private void chanFlag(User user, String[] cmd) {
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :CHANFLAG #chan MAX_BANS 500
+        // 0            1       2                          3         4     5        6  = 7        
+        CmdData cmdData = this.validateCommandData ( user, CHANFLAG, cmd );
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "CHANFLAG <chan> <flag> <value>" ) ); 
+                return;
+
+            case CHAN_NOT_REGISTERED :
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1() ) );
+                return;
+                
+            case CHAN_IS_FROZEN :
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                return;
+                       
+            case CHAN_IS_CLOSED :
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                return;
+                
+            case ACCESS_DENIED : 
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                return;
+            
+            case NO_SUCH_CHANFLAG : 
+                this.service.sendMsg ( user, output ( NO_SUCH_CHANFLAG, cmdData.getString1 ( ) ) );
+                return;
+            
+            case BAD_CHANFLAG_VALUE : 
+                this.service.sendMsg ( user, output ( BAD_CHANFLAG_VALUE ) );
+                return;
+            
+            default :
+                
+        }
+        ChanInfo ci = cmdData.getChanInfo ( );
+        NickInfo ni = cmdData.getNick ( );
+        String commandStr = cmdData.getCommandStr ( );
+        String commandVal = cmdData.getCommandVal ( );
+        int command = cmdData.getCommand ( );
+        String value = cmdData.getString2 ( );
+
+        /* 
+            private short join_connect_time = 0;
+            private short talk_connect_time = 0;
+            private short talk_join_time = 0;
+            private short max_bans = 200;
+            private boolean no_notice = false;
+            private boolean no_ctcp = false;
+            private boolean no_part_msg = false;
+            private boolean excempt_opped = false;
+            private boolean excempt_voiced = false;
+            private boolean excempt_identd = false;
+            private boolean excempt_registered = false;
+            private boolean excempt_invites = false;
+            private String greetmsg = null;
+        */
+        
+        switch ( command ) {
+            case JOIN_CONNECT_TIME :
+            case TALK_CONNECT_TIME :
+            case TALK_JOIN_TIME :
+            case MAX_BANS :
+                short sho;
+                if ( commandVal == null ) 
+                    commandVal = "0";
+                try {
+                    sho = Short.parseShort ( commandVal );
+                } catch ( NumberFormatException ex ) {
+                    this.service.sendMsg ( user, "Error: Invalid value." );
+                    return;
+                }
+                ci.getChanFlag().setShortFlag ( command, sho );
+                ci.getChanges().change ( command );
+                ChanServ.addToWorkList ( CHANGE, ci );
+                this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
+                this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+                break;
+
+            case NO_NOTICE :
+            case NO_CTCP :
+            case NO_PART_MSG :
+            case NO_QUIT_MSG :
+            case EXEMPT_OPPED :
+            case EXEMPT_VOICED :
+            case EXEMPT_IDENTD :
+            case EXEMPT_REGISTERED :
+            case EXEMPT_INVITES :
+                boolean boo = ( commandVal.equalsIgnoreCase ( "ON" ) );
+                ci.getChanFlag().setBooleanFlag ( command, boo );
+                ci.getChanges().change ( command );
+                ChanServ.addToWorkList ( CHANGE, ci );
+                this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
+                this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+                break;
+                
+            case GREETMSG :
+                String message = Handler.cutArrayIntoString ( cmd, 6 );
+                ci.getChanFlag().setGreetmsg ( message );
+                ci.getChanges().change ( command );
+                ChanServ.addToWorkList ( CHANGE, ci );
+                this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+message );
+                this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+                break;
+                
+            case LIST :
+                CSFlag cf = ci.getChanFlag ( );
+                this.service.sendMsg ( user, "*** ChanFlag LIST for "+ci.getName()+" ***" );
+                this.service.sendMsg ( user, "  - JOIN_CONNECT_TIME: "+cf.getJoin_connect_time() );
+                this.service.sendMsg ( user, "  - TALK_CONNECT_TIME: "+cf.getTalk_connect_time() );
+                this.service.sendMsg ( user, "  - TALK_JOIN_TIME: "+cf.getTalk_join_time() );
+                this.service.sendMsg ( user, "  - MAX_BANS: "+cf.getMax_bans() );
+                this.service.sendMsg ( user, "  - NO_NOTICE: "+( cf.isNo_notice() ? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - NO_CTCP: "+( cf.isNo_ctcp()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - NO_PART_MSG: "+( cf.isNo_part_msg()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - NO_QUIT_MSG: "+( cf.isNo_quit_msg()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - EXEMPT_OPPED: "+( cf.isExempt_opped()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - EXEMPT_VOICED: "+( cf.isExempt_voiced()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - EXEMPT_IDENTD: "+( cf.isExempt_identd()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - EXEMPT_REGISTERED: "+( cf.isExempt_registered() ? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - EXEMPT_INVITES: "+( cf.isExempt_invites()? "ON" : "OFF" ) );
+                this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
+                this.service.sendMsg ( user, "*** End of List ***" );
+                break;
+                
+            default :
+                
+        }
+        
+        
+    }
+
+    
+    
     private CmdData validateCommandData ( User user, int command, String[] cmd )  {
         Chan c;
         Chan c2;
@@ -1582,6 +1725,40 @@ import java.util.Random;
         
         switch ( command ) {
             
+            case CHANFLAG :
+                // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :CHANFLAG #chan MAX_BANS 500
+                // 0            1       2                          3         4     5        6  = 7   
+                if ( isShorterThanLen ( 6, cmd) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
+                    cmdData.setString1 ( cmd[4] );
+                    cmdData.setStatus ( CHAN_NOT_REGISTERED );
+                } else if ( ci.getSettings().is ( CLOSED ) ) {
+                    cmdData.setChanInfo ( ci );
+                    cmdData.setStatus ( CHAN_IS_CLOSED );
+                } else if ( ci.getSettings().is ( FROZEN ) ) {
+                    cmdData.setChanInfo ( ci );
+                    cmdData.setStatus ( CHAN_IS_FROZEN );
+                } else if ( ( ni = ci.getNickByUser ( user ) ) == null && ! user.isAtleast ( SA ) ) {
+                    cmdData.setString1 ( ci.getName() ); 
+                    cmdData.setStatus ( ACCESS_DENIED );
+                } else if ( ! ci.isFounder ( ni ) && ! user.isAtleast ( SA ) ) {
+                    cmdData.setString1 ( ci.getName() );
+                    cmdData.setStatus ( ACCESS_DENIED );
+                } else if ( ! CSFlag.isFlag ( cmd[5] ) ) {
+                    cmdData.setString1 ( cmd[5] );
+                    cmdData.setStatus ( NO_SUCH_CHANFLAG );
+                } else if ( ! CSFlag.isOkValue ( cmd[5], ( cmd.length > 6 ? cmd[6] : "" ) ) ) {
+                    cmdData.setStatus ( BAD_CHANFLAG_VALUE );
+                } else {
+                    cmdData.setChanInfo ( ci );
+                    cmdData.setCommandStr ( cmd[5] );
+                    cmdData.setCommand ( cmd[5].toUpperCase().hashCode() );
+                    cmdData.setNick ( ni );
+                    cmdData.setCommandVal ( cmd.length > 6 ? cmd[6] : "" );
+                }
+                break; 
+                
             case ACCESSLOG :
                 if ( isShorterThanLen ( 5, cmd) ) {
                     cmdData.setStatus ( SYNTAX_ERROR );
@@ -2250,6 +2427,12 @@ import java.util.Random;
             case CHANFLAG_EXIST :
                 return "Chan "+args[0]+" is already "+args[1]+".";
                 
+            case NO_SUCH_CHANFLAG :
+                return "No such chanflag available: "+args[0]+".";
+                
+            case BAD_CHANFLAG_VALUE :
+                return "Error: Invalid chanflag value.";
+                
             default : 
                 return "";
                 
@@ -2348,5 +2531,8 @@ import java.util.Random;
 
     private final static int CHANNELDROPPED             = 2601; 
     private final static int CHANNELDELETED             = 2602; 
+
+    private final static int NO_SUCH_CHANFLAG           = 2651; 
+    private final static int BAD_CHANFLAG_VALUE         = 2652; 
 
  }

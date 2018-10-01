@@ -45,6 +45,21 @@ public class CSChanges extends Changes {
     private boolean leaveops;
     private boolean founder;
   
+    private boolean join_connect_time;
+    private boolean talk_connect_time;
+    private boolean talk_join_time;
+    private boolean max_bans;
+    private boolean no_notice;
+    private boolean no_ctcp;
+    private boolean no_part_msg;
+    private boolean exempt_opped;
+    private boolean exempt_voiced;
+    private boolean exempt_identd;
+    private boolean exempt_registered;
+    private boolean exempt_invites;
+    private boolean greetmsg;
+    
+    
     public CSChanges ( ) {
         super ( );
         clean ( );
@@ -70,6 +85,20 @@ public class CSChanges extends Changes {
         this.restrict = false;
         this.verbose = false;
         this.founder = false;
+        
+        this.join_connect_time = false;
+        this.talk_connect_time = false;
+        this.talk_join_time = false;
+        this.max_bans = false;
+        this.no_notice = false;
+        this.no_ctcp = false;
+        this.no_part_msg = false;
+        this.exempt_opped = false;
+        this.exempt_voiced = false;
+        this.exempt_identd = false;
+        this.exempt_registered = false;
+        this.exempt_invites = false;
+        this.greetmsg = false;
     }
     
     public boolean hasChanged ( int what ) {
@@ -127,7 +156,46 @@ public class CSChanges extends Changes {
                 
             case FOUNDER :
                 return this.founder;
-                
+                    
+            case JOIN_CONNECT_TIME :
+                return this.join_connect_time;
+
+            case TALK_CONNECT_TIME :
+                return this.talk_connect_time;
+
+            case TALK_JOIN_TIME :
+                return this.talk_join_time;
+
+            case MAX_BANS :
+                return this.max_bans;
+            
+            case NO_NOTICE :
+                return this.no_notice;
+
+            case NO_CTCP :
+                return this.no_ctcp;
+
+            case NO_PART_MSG :
+                return this.no_part_msg;
+
+            case EXEMPT_OPPED :
+                return this.exempt_opped;
+
+            case EXEMPT_VOICED :
+                return this.exempt_voiced;
+
+            case EXEMPT_IDENTD :
+                return this.exempt_identd;
+
+            case EXEMPT_REGISTERED :
+                return this.exempt_registered;            
+            
+            case EXEMPT_INVITES :
+                return this.exempt_invites;
+            
+            case GREETMSG :        
+                return this.greetmsg;
+            
             default :
                 return false;
         }
@@ -225,6 +293,71 @@ public class CSChanges extends Changes {
                 this.changed = true;
                 break;
                 
+            case JOIN_CONNECT_TIME :
+                this.join_connect_time = true;
+                this.changed = true;
+                break;
+
+            case TALK_CONNECT_TIME :
+                this.talk_connect_time = true;
+                this.changed = true;
+                break;
+
+            case TALK_JOIN_TIME :
+                this.talk_join_time = true;
+                this.changed = true;
+                break;
+
+            case MAX_BANS :
+                this.max_bans = true;
+                this.changed = true;
+                break;
+            
+            case NO_NOTICE :
+                this.no_notice = true;
+                this.changed = true;
+                break;
+
+            case NO_CTCP :
+                this.no_ctcp = true;
+                this.changed = true;
+                break;
+
+            case NO_PART_MSG :
+                this.no_part_msg = true;
+                this.changed = true;
+                break;
+
+            case EXEMPT_OPPED :
+                this.exempt_opped = true;
+                this.changed = true;
+                break;
+
+            case EXEMPT_VOICED :
+                this.exempt_voiced = true;
+                this.changed = true;
+                break;
+
+            case EXEMPT_IDENTD :
+                this.exempt_identd = true;
+                this.changed = true;
+                break;
+
+            case EXEMPT_REGISTERED :
+                this.exempt_registered = true;
+                this.changed = true;
+                break;
+            
+            case EXEMPT_INVITES :
+                this.exempt_invites = true;
+                this.changed = true;
+                break;
+            
+            case GREETMSG :        
+                this.greetmsg = true;
+                this.changed = true;
+                break;
+
             default :
 
         }

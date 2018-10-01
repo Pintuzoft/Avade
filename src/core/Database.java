@@ -148,7 +148,19 @@ public class Database extends HashNumeric {
         return false;
     }
 
-    
+    /* Database changes */
+    static boolean change ( String query ) {
+        try {
+            ps = sql.prepareStatement ( query );
+            ps.execute ( );
+            ps.close ( ); 
+            
+        } catch ( SQLException ex ) {
+            return false;
+        }
+        return true;
+    }
+
     /*  mysql> desc log;
         +--------+-------------+------+-----+---------+----------------+
         | Field  | Type        | Null | Key | Default | Extra          |
@@ -315,6 +327,33 @@ public class Database extends HashNumeric {
         }
     }
     
+    
+    static String getDBVersion() {
+        String version = null;
+        if ( ! activateConnection() ) {
+            return version;
+        }
+        
+        String query;
+        try {
+            query = "select value "+
+                    "from settings "+
+                    "where name = 'version'";
+            ps = sql.prepareStatement ( query );
+            res = ps.executeQuery ( );
+            if ( res.next() ) {
+                version = res.getString ( 1 );
+            }
+            ps.close ( );
+            
+        } catch ( SQLException ex ) {
+            //Proc.log ( Database.class.getName ( ) , ex );
+            return "1.1701-1"; /* Base version */
+        }
+        return version;
+    }
+
+    
     private static ArrayList<NickInfo> stringToNicks ( String in ) {
         ArrayList<NickInfo> nList = new ArrayList<>();
         NickInfo ni;
@@ -365,4 +404,7 @@ public class Database extends HashNumeric {
         return buf;
     }
      
+    
+    
+    
 }

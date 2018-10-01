@@ -54,6 +54,7 @@ public class Proc extends HashNumeric {
         logger                  = new Log ( );
         this.run                = true;
         this.ticker             = System.nanoTime ( ); /* current time */
+        this.checkVersion ( );  /* Check version and apply changes if neccessary */
         this.connect ( );
         
         this.handler            = new Handler ( );
@@ -241,6 +242,11 @@ public class Proc extends HashNumeric {
     
     static ServSock getConn ( ) {
         return conn;
+    }
+
+    private void checkVersion() {
+        DBChanges changes = new DBChanges ( Proc.version );
+        
     }
 
 }

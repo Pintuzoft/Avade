@@ -20,7 +20,6 @@ package chanserv;
 import channel.Chan;
 import channel.Topic;
 import core.Handler;
-import core.StringMatch;
 import core.ServicesID;
 import core.HashNumeric;
 import static core.HashNumeric.SOP;
@@ -28,11 +27,9 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
 import nickserv.NickServ;
-import operserv.Oper;
 import user.User;
 import java.util.ArrayList;
 import java.util.Date;
-import nickserv.NSChanges;
 
 /**
  *  create table nick  ( name varchar ( 32 ) , mask varchar ( 128 ) ,pass varchar ( 32 ) ,mail varchar ( 64 ) ,regstamp int ( 11 ) , stamp int ( 11 ) , primary key  ( name )  )  ENGINE=InnoDB;
@@ -46,6 +43,7 @@ public class ChanInfo extends HashNumeric {
     private String          pass;
     private Topic           topic; 
     private ChanSetting     settings;
+    private CSFlag          chanFlag;
     private String          regTime;
     private String          lastSeen; 
     private ArrayList<CSAcc> klist;
@@ -606,5 +604,13 @@ public class ChanInfo extends HashNumeric {
     }
     public CSChanges getChanges ( ) {
         return this.changes;
+    }
+
+    public CSFlag getChanFlag ( ) {
+        return this.chanFlag;
+    }
+
+    void setChanFlag ( CSFlag chanFlag ) {
+        this.chanFlag = chanFlag;
     }
 }

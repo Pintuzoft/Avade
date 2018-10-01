@@ -343,7 +343,7 @@ public class User extends HashNumeric {
         if ( this.getOper() == null ) {
             return false;
         }
-        return this.getOper().isAtleast ( access );
+        return ( this.isOper() && this.getOper().isAtleast ( access ) );
     } 
   
     @Override

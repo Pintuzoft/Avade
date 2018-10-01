@@ -22,20 +22,39 @@ package core;
  * @author DreamHealer
  */
 public class Version extends HashNumeric {
-    private String          name;
+    private String          name = "Avade";
     private int             generation;
-    private int             version;
-    private int             subversion;
-    private String          date;
+    private int             year;
+    private int             month;
+    private int             build;
     
     public Version ( )  {
-        this.name           = "Avade";
         this.generation     = 1;
-        this.version        = 0;
-        this.subversion     = 20;
-        this.date           = "2018-Sep";
+        this.year           = 18;
+        this.month          = 9;
+        this.build          = 1;
     }
+    
     public String getVersion ( )  {
-        return this.name+"-"+this.generation+"."+this.version+"-"+this.subversion+"  ( "+this.date+" ) ";
-    } 
+        return this.name+"-"+this.generation+"."+this.year+this.zeroPrefix(this.month)+"-"+this.build;
+    }
+    
+    private String zeroPrefix ( int num ) {
+        String buf = String.valueOf ( num );
+        return buf.length() < 2 ? "0"+buf : buf;
+    }
+    
+    public int getGeneration ( ) {
+        return this.generation;
+    }
+    public int getYear ( ) {
+        return this.year;
+    }
+    public int getMonth ( ) {
+        return this.month;
+    }   
+    public int getBuild ( ) {
+        return this.build;
+    }
+    
 }

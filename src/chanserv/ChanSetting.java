@@ -21,7 +21,6 @@ import core.Proc;
 import core.HashNumeric;
 
 /**
- * create table nicksetting  ( name varchar ( 32 ) , enforce bool not null, secure bool not null, private bool not null, noop bool not null, neverop bool not null, mailblock bool not null, showemail bool not null, showhost bool not null, primary key  ( name ) , constraint foreign key  ( name )  references nick  ( name )  on delete cascade on update cascade )  ENGINE=InnoDB;
  * @author DreamHealer
  */
     /*   mysql> desc nicksetting;

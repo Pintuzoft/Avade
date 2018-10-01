@@ -189,6 +189,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int WHY                         = 85928;
     public final static int ACCESSLOG                   = 671568704;
     public final static int CHANLIST                    = -2079769872;
+    public final static int CHANFLAG                    = -2079946306;
     public final static int MDEOP                       = 73205743;
     public final static int MKICK                       = 73417747;
     public final static int NICK_ACCESS_DENIED          = 1319854842;
@@ -210,6 +211,21 @@ public abstract class HashNumeric extends TextFormat {
     public final static int SQ                          = 2654;
     public final static int SG                          = 2644;
     
+    /* CHANFLAG */
+    public final static int JOIN_CONNECT_TIME           = -556190185;
+    public final static int TALK_CONNECT_TIME           = 393912789;
+    public final static int TALK_JOIN_TIME              = -982443793;
+    public final static int MAX_BANS                    = 1219737695;
+    public final static int NO_NOTICE                   = 1717646102;
+    public final static int NO_CTCP                     = -1437640612;
+    public final static int NO_PART_MSG                 = 994710995;
+    public final static int NO_QUIT_MSG                 = -1244903889;
+    public final static int EXEMPT_OPPED               = 711234318;
+    public final static int EXEMPT_VOICED              = 772697554;
+    public final static int EXEMPT_IDENTD              = 390251732;
+    public final static int EXEMPT_REGISTERED          = 1834356450;
+    public final static int EXEMPT_INVITES             = -485255670;
+    public final static int GREETMSG                    = 988053464;
     
     /* OPER */
     public final static int ACCSTRING                   = 1073267634;

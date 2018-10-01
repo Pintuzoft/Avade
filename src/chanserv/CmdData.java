@@ -37,6 +37,8 @@ public class CmdData {
     private int command;
     private String str1;
     private String str2;
+    private String commandStr;
+    private String commandVal;
     
     public CmdData ( )  {
         this.chan       = null;
@@ -124,12 +126,28 @@ public class CmdData {
     public int getCommand ( ) {
         return this.command;
     }
-    
+
     public String getString1 ( ) {
         return this.str1;
     }
      
     public String getString2 ( ) {
         return this.str2;
+    }
+   
+    public String getCommandStr ( ) {
+        return this.commandStr;
+    }
+    
+    public String getCommandVal ( ) {
+        return this.commandVal;
+    }
+ 
+    void setCommandStr(String string) {
+        this.commandStr = string;
+    }
+
+    void setCommandVal(String string) {
+        this.commandVal = string;
     }
 }

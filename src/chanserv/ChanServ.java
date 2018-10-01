@@ -72,8 +72,9 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "HELP",         0,                          "Show help information" )               );
         cmdList.add ( new CommandInfo ( "REGISTER",     0,                          "Register a channel" )                  );
         cmdList.add ( new CommandInfo ( "IDENTIFY",     0,                          "Identify as founder of a channel" )    );
-        cmdList.add ( new CommandInfo ( "SET",          0,                          "Show user list" )                      );
-        cmdList.add ( new CommandInfo ( "INFO",         0,                          "Show uptime" )                         );
+        cmdList.add ( new CommandInfo ( "SET",          0,                          "Manage channel options" )              );
+        cmdList.add ( new CommandInfo ( "CHANFLAG",     0,                          "Manage eXtended channel flags" )       );
+        cmdList.add ( new CommandInfo ( "INFO",         0,                          "Show information about a channel" )    );
         cmdList.add ( new CommandInfo ( "AOP",          0,                          "Manage the AOP list" )                 );
         cmdList.add ( new CommandInfo ( "SOP",          0,                          "Manage the SOP list" )                 );
         cmdList.add ( new CommandInfo ( "AKICK",        0,                          "Manage the AKick list" )               );
@@ -210,6 +211,7 @@ public class ChanServ extends Service {
             if ( ci.is ( CLOSED ) ) {
                 ci.kickAll ( "Channel is CLOSED" );
             } else {
+                ci.getChanFlag().syncChangedValuesWithNetwork();
                 if ( ci.is ( TOPICLOCK )  || ci.is ( KEEPTOPIC )  )  {
                     c.setTopic ( ci.getTopic ( )  );
                     this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );

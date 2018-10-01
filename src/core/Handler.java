@@ -315,7 +315,7 @@ public class Handler extends HashNumeric {
         Chan c = new Chan ( this.data ); 
         cList.add ( c ); 
         if  ( check )  {
-            chan.checkSettings ( c ); 
+            chan.checkSettings ( c );
         } 
     }
     

@@ -81,14 +81,14 @@ public class OperServ extends Service {
  
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
-        cmdList.add ( new CommandInfo ( "HELP",     1,                         "Show help information" )                 );
-        cmdList.add ( new CommandInfo ( "UINFO",    CMDAccess ( UINFO ) ,   "Show user information" )                 );
-        cmdList.add ( new CommandInfo ( "CINFO",    CMDAccess ( CINFO ) ,   "Show channel information" )              );
-        cmdList.add ( new CommandInfo ( "ULIST",    CMDAccess ( ULIST ) ,   "Show user list" )                        );
-        cmdList.add ( new CommandInfo ( "SLIST",    CMDAccess ( ULIST ) ,   "Show server list" )                        );
-        cmdList.add ( new CommandInfo ( "UPTIME",   CMDAccess ( UPTIME ) ,  "Show uptime" )                           );
-        cmdList.add ( new CommandInfo ( "AKILL",    CMDAccess ( AKILL ) ,   "Manage the AKill list" )                 );
-        cmdList.add ( new CommandInfo ( "STAFF",    CMDAccess ( STAFF ) ,   "Manage the Staff list" )                 );
+        cmdList.add ( new CommandInfo ( "HELP",     1,                      "Show help information" )                );
+        cmdList.add ( new CommandInfo ( "UINFO",    CMDAccess ( UINFO ),    "Show user information" )                 );
+        cmdList.add ( new CommandInfo ( "CINFO",    CMDAccess ( CINFO ),    "Show channel information" )              );
+        cmdList.add ( new CommandInfo ( "ULIST",    CMDAccess ( ULIST ),    "Show user list" )                        );
+        cmdList.add ( new CommandInfo ( "SLIST",    CMDAccess ( ULIST ),    "Show server list" )                      );
+        cmdList.add ( new CommandInfo ( "UPTIME",   CMDAccess ( UPTIME ),   "Show uptime" )                           );
+        cmdList.add ( new CommandInfo ( "AKILL",    CMDAccess ( AKILL ),    "Manage the AKill list" )                 );
+        cmdList.add ( new CommandInfo ( "STAFF",    CMDAccess ( STAFF ),    "Manage the Staff list" )                 );
         cmdList.add ( new CommandInfo ( "SEARCHLOG",CMDAccess ( SEARCHLOG ),"Search the logs for nick or channel" )   );
         cmdList.add ( new CommandInfo ( "AUDIT",    CMDAccess ( AUDIT ),    "Search access logs" )                    );
         cmdList.add ( new CommandInfo ( "COMMENT",  CMDAccess ( COMMENT ),  "Add comment about nick or chan" )        );

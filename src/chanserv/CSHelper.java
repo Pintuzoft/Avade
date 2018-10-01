@@ -110,6 +110,10 @@ public class CSHelper extends Helper {
             case CHANLIST :
                 this.chanList ( user );
                 break;
+            
+            case CHANFLAG :
+                this.chanFlag ( user );
+                break;
                 
             case MDEOP :
                 this.mDeOp ( user );
@@ -800,6 +804,44 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   Dont go around deleting channels without cause. Users regged their channels and put"       );
         this.service.sendMsg ( user, "   their time and effort into them. If a channel been doing something illegal or against"     );
         this.service.sendMsg ( user, "   network policys then rather close the channel than delete it."                             );
+        this.showEnd ( user );  
+    }
+    private void chanFlag ( User user ) {
+        this.showStart ( user, "ChanFlag" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ CHANFLAG <#chan> <flag> [<value>]"+f.b ( ) +""               );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The ChanFlag command extends functionality available in the IRCd server to the network"    );
+        this.service.sendMsg ( user, "   users. This lets founders access extra settings that can be placed on a channel which "    );
+        this.service.sendMsg ( user, "   can assist with floodings, spam or other possible annoyances. The following is a list"     );
+        this.service.sendMsg ( user, "   of settings available through the ChanFlag command:"                                       );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "     JOIN_CONNECT_TIME <seconds>  - User is allowed to join X sec after connect"              );
+        this.service.sendMsg ( user, "     TALK_CONNECT_TIME <seconds>  - User is allowed to talk X sec after connect"              );
+        this.service.sendMsg ( user, "     TALK_JOIN_TIME <seconds>     - User is allowed to talk X sec after joining the chan"     );
+        this.service.sendMsg ( user, "     MAX_BANS <num>               - Max amount of bans that can be placed in the chan"        );
+        this.service.sendMsg ( user, "     NO_NOTICE <ON|OFF>           - Disable channel notices"                                  );
+        this.service.sendMsg ( user, "     NO_CTCP <ON|OFF>             - Disable channel CTCP"                                     );
+        this.service.sendMsg ( user, "     NO_PART_MSG <ON|OFF>         - Prevent part messages from being shown"                   );
+        this.service.sendMsg ( user, "     NO_QUIT_MSG <ON|OFF>         - Prevent quit messages from being shown"                   );
+        this.service.sendMsg ( user, "     EXEMPT_OPPED <ON|OFF>        - Exempt opped users from ChanFlags"                        );
+        this.service.sendMsg ( user, "     EXEMPT_VOICED <ON|OFF>       - Exempt voiced users from ChanFlags"                       );
+        this.service.sendMsg ( user, "     EXEMPT_IDENTD <ON|OFF>       - Exempt users using enabled identd from ChanFlags"         );
+        this.service.sendMsg ( user, "     EXEMPT_REGISTERED <ON|OFF>   - Exempt identified (+r) users from ChanFlags"              );
+        this.service.sendMsg ( user, "     EXEMPT_INVITES <ON|OFF>      - Exempt users matching the invites list (+I) from ChanFlags");
+        this.service.sendMsg ( user, "     GREETMSG <greeting>          - Set join greeting message for warning users they might"   );
+        this.service.sendMsg ( user, "                                    get match by the ChanFlags."                              );
+        this.service.sendMsg ( user, "     LIST                         - Will list current configuration"                          );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   These channel flags is temporary on the IRCd and will be unset if the channel is recreated");
+        this.service.sendMsg ( user, "   but with ChanFlag command these flags get persistent just like keeptopic keeps the topic"  );
+        this.service.sendMsg ( user, "   set on the channel even if the channel is recreated"                                       );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
+        this.service.sendMsg ( user, "   Before setting any flags on your channel please observe and identify the key aspects of"   );
+        this.service.sendMsg ( user, "   the issue(s) that your channel is facing and try resolve them as gently as possible. If"   );
+        this.service.sendMsg ( user, "   noone is allowed to talk for the first 10000 seconds your channel might inadvertently"     );
+        this.service.sendMsg ( user, "   loose users as they cannot do what IRC was built for and that is to chat."                 );
         this.showEnd ( user );  
     }
 }
