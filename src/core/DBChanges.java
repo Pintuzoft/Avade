@@ -72,17 +72,17 @@ public class DBChanges extends HashNumeric {
         ArrayList<String> qList = new ArrayList<>();
         switch ( target ) {
             case 117021 :
-                qList.add ( "TARGET: 1.1702-1 (Initial version)");
+                qList.add ( "to: v1.1702-1 (Initial version)");
                 qList.addAll ( this.db117021 ( ) );
                 qList.add ( "update settings set value = '1.1702-1' where name = 'version'" );
 
             case 118011 :
-                qList.add ( "TARGET: 1.1801-1 (Base version)");
+                qList.add ( "to: v1.1801-1 (Base version)");
                 qList.addAll ( this.db118011 ( ) );
                 qList.add ( "update settings set value = '1.1801-1' where name = 'version'" );
             
             case 118091 :
-                qList.add ( "TARGET: 1.1809-1");
+                qList.add ( "to: v1.1809-1");
                 qList.add ( "update settings set value = '1.1809-1' where name = 'version'" );
                 
                 break;
@@ -92,12 +92,12 @@ public class DBChanges extends HashNumeric {
                  
         }
         for ( String query : qList ) {
-            if ( query.matches ( "^TARGET: (.*)" ) ) {
-                System.out.println ( "************************" );
-                System.out.println ( query );
+            if ( query.matches ( "^to: (.*)" ) ) {
+                System.out.println ( "Updating DB "+query+" ..." );
             } else {
-                System.out.println ( ": "+query );
-                if ( ! Database.change ( query ) ) {
+               
+                if ( ! Database.change ( query ) ) { 
+                    System.out.println ( ": "+query );
                     System.out.println ( "  - Change FAILED to apply" );
                     System.exit ( 1 );
                 }
