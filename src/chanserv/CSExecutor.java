@@ -30,9 +30,7 @@ import nickserv.NickInfo;
 import nickserv.NickServ;
 import user.User;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -1608,22 +1606,6 @@ import java.util.Random;
         int command = cmdData.getCommand ( );
         String value = cmdData.getString2 ( );
 
-        /* 
-            private short join_connect_time = 0;
-            private short talk_connect_time = 0;
-            private short talk_join_time = 0;
-            private short max_bans = 200;
-            private boolean no_notice = false;
-            private boolean no_ctcp = false;
-            private boolean no_part_msg = false;
-            private boolean excempt_opped = false;
-            private boolean excempt_voiced = false;
-            private boolean excempt_identd = false;
-            private boolean excempt_registered = false;
-            private boolean excempt_invites = false;
-            private String greetmsg = null;
-        */
-        
         switch ( command ) {
             case JOIN_CONNECT_TIME :
             case TALK_CONNECT_TIME :
@@ -1667,8 +1649,8 @@ import java.util.Random;
                 ci.getChanFlag().setGreetmsg ( message );
                 ci.getChanges().change ( command );
                 ChanServ.addToWorkList ( CHANGE, ci );
-                this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+message );
-                this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+                this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+" :"+message );
+                this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+message );
                 break;
                 
             case LIST :

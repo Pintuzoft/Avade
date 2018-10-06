@@ -58,7 +58,7 @@ public class DBChanges extends HashNumeric {
                 }
             }
         }
-        System.exit ( 1 );
+       // System.exit ( 1 );
  
     }
         

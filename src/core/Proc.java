@@ -82,7 +82,7 @@ public class Proc extends HashNumeric {
             /* Proc loop */
          
             
-            this.read = this.conn.readLine();
+            this.read = Proc.conn.readLine();
             
 
             if ( this.read != null )  {
@@ -110,12 +110,12 @@ public class Proc extends HashNumeric {
             minAgo = System.currentTimeMillis ( ) - this.minuteDelay;
             if ( this.minMaintenance < minAgo )  {
                 this.handler.runMinuteMaintenance ( );
-                if ( this.conn.timedOut() ) { /* Did we time out? */
+                if ( Proc.conn.timedOut() ) { /* Did we time out? */
                     System.out.println("1:");
-                    this.conn.disconnect();
+                    Proc.conn.disconnect();
                     this.connect();
-                    this.handler.unloadServices ( );
-                    this.handler.initServices ( );
+                    Handler.unloadServices ( );
+                    Handler.initServices ( );
                 }
                 this.minMaintenance = System.currentTimeMillis ( );
             }
@@ -123,8 +123,8 @@ public class Proc extends HashNumeric {
             secAgo = System.currentTimeMillis ( ) - this.secondDelay;
             if ( this.secMaintenance < secAgo )  {
                 this.handler.runSecondMaintenance ( );
-                if ( this.handler.sanityCheck ( ) ) {
-                    this.handler.initServices ( );
+                if ( Handler.sanityCheck ( ) ) {
+                    Handler.initServices ( );
                 }
                 this.secMaintenance = System.currentTimeMillis ( );
             }

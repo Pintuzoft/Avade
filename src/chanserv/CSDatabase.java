@@ -119,8 +119,30 @@ public class CSDatabase extends Database {
                 ps.setString  ( 7, ci.getString ( LASTSEEN ) );
                 ps.execute ( );
                 ps.close ( );
-                
-                query = "insert into chanflag (?,0,0,0,200,0,0,0,0,0,0,0,0,null)";
+                /*
+                | name              | varchar(32)  | NO   | PRI | NULL    |       |
+                | join_connect_time | smallint(6)  | YES  |     | NULL    |       |
+                | talk_connect_time | smallint(6)  | YES  |     | NULL    |       |
+                | talk_join_time    | smallint(6)  | YES  |     | NULL    |       |
+                | max_bans          | smallint(6)  | YES  |     | NULL    |       |
+                | no_notice         | tinyint(1)   | YES  |     | NULL    |       |
+                | no_ctcp           | tinyint(1)   | YES  |     | NULL    |       |
+                | no_part_msg       | tinyint(1)   | YES  |     | NULL    |       |
+                | no_quit_msg       | tinyint(1)   | YES  |     | NULL    |       |
+                | exempt_opped      | tinyint(1)   | YES  |     | NULL    |       |
+                | exempt_voiced     | tinyint(1)   | YES  |     | NULL    |       |
+                | exempt_identd     | tinyint(1)   | YES  |     | NULL    |       |
+                | exempt_registered | tinyint(1)   | YES  |     | NULL    |       |
+                | exempt_invites    | tinyint(1)   | YES  |     | NULL    |       |
+                | greetmsg          | varchar(256) | YES  |     | NULL    |       |
+
+                */
+                query = "insert into chanflag "+
+                        "(name,join_connect_time,talk_connect_time,talk_join_time,"+
+                        "max_bans,no_notice,no_ctcp,no_part_msg,no_quit_msg,"+
+                        "exempt_opped,exempt_voiced,exempt_identd,exempt_registered,"+
+                        "exempt_invites,greetmsg) "+
+                        "values (?,0,0,0,200,0,0,0,0,0,0,0,0,0,null)";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );

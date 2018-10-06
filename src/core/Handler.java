@@ -82,7 +82,7 @@ public class Handler extends HashNumeric {
     public Handler ( )  { 
         this.config = Proc.getConf ( );
         db              = new Database ( );
-        this.initServices ( );
+        Handler.initServices ( );
         this.services   = new Services ( );
         date            = new Date ( );
         timeZone        = new SimpleTimeZone ( 0, "GMT" );
