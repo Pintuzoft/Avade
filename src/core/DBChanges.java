@@ -68,7 +68,7 @@ public class DBChanges extends HashNumeric {
     
     private boolean applyChanges ( int gen, int year, int month, int build ) {
         int target = this.convertVersion(gen, year, month, build);
-        
+        int counter = 0;
         ArrayList<String> qList = new ArrayList<>();
         switch ( target ) {
             case 117021 :
@@ -93,16 +93,22 @@ public class DBChanges extends HashNumeric {
         }
         for ( String query : qList ) {
             if ( query.matches ( "^to: (.*)" ) ) {
-                System.out.println ( "Updating DB "+query+" ..." );
+                System.out.print ( "\n" );
+                System.out.print ( "Updating DB "+query+" ..." );
+                counter = 0;
             } else {
-               
                 if ( ! Database.change ( query ) ) { 
                     System.out.println ( ": "+query );
                     System.out.println ( "  - Change FAILED to apply" );
                     System.exit ( 1 );
+                } else {
+                    if ( counter++ % 10 == 0 ) {
+                        System.out.print ( "." );
+                    }
                 }
             }
         }
+        System.out.print ( "\n" );
         return true;
     }
      
