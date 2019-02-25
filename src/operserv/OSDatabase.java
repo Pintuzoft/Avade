@@ -40,35 +40,7 @@ public class OSDatabase extends Database {
     private static ResultSet            res;
     private static ResultSet            res2;
     private static PreparedStatement    ps;
-
-/*    public static Oper getOper ( String nick )  {
-        Oper oper = new Oper ( );
-        if ( ! activateConnection ( )  )  {
-            return null;
-        }
-        try { 
-            String query = "SELECT name,access,instater FROM oper WHERE name = ? LIMIT 1;";
-            ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, nick );
-            res = ps.executeQuery ( );
-
-            if ( res.next ( )  )  {
-                oper = new Oper ( res );
-                res.close ( );
-                ps.close ( );
-              
-            } else {
-                res.close ( );
-                ps.close ( );
-            }
-            idleUpdate ( "getOper ( ) " );
-       
-        } catch  ( SQLException ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );   
-        }  
-        return oper;
-    }
-*/
+ 
     public static ArrayList<Oper> getAllStaff ( )  {
         Oper oper;
         if ( ! activateConnection ( )  )  {
@@ -115,128 +87,30 @@ public class OSDatabase extends Database {
         return true;
     }*/
     /* End NickServ */
- 
-/* mysql> desc ban;
-+----------+--------------+------+-----+---------+----------------+
-| Field    | Type         | Null | Key | Default | Extra          |
-+----------+--------------+------+-----+---------+----------------+
-| id       | int ( 11 )       | NO   | PRI | NULL    | auto_increment |
-| mask     | varchar ( 64 )   | YES  |     | NULL    |                |
-| reason   | varchar ( 256 )  | YES  |     | NULL    |                |
-| instater | varchar ( 33 )   | YES  |     | NULL    |                |
-| stamp    | int ( 11 )       | YES  |     | NULL    |                |
-| expire   | int ( 11 )       | YES  |     | NULL    |                |
-+----------+--------------+------+-----+---------+----------------+
-6 rows in set  ( 0.23 sec ) 
- */
-   
-    
-     
-    static boolean isWhiteListed ( String in ) {
+  
+    public static boolean addServicesBan ( ServicesBan ban )  {
+        String list = getListByHash ( ban.getType() );
         if ( ! activateConnection ( ) )  {
             return false;
         }
-        try {
-            String usermask = in.replace ( '*', '%' );
-            String query;
-            for ( String white : Proc.getConf().getWhiteList() ) {
-                query = "SELECT ? like ?";
-                ps = sql.prepareStatement ( query );
-                ps.setString   ( 1, "@"+white );
-                ps.setString   ( 2, usermask );
-                res2 = ps.executeQuery ( );
-                 
-                if ( res2.next ( ) && res2.getInt ( 1 ) == 1 )  {
-                    res2.close();
-                    ps.close ( );
-                    System.out.println ( "DEBUG: found match!!!" );
-                    return true;
-                }
-                ps.close ( );
-            }
-        } catch ( SQLException ex ) {
-            Logger.getLogger(OSDatabase.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return false;
-    }
-    
-    /* Match complete ips */
-    public static int checkBanByUser ( int hash, User user ) {
-        String list = getListByHash ( hash );
-        ServicesBan ban = null;
-            
-        if ( ! activateConnection ( ) )  {
-            return -1;
-        }
-        
-        try {
-            String query =  "select id,replace(mask, '%','*') as mask,reason,instater,stamp,expire "+
-                            "from "+list+" "+
-                            "where ? like mask "+
-                            "limit 1";
-            ps = sql.prepareStatement ( query );
-            ps.setString ( 1, user.getFullMask() );
-            res2 = ps.executeQuery ( );
-            
-             
-            if ( res2.next ( )  )  {
-                ban = new ServicesBan ( hash, res2.getInt ( "id" ), res2.getString ( "mask" ), 
-                                    res2.getString ( "reason" ), res2.getString ( "instater" ), 
-                                    res2.getString ( "stamp" ), res2.getString ( "expire" ) );
-                Handler.getOperServ().ban ( user, hash, ban );
-                ps.close ( );
-                res2.close ( );
-                return 1;
-            }    
-            ps.close ( );
-
-            res2.close ( );
-        } catch (SQLException ex) {
-            Logger.getLogger(OSDatabase.class.getName()).log(Level.SEVERE, null, ex);
-            return -2;
-        }
-        return 0;
-    }
-    
-    public static ServicesBan addServicesBan ( ServicesBan ban )  {
-        String list = getListByHash ( ban.getType() );
-        if ( ! activateConnection ( ) )  {
-            return null;
-        }
-        try {
-            int id;
-           
-            String query = "insert into "+list+" ( mask,reason,instater,stamp,expire ) VALUES "
-                          +" ( replace(?,'*','%'), ?, ?, now() , now() + "+ban.getExpire()+" ) ";
+        try { 
+            String query = "insert into "+list+" ( id,mask,reason,instater,stamp,expire ) VALUES "
+                          +" ( ?, ?, ?, ?, now() , now() + "+ban.getExpire()+" ) ";
             System.out.println(query);
             ps = sql.prepareStatement ( query );
-            ps.setString   (1, ban.getMask ( )  );
-            ps.setString   (2, ban.getReason ( )  );
-            ps.setString   (3, ban.getInstater ( )  );
+            ps.setLong     ( 1, ban.getID ( )  );
+            ps.setString   ( 2, ban.getMask ( )  );
+            ps.setString   ( 3, ban.getReason ( )  );
+            ps.setString   ( 4, ban.getInstater ( )  );
             ps.execute ( );
             ps.close ( );
-
-            query = "SELECT id,stamp,expire "+
-                    "FROM "+list+" "+
-                    "WHERE id=last_insert_id ( )";
-            ps = sql.prepareStatement ( query );
-            res2 = ps.executeQuery ( );
-
-            if ( res2.next ( ) ) {
-                ban.setId ( res2.getInt ( "id" )  );
-                ban.setTime ( res2.getString ( "stamp" )  );
-                ban.setExpire ( res2.getString ( "expire" )  );
-            } else {
-                ban = null;
-            }
-            ps.close ( );
-            res2.close ( );
             idleUpdate ( "addAkill ( ) " );
            
         } catch  ( SQLException ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );   
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
         } 
-        return ban;
+        return true;
     }
 
     public static void logServicesBan ( int command, ServicesBan ban ) {
@@ -248,22 +122,22 @@ public class OSDatabase extends Database {
         
         switch ( ban.getType() ) {
             case AKILL :
-                id = "AK"+ban.getId ( );
+                id = "AK"+ban.getID ( );
                 flag = ( command == DEL ? "AK-" : "AK+" );
                 break;
                 
             case IGNORE :
-                id = "IG"+ban.getId ( );
+                id = "IG"+ban.getID ( );
                 flag = ( command == DEL ? "IG-" : "IG+" );
                 break;
                 
             case SQLINE :
-                id = "SQ"+ban.getId ( );
+                id = "SQ"+ban.getID ( );
                 flag = ( command == DEL ? "SQ-" : "SQ+" );
                 break;
                       
             case SGLINE :
-                id = "SQ"+ban.getId ( );
+                id = "SQ"+ban.getID ( );
                 flag = ( command == DEL ? "SG-" : "SG+" );
                 break;
                 
@@ -301,11 +175,11 @@ public class OSDatabase extends Database {
             String query = "DELETE FROM "+list+" "+
                            "WHERE id = ?";
             ps = sql.prepareStatement ( query );
-            ps.setInt  ( 1, ban.getId ( )  );
+            ps.setLong  ( 1, ban.getID ( )  );
             ps.execute ( );
             ps.close ( );
 
-            System.out.println ( "debug ( delServicesBan ( "+ban.getId ( ) +" )  ) " ); 
+            System.out.println ( "debug ( delServicesBan ( "+ban.getID ( ) +" )  ) " ); 
             idleUpdate ( "delServicesBan ( ) " );
             return true;
           
@@ -322,14 +196,14 @@ public class OSDatabase extends Database {
             return banList;
         }
         try { 
-            String query = "select id,replace(mask,'%','*') as mask,reason,instater,stamp,expire "+
+            String query = "select id,mask,reason,instater,stamp,expire "+
                            "from "+list+" "+
                            "order by id desc";
             ps = sql.prepareStatement ( query );
             res2 = ps.executeQuery ( );
  
             while ( res2.next ( )  )  {
-                banList.add ( new ServicesBan ( hash, res2.getInt ( "id" ), res2.getString ( "mask" ), 
+                banList.add ( new ServicesBan ( hash, res2.getLong ( "id" ), res2.getString ( "mask" ), 
                                                 res2.getString ( "reason" ), res2.getString ( "instater" ), 
                                                 res2.getString ( "stamp" ), res2.getString ( "expire" ) ) );
             }
@@ -343,6 +217,41 @@ public class OSDatabase extends Database {
         return banList;
     }
     
+    public static ArrayList<SpamFilter> getSpamFilters ( ) {
+        ArrayList<SpamFilter> sfList = new ArrayList<>();
+        String query;
+        if ( ! activateConnection ( ) )  {
+            return sfList;
+        }
+        try {
+            query = "select id,pattern,flags,instater,reason,stamp,expire "+
+                    "from spamfilter "+
+                    "order by pattern asc";
+            ps = sql.prepareStatement ( query );
+            res2 = ps.executeQuery ( );
+            
+            while ( res2.next ( ) ) {
+                sfList.add (
+                    new SpamFilter (
+                        res2.getLong ( "id" ),
+                        res2.getString ( "pattern" ),
+                        res2.getString ( "flags" ),
+                        res2.getString ( "instater" ),
+                        res2.getString ( "reason" ),
+                        res2.getString ( "stamp" ),
+                        res2.getString ( "expire" )
+                    )
+                );
+            }
+            res2.close ( );
+            ps.close ( );
+            
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ), ex );
+        }
+        return sfList;
+    }
+
     static ServicesBan getServicesBanByTicket ( String ticket ) {
         ServicesBan ban = null;
         String tType = ticket.toUpperCase().substring ( 0, 2 );
@@ -376,7 +285,7 @@ public class OSDatabase extends Database {
         String list = getListByHash ( banType );
 
         try { 
-            String query = "select id,replace(mask,'%','*') as mask,reason,instater,stamp,expire "+
+            String query = "select id,mask,reason,instater,stamp,expire "+
                            "from "+list+" "+
                            "where id = ?";
             
@@ -404,7 +313,7 @@ public class OSDatabase extends Database {
             return banList;
         }
         try {
-            String query = "select id,replace(mask,'%','*') as mask,reason,instater,stamp,expire "+
+            String query = "select id,mask,reason,instater,stamp,expire "+
                            "from "+list+" "+
                            "where expire < now() "+
                            "order by id asc";
@@ -805,6 +714,69 @@ public class OSDatabase extends Database {
         }
         return true;
     }
+    /*
+    +----------+--------------+------+-----+---------+----------------+
+    | Field    | Type         | Null | Key | Default | Extra          |
+    +----------+--------------+------+-----+---------+----------------+
+    | id       | int(11)      | NO   | PRI | NULL    | auto_increment |
+    | pattern  | varchar(128) | YES  |     | NULL    |                |
+    | flags    | varchar(32)  | YES  |     | NULL    |                |
+    | reason   | varchar(256) | YES  |     | NULL    |                |
+    | instater | varchar(33)  | YES  |     | NULL    |                |
+    | stamp    | datetime     | YES  |     | NULL    |                |
+    | expire   | datetime     | YES  |     | NULL    |                |
+    +----------+--------------+------+-----+---------+----------------+
+
+    */
+    static boolean addSpamFilter ( SpamFilter sf ) {
+        String query;
+        if ( ! activateConnection() ) {
+            return false;
+        }
+        query = "insert into spamfilter "+
+                "(id,pattern,flags,instater,reason,stamp,expire) "+
+                "values (?,?,?,?,?,?,?)";
+        
+        try {
+            ps = sql.prepareStatement ( query );
+            ps.setLong     ( 1, sf.getID ( ) );
+            ps.setString   ( 2, sf.getPattern ( ) );
+            ps.setString   ( 3, sf.getFlags ( ) );
+            ps.setString   ( 4, sf.getInstater ( ) );
+            ps.setString   ( 5, sf.getReason ( ) );
+            ps.setString   ( 6, sf.getStamp ( ) );
+            ps.setString   ( 7, sf.getExpire ( ) );
+            ps.execute ( );
+            ps.close ( );
+            
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+ 
+    static boolean remSpamFilter ( SpamFilter sf ) {
+        String query;
+        if ( ! activateConnection() ) {
+            return false;
+        }
+        query = "delete from spamfilter "+
+                "where id = ? ";
+        
+        try {
+            ps = sql.prepareStatement ( query );
+            ps.setLong ( 1, sf.getID ( ) );
+            ps.execute ( );
+            ps.close ( );
+            
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+    
     
 /*    static private void logGlobal(int id, OSLogEvent log) {
         String query;
@@ -834,8 +806,6 @@ public class OSDatabase extends Database {
     static public void delLogEvent ( int id ) {
         Database.delLogEvent( "operlog", id );
     }
-
  
-
  
 }

@@ -149,15 +149,10 @@ public class Database extends HashNumeric {
     }
 
     /* Database changes */
-    static boolean change ( String query ) {
-        try {
-            ps = sql.prepareStatement ( query );
-            ps.execute ( );
-            ps.close ( ); 
-            
-        } catch ( SQLException ex ) {
-            return false;
-        }
+    static boolean change ( String query ) throws SQLException {
+        ps = sql.prepareStatement ( query );
+        ps.execute ( );
+        ps.close ( );     
         return true;
     }
 

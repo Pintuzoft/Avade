@@ -5,7 +5,10 @@
  */
 package core;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -84,7 +87,17 @@ public class DBChanges extends HashNumeric {
             case 118091 :
                 qList.add ( "to: v1.1809-1");
                 qList.add ( "update settings set value = '1.1809-1' where name = 'version'" );
-                
+
+            case 118101 :
+                qList.add ( "to: v1.1810-1");
+                qList.addAll ( this.db118101 ( ) );
+                qList.add ( "update settings set value = '1.1810-1' where name = 'version'" );
+
+            case 118102 :
+                qList.add ( "to: v1.1810-2");
+                qList.addAll ( this.db118102 ( ) );
+                qList.add ( "update settings set value = '1.1810-2' where name = 'version'" );
+
                 break;
                 
             default :
@@ -97,14 +110,16 @@ public class DBChanges extends HashNumeric {
                 System.out.print ( "Updating DB "+query+" ..." );
                 counter = 0;
             } else {
-                if ( ! Database.change ( query ) ) { 
-                    System.out.println ( ": "+query );
-                    System.out.println ( "  - Change FAILED to apply" );
-                    System.exit ( 1 );
-                } else {
+                try {
+                    Database.change ( query );
                     if ( counter++ % 10 == 0 ) {
                         System.out.print ( "." );
                     }
+                } catch (SQLException ex) {
+                    System.out.println ( ": "+query );
+                    System.out.println ( "  - Change FAILED to apply" );
+                    Proc.log ( Database.class.getName ( ), ex );
+                    System.exit ( 1 );
                 }
             }
         }
@@ -377,4 +392,21 @@ public class DBChanges extends HashNumeric {
         
         return qList;
     }
+    
+    private ArrayList<String> db118101 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "create table spamfilter (id int primary key auto_increment, pattern varchar(128), flags varchar(32), reason varchar(256), instater varchar(33),stamp datetime,expire datetime);" );
+        return qList;
+    }
+    
+    private ArrayList<String> db118102 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table spamfilter change id id bigint;" );
+        qList.add ( "alter table ignorelist change id id bigint;" );
+        qList.add ( "alter table sgline change id id bigint;" );
+        qList.add ( "alter table sqline change id id bigint;" );
+        qList.add ( "alter table akill change id id bigint;" );
+        return qList;
+    }
+     
 }

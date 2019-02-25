@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import core.Handler;
 import core.HashNumeric;
 import core.StringMatch;
 import java.text.DateFormat;
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
  */
 class ServicesBan extends HashNumeric {
     private int             type;
-    private int             id;
+    private long            id;
     private String          mask;
     private String          host;
     private String          user;
@@ -45,15 +46,22 @@ class ServicesBan extends HashNumeric {
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss"); 
     
     
-    public ServicesBan ( int type, int id, String mask, String reason, String instater, String time, String expire )  {
+    public ServicesBan ( int type, long id, String mask, String reason, String instater, String time, String expire )  {
         this.type           = type;
         this.id             = id;        
         this.mask           = mask;        
         this.instater       = instater;
         this.reason         = reason;
-        this.time           = time;
-        this.expire         = expire;
         this.hashCode       = mask.toUpperCase().hashCode ( );
+        
+        /* Add proper time and expire if time is null */
+        if ( time == null ) {
+            this.time = dateFormat.format ( new Date ( ) );
+            this.expire = Handler.expireToDateString ( this.time, expire );
+        } else {
+            this.time = time;
+            this.expire = expire;
+        }
 
         if ( mask.contains("@") ) {
             String[] buf = mask.split ( "@" );
@@ -92,7 +100,7 @@ class ServicesBan extends HashNumeric {
                          
             case SGLINE :
                 return "sgline";
-               
+                         
             default :
                 return "";
         }
@@ -111,7 +119,7 @@ class ServicesBan extends HashNumeric {
                    
             case SGLINE :
                 return "SGLINE";
-        
+                   
             default :
                 return "";
         }
@@ -121,7 +129,7 @@ class ServicesBan extends HashNumeric {
         return this.type;
     }
       
-    public int getId ( ) { 
+    public long getID ( ) { 
         System.out.println("debug: id:"+this.id);
         return this.id;
     }

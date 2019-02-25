@@ -223,7 +223,8 @@ public class NickServ extends Service {
     }
 
     
-    public static void maintenance ( ) {
+    public static int maintenance ( ) {
+        int todoAmount = 0;
         for ( NickInfo ni : niList ) {
             if ( ni.isState ( OLD ) ) {
                 if ( ni.getExp().isTimeToSendAnotherMail ( ) ) {
@@ -233,18 +234,19 @@ public class NickServ extends Service {
                 }
             }
         }
-        handleRegNicks ( );
-        handleChangedNicks ( );
-        handleNewAuths ( );
-        handleFullNewAuths ( );
-        handleDeletedNicks ( );
+        todoAmount += handleRegNicks ( );
+        todoAmount += handleChangedNicks ( );
+        todoAmount += handleNewAuths ( );
+        todoAmount += handleFullNewAuths ( );
+        todoAmount += handleDeletedNicks ( );
+        return todoAmount;
     }
  
     
     /*** HANDLE PENDING NICKS ***/
     
     /* Insert new auths */
-    private static void handleNewAuths ( ) {
+    private static int handleNewAuths ( ) {
         if ( NSDatabase.activateConnection() && newAuthList.size() > 0 ) {
             ArrayList<NSAuth> auths = new ArrayList<>();
             for ( NSAuth auth : newAuthList ) {
@@ -266,9 +268,10 @@ public class NickServ extends Service {
                 newAuthList.remove ( auth );
             }
         }
+        return newAuthList.size();
     }
         /* Insert new auths */
-    private static void handleFullNewAuths ( ) {
+    private static int handleFullNewAuths ( ) {
         if ( NSDatabase.activateConnection() && newFullAuthList.size() > 0 ) {
             ArrayList<NSAuth> auths = new ArrayList<>();
             for ( NSAuth auth : newFullAuthList ) {
@@ -280,9 +283,10 @@ public class NickServ extends Service {
                 newFullAuthList.remove ( auth );
             }
         }
+        return newFullAuthList.size();
     }
    
-    private static void handleRegNicks ( ) {
+    private static int handleRegNicks ( ) {
         if ( NSDatabase.activateConnection() && regList.size() > 0 ) {
             ArrayList<NickInfo> nicks = new ArrayList<>();            
             for ( NickInfo ni : regList.subList ( 0, getIndexFromSize ( regList.size() ) ) ) {
@@ -294,10 +298,11 @@ public class NickServ extends Service {
                 regList.remove ( ni );
             }
         }
+        return regList.size();
     }
     
     /* Update all nicks in the change list */
-    private static void handleChangedNicks ( ) {
+    private static int handleChangedNicks ( ) {
         if ( NSDatabase.activateConnection() && changeList.size() > 0 ) {
             ArrayList<NickInfo> nicks = new ArrayList<>();
             for ( NickInfo ni : changeList ) {
@@ -310,10 +315,11 @@ public class NickServ extends Service {
                 changeList.remove ( ni );
             }
         }
+        return changeList.size();
     }
        
     /* Update all nicks in the change list */
-    private static void handleDeletedNicks ( ) {
+    private static int handleDeletedNicks ( ) {
         if ( NSDatabase.activateConnection() && deleteList.size() > 0 ) {
             ArrayList<NickInfo> nicks = new ArrayList<>();
             for ( NickInfo ni : deleteList ) {
@@ -325,6 +331,7 @@ public class NickServ extends Service {
                 deleteList.remove ( ni );
             }
         }
+        return deleteList.size();
     }
 
     /*************/

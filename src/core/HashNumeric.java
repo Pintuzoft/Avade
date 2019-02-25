@@ -150,6 +150,8 @@ public abstract class HashNumeric extends TextFormat {
     public static final int DELIRCOP                    = 1605972624;
     public static final int HUB                         = 71893;
     public static final int LEAF                        = 2332510;
+    public static final int OS                          = 2532;
+    public static final int SFAKILL                     = -1580229460;
     
     
     /* ROOTSERV */
@@ -344,10 +346,34 @@ public abstract class HashNumeric extends TextFormat {
     public final static int BANLOG                      = 1951952085;
     public final static int SQLINE                      = -1841605806;
     public final static int SGLINE                      = -1850841016;
-    public final static int SPAM                        = 2551625;
+    public final static int SPAMFILTER                  = 1312445441;
     public final static int JUPE                        = 2288768;
     public final static int MISSING                     = 1787432262;
 
+    /* SpamFilter flags */
+    public final static int s                     = 115;
+    public final static int S                     = 83;
+    public final static int r                     = 114;
+    public final static int m                     = 109;
+    public final static int p                     = 112;
+    public final static int n                     = 110;
+    public final static int k                     = 107;
+    public final static int q                     = 113;
+    public final static int t                     = 116;
+    public final static int a                     = 97;
+    public final static int c                     = 99;
+    public final static int P                     = 80;
+    public final static int W                     = 87;
+    public final static int L                     = 76;
+    public final static int R                     = 82;
+    public final static int B                     = 66;
+    public final static int K                     = 75;
+    public final static int A                     = 65;
+    public final static int NUM_1                 = 49;
+    public final static int NUM_2                 = 50;
+    public final static int NUM_3                 = 51;
+    public final static int NUM_4                 = 52;
+    
     /* CHANNEL */
     public boolean mode_r;         /* mode r */
     public boolean mode_R;         /* mode R */
@@ -396,6 +422,7 @@ public abstract class HashNumeric extends TextFormat {
     public static final int CHAR_m                      = 77;
     public static final int CHAR_h                      = 72;
     public static final int CHAR_d                      = 68;
+    public static final int CHAR_y                      = 89;
 
     
     /* SERVICE */

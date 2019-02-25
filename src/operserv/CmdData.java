@@ -28,6 +28,9 @@ public class CmdData {
     private NickInfo        nick;
     private int             status;
     private String          str1;
+    private String          str2;
+    private String          str3;
+    private String          str4;
     private int command;
     private int sub;
     private int sub2;
@@ -44,6 +47,18 @@ public class CmdData {
     public void setString1 ( String str ) { 
         this.str1 = str;
     }
+       
+    public void setString2 ( String str ) { 
+        this.str2 = str;
+    }
+       
+    public void setString3 ( String str ) { 
+        this.str3 = str;
+    }
+       
+    public void setString4 ( String str ) { 
+        this.str4 = str;
+    }
     
     public void setStatus ( int status ) { 
         this.status = status;
@@ -59,6 +74,16 @@ public class CmdData {
     
     public String getString1 ( ) { 
         return this.str1;
+    }
+    
+    public String getString2 ( ) { 
+        return this.str2;
+    }
+    public String getString3 ( ) { 
+        return this.str3;
+    }
+    public String getString4 ( ) { 
+        return this.str4;
     }
 
     int getCommand ( ) {

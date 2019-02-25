@@ -20,6 +20,7 @@ package core;
 import server.ServSock;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import operserv.OperServ;
@@ -35,7 +36,7 @@ public class Proc extends HashNumeric {
     private static ServSock             conn;
 
     private Handler                     handler;
-    private boolean                     run; 
+    private static boolean              run; 
     private static Log                  logger; 
     private static long                 start;
     private long                        ticker; 
@@ -52,7 +53,7 @@ public class Proc extends HashNumeric {
     public Proc ( )  throws IOException {
         loadConf ( );
         logger                  = new Log ( );
-        this.run                = true;
+        run                     = true;
         this.ticker             = System.nanoTime ( ); /* current time */
         this.checkVersion ( );  /* Check version and apply changes if neccessary */
         this.connect ( );
@@ -67,7 +68,6 @@ public class Proc extends HashNumeric {
         this.secondDelay        = 1000; /* Every second */
         this.minuteDelay        = 60 * 1000; /* Every minute */
         this.hourDelay          = 60 * 60 * 1000; /* Every hour */
-
         this.runLoop ( );
     }
     
@@ -77,14 +77,14 @@ public class Proc extends HashNumeric {
         long hourAgo = 0;
         long minAgo = 0;
         long secAgo = 0;
+        int todoAmount = 1;
        
-        while ( this.run )  {
+        while ( run || todoAmount > 0 )  {
             /* Proc loop */
-         
+            todoAmount = 1;
             
             this.read = Proc.conn.readLine();
-            
-
+             
             if ( this.read != null )  {
                 /* We found some new data, send it to the handler */ 
                 this.handler.process ( this.read );
@@ -122,7 +122,8 @@ public class Proc extends HashNumeric {
             /* SECOND */
             secAgo = System.currentTimeMillis ( ) - this.secondDelay;
             if ( this.secMaintenance < secAgo )  {
-                this.handler.runSecondMaintenance ( );
+                todoAmount = 0; 
+                todoAmount += this.handler.runSecondMaintenance ( );
                 if ( Handler.sanityCheck ( ) ) {
                     Handler.initServices ( );
                 }
@@ -134,10 +135,14 @@ public class Proc extends HashNumeric {
 
     }
 
+    public static void stopServices ( ) {
+        run = false;
+    }
+    
     public static long getStartTime ( ) {
         return start;
     }
-
+    
     private void connect ( ) {
         try { 
             conn = new ServSock ( );
@@ -233,7 +238,19 @@ public class Proc extends HashNumeric {
     }
     
     public static void log ( String className, Exception e )  {
-        Logger.getLogger ( className ) .log ( Level.SEVERE, null, e );   
+        Logger.getLogger(className).log ( Level.SEVERE, null, e );
+        if ( e instanceof SQLException ) {
+            e.printStackTrace(System.err);
+            System.err.println("SQLState: "+((SQLException)e).getSQLState());
+            System.err.println("Error Code: "+((SQLException)e).getErrorCode());
+            System.err.println("Message: "+e.getMessage());
+
+            Throwable t = e.getCause();
+            while(t != null) {
+                System.out.println("Cause: " + t);
+                t = t.getCause();
+            }
+        }
     }
     
     public static void log ( String message )   { logger.out ( message );   }

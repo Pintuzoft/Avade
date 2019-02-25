@@ -31,6 +31,8 @@ import memoserv.MemoServ;
 import chanserv.ChanServ;
 import command.Queue;
 import guestserv.GuestServ;
+import java.text.DateFormat;
+import java.text.ParseException;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import java.text.SimpleDateFormat;
@@ -38,6 +40,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -167,6 +171,8 @@ public class Handler extends HashNumeric {
                 this.source = this.data[0].substring ( 1 );
                 if ( this.source.contains ( "." )  )  { 
                     /* Server stuff */
+                    System.out.println("DEBUG:"+this.data[1]);
+
                     switch ( this.data[1].hashCode ( )  )  {
                         case SERVER :
                             sList.add ( new Server ( this.data ) );
@@ -186,7 +192,12 @@ public class Handler extends HashNumeric {
                             
                         case GLOBOPS :
                             doGlobOps ( this.data );
-                             
+                            break;
+                            
+                        case OS :
+                            doOS ( this.data );
+                            break;
+                            
                     } 
                     
                 } else {
@@ -203,7 +214,6 @@ public class Handler extends HashNumeric {
                     if ( oper.isIgnored ( user ) ) {
                         return;
                     }
-                    
                     switch ( this.data[1].hashCode ( )  )  {
                         case PRIVMSG :
                             doPrivmsg ( user );
@@ -327,7 +337,7 @@ public class Handler extends HashNumeric {
         switch ( this.buf.hashCode ( )  )  {
             case ROOTSERV :
                 if ( RootServ.isUp ( )  )  { 
-                    this.root.parse ( user, this.data );
+                    Handler.root.parse ( user, this.data );
                 } else { 
                     this.sendNoSuchNick ( user, "RootServ" ); 
                 }
@@ -365,7 +375,19 @@ public class Handler extends HashNumeric {
                 
         }
     }
-
+    
+    private void doOS ( String[] data ) {
+        switch ( data[2].toUpperCase().hashCode() ) {
+            case SFAKILL :
+                oper.addSFAkill ( data );
+                break;
+                
+            default :
+                
+        }
+        
+    }
+        
     private void doSquit ( )  {
         Server s = findServer ( this.data[1] );
         if ( s != null )  {
@@ -593,6 +615,8 @@ public class Handler extends HashNumeric {
         }
         int code = source.toUpperCase().hashCode ( );
         for ( User u : uList ) {
+            System.out.println("NICK:"+u.getString(NAME));
+//            System.out.println("d: u:"+u.getString(NAME)+":"+u.hashCode()+":source:"+source+":"+code);
             if ( u.hashCode() == code ) {
                 return u;
             }
@@ -636,6 +660,7 @@ public class Handler extends HashNumeric {
     }
 
     public static void squitUser ( User user )  {
+        System.out.println("squitUser("+user.getString(NAME)+");");
         try {
             user.getSID().setSplitExpire ( );
             user.partAll ( );
@@ -647,6 +672,7 @@ public class Handler extends HashNumeric {
     }
 
     public static void deleteUser ( User user )  {
+        System.out.println("deleteUser("+user.getString(NAME)+");");
         try {
             user.getSID().remUser ( ); 
             user.partAll ( );
@@ -708,30 +734,33 @@ public class Handler extends HashNumeric {
     }
    
     /* MAINTENANCE METHODS */
-    public void runSecondMaintenance() {
-        oper.secMaintenance ( );
+    public int runSecondMaintenance() {
+        int todoAmount = 0;
+        todoAmount += oper.secMaintenance ( );
         for ( User user : uList ) {
             user.secMaintenence ( );
         }
         /* Database updates */
-        updateServicesIDs();
-        NickServ.maintenance ( );
-        ChanServ.maintenance ( );
+        todoAmount += updateServicesIDs();
+        todoAmount += NickServ.maintenance ( );
+        todoAmount += ChanServ.maintenance ( );
+        return todoAmount;
     }
-    private void updateServicesIDs ( ) {
-        if ( ! Database.activateConnection() ) {
-            return;
+    private int updateServicesIDs ( ) {
+        if ( updServicesID.isEmpty() || ! Database.activateConnection() ) {
+            return updServicesID.size();
         }
         ArrayList<ServicesID> sids = new ArrayList<>(); 
         for ( ServicesID sid : updServicesID ) {
             if ( ( sid.getNiList().size() == 0 && sid.getCiList().size() == 0 ) ||
-                 Database.updateServicesID ( sid ) ) {
+                Database.updateServicesID ( sid ) ) {
                 sids.add ( sid );
             }
         } 
         for ( ServicesID sid : sids ) {
             updServicesID.remove ( sid );
         }
+        return updServicesID.size();
     }
     public void runMinuteMaintenance ( )  {
         try {
@@ -747,12 +776,13 @@ public class Handler extends HashNumeric {
             Proc.log ( Handler.class.getName ( ) , e );
         }
     }
-    public void runHourMaintenance ( )  {
+    public int runHourMaintenance ( )  {
         ArrayList<ServicesID> splitExpire = new ArrayList<>();
+        int todoAmount = 0;
         try {
             initServices ( ); /* make sure everything is running */
-            NickServ.maintenance ( );
-            ChanServ.maintenance ( );
+            todoAmount += NickServ.maintenance ( );
+            todoAmount += ChanServ.maintenance ( );
             for ( ServicesID s : splitSIDs ) {
                 if ( s.timeToExpire ( ) ) {
                     splitExpire.add ( s );
@@ -764,6 +794,7 @@ public class Handler extends HashNumeric {
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
         }
+        return todoAmount;
     }
 
 
@@ -929,10 +960,9 @@ public class Handler extends HashNumeric {
         } catch ( NumberFormatException e )  {
             return "";
         }
-       
-         
+        
         /* take only the last char */
-        state = ""+data.charAt ( data.length ( ) - 1 );
+        state = String.valueOf ( data.charAt ( data.length ( ) - 1 ) );
         switch ( state.toUpperCase().hashCode ( ) ) {
             case CHAR_m : 
                 timeUnit = "MINUTE";
@@ -945,6 +975,10 @@ public class Handler extends HashNumeric {
             case CHAR_d : 
                 timeUnit = "DAY";
                 break;
+                         
+            case CHAR_y : 
+                timeUnit = "YEAR";
+                break;
                 
             default: 
                 return "INTERVAL 0 DAYS";
@@ -953,10 +987,56 @@ public class Handler extends HashNumeric {
         return  "INTERVAL "+( amount * multiply )+" "+timeUnit;
     }
  
+    public static String expireToDateString ( String datetime, String data ) {
+        String strBuf;
+        String state;
+        int ms = 0;
+        int amount;
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        Date date = null;
+        try {
+            System.out.println("expireToDateString: "+datetime);
+            date = dateFormat.parse ( datetime );
+        } catch (ParseException ex) {
+            Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        strBuf = data.substring ( 0, data.length ( ) - 1 );
+        
+        try {
+            amount = Integer.parseInt ( strBuf );
+        } catch ( NumberFormatException ex ) {
+            return "";
+        }
+        
+        state = String.valueOf ( data.charAt ( data.length ( ) - 1 ) );
+        switch ( state.toUpperCase().hashCode() ) {
+            case CHAR_m : 
+                ms = 60*1000;
+                break;
+                
+            case CHAR_h : 
+                ms = 60*60*1000;
+                break;
+                
+            case CHAR_d : 
+                ms = 60*60*24*1000;
+                break;
+                         
+            case CHAR_y : 
+                ms = 60*60*24*365*1000;
+                break;
+                 
+        }
+        date.setTime ( date.getTime() + ms );
+        return dateFormat.format ( date );
+    }
     
     private void doFinishSync(String[] data) {
         /* Fix Master after we synched */ 
-        root.fixMaster(); 
+        root.fixMaster ( );
+        oper.sendSpamFilter ( );
     }
 
     
@@ -1047,5 +1127,5 @@ public class Handler extends HashNumeric {
     public static ArrayList<ServicesID> getSplitSIDs ( ) {
         return splitSIDs;
     }
-    
+
 }

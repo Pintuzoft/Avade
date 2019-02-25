@@ -28,7 +28,10 @@ import static core.HashNumeric.DEL;
 import static core.HashNumeric.LIST;
 import static core.HashNumeric.NAME;
 import core.Service;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import server.Server;
@@ -40,7 +43,8 @@ import user.User;
  */
 public class OSExecutor extends Executor {
     private OSSnoop snoop;
-     
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
     public OSExecutor ( OperServ service, OSSnoop snoop )  {
         super ( );
         this.service        = service;
@@ -113,7 +117,11 @@ public class OSExecutor extends Executor {
             case SERVER :
                 this.doServer ( user, cmd );
                 break;
-             
+                      
+            case SPAMFILTER :
+                this.doSpamFilter ( user, cmd );
+                break;
+                      
             default:
                 this.found = false; 
                 this.noMatch ( user, cmd[3] );
@@ -310,7 +318,7 @@ public class OSExecutor extends Executor {
         this.service.sendMsg ( user, output ( BAN_LIST_START, cmdName, usermask ) );
         for ( ServicesBan a : OSDatabase.getServicesBans ( command ) ) {
             if ( StringMatch.maskWild ( usermask, a.getMask() ) ) {
-                this.service.sendMsg ( user, output ( BAN_LIST, ""+a.getId ( ), a.getMask ( ), ""+a.getExpire ( ), a.getInstater ( ), a.getReason ( ) ) );
+                this.service.sendMsg ( user, output ( BAN_LIST, ""+a.getID ( ), a.getMask ( ), ""+a.getExpire ( ), a.getInstater ( ), a.getReason ( ) ) );
             }
         } 
         this.service.sendMsg ( user, output ( BAN_LIST_STOP, "" ) );
@@ -524,7 +532,7 @@ public class OSExecutor extends Executor {
         ArrayList<User> uList = new ArrayList<>( );
         boolean foundOperMatch = false;
         String cmdName = ServicesBan.getCommandByHash ( command );
-        if ( OSDatabase.isWhiteListed ( usermask ) )
+        if ( OperServ.isWhiteListed ( usermask ) )
             /* ban matches an address on whitelist */
             return -3;
         if ( ( current = Handler.getOperServ().findBan ( command, usermask ) ) != null ) {
@@ -577,7 +585,7 @@ public class OSExecutor extends Executor {
     private ServicesBan getBan ( int command, int num )  {
         ServicesBan ban = null;
         for ( ServicesBan b : Handler.getOperServ().getListByCommand ( command ) ) {
-            if ( b.getId ( ) == num )  {
+            if ( b.getID ( ) == num )  {
                 ban = b;
             }
         }
@@ -897,13 +905,168 @@ public class OSExecutor extends Executor {
 
     }
   
+    private void doSpamFilter(User user, String[] cmd) {
+               
+        CmdData cmdData = this.validateCommandData ( user, SPAMFILTER, cmd );
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER <add|del|list> <string> <flag> <reason>" ) );
+                return;
+        
+            case BADFLAGS :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdData.getString1 ( ) ) );
+                return;
+                
+            case FILTER_EXISTS :
+                this.service.sendMsg ( user, output ( FILTER_EXISTS, cmdData.getString1 ( ) ) );
+                return;
+                
+            default :
+                
+        }
+        String pattern;
+        SpamFilter sFilter;
+        switch ( cmdData.getStatus ( ) ) {
+            case SHOWLIST :
+                this.service.sendMsg ( user, "*** SpamFilter LIST ***" );
+                for ( SpamFilter sf : OperServ.getSpamFilters ( ) ) {
+                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern(), sf.getFlags(), sf.getInstater(), sf.getExpire(), sf.getReason() ) );
+                }
+                this.service.sendMsg ( user, "*** End of List ***" );
+                break;
+                
+            case DEL :
+                pattern = cmdData.getString1();
+                if ( ( sFilter = OperServ.findSpamFilter ( pattern ) ) != null ) {
+                    OperServ.remSpamFilter ( sFilter );
+                    this.service.sendServ ( "SF "+pattern+" 0" );
+                    this.service.sendGlobOp ( user.getOper().getNick().getName()+" removed SpamFilter: "+pattern  );
+                }
+                break;
+                
+            case ADD :
+                pattern = cmdData.getString1();
+                String flags = cmdData.getString2();
+                String time = cmdData.getString3();
+                String reason = cmdData.getString4();
+                String stamp = dateFormat.format ( new Date ( ) );
+                String expire = Handler.expireToDateString ( stamp, time );
+                sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getName(), reason, stamp, expire );
+                
+                
+                //  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason);
+                OperServ.addSpamFilter ( sFilter );
+                this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );
+                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Expire: "+time+" Reason: "+reason  );
+                break;
+                
+            default :
+            
+        }
+        
+    }
+  
+    /*
+    -OperServ- Behavior Flags:
+    -OperServ- s = strip control codes (will strip colors/bolds/underlines/etc)
+    -OperServ- S = strip non-alphanumeric characters (will strip spaces too)
+    -OperServ- r = regexp (limited to SRAs)
+    -OperServ- m = match registered nicks (limited to SRAs)
+    -OperServ- Target flags:
+    -OperServ- p = private message
+    -OperServ- n = notice
+    -OperServ- k = kick message
+    -OperServ- q = quit message
+    -OperServ- t = topic
+    -OperServ- a = away message
+    -OperServ- c = channel message/notice
+    -OperServ- P = part message
+    -OperServ- Action flags:
+    -OperServ- W = warn user
+    -OperServ- L = lag user
+    -OperServ- R = report to opers (with umode +m)
+    -OperServ- B = block message
+    -OperServ- K = kill the user
+    -OperServ- A = akill the user
+    -OperServ- Special flags:
+    -OperServ- 1 = Shortcut to warn private massads (contain the flags: spnWR)
+    -OperServ- 2 = Shortcut to block+akill private massads (contain the flags: spnWRBA)
+    -OperServ- 3 = Shortcut to warn channel massads (contain the flags: scWR)
+    -OperServ- 4 = Shortcut to block+akill channel massads (contain the flags: scWRBA)
+    */
+    
+    private boolean isFlagsGood ( String flags ) {
+        for ( int index = 0; index < flags.length(); index++ ) {
+            switch ( String.valueOf(flags.charAt(index)).hashCode() ) {
+                case s :
+                case S :
+                case r :
+                case m :
+                case p :
+                case n :
+                case k :
+                case q :
+                case t :
+                case a :
+                case c :
+                case P :
+                case W :
+                case L :
+                case R :
+                case B :
+                case K :
+                case A :
+                case NUM_1 :
+                case NUM_2 :
+                case NUM_3 :
+                case NUM_4 :
+                    break;
+                    
+                default :
+                    return false;
+            }
+        }
+        return true;        
+    }
+    
     private CmdData validateCommandData ( User user, int command, String[] cmd ) {
         CmdData cmdData = new CmdData ( );
         NickInfo ni;
         int sub;
         int sub2;
+        int flag;
+        String time;
         
         switch ( command )  {
+            
+            case SPAMFILTER :
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SPAMFILTER add hello?hello?hello flags 1d spamming is not allowed
+                //            0       1                          2           3   4                 5     6  7       8+              = 9+
+                sub = cmd.length > 4 ? cmd[4].toUpperCase().hashCode() : 0;
+                time = cmd.length > 7 ? cmd[7] : "1000y";
+                flag = cmd.length > 6 ? cmd[6].toUpperCase().hashCode() : 0;
+                if ( sub == LIST ) {
+                    cmdData.setStatus ( SHOWLIST );
+                } else if ( cmd.length == 6 && sub == DEL ) {
+                    cmdData.setString1 ( cmd[5] );
+                    cmdData.setStatus ( DEL );
+                } else if ( isShorterThanLen ( 6, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( cmd.length > 6 && ! this.isFlagsGood ( cmd[6] ) ) {
+                    cmdData.setString1 ( cmd[6] );
+                    cmdData.setStatus ( BADFLAGS );
+                } else if ( OperServ.findSpamFilter ( cmd[5] ) != null ) {
+                    cmdData.setString1 ( cmd[5] );
+                    cmdData.setStatus ( FILTER_EXISTS );
+                } else {
+                    cmdData.setString1 ( cmd[5] );
+                    cmdData.setString2 ( cmd[6] );
+                    cmdData.setString3 ( cmd[7] );
+                    cmdData.setString4 ( Handler.cutArrayIntoString ( cmd, 8 ) );
+                    cmdData.setStatus ( ADD );
+                }
+                break;
+                
             case STAFF :
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :STAFF LIST
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :STAFF CSOP ADD Pintuz
@@ -1051,7 +1214,17 @@ public class OSExecutor extends Executor {
                        
             case ADD_COMMENT :
                 return "Comment has "+args[0];
+                     
+            case BADFLAGS :
+                return "Error: Bad flags found in: "+args[0]+" consult the help text for valid flags.";
+                   
+            case FILTER_EXISTS :
+                return "Error: There is already a spamfilter matching: "+args[0]+".";
              
+            case SPAMFILTER_LIST :
+                return "  "+args[0]+": "+args[1]+" "+args[2]+" ["+args[3]+"]: "+args[4]; 
+               
+                
             default:
                 return "";
                 
@@ -1102,6 +1275,9 @@ public class OSExecutor extends Executor {
     private final static int SHOWLIST               = 3051;
     private final static int SHOWBANLOG             = 3052;
 
-   
-  
+    private final static int BADFLAGS               = 3101;
+    private final static int FILTER_EXISTS          = 3102;
+    private final static int SPAMFILTER_LIST        = 3103;
+
+
 }

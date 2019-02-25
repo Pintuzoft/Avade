@@ -411,12 +411,14 @@ public class ChanServ extends Service {
     }
     
     
-    public static void maintenance ( )  {
-        writeLogs ( );
-        writeAccessLogs ( );
-        handleRegList ( );
-        handleUpdateList ( );
-        handleDeleteList ( );
+    public static int maintenance ( )  {
+        int todoAmount = 0;
+        todoAmount += writeLogs ( );
+        todoAmount += writeAccessLogs ( );
+        todoAmount += handleRegList ( );
+        todoAmount += handleUpdateList ( );
+        todoAmount += handleDeleteList ( );
+        return todoAmount;
     }
     
     public static void addLog ( CSLogEvent log ) {
@@ -427,7 +429,7 @@ public class ChanServ extends Service {
         accessLogs.add ( log );
     }
     
-    private static void writeLogs ( ) {
+    private static int writeLogs ( ) {
         if ( CSDatabase.activateConnection ( ) && logs.size() > 0 ) {
             ArrayList<CSLogEvent> eLogs = new ArrayList<>();
             for ( CSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
@@ -439,8 +441,9 @@ public class ChanServ extends Service {
                 logs.remove ( log );
             }
         }
+        return logs.size();
     }
-    private static void writeAccessLogs ( ) {
+    private static int writeAccessLogs ( ) {
         if ( CSDatabase.activateConnection ( ) && accessLogs.size() > 0 ) {
             ArrayList<CSAccessLogEvent> eLogs = new ArrayList<>();
             for ( CSAccessLogEvent log : accessLogs.subList ( 0, getIndexFromSize ( accessLogs.size() ) ) ) {
@@ -452,10 +455,11 @@ public class ChanServ extends Service {
                 accessLogs.remove ( log );
             }
         }
+        return accessLogs.size();
     }
 
     /* Write all pending channels to database */
-    private static void handleRegList ( ) {
+    private static int handleRegList ( ) {
         if ( CSDatabase.activateConnection() && regList.size() > 0 ) {
             ArrayList<ChanInfo> chans = new ArrayList<>();            
             for ( ChanInfo ci : regList.subList ( 0, getIndexFromSize ( regList.size() ) ) ) {
@@ -467,9 +471,10 @@ public class ChanServ extends Service {
                 regList.remove ( ci );
             }
         }
+        return regList.size();
     }
     
-    private static void handleUpdateList ( ) {
+    private static int handleUpdateList ( ) {
         if ( CSDatabase.activateConnection() && changeList.size() > 0 ) {
             ArrayList<ChanInfo> chans = new ArrayList<>();
             for ( ChanInfo ci : changeList.subList ( 0, getIndexFromSize ( changeList.size() ) ) ) {
@@ -482,9 +487,10 @@ public class ChanServ extends Service {
                 changeList.remove ( ci );
             }
         }
+        return changeList.size();
     }
     /* Write all pending channels to database */
-    private static void handleDeleteList ( ) {
+    private static int handleDeleteList ( ) {
         if ( CSDatabase.activateConnection() && deleteList.size() > 0 ) {
             ArrayList<ChanInfo> chans = new ArrayList<>();            
             for ( ChanInfo ci : deleteList.subList ( 0, getIndexFromSize ( deleteList.size() ) ) ) {
@@ -496,6 +502,7 @@ public class ChanServ extends Service {
                 deleteList.remove ( ci );
             }
         }
+        return deleteList.size();
     }
     
     private static ArrayList<ChanInfo> getWorkList ( int name ) {
