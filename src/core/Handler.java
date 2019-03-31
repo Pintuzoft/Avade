@@ -489,7 +489,11 @@ public class Handler extends HashNumeric {
             this.doChan ( true );
 
         }
-        chan.checkUser ( c, user );
+        if ( ! c.isSaJoin() ) {
+            chan.checkUser ( c, user );
+        } else {
+            c.toggleSaJoin();
+        }
     }
      
     private void doPart ( User user )  {
@@ -538,20 +542,23 @@ public class Handler extends HashNumeric {
     private void doGlobOps ( String[] data ) {
         // :testnet.avade.net GLOBOPS :DreamHealer used SAJOIN (#fredde +b)
         //                  0       1            2    3      4       5+
+        System.out.println("debug: doGlobOps()");
         CSLogEvent log;
         User user = Handler.findUser ( this.data[2].substring ( 1 ) );
         int command = this.data[4].hashCode();
-        String chan = this.data[5].substring ( 1 );
+        Chan chan = Handler.findChan(this.data[5].substring ( 1 ));
+        //String chan = this.data[5].substring ( 1 );
         String string = Handler.cutArrayIntoString ( this.data, 6 ).replace(")", "");
         
         switch ( command ) {
             case SAJOIN :
-                log = new CSLogEvent ( chan, SAJOIN, string, user.getOper().getName() );
+                log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, user.getOper().getName() );
                 ChanServ.addLog ( log );
+                chan.toggleSaJoin();
                 break;
                 
             case SAMODE :
-                log = new CSLogEvent ( chan, SAMODE, string, user.getOper().getName() );
+                log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, user.getOper().getName() );
                 ChanServ.addLog ( log );
                 break;
                 
@@ -625,9 +632,9 @@ public class Handler extends HashNumeric {
     }
     
     public static Chan findChan ( String source )  {
-        int hashCode = source.toUpperCase ( ) .hashCode ( );
+        int hashCode = source.toUpperCase().hashCode ( );
         for ( Chan c : cList )  {
-            if ( c.getHashName ( )  == hashCode )  {
+            if ( c.getHashName ( ) == hashCode )  {
                 return c;
             }
         }

@@ -147,7 +147,37 @@ public class CSDatabase extends Database {
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );
                 ps.close ( );
-                 
+                
+                /*
+                MariaDB [avade]> desc chansetting;
+                    +------------+-------------+------+-----+---------+-------+
+                    | Field      | Type        | Null | Key | Default | Extra |
+                    +------------+-------------+------+-----+---------+-------+
+                    | name       | varchar(33) | NO   | PRI |         |       |
+                    | keeptopic  | tinyint(1)  | YES  |     | 0       |       |
+                    | topiclock  | varchar(16) | YES  |     | OFF     |       |
+                    | ident      | tinyint(1)  | YES  |     | 0       |       |
+                    | opguard    | tinyint(1)  | YES  |     | 0       |       |
+                    | restricted | tinyint(1)  | YES  |     | 0       |       |
+                    | verbose    | tinyint(1)  | YES  |     | 0       |       |
+                    | mailblock  | tinyint(1)  | YES  |     | 0       |       |
+                    | leaveops   | tinyint(1)  | YES  |     | 0       |       |
+                    | modelock   | varchar(16) | YES  |     | NULL    |       |
+                    | freeze     | varchar(32) | YES  |     | NULL    |       |
+                    | close      | varchar(32) | YES  |     | NULL    |       |
+                    | hold       | varchar(32) | YES  |     | NULL    |       |
+                    | mark       | varchar(32) | YES  |     | NULL    |       |
+                    | auditorium | varchar(32) | YES  |     | NULL    |       |
+                    +------------+-------------+------+-----+---------+-------+
+                */
+                
+                query = "insert into chansetting "+
+                        "values (?,1,'OFF',1,1,0,0,0,0,'+nt',null,null,null,null,null)";
+                ps = sql.prepareStatement ( query );
+                ps.setString  ( 1, ci.getString ( NAME ) );
+                ps.execute ( );
+                ps.close ( );
+                
                 idleUpdate ( "createChan ( ) " );
             } catch  ( SQLException ex )  {
                 /* Nick already exists? return -1 */
@@ -294,7 +324,7 @@ public class CSDatabase extends Database {
                 } 
                 
                 if ( ci.getChanges().hasChanged ( TOPIC ) ) {
-                    if ( ci.getTopic().getTopic().length() > 0 ) {
+                    if ( ci.getTopic() != null && ci.getTopic().getTopic() != null && ci.getTopic().getTopic().length() > 0 ) {
                         query = "INSERT INTO topiclog ( name,setter,stamp,topic ) "+
                                 "VALUES  ( ?, ?, ?, ? )";
                         ps = sql.prepareStatement ( query );

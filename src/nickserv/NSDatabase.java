@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import operserv.Oper;
 import operserv.OperServ;
 import user.User;
 
@@ -773,6 +774,12 @@ public class NSDatabase extends Database {
                     settings,
                     exp
                 );
+                System.out.println("Loading nick: "+ni.getName());
+                Oper oper =  OperServ.getOper ( ni.getName() );
+                System.out.println(" - Oper: "+oper.getName() );
+                System.out.println(" - Access: "+oper.getAccess() );
+                System.out.println(" - Instater: "+oper.getString ( INSTATER ) );
+                
                 ni.setOper ( OperServ.getOper ( ni.getName() ) );
                 nList.add ( ni );
                 $count++; 

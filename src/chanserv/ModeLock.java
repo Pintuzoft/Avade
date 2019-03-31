@@ -160,7 +160,7 @@ class ModeLock extends HashNumeric {
         if ( this.m_invite == -1 && modes.is ( MODE_i ) )
             missing += "i";
         if ( this.m_moderate == -1 && modes.is ( MODE_m ) )
-            missing += "i";
+            missing += "m";
         if ( this.m_modregchat == -1 && modes.is ( MODE_M ) )
             missing += "M";
         if ( this.m_modregjoin == -1 && modes.is ( MODE_R ) )
@@ -174,7 +174,7 @@ class ModeLock extends HashNumeric {
         if ( this.m_secret == -1 && modes.is ( MODE_s ) )
             missing += "s";
         if ( this.m_topic == -1 && modes.is ( MODE_t ) )
-            missing += "i";
+            missing += "t";
         
         return missing;
     }

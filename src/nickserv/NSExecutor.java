@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import operserv.OperServ;
 
 /**
  *
@@ -92,6 +93,10 @@ import java.util.regex.Pattern;
                 break;
                 
             /* Oper */
+            case LIST :
+                this.list ( user, cmd );
+                break;
+                       
             case MARK :
                 this.changeFlag ( MARK, user, cmd );
                 break;
@@ -304,8 +309,12 @@ import java.util.regex.Pattern;
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "LIST <pattern>" ) );
                 return;
                 
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+            case ACCESS_DENIED_OPER :
+                this.service.sendMsg ( user, output ( ACCESS_DENIED_OPER, "" ) );
+                return;
+                      
+            case ACCESS_DENIED_SA :
+                this.service.sendMsg ( user, output ( ACCESS_DENIED_SA, "" ) );
                 return;
                 
             default : 
@@ -1021,9 +1030,10 @@ import java.util.regex.Pattern;
             case LIST :
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setStatus ( ACCESS_DENIED_OPER );
                 } else if ( ! user.isAtleast ( SA ) ) {
-                    cmdData.setString1 ( "SA" );
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    cmdData.setStatus ( ACCESS_DENIED_SA );
                 } 
                 break;
                
@@ -1270,6 +1280,12 @@ import java.util.regex.Pattern;
             
             case ACCESS_DENIED_SRA : 
                 return "Access denied. You need to be atleast SRA to use this command.";
+                   
+            case ACCESS_DENIED_SA : 
+                return "Access denied. You need to be atleast SA to use this command.";
+                      
+            case ACCESS_DENIED_OPER : 
+                return "No such command.";
             
             case ACCESS_DENIED_DELETE_OPER :
                 return "Access denied. You cannot delete a SA+.";
@@ -1350,8 +1366,10 @@ import java.util.regex.Pattern;
     /*** OPER MESSAGES ***/
     private final static int IDENT_NICK_DELETED       = 1801;
     private final static int NICK_DELETED             = 1802; 
-    private final static int ACCESS_DENIED_SRA          = 1804;
-    private final static int ACCESS_DENIED_DELETE_OPER  = 1805;
+    private final static int ACCESS_DENIED_OPER       = 1803;
+    private final static int ACCESS_DENIED_SA         = 1804;
+    private final static int ACCESS_DENIED_SRA          = 1805;
+    private final static int ACCESS_DENIED_DELETE_OPER  = 1806;
     private final static int NICK_SET_FLAG            = 1811;
     private final static int NICKFLAG_EXIST           = 1812;
     private final static int NICK_GETPASS             = 1813;

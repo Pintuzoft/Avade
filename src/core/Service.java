@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import server.ServSock;
 import user.User;
 import java.util.Date;
-import operserv.OperServ;
 
 /**
  *
@@ -172,6 +171,7 @@ import operserv.OperServ;
     
     /* COMMANDS */
     public int CMDAccess ( int var ) { 
+        System.out.println ( "Debug CMDAccess ( "+Proc.getConf().getInt ( var )+" )" );
         return Proc.getConf().getInt ( var ); 
     }
     

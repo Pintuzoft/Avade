@@ -131,15 +131,15 @@ import java.util.Random;
                 this.accesslog ( user, cmd );
                 break; 
            
-            case TOPICLOG :
-                this.topiclog ( user, cmd );
-                break; 
-                
             case CHANLIST :
                 this.chanList ( user, cmd );
                 break;
                 
             /* Oper Only Commands */
+            case TOPICLOG :
+                this.topiclog ( user, cmd );
+                break; 
+
             case LIST :
                 this.list ( user, cmd ); 
                 break;
@@ -277,22 +277,22 @@ import java.util.Random;
 
         } else {
             /* oping someone else */
-            if ( ci.getSettings ( ) .is ( IDENT ) ) {
+            if ( ci.getSettings().is ( IDENT ) ) {
                 /* ident is on */
                 if ( ( tNick = ci.getNickByUser ( target ) ) == null )  {
                     /* no access nick */
                     this.service.sendMsg ( user, output (NICK_NOT_IDENTED_OP, target.getString ( NAME ) ) );
 
-                } else if ( tNick.getSettings ( ) .is ( NEVEROP ) ) {
+                } else if ( tNick.getSettings().is ( NEVEROP ) ) {
                     /* never wants op */
                     this.service.sendMsg (user, output (NICK_NEVEROP, target.getString ( NAME )  )  );
 
                 } else {
-                    if ( ci.getSettings ( ) .is ( VERBOSE )  )  {
+                    if ( ci.getSettings().is ( VERBOSE ) ) {
                         this.service.sendOpMsg (ci, output (NICK_VERBOSE_OP, user.getString ( NAME ), target.getString ( NAME ), ci.getName ( ) ) );
                     }
                     this.service.sendMsg (user, output (NICK_OP, target.getString ( NAME ), ci.getName ( ) ) );
-                    Handler.getChanServ ( ) .opUser (c, target );
+                    Handler.getChanServ().opUser (c, target );
                 }
             } else {
                 /* ident is off */
@@ -411,8 +411,16 @@ import java.util.Random;
         ChanInfo ci = cmdData.getChanInfo ( );
         NickInfo ni = cmdData.getNick ( );
         String description = Handler.cutArrayIntoString ( cmd, 6 );
+        Topic topic; 
         
-        ci = new ChanInfo ( c.getString(NAME), ni, cmd[5], description, c.getTopic ( ) );
+        if ( c.getTopic() != null ) {
+            topic = c.getTopic();
+        } else {
+            topic = new Topic ("", ni.getName(), System.currentTimeMillis());
+        }
+        
+        
+        ci = new ChanInfo ( c.getString(NAME), ni, cmd[5], description, topic );
         ChanServ.addToWorkList ( REGISTER, ci );
         ChanServ.addChan ( ci );
         
@@ -1473,7 +1481,7 @@ import java.util.Random;
 
         for ( ChanInfo ci : cList ) {
             buf = f.b ( ) +"    "+ci.getName ( );
-            buf += ( ci.getTopic ( ) != null ) ? ci.getTopic ( ) .getTopic ( ) : "";
+            buf += ( ci.getTopic ( ) != null ) ? " : "+ci.getTopic().getTopic ( ) : "";
             this.service.sendMsg ( user, buf );
         }
         this.showEnd ( user, "Info" );

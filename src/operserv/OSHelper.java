@@ -93,6 +93,10 @@ class OSHelper extends Helper {
             case SERVER :
                 this.server ( user );
                 break;
+                       
+            case SPAMFILTER :
+                this.spamfilter ( user );
+                break;
                 
             default :
                 this.found = false; this.noMatch ( user, cmd[4] ); 
@@ -400,6 +404,55 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "   give this information to users as it could be used against you."                                           );
         this.showEnd ( user );
     }
+    private void spamfilter ( User user ) {
+        this.showStart ( user, "SpamFilter" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ SPAMFILTER <LIST|ADD|DEL> <string> <flags> <reason>"+f.b ( ) +""             );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Example: /OperServ SPAMFILTER ADD join?my?site?http* 2 Advertising is not allowed"                                                                                                          );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   The spamfilter command is a way to combat spam on the network. The SF command will let"                    );
+        this.service.sendMsg ( user, "   a bahamut server warn, block and/or akill users who is spamming specified strings to"                      );
+        this.service.sendMsg ( user, "   users or channels on the server/network. If unsure about the flags keep to the bundled ones."              );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Example Strings:"                                                                                          );
+        this.service.sendMsg ( user, "     <bot> hello hello hello!             : hello?hello?hello!"                                               );
+        this.service.sendMsg ( user, "     <bot> join my site http://blabla     : join?my?site?http*"                                               );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Bundled flags:"                                                                                            );
+        this.service.sendMsg ( user, "     1 : warn private massads (spnWR)"                                                                        );
+        this.service.sendMsg ( user, "     2 : block+akill private massads (spnWRBA)"                                                               );
+        this.service.sendMsg ( user, "     3 : warn channel massads (scWR)"                                                                         );
+        this.service.sendMsg ( user, "     4 : block+akill channel massads (scWRBA)"                                                                );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Behavior flags:"                                                                                           );
+        this.service.sendMsg ( user, "     s : strip control codes"                                                                                 );
+        this.service.sendMsg ( user, "     S : strip non-alphanumeric characters and spaces"                                                        );
+        this.service.sendMsg ( user, "     r : regexp"                                                                                              );
+        this.service.sendMsg ( user, "     m : match registered nicks"                                                                              );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Target flags:"                                                                                             );
+        this.service.sendMsg ( user, "     p : private message"                                                                                     );
+        this.service.sendMsg ( user, "     n : notice"                                                                                              );
+        this.service.sendMsg ( user, "     k : kick message"                                                                                        );
+        this.service.sendMsg ( user, "     q : quit message"                                                                                        );
+        this.service.sendMsg ( user, "     t : topic"                                                                                               );
+        this.service.sendMsg ( user, "     a : away message"                                                                                        );
+        this.service.sendMsg ( user, "     c : channel message/notice"                                                                              );
+        this.service.sendMsg ( user, "     p : part message"                                                                                        );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Action flags:"                                                                                             );
+        this.service.sendMsg ( user, "     W : warn user"                                                                                           );
+        this.service.sendMsg ( user, "     L : lag user"                                                                                            );
+        this.service.sendMsg ( user, "     R : report to opers (umode +m)"                                                                          );
+        this.service.sendMsg ( user, "     B : block message"                                                                                       );
+        this.service.sendMsg ( user, "     K : kill the user"                                                                                       );
+        this.service.sendMsg ( user, "     A : akill the user"                                                                                      );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   This functionality adds automation and its powerful so dont play around with it, only"                     );
+        this.service.sendMsg ( user, "   add strings in to actually help with the noise and block or akill users who matches"                       );
+        this.service.sendMsg ( user, "   the strings. Always try add long strings to avoid false positive matches."                                 );
+        this.showEnd ( user );
+    }
 }
-
- 

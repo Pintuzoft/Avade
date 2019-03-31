@@ -378,6 +378,7 @@ public class ChanSetting extends HashNumeric {
         this.keepTopic          = false;
         this.topicLock          = OFF;
         this.mailBlock          = false;
+        this.modeLock           = new ModeLock ( "" );
         this.verbose            = false;
         this.restrict           = false;
         this.opGuard            = false;

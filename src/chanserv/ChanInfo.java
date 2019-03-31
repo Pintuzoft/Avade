@@ -162,7 +162,7 @@ public class ChanInfo extends HashNumeric {
             case TOPIC :
                 if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
                     return this.topic.getTopic ( );
-                } 
+                }
                 return "";
                 
             case TOPICNICK :

@@ -77,6 +77,8 @@ public class Oper extends HashNumeric {
     }
     
     public Oper ( String name, int access, String instater )  {
+        System.out.println("debug: oper: access: "+access);
+
         this.name            = name;
         this.access          = access;
         this.instater        = instater;
@@ -87,6 +89,7 @@ public class Oper extends HashNumeric {
     
     /* user without access */
     public Oper ( ) {
+        System.out.println("debug: oper: user no access");
         this.name           = "";
         this.access         = 0;
         this.instater       = "";

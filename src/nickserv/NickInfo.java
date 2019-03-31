@@ -327,6 +327,7 @@ public class NickInfo extends HashNumeric {
     }
 
     public void setOper ( Oper oper ) {
+        System.out.println("SETOPER: oper:"+oper.getName()+" access:"+oper.getAccess()+" instater:"+oper.getString(INSTATER));
         this.oper = oper;
     }
     

@@ -644,53 +644,49 @@ public class OSDatabase extends Database {
 
    
      
-    static public Oper addStaff ( User user, NickInfo ni, int access ) {
-        Oper oper;
-        if ( ! activateConnection ( )  )  {
-            return null;
+    static public boolean addStaff ( Oper oper ) {
+        if ( ! activateConnection ( ) ) {
+            return false;
         }
         try {
             String query = "INSERT INTO oper ( name,access,instater ) VALUES ( ?, ?, ? ) "
                           +"ON DUPLICATE KEY UPDATE access = ?,instater = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getName ( ) );
-            ps.setInt      ( 2, access );
-            ps.setString   ( 3, user.getOper().getName ( ) );
-            ps.setInt      ( 4, access );
-            ps.setString   ( 5, user.getOper().getName ( ) );
+            ps.setString   ( 1, oper.getName ( ) );
+            ps.setInt      ( 2, oper.getAccess ( ) );
+            ps.setString   ( 3, oper.getString ( INSTATER ) );
+            ps.setInt      ( 4, oper.getAccess ( ) );
+            ps.setString   ( 5, oper.getString ( INSTATER ) );
             ps.execute ( );
             ps.close ( );
-            oper = OperServ.getOper ( ni.getName() );
             idleUpdate ( "addStaff ( ) " );
         
         } catch  ( SQLException ex )  {
             Proc.log ( OSDatabase.class.getName ( ) , ex );
-            return null;
+            return false;
         } 
-        return oper;
+        return true;
     }
     
     
-    public static Oper delStaff ( NickInfo ni, int access )  {
-        Oper oper;
-        if ( ! activateConnection ( )  )  {
-            return null;
+    public static boolean delStaff ( Oper oper )  {
+        if ( ! activateConnection ( ) ) {
+            return false;
         }
         try {
             String query = "DELETE FROM oper WHERE name = ? AND access = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getName ( )       );
-            ps.setInt      ( 2, access               );
+            ps.setString   ( 1, oper.getName ( ) );
+            ps.setInt      ( 2, oper.getAccess ( ) );
             ps.execute ( );
             ps.close ( );
-            oper = OperServ.getOper ( ni.getName() );
-            idleUpdate ( "delCSop ( ) " );
+            idleUpdate ( "delStaff ( ) " );
                      
-        } catch  ( SQLException ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );
-            return null;
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ), ex );
+            return false;
         } 
-        return oper;
+        return true;
     }
     
     static boolean addComment(Comment comment) {

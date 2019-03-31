@@ -27,6 +27,7 @@ import user.User;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Random;
+import nickserv.NickInfo;
 import server.Server;
 
 /**
@@ -53,7 +54,12 @@ public class OperServ extends Service {
     private static ArrayList<SpamFilter> remSpamFilters = new ArrayList<>(); /* Remove spamfilters */
       
     private static ArrayList<Oper> staff = new ArrayList<> ( );   /* Staff list */
+    private static ArrayList<Oper> addStaff = new ArrayList<> ( );   /* Staff list */
+    private static ArrayList<Oper> remStaff = new ArrayList<> ( );   /* Staff list */
 
+    private static ArrayList<OSLogEvent> logs = new ArrayList<> ( );   /* LogEvent list */
+
+    
     private ArrayList<User> chList = new ArrayList<>();     /* users who are schedualed for ban checks */
     
     private OSExecutor                  executor;   /* Object that parse and execute commands */
@@ -140,11 +146,16 @@ public class OperServ extends Service {
         todoAmount += this.checkRemServicesBans ( );
         todoAmount += this.checkAddSpamFilters ( );
         todoAmount += this.checkRemSpamFilters ( );
+        todoAmount += this.checkAddStaff ( );
+        todoAmount += this.checkRemStaff ( );
+        todoAmount += this.checkLogEvents ( );
         return todoAmount;
     }
+    
     public void minMaintenance ( ) {  
              
     }
+    
     public int checkAddServicesBans ( ) {
         if ( addServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
             return addServicesBans.size();
@@ -160,6 +171,7 @@ public class OperServ extends Service {
         }
         return addServicesBans.size();
     }
+    
     public int checkRemServicesBans ( ) {
         if ( remServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
             return remServicesBans.size();
@@ -238,6 +250,54 @@ public class OperServ extends Service {
             addServers.remove ( server );
         }
         return addServers.size();
+    }
+    
+    public int checkAddStaff ( ) {
+        if ( addStaff.isEmpty() || ! OSDatabase.checkConn() ) {
+            return addStaff.size();
+        }
+        ArrayList<Oper> oList = new ArrayList<>();
+        for ( Oper oper : addStaff ) {
+            if ( OSDatabase.addStaff ( oper ) ) {
+                oList.add ( oper );
+            }
+        }
+        for ( Oper oper : oList ) {
+            addStaff.remove ( oper );
+        }
+        return addStaff.size();
+    }
+       
+    public int checkRemStaff ( ) {
+        if ( remStaff.isEmpty() || ! OSDatabase.checkConn() ) {
+            return remStaff.size();
+        }
+        ArrayList<Oper> oList = new ArrayList<>();
+        for ( Oper oper : remStaff ) {
+            if ( OSDatabase.delStaff ( oper ) ) {
+                oList.add ( oper );
+            }
+        }
+        for ( Oper oper : oList ) {
+            remStaff.remove ( oper );
+        }
+        return remStaff.size();
+    }
+          
+    public int checkLogEvents ( ) {
+        if ( logs.isEmpty() || ! OSDatabase.checkConn() ) {
+            return logs.size();
+        }
+        ArrayList<OSLogEvent> lList = new ArrayList<>();
+        for ( OSLogEvent log : logs ) {
+            if ( OSDatabase.logEvent ( log ) > 0 ) {
+                lList.add ( log );
+            }
+        }
+        for ( OSLogEvent log : lList ) {
+            logs.remove ( log );
+        }
+        return logs.size();
     }
     
     private void checkUserList ( ) {
@@ -857,6 +917,37 @@ public class OperServ extends Service {
         }
         return false;
     }
-
+    
+    static void addOper ( Oper oper ) {
+        Oper rem = null;
+        int hash = oper.getName().hashCode();
+        for ( Oper o : staff ) {
+            System.out.println("addOper: "+hash+":"+o.getName().hashCode());
+            if ( o.getName().hashCode() == hash ) {
+                rem = o;
+            }
+        }
+        if ( rem != null ) {
+            staff.remove ( rem );
+        }
+        staff.add ( oper );
+        addStaff.add ( oper );
+    }
+    
+    static void delOper ( NickInfo ni ) {
+        Oper oper = null;
+        for ( Oper o : staff ) {
+            if ( o.getHashCode() == ni.hashCode() ) {
+                oper = o;
+            }
+        }
+        if ( oper != null ) {
+            staff.remove ( oper );
+            remStaff.add ( oper );
+        }
+    }
+    static void addLogEvent ( OSLogEvent log ) {
+        logs.add ( log );
+    }
 }
    

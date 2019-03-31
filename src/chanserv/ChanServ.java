@@ -88,7 +88,7 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "MKICK",        0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "DROP",         0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "ACCESSLOG",    0,                          "View the AOP/SOP/AKICK logs" )         );
-        cmdList.add ( new CommandInfo ( "ACCESSLOG",    CMDAccess ( TOPICLOG ),     "View the AOP/SOP/AKICK logs" )         );
+        cmdList.add ( new CommandInfo ( "TOPICLOG",     CMDAccess ( TOPICLOG ),     "View the topic logs" )         );
         cmdList.add ( new CommandInfo ( "LIST",         CMDAccess ( LIST ),         "List registered channels" )            );
         cmdList.add ( new CommandInfo ( "CHANLIST",     CMDAccess ( CHANLIST ),     "List chans associated with nick" )     );
         cmdList.add ( new CommandInfo ( "MARK",         CMDAccess ( MARK ),         "Mark channel" )                        );
@@ -172,6 +172,7 @@ public class ChanServ extends Service {
     public void checkUser ( Chan c, User user )  {
         ChanInfo ci;
         NickInfo ni;
+        System.out.println("debug: checkUser()");
         if ( ( ci = findChan ( c.getString ( NAME ) ) ) != null ) {
             if ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
                 return;
@@ -183,12 +184,16 @@ public class ChanServ extends Service {
                     opUser ( c, user );
                 }
                 
-            } else if ( ci.isAkick ( user ) || ci.is ( RESTRICT )  ) {
+            } else if ( ci.isAkick ( user ) || ci.is ( RESTRICT ) ) {
                 banUser ( c, user, null );
                 kickUser ( c, user );
             
             } else if ( c.isOp ( user ) && ci.is ( OPGUARD ) ) {
                 this.deOpUser ( c, user );
+            }
+            
+            if ( c.isSaJoin() ) {
+                c.toggleSaJoin();
             }
         }
     }

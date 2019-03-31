@@ -56,6 +56,9 @@ public class CSAcc extends HashNumeric {
         this.nick = parts[0];
         this.user = parts[1];
         this.host = parts[2];
+        System.out.println("CSAcc: nick: "+this.nick);
+        System.out.println("CSAcc: user: "+this.user);
+        System.out.println("CSAcc: host: "+this.host);
         this.access = access;
         try {
             if ( parts.length > 3 ) {
@@ -81,7 +84,7 @@ public class CSAcc extends HashNumeric {
         if ( this.cidr > -1 ) {
             isCidr = true;
         }
-        if ( this.host.compareTo ( "*") == 0 ) {
+        if ( this.host.compareTo ( "*" ) == 0 ) {
             this.wildHost = true;
         } else {
             if ( isIPv4Address ( this.host ) ) {
@@ -116,18 +119,42 @@ public class CSAcc extends HashNumeric {
     }
      
     private void parseNick ( ) {
-        String pattern = "^"+this.nick+"$".replaceAll("\\*", "(.*)").replaceAll("\\?", "(.?)");
+        String pattern = this.parsePattern ( this.nick );
+        System.out.println("userpattern: "+pattern);
         this.userPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private void parseUser ( ) {
-        String pattern = "^"+this.user+"$".replaceAll("\\*", "(.*)").replaceAll("\\?", "(.?)");
+        String pattern = this.parsePattern ( this.user );
+        System.out.println("userpattern: "+pattern);
         this.userPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private void parseHost ( ) {
-        String pattern = "^"+this.host+"$".replaceAll("\\*", "(.*)").replaceAll("\\?", "(.?)");
+        String pattern = this.parsePattern ( this.host );
+        System.out.println("hostpattern: "+pattern);
         this.hostPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
+    }
+    
+    private String parsePattern ( String pattern ) {
+        String buf = "^";
+        
+        for ( int i = 0; i < pattern.length(); i++ ) {
+            switch ( pattern.charAt(i) ) {
+                case '*' : 
+                    buf += "(.*)";
+                    break;
+                
+                case '?' : 
+                    buf += "(.?)";
+                    break;
+                    
+                default :
+                    buf += pattern.charAt(i);
+            }
+        } 
+        buf += "$";
+        return buf;
     }
     
     public static boolean isIPv4Address ( String str ) {
@@ -147,6 +174,7 @@ public class CSAcc extends HashNumeric {
         boolean matchUser = false;
         boolean matchHost = false;
         
+        
         /* Match registered nick */
         if ( this.ni != null ) {
             return user.isIdented ( ni );
@@ -164,19 +192,17 @@ public class CSAcc extends HashNumeric {
         } else {
             matchUser = this.userPattern.matcher(user.getString(USER)).find ( );
         }
-        
         if ( wildHost ) {
             matchHost = true;
         } else {
             if ( isIPv4 || isIPv6 ) {
                 try {
-                    matchHost = this.cidrUtils.isInRange ( this.host );
+                    matchHost = this.cidrUtils.isInRange ( user.getString ( HOST ) );
                 } catch (UnknownHostException ex) {
                     Logger.getLogger(CSAcc.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
-                System.out.println("DEBUG: match: "+user.getString ( HOST ) );
-                Matcher match = this.userPattern.matcher ( user.getString(HOST) );
+                Matcher match = this.hostPattern.matcher ( user.getString(HOST) );
                 matchHost = match.find ( );
             }
         }

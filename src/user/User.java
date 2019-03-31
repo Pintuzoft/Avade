@@ -44,7 +44,7 @@ public class User extends HashNumeric {
 //    private String                    realHost;
 //    private String                    ip;
     private Server                      server;
-    private Oper                        oper; 
+ //   private Oper                        oper; 
     private long                        signOn;
     private Date                        date;
     private int                         state; 
@@ -73,7 +73,7 @@ public class User extends HashNumeric {
         this.state      = 0; 
         sidBuf          = Long.parseLong ( data[8] ); /* buffer */ 
         this.signOn     = Long.parseLong ( data[3] ); 
-        this.oper       = new Oper ( ); /* Create oper object with user access */
+    //    this.oper       = new Oper ( ); /* Create oper object with user access */
         this.modes      = new UserMode ( );
         this.modes.set ( SERVER, data );
         this.cList      = new ArrayList<> ( );
@@ -304,30 +304,13 @@ public class User extends HashNumeric {
  
 
     public boolean is ( int access )  {
-        if ( this.oper == null )  {
-            return false;
+        int numacc = Oper.hashToAccess ( access );
+        for ( NickInfo ni : this.sid.getNiList() ) {
+            if ( ni.getOper().getAccess() >= numacc ) {
+                return true;        
+            }
         }
-        
-        switch ( access )  {
-            case IRCOP :
-                return this.isOper ( ); 
-                
-            case SA :
-                return this.oper.getAccOper ( SA );
-                
-            case CSOP :
-                return this.oper.getAccOper ( CSOP );
-                
-            case SRA :
-                return this.oper.getAccOper ( SRA );
-                
-            case MASTER :
-                return this.oper.isMaster ( );
-                
-            default: 
-                return false;
-            
-        }
+        return false;
     }
     
     public ArrayList<Chan> getChans ( )  {

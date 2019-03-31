@@ -798,11 +798,7 @@ public class OSExecutor extends Executor {
     }
     
     private void doStaff ( User user, String[] cmd ) {
-        if ( ! OSDatabase.checkConn ( ) ) {
-            Handler.getOperServ().sendMsg ( user, "Database error. Please try again in a little while." );
-            return;
-        } 
-        
+                
         CmdData cmdData = this.validateCommandData ( user, STAFF, cmd );
         
         switch ( cmdData.getStatus ( ) ) {
@@ -870,31 +866,25 @@ public class OSExecutor extends Executor {
         
         switch ( command ) {
             case DEL :
-                if ( ( oper = OSDatabase.delStaff ( ni, access ) ) == null ) {
-                    this.service.sendMsg ( user, output ( STAFF_NOT_DEL, accessStr, ni.getName ( ) ) );
-
-                } else {
-                    this.service.sendMsg ( user, output ( STAFF_DEL, accessStr, ni.getName ( ) ) );
-                    this.service.sendGlobOp ( output ( GLOB_STAFF_DEL, accessStr, user.getOper().getName(), ni.getName ( ) ) );
-                    this.msgUsersByNick ( ni, output ( NICK_NO_LONGER_STAFF, accessStr, ni.getName ( ) ) ); /* Msg all users identified to nick */
-                    log = new OSLogEvent ( ni.getName(), "del"+accessStr, user.getFullMask(), user.getOper().getName() );
-                    OSDatabase.logEvent ( log );
-                    ni.setOper ( oper );
-                }
+                oper = ni.getOper ( );
+                this.service.sendMsg ( user, output ( STAFF_DEL, accessStr, ni.getName ( ) ) );
+                this.service.sendGlobOp ( output ( GLOB_STAFF_DEL, accessStr, user.getOper().getName(), ni.getName ( ) ) );
+                this.msgUsersByNick ( ni, output ( NICK_NO_LONGER_STAFF, accessStr, ni.getName ( ) ) ); /* Msg all users identified to nick */
+                log = new OSLogEvent ( ni.getName(), "del"+accessStr, user.getFullMask(), user.getOper().getName() );
+                OperServ.addLogEvent ( log );
+                OperServ.delOper ( ni );
+                ni.setOper ( new Oper ( ) );
                 break;
                 
             case ADD :
-                if ( ( oper = OSDatabase.addStaff ( user, ni, access ) ) == null ) {
-                    this.service.sendMsg ( user, output ( STAFF_NOT_ADD, accessStr, ni.getName ( ) ) );
-
-                } else {
-                    this.service.sendMsg ( user, output ( STAFF_ADD, accessStr, ni.getName ( ) ) );
-                    this.service.sendGlobOp ( output ( GLOB_STAFF_ADD, accessStr, user.getOper().getName(), ni.getName ( ) ) );
-                    this.msgUsersByNick ( ni, output ( NICK_NOW_STAFF, accessStr, ni.getName ( ) ) ); /* Msg all users identified to nick */
-                    log = new OSLogEvent ( ni.getName(), "add"+accessStr, user.getFullMask(), user.getOper().getName() );
-                    OSDatabase.logEvent ( log );
-                    ni.setOper ( oper );
-                }
+                oper = new Oper ( ni.getName(), access, user.getOper().getName() );
+                this.service.sendMsg ( user, output ( STAFF_ADD, accessStr, ni.getName ( ) ) );
+                this.service.sendGlobOp ( output ( GLOB_STAFF_ADD, accessStr, user.getOper().getName(), ni.getName ( ) ) );
+                this.msgUsersByNick ( ni, output ( NICK_NOW_STAFF, accessStr, ni.getName ( ) ) ); /* Msg all users identified to nick */
+                log = new OSLogEvent ( ni.getName(), "add"+accessStr, user.getFullMask(), user.getOper().getName() );
+                OperServ.addLogEvent ( log );
+                OperServ.addOper ( oper );
+                ni.setOper ( oper );
                 break;
                  
         }

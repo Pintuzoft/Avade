@@ -34,9 +34,7 @@ import server.ServSock;
 import user.User;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import mail.SendMail;
-import operserv.OperServ;
 
 /**
  *

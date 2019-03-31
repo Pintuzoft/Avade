@@ -382,7 +382,7 @@ public class DBChanges extends HashNumeric {
 
 
         // Add chanflags table for eXtended flags
-        qList.add ( "create table chanflag (name varchar(32), join_connect_time smallint, talk_connect_time smallint, talk_join_time smallint, max_bans smallint, no_notice tinyint(1), no_ctcp tinyint(1), no_part_msg tinyint(1), no_quit_msg tinyint(1), exempt_opped tinyint(1), exempt_voiced tinyint(1), exempt_identd tinyint(1), exempt_registered tinyint(1), exempt_invites tinyint(1), greetmsg varchar(256), primary key (name) );" );
+        qList.add ( "create table chanflag (name varchar(33) not null default '', join_connect_time smallint, talk_connect_time smallint, talk_join_time smallint, max_bans smallint, no_notice tinyint(1), no_ctcp tinyint(1), no_part_msg tinyint(1), no_quit_msg tinyint(1), exempt_opped tinyint(1), exempt_voiced tinyint(1), exempt_identd tinyint(1), exempt_registered tinyint(1), exempt_invites tinyint(1), greetmsg varchar(256), primary key (name), constraint foreign key (name) references chan (name) on delete cascade on update cascade )engine=innodb charset=latin1;" );
 
         // Add chanflag for all current chans
         qList.add ( "insert into chanflag (select name,0,0,0,200,0,0,0,0,0,0,0,0,0,null from chan);" );

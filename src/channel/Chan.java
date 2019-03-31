@@ -42,21 +42,21 @@ public class Chan extends HashNumeric {
     private ArrayList<User>     uList;
     
     private ChanMode            modes;
+    private boolean sajoin = false;
     
     /* STATIC */
     public static Comparator<Chan>      comparator =  ( Chan c1, Chan c2 )  -> { return c1.hashCode ( )  - c2.hashCode ( ); };
 
 
-    public Chan  (  String[] data  )  {
+    public Chan ( String[] data ) {
         this.name           = data[3];
-        this.hashName       = this.name.toUpperCase ( ) .hashCode ( );
+        this.hashName       = this.name.toUpperCase().hashCode ( );
         this.createdOn      = Long.parseLong ( data[2] );
         this.modes          = new ChanMode ( );
         this.oList          = new ArrayList<>( );    /* oplist */
         this.vList          = new ArrayList<>( );    /* voicelist */
         this.uList          = new ArrayList<>( );    /* userlist */
         this.modes.set ( ChanMode.SERVER, data );
-
         this.addUserList ( data );
 
         //System.out.println ( "IN CHAN..." );
@@ -114,6 +114,9 @@ public class Chan extends HashNumeric {
         //      0        1      2       3         4      5+
         boolean state = false;
         User u;
+        if ( cmd.length < 6 ) {
+            return;
+        } 
         for ( int i=0, m=1; i < cmd[4].length ( ); i++ ) {
             u = Handler.findUser ( cmd[4+m] );
             switch ( ( ""+cmd[4].charAt(i)).hashCode ( ) ) {
@@ -213,8 +216,6 @@ public class Chan extends HashNumeric {
 
             default :
         } 
-        Handler.getChanServ().checkUser ( this, u );
-        /* Make ChanServ check user access */
     }
     
    
@@ -322,6 +323,7 @@ public class Chan extends HashNumeric {
         return this.hashName;
     } 
     
+    @Override
     public int hashCode ( ) { 
         return this.hashName;
     } 
@@ -333,5 +335,12 @@ public class Chan extends HashNumeric {
     public void setTopic ( Topic topic ) { 
         this.topic = topic;
     } 
- 
+    
+    public void toggleSaJoin ( ) {
+        this.sajoin = ! this.sajoin;
+    }
+    
+    public boolean isSaJoin ( ) {
+        return this.sajoin;
+    }
 }
