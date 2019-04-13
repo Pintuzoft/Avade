@@ -859,7 +859,7 @@ import java.util.Random;
                 if ( ci.getSettings().is ( VERBOSE ) ) {
                     this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), what, listName ) );
                 }
-                if ( command == AKICK ) {
+                if ( command == AKICK && ci.is ( AUTOAKICK ) ) {
                     c.addCheckUsers();
                 }
                 ci.changed();
@@ -1020,7 +1020,7 @@ import java.util.Random;
     public void set ( User user, String[] cmd )  {
         /* :DreamHealer PRIVMSG NickServ@services.sshd.biz :set #chan CMD ON          */
         /*      0          1               2                 3     4   5   6 = 7      */
-
+        
         CmdData cmdData = this.validateCommandData ( user, SET, cmd ); 
         
         switch ( cmdData.getStatus ( ) ) {
@@ -1052,6 +1052,7 @@ import java.util.Random;
                 
         }
         ChanInfo ci = cmdData.getChanInfo ( );
+        Chan c;
         boolean flag = false;
         int setting = 0;
 
@@ -1140,6 +1141,13 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "leave ops ( @ )  to the first user entering the channel after its been empty.", "leave ops(@)." );
                 ci.getSettings().set ( LEAVEOPS, flag );
                 ci.getChanges().change ( LEAVEOPS );
+                ChanServ.addToWorkList ( CHANGE, ci );
+                break;
+             
+            case AUTOAKICK :
+                this.sendWillOutput ( user, flag, "remove matching users on akick.", "leave ops(@)." );
+                ci.getSettings().set ( AUTOAKICK, flag );
+                ci.getChanges().change ( AUTOAKICK );
                 ChanServ.addToWorkList ( CHANGE, ci );
                 break;
  

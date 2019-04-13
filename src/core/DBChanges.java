@@ -97,6 +97,11 @@ public class DBChanges extends HashNumeric {
                 qList.add ( "to: v1.1810-2");
                 qList.addAll ( this.db118102 ( ) );
                 qList.add ( "update settings set value = '1.1810-2' where name = 'version'" );
+            
+            case 119041 :
+                qList.add ( "to: v1.1904-1");
+                qList.addAll ( this.db119041 ( ) );
+                qList.add ( "update settings set value = '1.1904-1' where name = 'version'" );
 
                 break;
                 
@@ -409,6 +414,12 @@ public class DBChanges extends HashNumeric {
         qList.add ( "alter table sgline change id id bigint;" );
         qList.add ( "alter table sqline change id id bigint;" );
         qList.add ( "alter table akill change id id bigint;" );
+        return qList;
+    }
+        
+    private ArrayList<String> db119041 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table chansetting add autoakick tinyint(1) default '0' after leaveops;" );
         return qList;
     }
      

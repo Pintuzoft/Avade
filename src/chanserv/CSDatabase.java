@@ -66,6 +66,7 @@ import user.User;
 | verbose    | tinyint ( 1 )   | YES  |     | NULL    |       |
 | mailblock  | tinyint ( 1 )   | YES  |     | NULL    |       |
 | leaveops   | tinyint ( 1 )   | YES  |     | NULL    |       |
+| autoakick  | tinyint ( 1 )   | YES  |     | NULL    |       |
 | private    | tinyint ( 1 )   | YES  |     | NULL    |       |
 +------------+-------------+------+-----+---------+-------+
 10 rows in set  ( 0.00 sec ) 
@@ -162,6 +163,7 @@ public class CSDatabase extends Database {
                     | verbose    | tinyint(1)  | YES  |     | 0       |       |
                     | mailblock  | tinyint(1)  | YES  |     | 0       |       |
                     | leaveops   | tinyint(1)  | YES  |     | 0       |       |
+                    | autoakick  | tinyint(1)  | YES  |     | 0       |       |
                     | modelock   | varchar(16) | YES  |     | NULL    |       |
                     | freeze     | varchar(32) | YES  |     | NULL    |       |
                     | close      | varchar(32) | YES  |     | NULL    |       |
@@ -236,6 +238,8 @@ public class CSDatabase extends Database {
                     changes = addToQuery ( changes, "mailblock" );
                 if ( ci.getChanges().hasChanged ( LEAVEOPS ) )
                     changes = addToQuery ( changes, "leaveops" );
+                if ( ci.getChanges().hasChanged ( AUTOAKICK ) )
+                    changes = addToQuery ( changes, "autoakick" );
                 if ( ci.getChanges().hasChanged ( MODELOCK ) )
                     changes = addToQuery ( changes, "modelock" );
                 if ( ci.getChanges().hasChanged ( TOPICLOCK ) )
@@ -274,7 +278,9 @@ public class CSDatabase extends Database {
                     if ( ci.getChanges().hasChanged ( MAILBLOCK ) )
                         ps.setBoolean ( index++, ci.getSettings().is ( MAILBLOCK ) );
                     if ( ci.getChanges().hasChanged ( LEAVEOPS ) )
-                        ps.setBoolean ( index++, ci.getSettings().is ( LEAVEOPS ) );
+                        ps.setBoolean ( index++, ci.getSettings().is ( LEAVEOPS ) ); 
+                    if ( ci.getChanges().hasChanged ( AUTOAKICK ) )
+                        ps.setBoolean ( index++, ci.getSettings().is ( AUTOAKICK ) );
                     if ( ci.getChanges().hasChanged ( MODELOCK ) )
                         ps.setString ( index++, ci.getSettings().getModeLock().getModes ( ) );
                     if ( ci.getChanges().hasChanged ( TOPICLOCK ) )
@@ -771,7 +777,7 @@ public class CSDatabase extends Database {
         }
         try {
             String query = "SELECT keeptopic,topiclock,ident,opguard,"+
-                           "restricted,verbose,mailblock,leaveops,"+
+                           "restricted,verbose,mailblock,leaveops,autoakick,"+
                            "modelock,mark,freeze,close,hold,auditorium "+
                            "FROM chansetting "+
                            "WHERE name = ?;";
@@ -799,6 +805,7 @@ public class CSDatabase extends Database {
                 settings.set ( VERBOSE,     res2.getBoolean ( "verbose" )       );
                 settings.set ( MAILBLOCK,   res2.getBoolean ( "mailblock" )     );
                 settings.set ( LEAVEOPS,    res2.getBoolean ( "leaveops" )      );
+                settings.set ( AUTOAKICK,   res2.getBoolean ( "autoakick" )     );
                 /* Oper only */
                 settings.set ( MARK,        res2.getString ( "mark" )           );
                 settings.set ( FREEZE,      res2.getString ( "freeze" )         );

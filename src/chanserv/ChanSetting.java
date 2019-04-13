@@ -48,6 +48,7 @@ public class ChanSetting extends HashNumeric {
     private boolean     verbose;
     private boolean     mailBlock;
     private boolean     leaveOps;
+    private boolean     autoAkick;
     private ModeLock    modeLock;
 
     private String      mark;
@@ -89,6 +90,9 @@ public class ChanSetting extends HashNumeric {
 
             case LEAVEOPS :
                 return this.leaveOps;
+            
+            case AUTOAKICK :
+                return this.autoAkick;
 
             case MARKED :
             case MARK :
@@ -120,36 +124,40 @@ public class ChanSetting extends HashNumeric {
     }
     
     public void set ( int mode, boolean state )  {
-         switch ( mode )  {
-             case KEEPTOPIC :
-                 this.keepTopic = state; 
-                 break;
-                 
-             case IDENT :
-                 this.ident = state;
-                 break;
-                 
-             case OPGUARD :
-                 this.opGuard = state;
-                 break;
-                 
-             case RESTRICT :
-                 this.restrict = state;
-                 break;
-                 
-             case VERBOSE :
-                 this.verbose = state;
-                 break;
-                 
-             case MAILBLOCKED :
-                 this.mailBlock = state;
-                 break;
-                 
-             case LEAVEOPS :
-                 this.leaveOps = state;
-                 break;
-                 
-             default :
+        switch ( mode )  {
+            case KEEPTOPIC :
+                this.keepTopic = state; 
+                break;
+
+            case IDENT :
+                this.ident = state;
+                break;
+
+            case OPGUARD :
+                this.opGuard = state;
+                break;
+
+            case RESTRICT :
+                this.restrict = state;
+                break;
+
+            case VERBOSE :
+                this.verbose = state;
+                break;
+
+            case MAILBLOCKED :
+                this.mailBlock = state;
+                break;
+
+            case LEAVEOPS :
+                this.leaveOps = state;
+                break;
+
+            case AUTOAKICK :
+                this.autoAkick = state;
+                break;
+
+            default :
          } 
     }  
     
@@ -240,6 +248,9 @@ public class ChanSetting extends HashNumeric {
                  
             case LEAVEOPS :
                 return "LeaveOps";
+                        
+            case AUTOAKICK :
+                return "AutoAKick";
                  
             /* Oper Only */
             case MARK :
@@ -341,6 +352,11 @@ public class ChanSetting extends HashNumeric {
                 buf += this.isFirst ( first );
                 buf += this.modeString ( LEAVEOPS );
             }      
+            
+            if ( is ( AUTOAKICK ) ) {
+                buf += this.isFirst ( first );
+                buf += this.modeString ( AUTOAKICK );
+            }      
 
             /* Oper only */
             if ( is ( MARKED ) ) {
@@ -384,6 +400,7 @@ public class ChanSetting extends HashNumeric {
         this.opGuard            = false;
         this.ident              = false;
         this.leaveOps           = false;
+        this.autoAkick          = false;
         /* Oper only */
         this.mark               = new String ( );
         this.freeze             = new String ( );

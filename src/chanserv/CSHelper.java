@@ -466,13 +466,49 @@ public class CSHelper extends Helper {
             return;
         }
          
-        switch ( cmd[5].toUpperCase ( ) .hashCode ( )  )  {
+        switch ( cmd[5].toUpperCase().hashCode ( ) ) {
+            case DESCRIPTION :
+                this.setDescription ( user );
+                break;
+                         
             case KEEPTOPIC :
                 this.setKeepTopic ( user );
                 break;
                 
             case TOPICLOCK :
                 this.setTopicLock ( user );
+                break;
+                
+            case IDENT :
+                this.setIdent ( user );
+                break;
+                
+            case OPGUARD :
+                this.setOpGuard ( user );
+                break;
+
+            case RESTRICT :
+                this.setRestrict ( user );
+                break;
+                
+            case VERBOSE :
+                this.setVerbose ( user );
+                break;
+                
+            case MAILBLOCK :
+                this.setMailBlock ( user );
+                break;
+                
+            case LEAVEOPS :
+                this.setLeaveOps ( user );
+                break;
+                
+            case AUTOAKICK :
+                this.setAutoAKick ( user );
+                break;
+                
+            case PRIVATE :
+                this.setPrivate ( user );
                 break;
                 
             default :
@@ -497,6 +533,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"VERBOSE"+f.b ( ) +"        Will make changes to the channel verbose"                           );
         this.service.sendMsg ( user, "       "+f.b ( ) +"MAILBLOCK"+f.b ( ) +"      Prevent services from sending password to founders mail"            );
         this.service.sendMsg ( user, "       "+f.b ( ) +"LEAVEOPS"+f.b ( ) +"       First user in will be allowed to be op(@) "                         );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"AUTOAKICK"+f.b ( ) +"      Have ChanServ remove all matching users when placing an akick"      );
         this.service.sendMsg ( user, "   "                                                                                                              );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                                 );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                               );
@@ -637,7 +674,25 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   is not recommended to be enabled."                                                         );
         this.showEnd ( user );  
     }
-
+    
+    public void setAutoAKick ( User user )  {
+        this.showStart ( user, "Set AutoAKick" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SET <#chan> AUTOAKICK <ON|OFF>"+f.b ( ) +""                  );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The AUTOAKICK setting will let you to actively remove users from your channel when"        );
+        this.service.sendMsg ( user, "   an AKICK has been placed. When placing a new AKICK ChanServ will check the channel"        );
+        this.service.sendMsg ( user, "   for any matching users who have no access to the channel and kick ban them from"           );
+        this.service.sendMsg ( user, "   the channel."                                                                              );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
+        this.service.sendMsg ( user, "   This setting is nice to have in order to cope with flooding. With it enabled you "         );
+        this.service.sendMsg ( user, "   or your script/bot only need to identify patterns and place akicks and ChanServ"           );
+        this.service.sendMsg ( user, "   would do the rest for you. This would then actively help you defending your channel"       );
+        this.service.sendMsg ( user, "   by taking some of the work/load your script/bot has to do to ban and kick the bots"        );
+        this.showEnd ( user );  
+    }
+    
     public void setPrivate ( User user )  {
         this.showStart ( user, "Set Private" );
         this.service.sendMsg ( user, "   "                                                                                          );

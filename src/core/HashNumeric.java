@@ -287,6 +287,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int RESTRICT                    = 446081724;
     public final static int VERBOSE                     = 1069090146;
     public final static int LEAVEOPS                    = -1934704485;
+    public final static int AUTOAKICK                   = 154503608;
     public final static int MODELOCK                    = 163603790;
 
     /* NICKSERV */

@@ -43,6 +43,7 @@ public class CSChanges extends Changes {
     private boolean restrict;
     private boolean verbose;
     private boolean leaveops;
+    private boolean autoakick;
     private boolean founder;
   
     private boolean join_connect_time;
@@ -84,6 +85,8 @@ public class CSChanges extends Changes {
         this.opguard = false;
         this.restrict = false;
         this.verbose = false;
+        this.leaveops = false;
+        this.autoakick = false;
         this.founder = false;
         
         this.join_connect_time = false;
@@ -153,6 +156,9 @@ public class CSChanges extends Changes {
 
             case LEAVEOPS :
                 return this.leaveops;
+                       
+            case AUTOAKICK :
+                return this.autoakick;
                 
             case FOUNDER :
                 return this.founder;
@@ -288,6 +294,11 @@ public class CSChanges extends Changes {
                 this.changed = true;
                 break;
                 
+            case AUTOAKICK :
+                this.autoakick = true;
+                this.changed = true;
+                break;
+                
             case FOUNDER :
                 this.founder = true;
                 this.changed = true;
@@ -404,8 +415,8 @@ public class CSChanges extends Changes {
             System.out.println("Changes: verbose!");
         if ( this.leaveops )
             System.out.println("Changes: leaveops!");
-        if ( this.leaveops )
-            System.out.println("Changes: leaveops!");
+        if ( this.autoakick )
+            System.out.println("Changes: autoakick!");
     }
 
     
