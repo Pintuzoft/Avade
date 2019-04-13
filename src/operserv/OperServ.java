@@ -100,7 +100,8 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "UINFO",     CMDAccess ( UINFO ),       "Show user information" )                 );
         cmdList.add ( new CommandInfo ( "CINFO",     CMDAccess ( CINFO ),       "Show channel information" )              );
         cmdList.add ( new CommandInfo ( "ULIST",     CMDAccess ( ULIST ),       "Show user list" )                        );
-        cmdList.add ( new CommandInfo ( "SLIST",     CMDAccess ( ULIST ),       "Show server list" )                      );
+        cmdList.add ( new CommandInfo ( "CLIST",     CMDAccess ( CLIST ),       "Show user list" )                        );
+        cmdList.add ( new CommandInfo ( "SLIST",     CMDAccess ( SLIST ),       "Show server list" )                      );
         cmdList.add ( new CommandInfo ( "UPTIME",    CMDAccess ( UPTIME ),      "Show uptime" )                           );
         cmdList.add ( new CommandInfo ( "AKILL",     CMDAccess ( AKILL ),       "Manage the AKill list" )                 );
         cmdList.add ( new CommandInfo ( "STAFF",     CMDAccess ( STAFF ),       "Manage the Staff list" )                 );
@@ -584,7 +585,6 @@ public class OperServ extends Service {
                     this.unBan ( command, ban );
                     this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
                     for ( User u : Handler.getUserList() ) {
-                        System.out.println("DEBUG: "+u.getString(NAME)+":"+u.getString(REALNAME)+":"+ban.getMask());
                         if ( StringMatch.wild ( u.getString ( REALNAME ), ban.getMask ( ) ) ) {
                             this.sendServ ( "KILL "+u.getString ( NAME )+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
                         }
@@ -710,7 +710,6 @@ public class OperServ extends Service {
         int pHash;
         int sHash;
         int hash;
-        System.out.println("DEBUG: servers: "+servers.size());
         switch ( type ) {
             case HUB :
                 for ( NetServer server : servers ) {

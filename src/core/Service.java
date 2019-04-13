@@ -53,7 +53,6 @@ import java.util.Date;
         this.realName   = this.name+" "+Proc.getConf().get ( SERVICEGCOS );
         this.server     = this.getServer ( );
         
-        System.out.println ( "DEBUG: new arraylist from super" );
         this.cmdList    = new ArrayList<>();
         this.send ( NICK, this.name );
     }

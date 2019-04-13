@@ -31,13 +31,13 @@ class GuestAdTask extends TimerTask {
     private Random      rand;
     private int         index;
 
-    public GuestAdTask ( User user )  { 
+    public GuestAdTask ( User user )  {
         this.user   = user; 
         this.rand   = new Random ( );
     }
 
     @Override
-    public void run ( )  {            
+    public void run ( ) {
         User u;
         NickServ.adRegNick ( this.user );            
     }

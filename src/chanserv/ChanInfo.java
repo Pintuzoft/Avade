@@ -46,6 +46,7 @@ public class ChanInfo extends HashNumeric {
     private CSFlag          chanFlag;
     private String          regTime;
     private String          lastSeen; 
+    
     private ArrayList<CSAcc> klist;
     private ArrayList<CSAcc> slist;
     private ArrayList<CSAcc> alist;
@@ -100,7 +101,7 @@ public class ChanInfo extends HashNumeric {
     public void maintenence ( ) {
         this.updateAccessChanges();
     }
-    
+     
     private void updateAccessChanges ( ) {
         if ( CSDatabase.checkConn() && this.addAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
@@ -310,7 +311,6 @@ public class ChanInfo extends HashNumeric {
  
     public boolean delAkick ( String mask )  {
         CSAcc del = null;
-         
         for ( CSAcc akick : this.klist )  {
             if ( akick.getMask ( ) != null )  {
                 if ( mask.toUpperCase().hashCode ( ) == akick.getMask().toUpperCase().hashCode ( ) ) {
@@ -392,8 +392,37 @@ public class ChanInfo extends HashNumeric {
             default :
                 return new ArrayList<>();
         }
+
     }
 
+    public void addAccess ( int access, CSAcc acc ) {
+        if ( acc == null ) {
+            return;
+        }
+        this.removeFromAll ( acc );
+        switch ( access ) {
+            case SOP :
+                this.slist.add ( acc );
+                break;
+                
+            case AOP :
+                this.alist.add ( acc );
+                break;
+                
+            case AKICK :
+                this.klist.add ( acc );
+                break;
+                
+            default :
+                
+        }
+        this.addAccList.add ( acc );
+        if ( acc.getNick() != null ) {
+            acc.getNick().addToAccessList ( access, this );
+        }
+        System.out.println("addAccess(8)");
+    }
+    
     public CSAcc getAccessByNick ( int access, NickInfo ni ) {
         for ( CSAcc acc : getAccessList ( access ) ) {
             if ( acc.getNick().hashCode ( ) == ni.hashCode ( ) ) {
@@ -451,34 +480,75 @@ public class ChanInfo extends HashNumeric {
         return buf;
     }
 
-    public boolean addAccess ( int access, NickInfo ni )  {
-        CSAcc acc = new CSAcc ( ni, access );
-        CSAcc rem = null;
-        ArrayList<CSAcc> list = this.getAccessList ( access );
-        this.removeFromAll ( ni );
-        list.add ( acc );
+/*    public void addAccess ( int access, CSAcc acc )  {
+       
+        System.out.println(" - 0");
+        if ( acc == null ) {
+        System.out.println(" - 1");
+            return;
+        }
+        System.out.println(" - 2");
+        if ( acc.getNick() != null ) {
+        System.out.println(" - 3");
+            this.removeFromAll ( acc.getNick() );
+        } else if ( acc.getMask() != null ) {
+        System.out.println(" - 4");
+            this.removeFromAll ( acc );
+        }
+        System.out.println(" - 5");
+        this.getAccessList (access).add ( acc );
+        System.out.println(" - 6");
         this.addAccList.add ( acc );
-        ni.addToAccessList ( access, this );
-        return true;        
+        System.out.println(" - 7");
+        if ( acc.getNick() != null ) {
+        System.out.println(" - 8");
+            acc.getNick().addToAccessList ( access, this );
+        }
+        System.out.println(" - 9");
+
     }
-    public boolean delAccess ( int access, NickInfo ni )  {
-        CSAcc del = null;
+  */  
+    public void delAccess ( int access, CSAcc acc )  {
         ArrayList<CSAcc> list = this.getAccessList ( access );
-        for ( CSAcc acc : list )  {
-            if ( acc.getNick().hashCode ( ) == ni.hashCode ( )  )  {
-                del = acc;
+        list.remove ( acc );
+        this.remAccList.add ( acc );
+        if ( acc.getNick() != null ) {
+            acc.getNick().remFromAccessList ( access, this );
+        }
+    }
+    
+    public CSAcc getAccess ( int subcommand, NickInfo ni2 ) {
+        CSAcc acc = null;
+        System.out.println("---- getAccess(ni)");
+        if ( ni2 == null ) {
+            return null;
+        }
+        int hash = ni2.hashCode();
+        ArrayList<CSAcc> list = this.getAccessList ( subcommand );
+        for ( CSAcc a : list ) {
+            if ( a.getNick() != null && a.getNick().hashCode() == hash ) {
+                acc = a;
             }
         }
-        if ( del != null )  {
-            list.remove ( del );
-            this.remAccList.add ( del );
-            ni.remFromAccessList ( access, this );
-            return true;
-        } 
-        return false;
+        return acc;
     }
-  
-       
+    
+    public CSAcc getAccess ( int subcommand, String mask ) {
+        CSAcc acc = null;
+        System.out.println("---- getAccess(mask)");
+        if ( mask == null ) {
+            return null;
+        }
+        int hash = mask.hashCode();
+        ArrayList<CSAcc> list = this.getAccessList ( subcommand );
+        for ( CSAcc a : list ) {
+            if ( a.getMask() != null && a.getMask().hashCode() == hash ) {
+                acc = a;
+            }
+        }
+        return acc;
+    }
+    
     public void addAccess ( int access, String mask )  {
         CSAcc acc = new CSAcc ( mask, access );
         ArrayList<CSAcc> list = this.getAccessList ( access );
@@ -486,6 +556,28 @@ public class ChanInfo extends HashNumeric {
         this.addAccList.add ( acc );
     }
  
+    public void removeFromAll ( CSAcc acc ) {
+        CSAcc rem;
+        int[] accessList = { SOP, AOP, AKICK };
+        for ( int access : accessList ) {
+            for ( CSAcc entry : getAccessList ( access ) ) {
+                if ( entry.getNick() != null && 
+                     acc.getNick() != null &&
+                     entry.matchNick ( acc.getNick() ) ) {
+                    rem = acc;
+                } else if ( entry.getMask() != null &&
+                            acc.getMask() != null &&
+                            entry.matchMask(acc.getMask()) ) {
+                    rem = acc;
+                }
+            }
+            getAccessList(access).remove ( acc );
+            if ( acc != null && acc.getNick() != null ) {
+                acc.getNick().remFromAccessList ( access, this );
+            }
+        }
+    }
+     
     public void removeFromAll ( NickInfo ni ) {
         int[] accessList = { SOP, AOP, AKICK };
         for ( int access : accessList ) {

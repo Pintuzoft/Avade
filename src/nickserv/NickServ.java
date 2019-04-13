@@ -17,6 +17,7 @@
  */
 package nickserv;
 
+import chanserv.CSAcc;
 import chanserv.CSAccessLogEvent;
 import chanserv.CSDatabase;
 import chanserv.CSLogEvent;
@@ -488,6 +489,7 @@ public class NickServ extends Service {
         /* Message all currently idented users then unident them */
         ArrayList<User> uList = Handler.findUsersByNick ( ni );
         ArrayList<ChanInfo> cList;
+        CSAcc acc = null;
         int[] lists = { SOP, AOP, AKICK };
         HashMap<Integer,Integer> map = new HashMap ( );
         map.put ( AOP, "DELAOP".hashCode() );
@@ -502,9 +504,11 @@ public class NickServ extends Service {
 
         for ( int list : lists ) {
             for ( ChanInfo ci : ni.getChanAccess ( list ) ) {
-                ci.delAccess ( list, ni );
-                CSAccessLogEvent log = new CSAccessLogEvent ( ci.getName(), map.get ( list ), ni.getName() );
-                ChanServ.addAccessLog ( log );
+                if ( ( acc = ci.getAccess ( list, ni ) ) != null ) {
+                    ci.delAccess ( list, acc );
+                    CSAccessLogEvent log = new CSAccessLogEvent ( ci.getName(), map.get ( list ), ni.getName() );
+                    ChanServ.addAccessLog ( log );
+                }
             }
         }
               

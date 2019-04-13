@@ -171,7 +171,6 @@ public class Handler extends HashNumeric {
                 this.source = this.data[0].substring ( 1 );
                 if ( this.source.contains ( "." )  )  { 
                     /* Server stuff */
-                    System.out.println("DEBUG:"+this.data[1]);
 
                     switch ( this.data[1].hashCode ( )  )  {
                         case SERVER :
@@ -322,13 +321,17 @@ public class Handler extends HashNumeric {
     /*****************************/
     
     private void doChan  ( boolean check )  {
-        Chan c = new Chan ( this.data ); 
-        cList.add ( c ); 
-        if  ( check )  {
-            chan.checkSettings ( c );
-        } 
+        Chan c;
+        if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
+            c.addUserList(data);
+        } else {
+            c = new Chan ( this.data ); 
+            cList.add ( c ); 
+            if  ( check )  {
+                chan.checkSettings ( c );
+            }
+        }
     }
-    
     
     //     :Guest12203 PRIVMSG NickServ@services.sshd.biz :identify asd.
     private void doPrivmsg ( User user )  {
@@ -452,8 +455,6 @@ public class Handler extends HashNumeric {
         NickServ.fixIdentState ( u );
         uList.add ( u );
         
-        
-        
         Server s = findServer ( this.data[7] );
         if ( s != null ) {
             s.addUser ( u );
@@ -472,8 +473,9 @@ public class Handler extends HashNumeric {
         ni = NickServ.findNick ( user.getString ( NAME )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );
-        for ( Chan c : user.getChans ( )  )  {
-            chan.checkUser ( c, user );
+        for ( Chan c : user.getChans ( ) ) {
+            ChanServ.addCheckUser ( c, user );
+//            chan.checkUser ( c, user );
         }
         this.oper.checkUser ( user ); /* Add user in OperServ check queue (akills etc) */
     }
@@ -481,16 +483,15 @@ public class Handler extends HashNumeric {
     private void doSJoin ( User user )  {
         /* User joined a channel */
         Chan c = findChan ( this.data[3] );
-        if ( c != null )  {
+        if ( c != null ) {
             c.addUser ( USER, user );
             user.addChan ( c );
-
         } else {
             this.doChan ( true );
-
         }
         if ( ! c.isSaJoin() ) {
-            chan.checkUser ( c, user );
+            ChanServ.addCheckUser ( c, user );
+//            chan.checkUser ( c, user );
         } else {
             c.toggleSaJoin();
         }
@@ -622,7 +623,7 @@ public class Handler extends HashNumeric {
         }
         int code = source.toUpperCase().hashCode ( );
         for ( User u : uList ) {
-            System.out.println("NICK:"+u.getString(NAME));
+  //          System.out.println("NICK:"+u.getString(NAME));
 //            System.out.println("d: u:"+u.getString(NAME)+":"+u.hashCode()+":source:"+source+":"+code);
             if ( u.hashCode() == code ) {
                 return u;
@@ -667,7 +668,7 @@ public class Handler extends HashNumeric {
     }
 
     public static void squitUser ( User user )  {
-        System.out.println("squitUser("+user.getString(NAME)+");");
+   //     System.out.println("squitUser("+user.getString(NAME)+");");
         try {
             user.getSID().setSplitExpire ( );
             user.partAll ( );
@@ -679,7 +680,7 @@ public class Handler extends HashNumeric {
     }
 
     public static void deleteUser ( User user )  {
-        System.out.println("deleteUser("+user.getString(NAME)+");");
+     //   System.out.println("deleteUser("+user.getString(NAME)+");");
         try {
             user.getSID().remUser ( ); 
             user.partAll ( );
@@ -775,7 +776,7 @@ public class Handler extends HashNumeric {
             oper.minMaintenance ( );
             db.runMaintenance ( );
             
-            this.checkNiStates ( );
+ //           this.checkNiStates ( );
             this.sidCleaner ( );
             this.cmdQueue.maintenance ( );
         
@@ -805,9 +806,8 @@ public class Handler extends HashNumeric {
     }
 
 
-    private void checkNiStates ( )  {
-      //  System.out.println ( "DEBUG: checkNiStates ( );" );
-        NickInfo ni;
+//    private void checkNiStates ( )  {
+//        NickInfo ni;
 /*        try {
             for ( User u : uList )  { 
                 System.out.println ( "DEBUG: checkNiStates ( "+u.getString ( User.NAME ) +" );" );
@@ -831,7 +831,7 @@ public class Handler extends HashNumeric {
         } catch ( Exception e )  { 
             Logger.getLogger ( Handler.class.getName ( )  ) .log ( Level.SEVERE, null, e );
         }*/
-    }
+//    }
 
     
     private void sidCleaner ( )  {
@@ -1135,4 +1135,7 @@ public class Handler extends HashNumeric {
         return splitSIDs;
     }
 
+    public static ArrayList<Chan> getChanList ( ) {
+        return cList;
+    }
 }

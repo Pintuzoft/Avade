@@ -62,7 +62,7 @@ public class ChanSetting extends HashNumeric {
     }
    
     public boolean is ( int setting )  {
-        System.out.println( "debug: is:"+setting );
+      //  System.out.println( "debug: is:"+setting );
         switch ( setting )  {
             case KEEPTOPIC :
                 return this.keepTopic;

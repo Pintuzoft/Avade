@@ -23,7 +23,6 @@ import core.Handler;
 import core.ServicesID;
 import core.HashNumeric;
 import nickserv.NickInfo;
-import nickserv.NickServ;
 import operserv.Oper;
 import server.Server;
 import java.util.ArrayList;
@@ -152,7 +151,7 @@ public class User extends HashNumeric {
     }
    
     /* Make hostinfo object transparent */
-    private String getHost ( ) { 
+    public String getHost ( ) { 
         return this.hi.getHost ( );
     }
     
@@ -164,6 +163,13 @@ public class User extends HashNumeric {
         return this.hi.getRealHost ( );
     }
     
+    public String getName ( ) {
+        return this.name;
+    }
+    public String getUser ( ) {
+        return this.user;
+    }
+     
     public UserMode getModes ( ) { 
         return this.modes;
     }

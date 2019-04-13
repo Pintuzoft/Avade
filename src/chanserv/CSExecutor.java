@@ -729,9 +729,9 @@ import java.util.Random;
                 int j = 0;
                 for ( CSAcc acc : list )  {     
                     if ( acc.getNick ( ) != null )  {
-                        this.service.sendMsg ( user,  ( ++j ) +" -   "+acc.getNick ( ) .getString ( NAME ) +"  ( "+acc.getNick ( ) .getString ( FULLMASK ) +" ) " );
+                        this.service.sendMsg ( user,  " - "+acc.getNick().getString ( NAME )+" ("+acc.getNick ( ) .getString ( FULLMASK ) +") (nick)" );
                     } else {
-                        this.service.sendMsg ( user,  ( ++j ) +" -   "+acc.getMask ( ) );
+                        this.service.sendMsg ( user,  " - "+acc.getMask ( )+" (mask)" );
                     }
                 }
                 this.showEnd ( user, accStr+" list" );
@@ -810,56 +810,67 @@ import java.util.Random;
             case NOT_ENOUGH_ACCESS :
                 this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, "" ) ); 
                 return;
+                    
+            case XOP_NOT_FOUND :
+                this.service.sendMsg ( user, output ( XOP_NOT_FOUND, "" ) ); 
+                return;
+                   
+            case XOP_ADD_FAIL :
+                this.service.sendMsg ( user, output ( XOP_ADD_FAIL, "" ) ); 
+                return;
+                     
+            case XOP_ALREADY_PRESENT :
+                this.service.sendMsg ( user, output ( XOP_ALREADY_PRESENT, cmdData.getString1(), this.getListStr ( access ) ) ); 
+                return;
             
             default :
                 
         }
        
         ChanInfo ci = cmdData.getChanInfo();
+        Chan c = Handler.findChan(ci.getName());
         NickInfo ni = cmdData.getNick();
         NickInfo ni2;
+        String what;
         String mask = null;
         int command = cmdData.getCommand();
+        int subcommand = cmdData.getSubCommand();
+        CSAcc acc = cmdData.getAcc();
          
         if ( ( ni2 = cmdData.getNick2() ) == null ) {
             mask = cmdData.getString1(); 
         } 
         
-        switch ( command ) {
+        if ( acc != null && acc.getNick() != null ) {
+            what = acc.getNick().getName();
+        } else if ( acc != null && acc.getMask() != null ) {
+            what = acc.getMask();
+        } else {
+            what = "-";
+        }
+        
+        
+        switch ( subcommand ) {
             case ADD :
-                if ( ni2 != null )  {
-                    ci.addAccess ( access, ni2 );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getAddList(access), ni2.getName ( ), user ) );
-                    this.service.sendMsg ( user, output ( NICK_ADDED, ni2.getString ( NAME ), listName ) );
-                    if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), ni2.getString ( NAME ), listName ) );
-                    }
-                } else if ( mask != null ) {
-                    ci.addAccess ( access, mask );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getAddList(access), mask, user ) );
-                    this.service.sendMsg ( user, output ( NICK_ADDED, mask, listName ) );
-                    if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), mask, listName ) );
-                    }
+                ci.removeFromAll ( acc );
+                ci.addAccess ( command, acc );
+                ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getAddList(access), what, user ) );
+                this.service.sendMsg ( user, output ( NICK_ADDED, what, listName ) );
+                if ( ci.getSettings().is ( VERBOSE ) ) {
+                    this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), what, listName ) );
+                }
+                if ( command == AKICK ) {
+                    c.addCheckUsers();
                 }
                 ci.changed();
                 break;
                 
             case DEL :
-                if ( ni2 != null ) {
-                    ci.delAccess ( access, ni2 );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getDelList(access), ni2.getName ( ), user ) );
-                    this.service.sendMsg ( user, output ( NICK_DELETED, ni2.getString ( NAME ), listName ) );
-                    if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni2.getString ( NAME ), ni2.getString ( NAME ), listName ) );
-                    }
-                } else if ( mask != null )  {
-                    ci.delAkick ( mask );
-                    ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getDelList(access), mask, user ) );
-                    this.service.sendMsg ( user, output ( NICK_DELETED, mask, listName ) );
-                    if ( ci.getSettings().is ( VERBOSE ) ) {
-                        this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni2.getString ( NAME ), mask, listName ) );
-                    }
+                ci.delAccess ( access, acc );
+                ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getDelList(access), what, user ) );
+                this.service.sendMsg ( user, output ( NICK_DELETED, what, listName ) );
+                if ( ci.getSettings().is ( VERBOSE ) ) {
+                    this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni.getString ( NAME ), what, listName ) );
                 }
                 ci.changed();
                 break;
@@ -1688,7 +1699,13 @@ import java.util.Random;
         
     }
 
-    
+    private CSAcc getAcc ( int command, ChanInfo ci, NickInfo ni ) {
+        return ci.getAccess ( command, ni );
+    }
+    private CSAcc getAcc ( int command, ChanInfo ci, String mask ) {
+        return ci.getAccess ( command, mask );
+    }
+
     
     private CmdData validateCommandData ( User user, int command, String[] cmd )  {
         Chan c;
@@ -1703,6 +1720,8 @@ import java.util.Random;
         int subcommand;
         int num;
         String mask = null;
+        CSAcc acc = null;
+        CSAcc acc2 = null;
         boolean checkNick   = false;
         boolean checkPass   = false;
         boolean needAccess  = false;
@@ -1800,7 +1819,6 @@ import java.util.Random;
                 }
                 
                 subcommand = cmd[5].toUpperCase().hashCode ( );
-                 
                 if ( subcommand != ADD && subcommand != DEL ) {
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } else if ( ni2 == null && mask == null ) {
@@ -1824,6 +1842,17 @@ import java.util.Random;
                 } else if ( ni2 != null && 
                             ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
                     cmdData.setStatus ( NOT_ENOUGH_ACCESS );
+                } else if ( ( acc = getAcc ( command, ci, ni2 ) ) == null && 
+                            ( acc = getAcc ( command, ci, mask ) ) == null &&
+                            subcommand == DEL ) {
+                    cmdData.setStatus ( XOP_NOT_FOUND );
+                } else if ( subcommand == ADD && acc != null ) {
+                    cmdData.setString1 ( (ni2 != null ? ni2.getName() : mask) );
+                    cmdData.setStatus ( XOP_ALREADY_PRESENT );
+                } else if ( subcommand == ADD && 
+                            ( ( ni2 != null && ( acc = new CSAcc ( ni2, command ) ) == null ) ||
+                              ( mask != null && ( acc = new CSAcc ( mask, command ) ) == null ) ) ) {  
+                    cmdData.setStatus ( XOP_ADD_FAIL );
                 } else {
                     cmdData.setChanInfo ( ci );
                     cmdData.setNick ( ni );
@@ -1832,7 +1861,9 @@ import java.util.Random;
                     } else {
                         cmdData.setString1 ( mask );
                     }
-                    cmdData.setCommand ( subcommand );
+                    cmdData.setAcc ( acc );
+                    cmdData.setCommand ( command );
+                    cmdData.setSubCommand ( subcommand );
                 }
                 break;            
                    
@@ -2192,7 +2223,22 @@ import java.util.Random;
         }
     }
     
- 
+    private String getListStr ( int command ) {
+        switch ( command ) {
+            case SOP :
+                return "SOP";
+                
+            case AOP :
+                return "AOP";
+                
+            case AKICK :
+                return "AKick";
+                
+            default :
+                return "Undefined";
+        }
+    }
+    
     private int isAddOrDel ( String str ) {
         if ( str == null ) {
             return 0;
@@ -2422,6 +2468,15 @@ import java.util.Random;
                 
             case BAD_CHANFLAG_VALUE :
                 return "Error: Invalid chanflag value.";
+                        
+            case XOP_NOT_FOUND :
+                return "Error: Entry not found.";
+                       
+            case XOP_ADD_FAIL :
+                return "Error: Failed to add entry.";
+                
+            case XOP_ALREADY_PRESENT :
+                return "Error: "+args[0]+" is already present on "+args[1]+" list.";
                 
             default : 
                 return "";
@@ -2524,5 +2579,9 @@ import java.util.Random;
 
     private final static int NO_SUCH_CHANFLAG           = 2651; 
     private final static int BAD_CHANFLAG_VALUE         = 2652; 
+
+    private final static int XOP_NOT_FOUND              = 2701; 
+    private final static int XOP_ADD_FAIL               = 2702; 
+    private final static int XOP_ALREADY_PRESENT        = 2703; 
 
  }

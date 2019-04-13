@@ -52,14 +52,12 @@ public class Server extends HashNumeric {
                     this.name       = data[1];
                     this.distance   = Integer.parseInt ( data[2] );
                     this.link       = null; /* center of the network */
-                    System.out.println ( "DEBUG: new Server ( "+data[1]+" ) " );
                 }
                 break;
                 
             default :
                 /* We got a new server */
                 if ( data.length > 4 )  {
-                    System.out.println ( "DEBUG: new Server ( "+data[1]+" ) " );
                     this.name       = data[2];
                     this.distance   = Integer.parseInt ( data[3] );
 
@@ -122,10 +120,8 @@ public class Server extends HashNumeric {
     public void recursiveUserList ( User user, String prepend )  {
         this.sendServ ( "NOTICE "+user.getString ( NAME ) +" :"+prepend+"^- "+this.name );
         for ( User u : this.uList )  {
-            //System.out.println ( "DEBUG: writing userlist.." );
             this.sendServ ( "NOTICE "+user.getString ( NAME ) +" :"+prepend+"    "+u.getString ( NAME ) +"!"+u.getString ( USER ) +"@"+u.getString ( HOST )  );
         } 
-        //System.out.println ( "DEBUG: ServerLinked ( "+this.sList.size ( ) +" );" );
 
         prepend += "  ";
         for ( Server s : this.sList )  {

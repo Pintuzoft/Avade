@@ -53,7 +53,7 @@ class GuestTask extends TimerTask {
                         search = false;
                     }
                 }
-                u.getSID ( ) .resetTimers ( );
+                u.getSID().resetTimers ( );
                 ServSock.sendCmd (":"+Proc.getConf ( ) .get (HashNumeric.NAME ) +" SVSNICK "+u.getString ( User.NAME ) +" Guest"+this.index+" 0" );
                 u.getModes ( ) .set ( UserMode.IDENT, false );
             }

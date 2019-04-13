@@ -71,6 +71,10 @@ public class OSExecutor extends Executor {
                 this.doUList ( user ); 
                 break;
             
+            case CLIST :
+                this.doCList ( user ); 
+                break;
+            
             case SLIST :
                 this.doSList ( user ); 
                 break;
@@ -185,6 +189,7 @@ public class OSExecutor extends Executor {
     private void doCInfo ( User user, String[] cmd )  {
         /* UINFO requested so lets send all we know about that user */
         Chan c;
+        int counter = 0;
         String users    = new String ( );
         String voice    = new String ( );
         String oped     = new String ( );
@@ -196,7 +201,10 @@ public class OSExecutor extends Executor {
         }
         
         if (  ( c = Handler.findChan ( cmd[4] )  )  != null )  {
-
+            modes = c.getModes().getModes ( );
+            this.service.sendMsg ( user, "*** Chan INFO ***"                    );
+            this.service.sendMsg ( user, "    Name: "+c.getString ( NAME )      );
+            this.service.sendMsg ( user, "   Modes: "+modes                     );
             /* GET OP LIST */ 
             for ( User cu : c.getList ( OP )  )  {
                 if ( oped.isEmpty ( )  )  {
@@ -204,35 +212,47 @@ public class OSExecutor extends Executor {
                 } else {
                     oped += " "+cu.getString ( NAME );
                 }
-                System.out.println ( "debug ( oped ) : "+oped );
+                if ( ++counter > 10 ) {
+                    this.service.sendMsg ( user, "      Op: "+oped                      );
+                    counter = 0;
+                    oped = "";
+                }
             }
+            this.service.sendMsg ( user, "      Op: "+oped                      );
 
             /* GET VOICE LIST */
+            counter = 0;
             for ( User cu : c.getList ( VOICE )  )  {
                 if ( voice.isEmpty ( )  )  {
                     voice = cu.getString ( NAME );
                 } else {
                     voice += " "+cu.getString ( NAME );
                 }
-                System.out.println ( "debug ( voice ) : "+voice );
+                if ( ++counter > 10 ) {
+                    this.service.sendMsg ( user, "   Voice: "+voice                      );
+                    counter = 0;
+                    voice = "";
+                }
             }
+            this.service.sendMsg ( user, "   Voice: "+voice                      );
 
             /* GET USER LIST */
+            counter = 0;
             for ( User cu : c.getList ( USER )  )  {
                 if ( users.isEmpty ( )  )  {
                     users = cu.getString ( NAME );
                 } else {
                     users += " "+cu.getString ( NAME );
                 }
-                System.out.println ( "debug ( users ) : "+users );
+                if ( ++counter > 10 ) {
+                    this.service.sendMsg ( user, "   Users: "+users                      );
+                    counter = 0;
+                    users = "";
+                }
             }
-            modes = c.getModes ( ) .getModes ( );
-            this.service.sendMsg ( user, "*** Chan INFO ***"                    );
-            this.service.sendMsg ( user, "    Name: "+c.getString ( NAME )      );
-            this.service.sendMsg ( user, "   Modes: "+modes                     );
-            this.service.sendMsg ( user, "      Op: "+oped                      );
-            this.service.sendMsg ( user, "   Voice: "+voice                     );
-            this.service.sendMsg ( user, "    User: "+users                     );
+            this.service.sendMsg ( user, "   Users: "+users                      );
+
+            
             this.service.sendMsg ( user, "*** End ***"                          );
 
         } else {
@@ -247,6 +267,15 @@ public class OSExecutor extends Executor {
         }
         s.recursiveUserList ( user, " " );
     }
+    
+    private void doCList ( User user )  {
+        this.service.sendMsg ( user, "*** Channel List ***" );
+        for ( Chan c : Handler.getChanList() ) {
+            this.service.sendMsg ( user, " - "+c.getString(NAME) );
+        }
+        this.service.sendMsg ( user, "*** End of List ***" );
+    }
+    
     private void doSList ( User user )  {
         if ( ! OperServ.enoughAccess ( user, UINFO ) ) {
             return;
@@ -692,7 +721,7 @@ public class OSExecutor extends Executor {
         }
         ArrayList<OSLogEvent> lsList;
         lsList = OSDatabase.getAuditList ( target );
-        System.out.println ( "DEBUG: "+lsList.size() );
+        
         for ( OSLogEvent log : lsList ) {
             this.service.sendMsg ( user, output ( SHOWAUDIT, log.getStamp(), log.getFlag(), log.getName(), log.getMask(), log.getOper(), log.getData() ) );
         }
@@ -716,9 +745,8 @@ public class OSExecutor extends Executor {
         }
         ArrayList<OSLogEvent> lsList;
         lsList = OSDatabase.getBanLogList ( target );
-        System.out.println ( "DEBUG: "+lsList.size() );
+        
         for ( OSLogEvent log : lsList ) {
-            System.out.println("DEBUG: logID: "+log.getID() );
             this.service.sendMsg ( user, output ( SHOWBANLOG, log.getStamp(), log.getFlag(), log.getName(), log.getMask(), log.getOper(), log.getData() ) );
         }
         this.service.sendMsg ( user, "*** End of Audit ***" ); 

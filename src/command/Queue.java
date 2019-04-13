@@ -91,7 +91,7 @@ public class Queue extends HashNumeric {
                 case AUTHMAIL : { 
                     ni2 = NickServ.findNick ( ni.getName ( )  );                  
                     res = Handler.getNickServ().authorizeNick ( ni2, command );
-                    System.out.println ( "debug: nickname: "+ni2.getName ( ) +" ( "+ni2.getSettings().is ( AUTH ) +" ) " );
+              //      System.out.println ( "debug: nickname: "+ni2.getName ( ) +" ( "+ni2.getSettings().is ( AUTH ) +" ) " );
                 }
             } 
         }

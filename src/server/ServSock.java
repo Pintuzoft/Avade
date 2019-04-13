@@ -96,9 +96,9 @@ public class ServSock extends HashNumeric {
 
     public static void sendCmd ( String cmd )  {
         try {   
-            if ( ! cmd.contains ( "PONG" )  )  {
-                System.out.println ( "Sending: "+cmd );
-            } 
+        //    if ( ! cmd.contains ( "PONG" )  )  {
+        //        System.out.println ( "Sending: "+cmd );
+        //    } 
             out.println ( cmd ); 
         } catch ( Exception e )  {
             Proc.log ( ServSock.class.getName ( ) , e ); 

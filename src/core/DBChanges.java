@@ -390,6 +390,9 @@ public class DBChanges extends HashNumeric {
         // Chansettingfix
         qList.add ( "alter table chansetting drop private;" );
         
+        // Create data in chansetting
+        qList.add ( "insert into chansetting (select name,0 as keeptopic,'off' as topiclock,0 as ident,1 as opguard,0 as restricted,0 as verbose,0 as mailblock,0 as leaveops,'+nt-s' as modelock,null as freeze,null as close,null as hold,null mark,null as auditorium from chan);" );
+        
         return qList;
     }
     

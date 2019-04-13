@@ -35,10 +35,12 @@ public class CmdData {
     private User target;
     private int status;
     private int command;
+    private int subcommand;
     private String str1;
     private String str2;
     private String commandStr;
     private String commandVal;
+    private CSAcc acc;
     
     public CmdData ( )  {
         this.chan       = null;
@@ -77,6 +79,10 @@ public class CmdData {
     
     public void setCommand ( int command ) {
         this.command = command;
+    }  
+     
+    public void setSubCommand ( int subcommand ) {
+        this.subcommand = subcommand;
     }  
    
     public void setOper ( NickInfo ni ) {
@@ -126,6 +132,10 @@ public class CmdData {
     public int getCommand ( ) {
         return this.command;
     }
+    
+    public int getSubCommand ( ) {
+        return this.subcommand;
+    }
 
     public String getString1 ( ) {
         return this.str1;
@@ -143,11 +153,19 @@ public class CmdData {
         return this.commandVal;
     }
  
-    void setCommandStr(String string) {
+    public void setCommandStr ( String string ) {
         this.commandStr = string;
     }
 
-    void setCommandVal(String string) {
+    public void setCommandVal ( String string ) {
         this.commandVal = string;
+    }
+    
+    public void setAcc ( CSAcc acc ) {
+        this.acc = acc;
+    }
+    
+    public CSAcc getAcc ( ) {
+        return this.acc;
     }
 }

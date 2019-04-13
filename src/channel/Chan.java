@@ -17,12 +17,12 @@
  */
 package channel;
 
+import chanserv.ChanServ;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
 import user.User;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.regex.Pattern;
 
 /**
@@ -45,7 +45,7 @@ public class Chan extends HashNumeric {
     private boolean sajoin = false;
     
     /* STATIC */
-    public static Comparator<Chan>      comparator =  ( Chan c1, Chan c2 )  -> { return c1.hashCode ( )  - c2.hashCode ( ); };
+    //public static Comparator<Chan>      comparator =  ( Chan c1, Chan c2 )  -> { return c1.hashCode ( )  - c2.hashCode ( ); };
 
 
     public Chan ( String[] data ) {
@@ -96,9 +96,14 @@ public class Chan extends HashNumeric {
                         }
 
                         if (  ( u = Handler.findUser ( nick )  )  != null )  {
-                            if ( op )               { this.addUser ( OP, u );       } 
-                            else if ( vo )          { this.addUser ( VOICE, u );    } 
-                            else                    { this.addUser ( USER, u );     }
+                            if ( op ) { 
+                                this.addUser ( OP, u );
+                            } else if ( vo ) {
+                                this.addUser ( VOICE, u );
+                            } else {
+                                this.addUser ( USER, u );
+                            }
+                            ChanServ.addCheckUser ( this, u );
                         } 
                     }
                 }
@@ -108,7 +113,19 @@ public class Chan extends HashNumeric {
             Proc.log ( Chan.class.getName ( ) , e ); 
         }
     }
-      
+    
+    public void addCheckUsers ( ) {
+        for ( User u : uList ) {
+            ChanServ.addCheckUser ( this, u );
+        }
+        for ( User u : vList ) {
+            ChanServ.addCheckUser ( this, u );
+        }
+        for ( User u : vList ) {
+            ChanServ.addCheckUser ( this, u );
+        }
+    }
+    
     public void chMode ( String[] cmd )  {
         // :DreamHealer MODE #friends 1374147654 +oooo Guest33015 Guest33015 Guest33015 Guest33015
         //      0        1      2       3         4      5+
@@ -191,9 +208,15 @@ public class Chan extends HashNumeric {
         }
     }
     public void remUser ( User u )  {
-        if ( this.oList.contains ( u )  )   { this.oList.remove ( u ); }
-        if ( this.vList.contains ( u )  )   { this.vList.remove ( u ); }
-        if ( this.uList.contains ( u )  )   { this.uList.remove ( u ); }
+        if ( this.oList.contains ( u ) ) {
+            this.oList.remove ( u );
+        }
+        if ( this.vList.contains ( u ) ) {
+            this.vList.remove ( u );
+        }
+        if ( this.uList.contains ( u ) ) {
+            this.uList.remove ( u );
+        }
     }
 
     public void addUser ( int acc, User u )  {

@@ -203,11 +203,6 @@ public class Database extends HashNumeric {
             return -3;
         }
         
-        System.out.println("DEBUG: name: "+log.getName());
-        System.out.println("DEBUG: flag: "+log.getFlag());
-        System.out.println("DEBUG: mask: "+log.getMask());
-        System.out.println("DEBUG: oper: "+log.getOper());
-        
         try {
             if ( log.isOper() ) {
                 query = "insert into "+table+" "+

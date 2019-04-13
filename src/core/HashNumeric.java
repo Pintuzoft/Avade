@@ -134,6 +134,7 @@ public abstract class HashNumeric extends TextFormat {
     public static final int CINFO                       = 64127857;
     public static final int SINFO                       = 78904193;
     public static final int ULIST                       = 80836211;
+    public static final int CLIST                       = 64212833;
     public static final int SLIST                       = 78989169;
     public static final int UPTIME                      = -1785032728;
     public static final int IGNORE                      = -2137067054;
@@ -202,7 +203,11 @@ public abstract class HashNumeric extends TextFormat {
     public final static int DELSOP                      = 2012851625;
     public final static int ADDAKICK                    = -451619290;
     public final static int DELAKICK                    = 1598381308;
+    
+    public final static int KICKBAN                     = -2596887;
      
+    
+    
     /* FLAG */
     public final static int TYPE                        = 2590522;
     public final static int REASON                      = -1881635260;
@@ -429,8 +434,7 @@ public abstract class HashNumeric extends TextFormat {
       /* STATIC INT */
     public static final int RAW                         = 80904;
     
-    
-   
+     
     
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );

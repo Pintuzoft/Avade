@@ -210,7 +210,6 @@ import operserv.OperServ;
                 
         }
         NickInfo ni = cmdData.getNick ( );
-        System.out.println("DEBUG: "+ni.getHashMask ( )+":"+user.getHashMask ( ));
         if ( ni.getHashMask ( ) != user.getHashMask ( ) ) {
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );        
@@ -765,7 +764,6 @@ import operserv.OperServ;
     public void doSetBoolean ( int cmd, String command, User user, NickInfo ni, boolean enable )  {
         this.sendIsOutput ( user, enable, command );
         ni.getSettings().set ( cmd, enable );
-        System.out.println("DEBUG: changed item: "+cmd);
         ni.getChanges().change ( cmd );
         NickServ.addToWorkList ( CHANGE, ni );
     }
@@ -1060,7 +1058,6 @@ import operserv.OperServ;
                     cmdData.setStatus ( NICKFLAG_EXIST );
                 } else {
                     cmdData.setNick ( ni );
-                    System.out.println ( "DEBUG:  - "+command );
                     if ( unset ) {
                         cmdData.setCommand ( this.getAntiCommand ( command ) );
                     }

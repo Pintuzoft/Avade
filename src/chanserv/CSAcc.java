@@ -39,12 +39,13 @@ public class CSAcc extends HashNumeric {
     private Pattern userPattern;
     private Pattern hostPattern;
     private CIDRUtils cidrUtils;
-    
+    private String rawMask;
     private String mask;
     private String nick;
     private String user;
     private String host;
     private int cidr = -1;
+    private int hashMask;
     
     public CSAcc ( NickInfo ni, int access ) {
         this.ni = ni;
@@ -52,13 +53,15 @@ public class CSAcc extends HashNumeric {
     }
     
     public CSAcc ( String mask, int access ) {
+        this.rawMask = mask;
+        this.hashMask = mask.hashCode();
         String[] parts = mask.split("[!@/]");
         this.nick = parts[0];
         this.user = parts[1];
         this.host = parts[2];
-        System.out.println("CSAcc: nick: "+this.nick);
-        System.out.println("CSAcc: user: "+this.user);
-        System.out.println("CSAcc: host: "+this.host);
+     //   System.out.println("CSAcc: nick: "+this.nick);
+     //   System.out.println("CSAcc: user: "+this.user);
+     //   System.out.println("CSAcc: host: "+this.host);
         this.access = access;
         try {
             if ( parts.length > 3 ) {
@@ -120,19 +123,19 @@ public class CSAcc extends HashNumeric {
      
     private void parseNick ( ) {
         String pattern = this.parsePattern ( this.nick );
-        System.out.println("userpattern: "+pattern);
-        this.userPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
+    //    System.out.println("userpattern: "+pattern);
+        this.nickPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private void parseUser ( ) {
         String pattern = this.parsePattern ( this.user );
-        System.out.println("userpattern: "+pattern);
+    //    System.out.println("userpattern: "+pattern);
         this.userPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private void parseHost ( ) {
         String pattern = this.parsePattern ( this.host );
-        System.out.println("hostpattern: "+pattern);
+    //    System.out.println("hostpattern: "+pattern);
         this.hostPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
@@ -173,8 +176,7 @@ public class CSAcc extends HashNumeric {
         boolean matchNick = false;
         boolean matchUser = false;
         boolean matchHost = false;
-        
-        
+              
         /* Match registered nick */
         if ( this.ni != null ) {
             return user.isIdented ( ni );
@@ -184,7 +186,7 @@ public class CSAcc extends HashNumeric {
         if ( wildNick ) {
             matchNick = true;
         } else {
-            matchNick = this.nickPattern.matcher(user.getString(NAME)).find ( );
+           matchNick = this.nickPattern.matcher(user.getString(NAME)).find ( );
         }
         
         if ( wildUser ) {
@@ -220,9 +222,27 @@ public class CSAcc extends HashNumeric {
         return false;
     }
     
+    public boolean matchMask ( String mask ) {
+        if ( this.mask != null ) {
+            return ( this.mask.hashCode() == mask.hashCode() );
+        }
+        return false;
+    }
+    
+    public boolean matchHashMask ( String mask ) {
+        if ( this.mask != null ) {
+            return ( this.hashMask == mask.hashCode() );
+        }
+        return false;
+    }
+    
     public String getMask ( ) {
         return this.nick+"!"+this.user+"@"+this.host+( isCidr ? "/"+this.cidr : "" );
     } 
+    
+    public String getRawMask ( ) {
+        return this.rawMask;
+    }
     
     public int getAccess ( ) {
         return this.access;

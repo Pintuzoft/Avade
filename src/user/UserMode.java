@@ -18,7 +18,6 @@
 package user;
 
 import core.HashNumeric;
-import core.Proc;
 
 /**
  *
@@ -54,7 +53,6 @@ public class UserMode extends HashNumeric {
     public void setModeString ( String data )  {
         boolean state = false;
         Character ch;
-        System.out.println ( "DEBUG: setMode ( user ) " );
         for ( int index=0; index < data.length ( ); index++ )  {
             ch = data.charAt ( index );
             switch ( ch.hashCode ( )  )  {
@@ -131,6 +129,6 @@ public class UserMode extends HashNumeric {
     } 
    
     private void debug ( )  {
-        System.out.println ( "DEBUG: a="+this.sadmin+", A="+this.admin+", o="+this.oper+", r="+this.ident );
+ //       System.out.println ( "DEBUG: a="+this.sadmin+", A="+this.admin+", o="+this.oper+", r="+this.ident );
     }
 }

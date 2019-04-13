@@ -119,7 +119,6 @@ public class SExecutor extends Executor {
     }
    
     public void doStats ( User user, String[] cmd )  {
-        System.out.println ( "DEBUG: doStats!: "+cmd[2] );
         switch ( cmd[2].toUpperCase ( ) .hashCode ( )  )  {
             
             case CHAR_U : /* UPTIME */ 
@@ -127,8 +126,6 @@ public class SExecutor extends Executor {
                     this.services.sendServicesCMD ( user, Numeric.RPL_STATSUPTIME,  "Server Up "+Proc.getUptime ( )  ); 
                 } else if ( iCmp ( cmd[3], this.services.getString ( STATS )  )  )  {
                     this.services.sendStatsCMD ( user, Numeric.RPL_STATSUPTIME,  "Server Up "+Proc.getUptime ( )  ); 
-                } else {
-                    System.out.println ( "DEBUG: HERE!!" ); 
                 } 
                 break; 
             

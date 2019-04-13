@@ -258,7 +258,6 @@ public class CSDatabase extends Database {
                             "set "+changes+" "+
                             "where name = ?";
                     
-                    System.out.println("DEBUG: "+query);
                     ps = sql.prepareStatement ( query );
                     int index = 1;
                     ci.getChanges().printChanges();
@@ -372,7 +371,6 @@ public class CSDatabase extends Database {
                             "set "+changes+" "+
                             "where name = ?";
                     
-                    System.out.println("DEBUG: "+query);
                     ps = sql.prepareStatement ( query );
                     
                     int index = 1;

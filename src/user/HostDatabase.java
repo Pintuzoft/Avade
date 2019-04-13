@@ -47,15 +47,13 @@ public class HostDatabase extends Database {
             res = ps.executeQuery ( );
 
             if ( res.next ( )  )  {
-                System.out.println ( "Record found" );
                 String buf = res.getString ( "host" );
                 res.close ( );
                 ps.close ( );                    
                 return buf;
 
-            } else {
-                System.out.println ( "Record not found" );
             }
+            
             res.close ( );
             ps.close ( );   
             idleUpdate ( "getHost ( ) " );         

@@ -41,7 +41,6 @@ public class RSExecutor extends Executor {
 
     public void parse ( User user, String[] cmd )  {
         Oper oper = user.getSID().getOper ( );
-        System.out.println ( "DEBUG: RS sizeof ( cmd )  : "+cmd.length );
   
         if ( ! oper.isAtleast ( SRA )  )  {
             this.service.sendMsg ( user, "Access denied!." );
@@ -50,7 +49,6 @@ public class RSExecutor extends Executor {
         
         this.found = true; /* Assume that everything will go correctly */
 
-        System.out.println ( "debug: "+cmd[3] );
         switch ( cmd[3].toUpperCase ( ) .hashCode ( )  )  {
             case REHASH :
                 this.rehash ( user, cmd );

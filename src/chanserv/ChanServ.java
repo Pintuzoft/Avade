@@ -28,6 +28,7 @@ import core.TextFormat;
 import user.User;
 import java.util.ArrayList;
 import operserv.OperServ;
+import user.UserCheck;
 
 /**
  *
@@ -45,9 +46,9 @@ public class ChanServ extends Service {
     private static ArrayList<ChanInfo> changeList = new ArrayList<>();
     private static ArrayList<ChanInfo> deleteList = new ArrayList<>();
     
-    private static ArrayList<ChanInfo> ciList = new ArrayList<>( ); /* List of regged channels */
+    private static ArrayList<ChanInfo> ciList = new ArrayList<>(); /* List of regged channels */
 
-    
+    private static ArrayList<UserCheck> chUserCheckList = new ArrayList<>();
     
     private TextFormat          f;
     
@@ -172,8 +173,13 @@ public class ChanServ extends Service {
     public void checkUser ( Chan c, User user )  {
         ChanInfo ci;
         NickInfo ni;
-        System.out.println("debug: checkUser()");
+        CSAcc acc;
         if ( ( ci = findChan ( c.getString ( NAME ) ) ) != null ) {
+            if ( c.isSaJoin() ) {
+                c.toggleSaJoin();
+                return;
+            }
+                 
             if ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
                 return;
             }
@@ -183,30 +189,23 @@ public class ChanServ extends Service {
                 if ( ni == null || ( ni != null && ! ni.is ( NEVEROP ) ) ) {
                     opUser ( c, user );
                 }
-                
-            } else if ( ci.isAkick ( user ) || ci.is ( RESTRICT ) ) {
+
+            } else if ( ci.is ( RESTRICT ) ) {
                 banUser ( c, user, null );
                 kickUser ( c, user );
-            
+                
+            } else if ( ci.isAkick ( user ) ) {
+                acc = ci.getAkickAccess ( user );
+                banUser ( c, user, ( acc.getRawMask() != null ? acc.getRawMask() : null ) );
+                kickUser ( c, user );
+                
             } else if ( c.isOp ( user ) && ci.is ( OPGUARD ) ) {
                 this.deOpUser ( c, user );
             }
             
-            if ( c.isSaJoin() ) {
-                c.toggleSaJoin();
-            }
         }
     }
-    
-    public void banUser ( Chan c, User user, String mask )  {
-        // :Pintuz MODE #avade 0 +o Pintuz
-        if ( mask == null )  {
-            this.sendCmd ( "MODE "+c.getString ( NAME ) +" +b *!"+user.getString ( USER ) +"@"+user.getString ( HOST )  );
-        } else {
-            this.sendCmd ( "MODE "+c.getString ( NAME ) +" +b "+mask );
-        }
-    }
-    
+     
     public void checkSettings ( Chan c )  {
         ChanInfo ci;
         if ( c == null ) {
@@ -232,9 +231,11 @@ public class ChanServ extends Service {
         if ( ci == null || c == null || ci.getSettings() == null || ci.getSettings().getModeLock() == null ) {
             return;
         }
-        String missing = ci.getSettings().getModeLock().getMissingModes ( c, ci );
-        c.getModes().setModeString ( missing );
-        this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :"+missing );
+        String missing = null;
+        if ( ( missing = ci.getSettings().getModeLock().getMissingModes ( c, ci ) ) != null ) {
+            c.getModes().setModeString ( missing );
+            this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :"+missing );
+        }
     }
 
     public boolean checkTopic ( User u, Chan c )  {
@@ -286,10 +287,19 @@ public class ChanServ extends Service {
         return false;
     }
   
+    public void banUser ( Chan c, User user, String mask )  {
+        // :Pintuz MODE #avade 0 +o Pintuz
+        if ( mask == null )  {
+            this.sendCmd ( "MODE "+c.getString(NAME)+" +b *!"+user.getString(USER)+"@"+user.getString(HOST) );
+        } else {
+            this.sendCmd ( "MODE "+c.getString(NAME)+" +b "+mask );
+        }
+    }
     
     public void kickUser ( Chan c, User user )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( c.nickIsPresent ( user.getString ( NAME )  )  )  {
+            c.remUser ( user );
             this.sendCmd ( "KICK "+c.getString ( NAME ) +" :"+user.getString ( NAME )  );
         }
     }
@@ -423,7 +433,33 @@ public class ChanServ extends Service {
         todoAmount += handleRegList ( );
         todoAmount += handleUpdateList ( );
         todoAmount += handleDeleteList ( );
+        checkUserList ( );
         return todoAmount;
+    }
+    
+    private static void checkUserList ( ) {
+        System.out.println("debug: checkUserList("+chUserCheckList.size()+")");
+        ArrayList<UserCheck> checked = new ArrayList<>();
+        for ( UserCheck uc : chUserCheckList ) {
+            Handler.getChanServ().checkUser ( uc.getChan(), uc.getUser() );
+            checked.add(uc);
+        }
+        for ( UserCheck uc : checked ) {
+            chUserCheckList.remove ( uc );
+        }
+    }
+    
+    public static void addCheckUser ( Chan chan, User user ) {
+        if ( chan == null || user == null ) {
+            return;
+        }
+        for ( UserCheck uc : chUserCheckList ) {
+            if ( uc.getChan().getHashName() == chan.getHashName() &&
+                 uc.getUser().getHash() == user.getHash() ) {
+                return;
+            }
+        }
+        chUserCheckList.add ( new UserCheck ( chan, user ) );
     }
     
     public static void addLog ( CSLogEvent log ) {

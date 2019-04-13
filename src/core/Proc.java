@@ -92,7 +92,7 @@ public class Proc extends HashNumeric {
             } else {
                 /* We didnt find any new data so lets take a nap */
                 try {
-                    Thread.sleep ( 100 );          
+                    Thread.sleep ( 50 );          
                    
                 } catch  ( InterruptedException ex )  {
                     Logger.getLogger ( Proc.class.getName ( ) ) .log ( Level.SEVERE, null, ex );

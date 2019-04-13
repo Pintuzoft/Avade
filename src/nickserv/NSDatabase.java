@@ -214,7 +214,7 @@ public class NSDatabase extends Database {
                 query = "update nicksetting "
                       + "set "+changes+" "
                       + "where name = ?";
-                System.out.println("DEBUG: "+query);
+               
                 ps = sql.prepareStatement ( query );
                  int index = 1;
                  ni.getChanges().printChanges();
