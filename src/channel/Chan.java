@@ -95,7 +95,7 @@ public class Chan extends HashNumeric {
                             vo = true;
                         }
 
-                        if (  ( u = Handler.findUser ( nick )  )  != null )  {
+                        if ( ( u = Handler.findUser ( nick ) ) != null ) {
                             if ( op ) { 
                                 this.addUser ( OP, u );
                             } else if ( vo ) {
@@ -103,6 +103,7 @@ public class Chan extends HashNumeric {
                             } else {
                                 this.addUser ( USER, u );
                             }
+                            u.addChan ( this );
                             ChanServ.addCheckUser ( this, u );
                         } 
                     }
@@ -207,15 +208,29 @@ public class Chan extends HashNumeric {
              Proc.log ( Chan.class.getName ( ) , e );
         }
     }
-    public void remUser ( User u )  {
-        if ( this.oList.contains ( u ) ) {
-            this.oList.remove ( u );
+    public void remUser ( User user )  {
+        int hash = user.getHash();
+        ArrayList<User> rList = new ArrayList<>();
+        for ( User o : oList ) {
+            if ( o.getHash() == hash ) {
+                rList.add ( o );
+            }
         }
-        if ( this.vList.contains ( u ) ) {
-            this.vList.remove ( u );
-        }
-        if ( this.uList.contains ( u ) ) {
-            this.uList.remove ( u );
+        for ( User v : vList ) {
+            if ( v.getHash() == hash ) {
+                rList.add ( v );
+            }
+        } 
+        for ( User u : uList ) {
+            if ( u.getHash() == hash ) {
+                rList.add ( u );
+            }
+        } 
+        
+        for ( User rem : rList ) {
+            this.oList.remove ( rem );
+            this.vList.remove ( rem );
+            this.uList.remove ( rem );
         }
     }
 

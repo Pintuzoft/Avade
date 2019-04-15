@@ -409,13 +409,17 @@ public class OperServ extends Service {
         user.getUserFlood().incCounter ( this );
 
         cmd[3] = cmd[3].substring ( 1 );
-        if ( ! user.isOper ( ) )  {
+        if ( user == null ) {
+            System.out.println("DEBUG: parse() -> no user");
+            return;
+        } else if ( ! user.isOper ( ) )  {
             this.sendMsg ( user, "IRC Operator Services are for IRC Operators only .. *sigh*" );
             return;
         } else if ( ! OperServ.enoughAccess ( user, cmd[3].toUpperCase().hashCode() ) ) {
             this.sendMsg ( user, "Access denied!." );
             return;
         }
+        
         switch ( cmd[3].toUpperCase().hashCode ( ) ) {
             case HELP :
                 this.helper.parse ( user, cmd );

@@ -157,8 +157,11 @@ public class OSExecutor extends Executor {
                 }
             }
             this.service.sendMsg ( user, "        IP: " + u.getString ( IP )                                        );
-            this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes ( ) .is ( IDENT ) +" ) , oper ( "+u.getModes ( ) .is ( OPER ) +" ) , admin ( "+u.getModes ( ) .is ( ADMIN ) +" ) , sadmin ( "+u.getModes ( ) .is ( SADMIN ) +" ) " );
+            this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes().is ( IDENT )+" ), oper ( "+u.getModes().is ( OPER )+" ) , admin ( "+u.getModes().is ( ADMIN )+" ) , sadmin ( "+u.getModes().is ( SADMIN )+" ) " );
             this.service.sendMsg ( user, "    Server: "+u.getServ ( ) .getName ( )                                  );
+            for ( Chan c : user.getChans() ) {
+                this.service.sendMsg ( user, "   Channel: "+c.getString ( NAME )                                    );
+            }
             this.service.sendMsg ( user, "*** End ***"                                                              );
         } else {
             this.service.sendMsg ( user, "Error: nick is offline"                                                   );

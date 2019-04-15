@@ -334,6 +334,16 @@ public class ChanInfo extends HashNumeric {
         }    
         return false;
     }
+    
+    public boolean isAkick ( NickInfo ni )  {
+        int hash = ni.getHashName();
+        for ( CSAcc acc : this.klist )  {
+            if ( acc.getNick() != null && acc.getNick().getHashName() == hash )  {
+                return true;
+            }
+        }    
+        return false;
+    }
    
     public CSAcc getAkickAccess ( User user )  {
         for ( CSAcc acc : this.klist )  {

@@ -1841,14 +1841,17 @@ import java.util.Random;
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( CHAN_IS_CLOSED );  
-                } else if ( ni == null || ! ci.isAtleastSop ( ni ) ) {
+                } else if ( ni == null || 
+                            ( ! ci.isAtleastSop ( ni ) && ni.getHashName() != ni2.getHashName() ) ||
+                            ( ci.isAkick ( ni ) ) ) {
                     cmdData.setString1 ( user.getString ( NAME ) );
                     cmdData.setStatus ( ACCESS_DENIED );
                 } else if ( ni2 != null && ! ni2.isAuth ( ) ) {
                     cmdData.setNick2 ( ni2 );
                     cmdData.setStatus ( NICK_NOT_AUTHED );
                 } else if ( ni2 != null && 
-                            ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
+                            ( ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) &&
+                              ni.getHashName() != ni2.getHashName() ) ) {
                     cmdData.setStatus ( NOT_ENOUGH_ACCESS );
                 } else if ( ( acc = getAcc ( command, ci, ni2 ) ) == null && 
                             ( acc = getAcc ( command, ci, mask ) ) == null &&

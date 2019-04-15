@@ -243,8 +243,11 @@ public class Handler extends HashNumeric {
                             break;
                             
                         case KILL :
-                            this.nullService ( user ); /* null if service */
-                            deleteUser ( user );
+                            //this.nullService ( user ); /* null if service */
+                            User u;
+                            if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
+                                deleteUser ( u );
+                            }
                             break;
                             
                         case NICK :
