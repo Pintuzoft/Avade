@@ -437,7 +437,6 @@ public class ChanServ extends Service {
     }
     
     private static void checkUserList ( ) {
-        System.out.println("debug: checkUserList("+chUserCheckList.size()+")");
         ArrayList<UserCheck> checked = new ArrayList<>();
         for ( UserCheck uc : chUserCheckList ) {
             Handler.getChanServ().checkUser ( uc.getChan(), uc.getUser() );

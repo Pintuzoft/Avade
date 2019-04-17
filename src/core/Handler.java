@@ -175,6 +175,7 @@ public class Handler extends HashNumeric {
                     switch ( this.data[1].hashCode ( )  )  {
                         case SERVER :
                             sList.add ( new Server ( this.data ) );
+                            root.sendPanic();
                             break;
                             
                         case SJOIN :
@@ -284,7 +285,8 @@ public class Handler extends HashNumeric {
                 /* We are getting  */
                 switch ( this.data[0].hashCode ( )  )  {
                         case SERVER :
-                            sList.add ( new Server ( this.data )  );
+                            sList.add ( new Server ( this.data ) );
+                            root.sendPanic();
                             break;
                             
                         case SJOIN :

@@ -22,6 +22,8 @@ import core.Handler;
 import core.Proc;
 import core.Service;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 import nickserv.NSDatabase;
 import nickserv.NickInfo;
 import nickserv.NickServ;
@@ -36,10 +38,11 @@ import user.User;
  */
 public class RootServ extends Service {
     private static boolean                  is = false;
+    private static int                      panic;
     private RSExecutor                      executor;       /* Object that parse and execute commands */
     private RSHelper                        helper;         /* Object that parse and respond to help queries */
     private RSSnoop                         snoop;          /* Object for monitoring and reporting */
-    
+    private static Timer                    panicTimer;
     private static boolean                  updConf; 
     
     public RootServ ( )  {
@@ -49,6 +52,7 @@ public class RootServ extends Service {
     
     private void initRootServ ( )  {
         is              = true;
+        panic           = USER;
         this.snoop      = new RSSnoop ( this );
         this.executor   = new RSExecutor ( this, this.snoop );
         this.helper     = new RSHelper ( this, this.snoop );
@@ -58,12 +62,13 @@ public class RootServ extends Service {
     public static void updConf ( ) { 
         updConf = true;
     }
- 
+     
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
-        cmdList.add ( new CommandInfo ( "REHASH",   CMDAccess ( REHASH ) ,   "Reload the config file" )  );
-        cmdList.add ( new CommandInfo ( "SRAW",     CMDAccess ( SRAW ) ,     "Send raw messages from services to the network" )  );
-        cmdList.add ( new CommandInfo ( "SRA",      CMDAccess ( SRA ) ,      "Manage the Services Root Admin list" )  );
+        cmdList.add ( new CommandInfo ( "REHASH",   CMDAccess ( REHASH ),   "Reload the config file" )  );
+        cmdList.add ( new CommandInfo ( "SRAW",     CMDAccess ( SRAW ),     "Send raw messages from services to the network" )  );
+        cmdList.add ( new CommandInfo ( "SRA",      CMDAccess ( SRA ),      "Manage the Services Root Admin list" )  );
+        cmdList.add ( new CommandInfo ( "PANIC",    CMDAccess ( PANIC ),    "Manage the services panic state" )  );
     }  
     
     
@@ -106,6 +111,75 @@ public class RootServ extends Service {
             
         } 
     }
+ 
+    public static void adPanic ( ) {
+        panicTimer = new Timer ( );
+        panicTimer.schedule ( new TimerTask ( ) {
+            @Override
+                public void run() {
+                    Handler.getRootServ().sendGlobOp ( "WARNING! Services PANIC state is currently set to: "+RootServ.getPanicStr ( NONE ) );
+                    RootServ.adPanic();
+                } 
+            }, 900000
+        );
+    }
+    
+    public static void setPanic ( int state ) {
+        panic = state;
+        Handler.getRootServ().sendPanic();
+        switch ( state ) {
+            case OPER :
+            case IDENT :
+                RootServ.adPanic ( );
+                break;
+            
+            case USER : 
+                panicTimer.cancel();
+                panicTimer = null;
+                
+            default :
+                
+        }
+    }
+    
+    public static int getPanic ( ) {
+        return panic;
+    }
+    
+    public static String getPanicStr ( int hash ) {
+        switch ( hash ) {
+            case OPER : 
+                return "OPER [only IRCops can access services]";
+                
+            case IDENT :
+                return "IDENT [only identified users (+r) can access services]";
+                
+            case USER :
+                return "USER [everyone can access services]";
+                
+            default :
+                return getPanicStr ( panic );
+                
+        }
+    }
+    
+    public void sendPanic ( ) {
+        int state = 0;
+        switch ( panic ) {
+            case OPER :
+                state = 2;
+                break;
+                
+            case IDENT :
+                state = 1;
+                break;
+                 
+            default:
+                
+        }
+        this.sendServ ( "SVSPANIC "+state );
+    }
+
     
     public void fixMaster ( ) {
         String master = Proc.getConf().get ( MASTER );
@@ -144,8 +218,8 @@ public class RootServ extends Service {
                 ni.setOper ( OperServ.getOper ( master ) );
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
-                    Handler.getRootServ().sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );
-                    Handler.getRootServ().sendMsg ( user, "NOTE: losing access of the master nick can cause inconvenience as only the master can manage the SRA list, and no SRA can add a new master." );
+                    this.sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );
+                    this.sendMsg ( user, "NOTE: losing access of the master nick can cause inconvenience as only the master can manage the SRA list, and no SRA can add a new master." );
                 }
             }
         } 

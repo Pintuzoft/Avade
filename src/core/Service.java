@@ -177,7 +177,6 @@ import java.util.Date;
     /* Returns the list of added commands with its access and info */
     public ArrayList<CommandInfo> getCommandList ( int access )    { 
         ArrayList<CommandInfo> list = new ArrayList<> ( );
-
         for ( CommandInfo ci : cmdList )  {
             if ( ci.isAcc ( access )  )  {
                 list.add ( ci );

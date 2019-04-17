@@ -68,9 +68,10 @@ public class Config extends HashNumeric {
     private String snoopChanServ;
     private String snoopMemoServ;
     
-    /* COMMANDS */
+    /* COMMANDS (set all to 5 - master) */
     private int rehash = 5;
     private int sraw = 5;
+    private int panic = 5;
     private int uinfo = 5;
     private int cinfo = 5;
     private int sinfo = 5;
@@ -327,12 +328,17 @@ public class Config extends HashNumeric {
  
     private void setCommand ( String command, int access ) {
         switch ( command.trim().toUpperCase().hashCode() ) {
+                
+            case SRAW :
+                this.sraw = access;
+                break;
+                
             case REHASH :
                 this.rehash = access;
                 break;
                 
-            case SRAW :
-                this.sraw = access;
+            case PANIC :
+                this.panic = access;
                 break;
                 
             case UINFO :
@@ -452,7 +458,6 @@ public class Config extends HashNumeric {
                 break;
 
             default :
-                
         }
     }
  
@@ -501,6 +506,16 @@ public class Config extends HashNumeric {
     
     public int getInt ( int var )  {
         switch ( var )  {
+            /* RootServ */
+            case REHASH : 
+                return this.rehash;
+                
+            case SRAW : 
+                return this.sraw;
+                
+            case PANIC : 
+                return this.panic;
+                
             /* OperServ */
             case UINFO : 
                 return this.uinfo;
@@ -596,7 +611,7 @@ public class Config extends HashNumeric {
         }
     }
     
-        public String get ( int var )  {
+    public String get ( int var )  {
         switch ( var )  {
             case NAME :
                 return this.name;

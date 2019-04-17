@@ -342,6 +342,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int ADMIN                       = 62130991;
     public final static int SADMIN                      = -1856616772;
     public final static int SRAW                        = 2553557;
+    public final static int PANIC                       = 75895383;
     public final static int AKILL                       = 62335775;
     public final static int TIME                        = 2575053;
     public final static int SEARCHLOG                   = 269847676;

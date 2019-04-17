@@ -61,6 +61,10 @@ public class RSExecutor extends Executor {
             case SRA :
                 this.sra ( user, cmd );
                 break;
+                 
+            case PANIC :
+                this.panic ( user, cmd );
+                break;
                 
             default: 
         }
@@ -68,11 +72,6 @@ public class RSExecutor extends Executor {
     }
 
     private void rehash ( User user, String[] cmd )  {
-        System.out.println ( "debug: doRehash ( ) " );
-        if ( ! RootServ.enoughAccess ( user, REHASH ) ) {
-            return;
-        }
-
         if ( Proc.rehashConf ( )  )  {
             this.service.sendMsg ( user, "Rehashing services successful" );
         } else {
@@ -81,9 +80,6 @@ public class RSExecutor extends Executor {
     }
 
     private void sraw ( User user, String[] cmd )  {
-        if ( ! RootServ.enoughAccess ( user, SRAW ) ) {
-            return;
-        }
         String buf = new String ( );
         for ( int i = 4; i < cmd.length; i++ )  {
             if ( buf.length() > 0 ) {
@@ -102,10 +98,6 @@ public class RSExecutor extends Executor {
         System.out.println ( "debug ( doSra );" );
         NickInfo sra;
         NickInfo target;
-        
-        if ( ! RootServ.enoughAccess ( user, SRA ) ) { 
-            return; 
-        }
         
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" ) );
@@ -168,6 +160,47 @@ public class RSExecutor extends Executor {
     }
     /* END SRA */
 
+    /* PANIC */
+    private void panic ( User u, String[] cmd )  {
+        // :DreamHea1er PRIVMSG RootServ@services.sshd.biz :PANIC
+        // :DreamHea1er PRIVMSG RootServ@services.sshd.biz :PANIC OPER
+        //  0           1       2                           3     4   5       = 6
+        NickInfo sra;
+        System.out.println ( "debug ( doPanic );" );
+        int state;
+        String panic;
+        
+        if ( cmd.length > 4 ) {
+            state = cmd[4].toUpperCase().hashCode();
+        } else {
+            state = NONE;
+        }
+        
+        sra = NickServ.findNick ( u.getSID().getOper().getString ( NAME ) );
+        
+        if ( sra == null )  {
+            this.service.sendMsg ( u, output ( ACCESS_DENIED, "" )  );
+            return;
+        }
+        
+        switch ( state ) {
+            case OPER :
+            case IDENT :
+            case USER :
+                RootServ.setPanic ( state );
+                panic = RootServ.getPanicStr ( state );
+                break;
+
+            case NONE :
+                Handler.getRootServ().sendMsg ( u, "Panic state is: "+RootServ.getPanicStr ( NONE ) );
+                return;
+                
+            default : 
+                Handler.getRootServ().sendMsg ( u, "Error: not a valid panic state" );
+                return;
+        }
+        Handler.getRootServ().sendGlobOp ( sra.getName()+" changed PANIC state to: "+panic );
+    }
     
     /* OUTPUT */
     public String output ( int code, String... args )  {
