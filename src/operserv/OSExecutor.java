@@ -21,6 +21,7 @@ import channel.Chan;
 import chanserv.ChanInfo;
 import core.Executor;
 import core.Handler;
+import core.HashNumeric;
 import core.StringMatch;
 import core.Proc;
 import static core.HashNumeric.ADD;
@@ -28,12 +29,17 @@ import static core.HashNumeric.DEL;
 import static core.HashNumeric.LIST;
 import static core.HashNumeric.NAME;
 import core.Service;
+import guestserv.GuestServ;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import nickserv.NickInfo;
 import nickserv.NickServ;
+import server.ServSock;
 import server.Server;
 import user.User;
 
@@ -124,6 +130,10 @@ public class OSExecutor extends Executor {
                       
             case SPAMFILTER :
                 this.doSpamFilter ( user, cmd );
+                break;
+                      
+            case FORCENICK :
+                this.forcenick ( user, cmd );
                 break;
                       
             default:
@@ -986,7 +996,63 @@ public class OSExecutor extends Executor {
         }
         
     }
-  
+      private void forcenick ( User user, String[] cmd ) {
+               
+        CmdData cmdData = this.validateCommandData ( user, FORCENICK, cmd );
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "FORCENICK <nick> [<new-nick>]" ) );
+                return;
+        
+            case NICK_NOT_FOUND :
+                this.service.sendMsg ( user, output ( NICK_NOT_FOUND, cmdData.getString1 ( ) ) );
+                return;
+                         
+            case NICK_ALREADY_PRESENT :
+                this.service.sendMsg ( user, output ( NICK_ALREADY_PRESENT, cmdData.getString1 ( ) ) );
+                return;
+                
+            case NICK_IS_OPER :
+                this.service.sendMsg ( user, output ( NICK_IS_OPER, cmdData.getString1 ( ) ) );
+                return;
+                
+            default :
+                
+        }
+        String pattern;
+        NickInfo oper = cmdData.getNick();
+        User u = Handler.findUser ( cmdData.getString1() );
+        String newNick = cmdData.getString2();
+        Random rand = new Random ( );
+        int index = 0;
+        
+        if ( newNick == null ) {
+            boolean search = true;
+            while ( search )  {
+                index = rand.nextInt ( GuestServ.max ) +10000;
+                if ( Handler.findUser ( "Guest"+index )  == null )  {
+                    search = false;
+                }
+            }
+            newNick = "Guest"+index;
+            Handler.getOperServ().sendGlobOp ( oper.getName()+" has issued FORCENICK on: "+u.getName() );
+        
+        } else {
+            Handler.getOperServ().sendGlobOp ( oper.getName()+" has issued FORCENICK on: "+u.getName()+" -> "+newNick );
+        }
+        Handler.getOperServ().sendServ ( "SQLINE "+u.getName()+" :You cannot use this nick." );
+        Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
+        Timer timer = new Timer ( );
+        timer.schedule( new UnSQlineTask ( u.getName() ), 15000);
+        
+        OperServ.addTimer ( timer );
+        
+        
+        u.setName(newNick);
+    }
+      
+     
+      
     /*
     -OperServ- Behavior Flags:
     -OperServ- s = strip control codes (will strip colors/bolds/underlines/etc)
@@ -1052,6 +1118,9 @@ public class OSExecutor extends Executor {
     
     private CmdData validateCommandData ( User user, int command, String[] cmd ) {
         CmdData cmdData = new CmdData ( );
+        User u;
+        User u2;
+        NickInfo oper;
         NickInfo ni;
         int sub;
         int sub2;
@@ -1119,6 +1188,31 @@ public class OSExecutor extends Executor {
                     cmdData.setSub ( sub );
                     cmdData.setSub2 ( sub2 );
                 } 
+                break;
+                
+            case FORCENICK :
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :FORCENICK nick
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :FORCENICK nick newnick
+                //  0           1       2                           3         4    5        = 6
+                if ( isShorterThanLen( 5, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ni = user.getOper().getNick() ) == null ) {
+                    cmdData.setStatus ( ACCESS_DENIED );
+                } else if ( ( u = Handler.findUser ( cmd[4] ) ) == null ) {
+                    cmdData.setStatus ( NICK_NOT_FOUND );
+                } else if ( u.isAtleast ( IRCOP ) ) {
+                    cmdData.setString1 ( u.getName() );
+                    cmdData.setStatus ( NICK_IS_OPER );
+                } else if ( cmd.length == 6 && ( u2 = Handler.findUser ( cmd[5] ) ) != null ) {
+                    cmdData.setString1 ( u2.getName() );
+                    cmdData.setStatus ( NICK_ALREADY_PRESENT );               
+                } else {
+                    cmdData.setNick ( ni );
+                    cmdData.setString1 ( u.getName() );
+                    if ( cmd.length == 6 ) {
+                        cmdData.setString2 ( cmd[5] );
+                    }
+                }
                 break;
                 
             default :
@@ -1245,7 +1339,15 @@ public class OSExecutor extends Executor {
             case SPAMFILTER_LIST :
                 return "  "+args[0]+": "+args[1]+" "+args[2]+" ["+args[3]+"]: "+args[4]; 
                
-                
+            case NICK_NOT_FOUND :
+                return "Error: Nick "+args[0]+" was not found."; 
+             
+            case NICK_ALREADY_PRESENT :
+                return "Error: Nick "+args[0]+" already exists on the network."; 
+             
+            case NICK_IS_OPER :
+                return "Error: Nick "+args[0]+" is an IRCop"; 
+               
             default:
                 return "";
                 
@@ -1300,5 +1402,8 @@ public class OSExecutor extends Executor {
     private final static int FILTER_EXISTS          = 3102;
     private final static int SPAMFILTER_LIST        = 3103;
 
+    private final static int NICK_NOT_FOUND         = 3201;
+    private final static int NICK_ALREADY_PRESENT   = 3202;
+    private final static int NICK_IS_OPER           = 3203;
 
 }

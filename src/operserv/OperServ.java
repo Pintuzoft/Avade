@@ -27,6 +27,8 @@ import user.User;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import nickserv.NickInfo;
 import server.Server;
 
@@ -70,6 +72,9 @@ public class OperServ extends Service {
     private Oper operNick = new Oper ( "OperServ", 4, "OperServ" );
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss"); 
 
+    private static ArrayList<Timer> timerList = new ArrayList<>();
+    
+    
     public OperServ ( )  {
         super ( "OperServ" );
         this.initOperServ ( );
@@ -116,6 +121,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "SPAMFILTER",CMDAccess ( SPAMFILTER ),  "Manage the services SpamFilter list" )   );
         cmdList.add ( new CommandInfo ( "JUPE",      CMDAccess ( JUPE ),        "Jupiter a server" )                      );
         cmdList.add ( new CommandInfo ( "SERVER",    CMDAccess ( SERVER ),      "Handle server list" )                    );
+        cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )    );
     }
    
     public static ArrayList<CommandInfo> getCMDList ( int command ) {
@@ -937,7 +943,7 @@ public class OperServ extends Service {
         addStaff.add ( oper );
     }
     
-    static void delOper ( NickInfo ni ) {
+    public static void delOper ( NickInfo ni ) {
         Oper oper = null;
         for ( Oper o : staff ) {
             if ( o.getHashCode() == ni.hashCode() ) {
@@ -949,8 +955,17 @@ public class OperServ extends Service {
             remStaff.add ( oper );
         }
     }
-    static void addLogEvent ( OSLogEvent log ) {
+    public static void addLogEvent ( OSLogEvent log ) {
         logs.add ( log );
     }
+    
+    public static void addTimer ( Timer task ) {
+        timerList.add ( task );
+    }
+    
+    public static void remTimer ( Timer task ) {
+        timerList.remove ( task );
+    }
+    
 }
    

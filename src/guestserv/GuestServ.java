@@ -53,7 +53,7 @@ public class GuestServ extends Service {
             /* Change nick after 1 minute */
             Timer timer = new Timer ( true );
             now.setTimeInMillis ( now.getTimeInMillis ( ) + ( 60*1000 ) );
-            timer.schedule ( new GuestTask ( user ) , now.getTime ( ) );
+            timer.schedule ( new GuestTask ( user ), now.getTime ( ) );
             user.getSID().addTimer ( timer );
         }
     }

@@ -474,7 +474,12 @@ public class Handler extends HashNumeric {
     /* user wants to change nick */
     private void doNick ( User user )  {
         NickInfo ni;
-        user.setName ( this.data[2] );
+        if ( user == null ) {
+            return;
+        }
+        if ( this.data.length >= 3 ) {
+            user.setName ( this.data[2] );
+        }
         ni = NickServ.findNick ( user.getString ( NAME )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );

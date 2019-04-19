@@ -97,6 +97,10 @@ class OSHelper extends Helper {
             case SPAMFILTER :
                 this.spamfilter ( user );
                 break;
+                       
+            case FORCENICK :
+                this.forcenick ( user );
+                break;
                 
             default :
                 this.found = false; this.noMatch ( user, cmd[4] ); 
@@ -453,6 +457,26 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "   This functionality adds automation and its powerful so dont play around with it, only"                     );
         this.service.sendMsg ( user, "   add strings in to actually help with the noise and block or akill users who matches"                       );
         this.service.sendMsg ( user, "   the strings. Always try add long strings to avoid false positive matches."                                 );
+        this.showEnd ( user );
+    }
+    
+    private void forcenick ( User user ) {
+        this.showStart ( user, "ForceNick" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ FORCENICK <nick> [<new-nick>]"+f.b ( ) +""                                   );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   This command will forcefully change a nick to a new nick. This is only intended for"                       );
+        this.service.sendMsg ( user, "   actual incidents where users are using their nick name to advertise or insult others"                      );
+        this.service.sendMsg ( user, "   and brings a quick way to resolve issues with users nicknames without having to remove"                    );
+        this.service.sendMsg ( user, "   them from the network."                                                                                    );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   When used without a new nick the user will get a GuestXXXXX nick."                                         );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   The command will change the nick of a user to a new nick. The command will not logout"                     );
+        this.service.sendMsg ( user, "   an identified nick so its recommended to only use it on an unregged nick. The command will"                );
+        this.service.sendMsg ( user, "   place a short sqline during the process to ensure the nick is not instantly changing back."                );
+        this.service.sendMsg ( user, "   Opers are excempted from this command so you cannot change the nick of an oper."                           );
         this.showEnd ( user );
     }
 }
