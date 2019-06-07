@@ -143,7 +143,7 @@ class OSHelper extends Helper {
 
         if ( access > 2 )  {
             this.service.sendMsg ( user, "   " );
-            this.service.sendMsg ( user, "   "+f.b ( ) +"Channel Services Commands"+f.b ( )                                     );
+            this.service.sendMsg ( user, "   "+f.b ( ) +"Channel Services Operator Commands"+f.b ( )                              );
             for ( CommandInfo ci : OperServ.getCMDList ( CSOP )  )  {
                 this.service.sendMsg ( user, "       "+f.b ( ) +ci.getName ( ) +f.b ( ) +ci.getPatch ( ) +ci.getDescription ( )  );
             }
