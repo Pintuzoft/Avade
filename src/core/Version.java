@@ -27,12 +27,14 @@ public class Version extends HashNumeric {
     private int             year;
     private int             month;
     private int             build;
+    private String          bahamut;
     
     public Version ( )  {
         this.generation     = 1;
         this.year           = 19;
         this.month          = 04;
         this.build          = 3;
+        this.bahamut        = "bahamut-2.1.4";
     }
     
     public String getVersion ( )  {
@@ -55,6 +57,9 @@ public class Version extends HashNumeric {
     }   
     public int getBuild ( ) {
         return this.build;
+    }
+    public String getBahamut ( ) {
+        return this.bahamut;
     }
     
 }

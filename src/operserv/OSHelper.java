@@ -101,6 +101,10 @@ class OSHelper extends Helper {
             case FORCENICK :
                 this.forcenick ( user );
                 break;
+                            
+            case BAHAMUT :
+                this.bahamut ( user );
+                break;
                 
             default :
                 this.found = false; this.noMatch ( user, cmd[4] ); 
@@ -478,6 +482,22 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "   an identified nick so its recommended to only use it on an unregged nick. The command will"                );
         this.service.sendMsg ( user, "   place a short sqline during the process to ensure the nick is not instantly changing back."                );
         this.service.sendMsg ( user, "   Opers are excempted from this command so you cannot change the nick of an oper."                           );
+        this.showEnd ( user );
+    }
+
+    private void bahamut(User user) {
+        this.showStart ( user, "Bahamut" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ BAHAMUT"+f.b ( ) +""                                                         );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   This command will output the version of bahamut best suited for this version of services"                  );
+        this.service.sendMsg ( user, "   though services will connect fine to older versions of bahamut. To make sure all features"                 );
+        this.service.sendMsg ( user, "   provided by services is working correctly please run the version of bahamut stated by using"               );
+        this.service.sendMsg ( user, "   this command."                                                                                             );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   This command will output the version of bahamut you should be running. Try keeping the servers"            );
+        this.service.sendMsg ( user, "   running on your network up to par with that version to make sure all available features is working"        ); 
         this.showEnd ( user );
     }
 }

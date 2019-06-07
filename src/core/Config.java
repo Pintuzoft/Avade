@@ -77,6 +77,7 @@ public class Config extends HashNumeric {
     
     /* COMMANDS (set all to 5 - master) */
     private int rehash = 5;
+    private int bahamut = 5;
     private int sraw = 5;
     private int panic = 5;
     private int uinfo = 5;
@@ -384,6 +385,10 @@ public class Config extends HashNumeric {
             case REHASH :
                 this.rehash = access;
                 break;
+                         
+            case BAHAMUT :
+                this.bahamut = access;
+                break;
                 
             case PANIC :
                 this.panic = access;
@@ -559,12 +564,15 @@ public class Config extends HashNumeric {
     public int getInt ( int var )  {
         switch ( var )  {
             /* RootServ */
-            case REHASH : 
-                return this.rehash;
-                
             case SRAW : 
                 return this.sraw;
                 
+            case REHASH : 
+                return this.rehash;
+                           
+            case BAHAMUT : 
+                return this.bahamut;
+            
             case PANIC : 
                 return this.panic;
                 

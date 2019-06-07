@@ -135,6 +135,10 @@ public class OSExecutor extends Executor {
             case FORCENICK :
                 this.forcenick ( user, cmd );
                 break;
+                              
+            case BAHAMUT :
+                this.bahamut ( user, cmd );
+                break;
                       
             default:
                 this.found = false; 
@@ -144,6 +148,10 @@ public class OSExecutor extends Executor {
         this.snoop.msg ( this.found, user, cmd ); 
     }
 
+    private void bahamut ( User user, String[] cmd ) {
+        this.service.sendMsg ( user, "This version of services works best with the following version of bahamut:" );
+        this.service.sendMsg ( user, "    "+Proc.getVersion().getBahamut() );
+    }
 
     private void doUInfo ( User user, String[] cmd )  {
         /* UINFO requested so lets send all we know about that user */

@@ -121,6 +121,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "JUPE",      CMDAccess ( JUPE ),        "Jupiter a server" )                      );
         cmdList.add ( new CommandInfo ( "SERVER",    CMDAccess ( SERVER ),      "Handle server list" )                    );
         cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )    );
+        cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )   );
     }
    
     public static ArrayList<CommandInfo> getCMDList ( int command ) {

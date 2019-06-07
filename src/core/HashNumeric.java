@@ -166,6 +166,7 @@ public abstract class HashNumeric extends TextFormat {
     public static final int LEAF                        = 2332510;
     public static final int OS                          = 2532;
     public static final int SFAKILL                     = -1580229460;
+    public static final int BAHAMUT                     = 375102260;
     
     
     /* ROOTSERV */
