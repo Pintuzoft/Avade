@@ -50,6 +50,10 @@ public class RSExecutor extends Executor {
         this.found = true; /* Assume that everything will go correctly */
 
         switch ( cmd[3].toUpperCase ( ) .hashCode ( )  )  {
+            case STOP :
+                this.stop ( user, cmd );
+                break;
+                          
             case REHASH :
                 this.rehash ( user, cmd );
                 break;
@@ -79,6 +83,17 @@ public class RSExecutor extends Executor {
         }
     }
 
+    private void stop(User user, String[] cmd) {
+        if ( user == null || user.getOper() == null || user.getOper().getName() == null ) {
+            this.service.sendGlobOp ( "SERVICES STOP!. Failed by: "+user.getFullMask() );
+            return;
+        }
+        RootServ.setPanic ( OPER );
+        this.service.sendGlobOp ( "SERVICES STOP!. Issued by: "+user.getFullMask()+" ["+user.getOper().getName()+"]" );
+        Proc.stopServices();
+    }
+ 
+    
     private void sraw ( User user, String[] cmd )  {
         String buf = new String ( );
         for ( int i = 4; i < cmd.length; i++ )  {
@@ -248,5 +263,5 @@ public class RSExecutor extends Executor {
     
     private static final int GLOB_SRA_ADD       = 1101;
     private static final int GLOB_SRA_DEL       = 1102;
- 
+
 }

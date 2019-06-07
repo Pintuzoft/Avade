@@ -76,6 +76,7 @@ public class Config extends HashNumeric {
     private String snoopMemoServ;
     
     /* COMMANDS (set all to 5 - master) */
+    private int stop = 5;
     private int rehash = 5;
     private int bahamut = 5;
     private int sraw = 5;
@@ -378,6 +379,10 @@ public class Config extends HashNumeric {
     private void setCommand ( String command, int access ) {
         switch ( command.trim().toUpperCase().hashCode() ) {
                 
+            case STOP :
+                this.stop = access;
+                break;
+                           
             case SRAW :
                 this.sraw = access;
                 break;
@@ -564,6 +569,9 @@ public class Config extends HashNumeric {
     public int getInt ( int var )  {
         switch ( var )  {
             /* RootServ */
+            case STOP : 
+                return this.stop;
+                       
             case SRAW : 
                 return this.sraw;
                 

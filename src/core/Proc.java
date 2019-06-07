@@ -19,7 +19,6 @@ package core;
 
 import server.ServSock;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -131,8 +130,20 @@ public class Proc extends HashNumeric {
             }
 
         }
-       // System.out.println("DEBUG!!!: OUTSIDE loop!!");
-
+        // System.out.println("DEBUG!!!: OUTSIDE loop!!");
+        do {
+            Handler.getRootServ().sendGlobOp ( "Running: handler->hourMaintenance" );
+        } while ( this.handler.runHourMaintenance ( ) > 0 );
+        do {
+            Handler.getRootServ().sendGlobOp ( "Running: handler->minMaintenance" );
+        } while ( this.handler.runMinuteMaintenance ( ) > 0 );
+        do {
+            Handler.getRootServ().sendGlobOp ( "Running: handler->secMaintenance" );
+        } while ( this.handler.runSecondMaintenance ( ) > 0 );
+        
+        Handler.getRootServ().sendGlobOp ( "SERVICES IS NOW STOPPED!..." );
+        Proc.conn.disconnect();
+        System.exit ( 0 );
     }
 
     public static void stopServices ( ) {

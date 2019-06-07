@@ -909,10 +909,11 @@ public class Handler extends HashNumeric {
         }
         return updServicesID.size();
     }
-    public void runMinuteMaintenance ( )  {
+    public int runMinuteMaintenance ( )  {
+        int todoAmount = 0;
         try {
             initServices ( ); /* make sure everything is running */
-            oper.minMaintenance ( );
+            todoAmount += oper.minMaintenance ( );
             db.runMaintenance ( );
             
  //           this.checkNiStates ( );
@@ -922,6 +923,7 @@ public class Handler extends HashNumeric {
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
         }
+        return todoAmount;
     }
     public int runHourMaintenance ( )  {
         ArrayList<ServicesID> splitExpire = new ArrayList<>();

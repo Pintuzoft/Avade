@@ -65,10 +65,11 @@ public class RootServ extends Service {
      
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
+        cmdList.add ( new CommandInfo ( "PANIC",    CMDAccess ( PANIC ),    "Manage the services panic state" )  );
         cmdList.add ( new CommandInfo ( "REHASH",   CMDAccess ( REHASH ),   "Reload the config file" )  );
         cmdList.add ( new CommandInfo ( "SRAW",     CMDAccess ( SRAW ),     "Send raw messages from services to the network" )  );
         cmdList.add ( new CommandInfo ( "SRA",      CMDAccess ( SRA ),      "Manage the Services Root Admin list" )  );
-        cmdList.add ( new CommandInfo ( "PANIC",    CMDAccess ( PANIC ),    "Manage the services panic state" )  );
+        cmdList.add ( new CommandInfo ( "STOP",     CMDAccess ( STOP ),     "Correct way to stop services" )  );
     }  
     
     

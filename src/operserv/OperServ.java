@@ -163,12 +163,13 @@ public class OperServ extends Service {
         return todoAmount;
     }
     
-    public void minMaintenance ( ) {  
-        this.expireSpamFilter ( );
-  
+    public int minMaintenance ( ) {
+        int todoAmount = 0;
+        todoAmount += this.expireSpamFilter ( );
+        return todoAmount;
     }
     
-    public void expireSpamFilter ( ) {
+    public int expireSpamFilter ( ) {
         ArrayList<SpamFilter> remList = new ArrayList<>();
         for ( SpamFilter sf : spamfilters ) {
             if ( sf.hasExpired ( ) ) {
@@ -181,6 +182,7 @@ public class OperServ extends Service {
         for ( SpamFilter sf : remList ) {
             spamfilters.remove ( sf );
         }
+        return spamfilters.size();
     }
     
     public int checkAddServicesBans ( ) {
