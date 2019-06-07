@@ -39,12 +39,24 @@ public abstract class HashNumeric extends TextFormat {
     public final static int DB                          = 2174;
     public final static int ADDRESS                     = -429709356;
     public final static int GCOS                        = 2182080;
+    public final static int WARN                        = 2656902;
+    public final static int ACTION                      = 1925345846;
+    public final static int WARNIP                      = -1741682131;
+    public final static int WARNRANGE                   = 1055480407;
+    public final static int ACTIONIP                     = -873544227;
+    public final static int ACTIONRANGE                  = -541278041;
+    public final static int TRIGGERWARN                 = 1473044510;
+    public final static int TRIGGERACTION               = 1923596750;
+    public final static int TRIGGERWARNIP               = -1743431227;
+    public final static int TRIGGERWARNRANGE            = 487769023;
+    public final static int TRIGGERACTIONIP             = 1740541813;
+    public final static int TRIGGERACTIONRANGE          = -651071473;
     
-    public final static int SNOOPROOTSERV                 = 2080194861;
-    public final static int SNOOPOPERSERV                 = 1746096281;
-    public final static int SNOOPNICKSERV                 = -1977995474;
-    public final static int SNOOPCHANSERV                 = -616064099;
-    public final static int SNOOPMEMOSERV                 = 1609099653;
+    public final static int SNOOPROOTSERV               = 2080194861;
+    public final static int SNOOPOPERSERV               = 1746096281;
+    public final static int SNOOPNICKSERV               = -1977995474;
+    public final static int SNOOPCHANSERV               = -616064099;
+    public final static int SNOOPMEMOSERV               = 1609099653;
 
     public final static int SERVICEUSER                 = 225567712;
     public final static int SERVICEHOST                 = 225177021;
@@ -94,6 +106,7 @@ public abstract class HashNumeric extends TextFormat {
     public static final int OLD                         = 78343;
     public static final int SAMODE                      = -1856346895;
     public static final int GLOBOPS                     = 839070234;
+    public static final int SF                          = 2643;
 
     /* NICKSERV */
     public final static int HELP                        = 2213697;
@@ -345,6 +358,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int SRAW                        = 2553557;
     public final static int PANIC                       = 75895383;
     public final static int AKILL                       = 62335775;
+    public final static int AUTOKILL                    = -2072929907;
     public final static int TIME                        = 2575053;
     public final static int SEARCHLOG                   = 269847676;
     public final static int AUDIT                       = 62628795;

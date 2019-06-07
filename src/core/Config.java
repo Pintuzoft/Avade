@@ -62,6 +62,13 @@ public class Config extends HashNumeric {
     private String serviceHost;
     private String serviceGcos;
     
+    private boolean triggerWarn;
+    private int triggerAction;
+    private int triggerWarnIP;
+    private int triggerWarnRange;
+    private int triggerActionIP;
+    private int triggerActionRange;
+ 
     private String snoopRootServ;
     private String snoopOperServ;
     private String snoopNickServ;
@@ -254,6 +261,46 @@ public class Config extends HashNumeric {
             if ( this.serviceGcos == null ) 
                 printErrorAndExit ( "service->gcos" );
 
+            /* TRIGGER */
+            String[] trigger = result.get("trigger").toString().replace("{","").replace("}","").split(",");
+            for ( String str : trigger ) {
+                String[] data = str.split("=");
+                switch ( data[0].trim().toUpperCase().hashCode() ) {
+                    case WARN :
+                        this.triggerWarn = data[1].equalsIgnoreCase ( "true" );
+                        break;
+                        
+                    case ACTION :
+                        this.triggerAction = data[1].toUpperCase().hashCode();
+                        break;
+                        
+                    case WARNIP :
+                        this.triggerWarnIP = Integer.parseInt ( data[1] );
+                        break;
+                        
+                    case WARNRANGE :
+                        this.triggerWarnRange = Integer.parseInt ( data[1] );
+                        break;
+                        
+                    case ACTIONIP :
+                        this.triggerActionIP = Integer.parseInt ( data[1] );
+                        break;
+                        
+                    case ACTIONRANGE :
+                        this.triggerActionRange = Integer.parseInt ( data[1] );
+                        break;
+                }
+            }
+
+            if ( this.triggerWarnIP <= 0 ) 
+                printErrorAndExit ( "trigger->warnip" );
+            if ( this.triggerWarnRange <= 0 ) 
+                printErrorAndExit ( "trigger->warnrange" );
+            if ( this.triggerActionIP <= 0 ) 
+                printErrorAndExit ( "trigger->akillip" );
+            if ( this.triggerActionRange <= 0 ) 
+                printErrorAndExit ( "trigger->akillrange" );
+        
             /* SNOOP */
             String[] snoop = result.get("snoop").toString().replace("{","").replace("}","").split(",");            
             for ( String str : snoop ) {
@@ -613,6 +660,22 @@ public class Config extends HashNumeric {
             case FORCENICK :
                 return this.forcenick;
                 
+            /* TRIGGER */
+            case TRIGGERWARNIP :
+                return this.triggerWarnIP;
+
+            case TRIGGERWARNRANGE :
+                return this.triggerWarnRange;
+
+            case TRIGGERACTIONIP :
+                return this.triggerActionIP;
+
+            case TRIGGERACTIONRANGE :
+                return this.triggerActionRange;
+                
+            case TRIGGERACTION :
+                return this.triggerAction;
+                
             default : 
                 return -1;
                 
@@ -710,6 +773,9 @@ public class Config extends HashNumeric {
         switch ( command ) {
             case FORCEMODES :
                 return this.forcemodes;
+                
+            case TRIGGERWARN :
+                return this.triggerWarn;
                 
             default :
                 return false;

@@ -18,18 +18,12 @@
 package operserv;
 
 import core.Database;
-import core.Handler;
 import core.Proc;
 import java.sql.PreparedStatement;
-import nickserv.NickInfo;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import server.Server;
-import user.User;
 
 /**
  *
@@ -94,14 +88,17 @@ public class OSDatabase extends Database {
             return false;
         }
         try { 
+            ban.printData();
             String query = "insert into "+list+" ( id,mask,reason,instater,stamp,expire ) VALUES "
-                          +" ( ?, ?, ?, ?, now() , now() + "+ban.getExpire()+" ) ";
+                          +" ( ?, ?, ?, ?, ?, ? ) ";
             System.out.println(query);
             ps = sql.prepareStatement ( query );
-            ps.setLong     ( 1, ban.getID ( )  );
-            ps.setString   ( 2, ban.getMask ( )  );
-            ps.setString   ( 3, ban.getReason ( )  );
-            ps.setString   ( 4, ban.getInstater ( )  );
+            ps.setString ( 1, ban.getID ( ) );
+            ps.setString ( 2, ban.getMask ( ) );
+            ps.setString ( 3, ban.getReason ( ) );
+            ps.setString ( 4, ban.getInstater ( ) );
+            ps.setString ( 5, ban.getTime ( ) );
+            ps.setString ( 6, ban.getExpire ( ) );
             ps.execute ( );
             ps.close ( );
             idleUpdate ( "addAkill ( ) " );
@@ -175,7 +172,7 @@ public class OSDatabase extends Database {
             String query = "DELETE FROM "+list+" "+
                            "WHERE id = ?";
             ps = sql.prepareStatement ( query );
-            ps.setLong  ( 1, ban.getID ( )  );
+            ps.setString  ( 1, ban.getID ( )  );
             ps.execute ( );
             ps.close ( );
 
@@ -203,7 +200,7 @@ public class OSDatabase extends Database {
             res2 = ps.executeQuery ( );
  
             while ( res2.next ( )  )  {
-                banList.add ( new ServicesBan ( hash, res2.getLong ( "id" ), res2.getString ( "mask" ), 
+                banList.add ( new ServicesBan ( hash, res2.getString ( "id" ), true, res2.getString ( "mask" ), 
                                                 res2.getString ( "reason" ), res2.getString ( "instater" ), 
                                                 res2.getString ( "stamp" ), res2.getString ( "expire" ) ) );
             }
@@ -293,7 +290,7 @@ public class OSDatabase extends Database {
             ps.setInt ( 1, tID );
             res2 = ps.executeQuery ( );
             if ( res2.next ( ) ) {
-                ban = new ServicesBan ( banType, res2.getInt ( "id" ), res2.getString ( "mask" ), 
+                ban = new ServicesBan ( banType, res2.getString ( "id" ), true, res2.getString ( "mask" ), 
                                                  res2.getString ( "reason" ), res2.getString ( "instater" ), 
                                                  res2.getString ( "stamp" ), res2.getString ( "expire" ) );
             }
@@ -321,7 +318,7 @@ public class OSDatabase extends Database {
             res2 = ps.executeQuery ( );
 
             while ( res2.next ( )  )  {
-                banList.add ( new ServicesBan ( hash, res2.getInt ( "id" ), res2.getString ( "mask" ),
+                banList.add ( new ServicesBan ( hash, res2.getString ( "id" ), true, res2.getString ( "mask" ),
                                                 res2.getString ( "reason" ), res2.getString ( "instater" ),
                                                 res2.getString ( "stamp" ) , res2.getString ( "expire" )  )  );
             }

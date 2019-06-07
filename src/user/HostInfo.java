@@ -17,11 +17,6 @@
  */
 package user;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  *
  * @author fredde
@@ -33,32 +28,35 @@ public class HostInfo {
     private String host;
     private String realHost;
     private String ip;
+    private String range;
+    private int ipHash;
+    private int ipHash24;
+    private boolean isIPv4;
     
     public HostInfo ( long ip, String host )  {
-        this.ip         = this.intToIP ( ip );
-        this.host       = host;
-        this.realHost   = this.ipToHost ( );
-    }
-    
-    private String intToIP ( long bytes )  {
-        return String.format ( "%d.%d.%d.%d",   ( bytes >> 24 & 0xff ) ,  ( bytes >> 16 & 0xff ) ,  ( bytes >> 8 & 0xff ) ,  ( bytes & 0xff )  );
+        this.ip   = intToIP ( ip );
+        this.ipHash = this.ip.hashCode();
+        this.host = host;
+        if ( this.ip.contains(".") ) {
+            this.isIPv4 = true;
+            this.range = IPv4ToCidr24 ( this.ip );
+        } else {
+            this.isIPv4 = false;
+            this.range = IPv6ToCidr24 ( this.ip );
+        }
+        this.ipHash24 = this.range.hashCode();
     }
 
-    private String ipToHost ( )  {
-        String host = HostDatabase.getHost ( this.ip ) ;
-       
-        if ( host  == null ) {
-            try {
-                InetAddress a = InetAddress.getByName ( this.ip );
-                host = a.getHostName ( );
-               
-            } catch  ( UnknownHostException ex )  {
-                Logger.getLogger ( HostInfo.class.getName ( )  ) .log ( Level.SEVERE, null, ex );
-                host = this.ip;
-            }
-            HostDatabase.addHost ( this.ip, host );
-        } 
-        return host;
+    private static String IPv4ToCidr24 ( String ip ) {
+        return ip.substring(0,ip.lastIndexOf("."))+".*";
+    }
+
+    private static String IPv6ToCidr24 ( String ip ) {
+        return ip.substring(0,ip.lastIndexOf(":"))+":*";
+    }        
+
+    private static String intToIP ( long bytes )  {
+        return String.format ( "%d.%d.%d.%d",   ( bytes >> 24 & 0xff ) ,  ( bytes >> 16 & 0xff ) ,  ( bytes >> 8 & 0xff ) ,  ( bytes & 0xff )  );
     }
     
     public String getHost ( ) { 
@@ -68,8 +66,25 @@ public class HostInfo {
     public String getIp ( ) { 
         return this.ip;
     }
+    public String getRange ( ) { 
+        return this.range;
+    }
+    public int getIpHash ( ) { 
+        return this.ipHash;
+    }
+    public int getRangeHash ( ) { 
+        return this.ipHash24;
+    }
     
     public String getRealHost ( ) { 
         return this.realHost;
     }
+    
+    public boolean ipMatch ( int hash ) {
+        return this.ipHash == hash;
+    }
+    public boolean rangeMatch ( int hash ) {
+        return this.ipHash24 == hash;
+    }
+    
 }

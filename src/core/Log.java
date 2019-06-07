@@ -39,7 +39,7 @@ public class Log extends HashNumeric {
     
     public Log ( )  {
         this.seconds        =  ( long )  ( System.currentTimeMillis ( ) /1000 );
-        this.dateFormat     = new SimpleDateFormat ( "yyyy MM/dd hh:mm:ss zzz" );
+        this.dateFormat     = new SimpleDateFormat ( "yyyy MM/dd HH:mm:ss zzz" );
         this.connect ( );
     }
     

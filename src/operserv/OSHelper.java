@@ -159,14 +159,15 @@ class OSHelper extends Helper {
     public void akill ( User user )  { 
         this.showStart ( user, "AKill" );
         this.service.sendMsg ( user, "   "                                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ AKILL <ADD|TIME|DEL|LIST> [<20m|12h|7d>] <user@mask> <REASON>"+f.b ( ) +""   );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ AKILL <ADD|TIME|DEL|LIST> <minutes> <nick!user@host> <REASON>"+f.b ( ) +""   );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"    Ex: /OperServ AKILL ADD 180 *!*@1.2.3.4 Flooding is not permitted"+f.b ( )+""              );
         this.service.sendMsg ( user, "   "                                                                                                          );
-        this.service.sendMsg ( user, "   AKill is a powerful command and allows services admins to remove unwanted"                                 );
-        this.service.sendMsg ( user, "   clients from the network. You are unable to lay akills that matches opers"                                 );
+        this.service.sendMsg ( user, "   AKill is a powerful command and allow staff remove unwanted clients from"                                  );
+        this.service.sendMsg ( user, "   the network. You are unable to place akills that matches opers or white listed"                            );
+        this.service.sendMsg ( user, "   ips. Note that nick is passed using the command but the field is never used."                                                                                                      );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
-        this.service.sendMsg ( user, "   Rather place timed akills to let services have a smaller better maintained database"                       );
-        this.service.sendMsg ( user, "   of current akilled hosts."                                                                                 );
+        this.service.sendMsg ( user, "   Place akills based on ip as the ircd's will use less resources on ips"                                     );
         this.showEnd ( user );
     }
     

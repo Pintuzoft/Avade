@@ -38,12 +38,8 @@ public class User extends HashNumeric {
     private int                         hashName;           /* integer representation of nickname */
     private int                         hashMask;           /* integer representation of user@host */
     private String                      user;
-//    private String                    host;
     private String                      realName;
-//    private String                    realHost;
-//    private String                    ip;
     private Server                      server;
- //   private Oper                        oper; 
     private long                        signOn;
     private Date                        date;
     private int                         state; 
@@ -53,26 +49,22 @@ public class User extends HashNumeric {
     private HostInfo                    hi;
     
     private UserFlood                   flood;
-     
-    /* STATIC */
-    //public static Comparator<User>      comparator =  ( User u1, User u2 )  -> { return u1.hashCode ( )  - u2.hashCode ( ); };
-    
+        
     public User ( String[] data )  {
         // NICK NickServ 1 1320454528 + service sshd.biz services.sshd.biz 0 1320454528 :NickServ Services
         // 0    1        2 3          4 5       6        7                 8 9          9         10
         long sidBuf;
         this.name       = data[1];
-        this.hashName   = this.name.toUpperCase ( ) .hashCode ( );
+        this.hashName   = this.name.toUpperCase().hashCode ( );
         this.user       = data[5]; 
-        this.hi         = new HostInfo ( Long.parseLong ( data[9] ) ,data[6] ); 
-       // this.host       = data[6];
-        this.hashMask   =  ( this.user+"@"+this.getHost ( )  ) .toUpperCase ( ) .hashCode ( ); 
+        this.hi         = new HostInfo ( Long.parseLong ( data[9] ), data[6] ); 
+        
+        this.hashMask   =  ( this.user+"@"+this.getHost ( ) ).toUpperCase().hashCode ( ); 
         this.server     = Handler.findServer ( data[7] );
         this.date       = new Date ( );
         this.state      = 0; 
         sidBuf          = Long.parseLong ( data[8] ); /* buffer */ 
         this.signOn     = Long.parseLong ( data[3] ); 
-    //    this.oper       = new Oper ( ); /* Create oper object with user access */
         this.modes      = new UserMode ( );
         this.modes.set ( SERVER, data );
         this.cList      = new ArrayList<> ( );
@@ -88,29 +80,7 @@ public class User extends HashNumeric {
                 this.realName += " "+data[index];
             }
         }
-      
-        //this.ip         = this.intToIP ( Long.parseLong ( data[9] )  );
-        
-        //this.realHost   = this.ipToHost ( );
-        
-/*        if ( sidBuf > 999 )  {
-            this.sid = Handler.findSid ( sidBuf );
-            if ( this.sid == null )  {
-                this.sid = new ServicesID ( sidBuf );
-            }
-        } else {
-            this.sid = new ServicesID ( );
-        }
-  */       
         this.flood = new UserFlood ( this );
-        /* identify user if +r is set */
-/*        if ( this.modes.is ( IDENT )  )  {
-            NickInfo ni = NickServ.findNick ( this.name );
-            this.sid.addUser ( this );
-            this.sid.add ( ni );
-        } */
-    //    this.sid.printSID();
-       
     }
 
     public User ( int code )  {
@@ -154,8 +124,18 @@ public class User extends HashNumeric {
     public String getHost ( ) { 
         return this.hi.getHost ( );
     }
+    public HostInfo getHostInfo ( ) { 
+        return this.hi;
+    }
+       
+    public boolean ipMatch ( int ipHash ) { 
+        return this.hi.ipMatch ( ipHash );
+    }
+    public boolean rangeMatch ( int ipHash ) { 
+        return this.hi.rangeMatch ( ipHash );
+    }
     
-    private String getIp ( ) { 
+    public String getIp ( ) { 
         return this.hi.getIp ( );
     }
     

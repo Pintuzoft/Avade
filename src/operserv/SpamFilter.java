@@ -8,8 +8,11 @@ package operserv;
 import core.Handler;
 import core.HashNumeric;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -24,6 +27,7 @@ public class SpamFilter extends HashNumeric {
     private String reason;
     private String stamp;
     private String expire;
+    private long expireStamp;
     private int bits;
     public static final int SF_FLAG_NONE        = 000000;
     public static final int SF_FLAG_STRIPCTRL   = 0x0001;
@@ -45,7 +49,7 @@ public class SpamFilter extends HashNumeric {
     public static final int SF_ACT_BLOCK        = 0x8000;
     public static final int SF_ACT_KILL         = 0x10000;
     public static final int SF_ACT_AKILL        = 0x40000;
-    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss"); 
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
     public SpamFilter ( long id, String pattern, String flags, String instater, String reason, String stamp, String expire ) {
         this.id = id;
@@ -64,7 +68,14 @@ public class SpamFilter extends HashNumeric {
         } else {
             this.stamp = stamp;
             this.expire = expire;
+            
         }
+        try {
+            this.expireStamp = dateFormat.parse(this.expire).getTime();
+        } catch (ParseException ex) {
+            Logger.getLogger(SpamFilter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.out.println("expireStamp: "+this.stamp+":"+this.expireStamp);
         this.flagsToBits();
     }
     
@@ -201,6 +212,11 @@ public class SpamFilter extends HashNumeric {
                     /* Unknown flag */
             }
         }
+    }
+
+    public boolean hasExpired ( ) {
+        System.out.println(this.expireStamp+":"+System.currentTimeMillis());
+        return this.expireStamp < System.currentTimeMillis();
     }
     
 }

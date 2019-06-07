@@ -18,7 +18,6 @@
 package operserv;
 
 import nickserv.*;
-import user.User;
 
 /**
  *
@@ -31,9 +30,10 @@ public class CmdData {
     private String          str2;
     private String          str3;
     private String          str4;
-    private int command;
-    private int sub;
-    private int sub2;
+    private int             command;
+    private int             sub;
+    private int             sub2;
+    private ServicesBan     ban;
 
     public CmdData ( )  {
         this.nick       = null;
@@ -108,6 +108,14 @@ public class CmdData {
 
     public void setSub2 ( int sub2 ) {
         this.sub2 = sub2;
+    }
+       
+    public ServicesBan getServicesBan ( ) {
+        return this.ban;
+    }
+
+    public void setServicesBan ( ServicesBan ban ) {
+        this.ban = ban;
     }
     
 }

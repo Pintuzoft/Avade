@@ -31,6 +31,7 @@ import memoserv.MemoServ;
 import chanserv.ChanServ;
 import command.Queue;
 import guestserv.GuestServ;
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import nickserv.NickInfo;
@@ -42,7 +43,9 @@ import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import operserv.ServicesBan;
 
 /**
  *
@@ -60,6 +63,7 @@ public class Handler extends HashNumeric {
     private Services                        services;
     private Snoop                           snoop;
     private Config                          config; 
+    private Trigger                         trigger;
     private static ArrayList<User>          uList = new ArrayList<>();
     private static ArrayList<ServicesID>    splitSIDs = new ArrayList<>();
     private static ArrayList<ServicesID>    updServicesID = new ArrayList<>();
@@ -74,19 +78,20 @@ public class Handler extends HashNumeric {
     private static SimpleTimeZone           timeZone;
     private static Locale                   locale;
     private static SimpleDateFormat         sdf;
-  //  private Config conf;
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
     /* Maintenance Delays */
     private final static int DB_DELAY = 1; /* Delay in minutes */
     private long                            dbDelay; 
     private String                          buf; 
     private Queue                           cmdQueue;
-    private static boolean                         sanity;
+    private static boolean                  sanity;
     
     public Handler ( )  { 
         this.config = Proc.getConf ( );
         db              = new Database ( );
         Handler.initServices ( );
+        this.trigger    = new Trigger ( );
         this.services   = new Services ( );
         date            = new Date ( );
         timeZone        = new SimpleTimeZone ( 0, "GMT" );
@@ -308,6 +313,10 @@ public class Handler extends HashNumeric {
                         case NICK :
                             this.doNick ( );
                             break;
+                                  
+                        case SF :
+                            this.doSF ( );
+                            break;
                             
                         case ERROR :
                             this.doError ( );
@@ -395,7 +404,14 @@ public class Handler extends HashNumeric {
         }
         
     }
-        
+      
+    private void doSF ( ) {
+        // SF *hello*hello*hello* 315441 :test
+        if ( ! oper.isSpamFiltered ( data[1] ) ) {
+            oper.sendServ ( "SF "+data[1]+" 0" );
+        }
+    }
+    
     private void doSquit ( )  {
         Server s = findServer ( this.data[1] );
         if ( s != null )  {
@@ -467,7 +483,117 @@ public class Handler extends HashNumeric {
 //        NickInfo ni;
   //      if ( () == null ) {
     //    }
+        checkTrigger ( u );
         this.oper.checkUser ( u ); /* Add user in OperServ check queue (akills etc) */
+    }
+    
+    private static void checkTrigger ( User user ) {
+        int ipCount = 0;
+        int rangeCount = 0;
+        for ( User u : uList ) {
+            if ( u.ipMatch ( user.getHostInfo().getIpHash() ) ) {
+                ++ipCount;
+            } 
+            if ( u.rangeMatch ( user.getHostInfo().getRangeHash() ) ) {
+                ++rangeCount;
+            }
+        }
+        String reason;
+        switch ( Trigger.getAction() ) {
+            case AKILL :
+                String stamp = dateFormat.format ( new Date ( ) );
+                String percent;
+                boolean foundOperMatch = false;
+                String expire = Handler.expireToDateString ( stamp, "30m" );
+                if ( ipCount > Trigger.getActionIP() ) {
+                    reason = "Cloning. Too many clients found from this IP. 30 min ban.";
+                    ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
+                    percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
+                    if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
+                        Handler.getOperServ().addServicesBan ( ban );
+                        Handler.getOperServ().sendServicesBan ( ban );
+                        oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
+                    }
+                } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
+                    if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
+                         ipCount % 10 == 0 ) {
+                        oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
+                    }
+                }
+                if ( ipCount > Trigger.getActionRange() ) {
+                    reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
+                    ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
+                    percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
+                    if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
+                        Handler.getOperServ().addServicesBan ( ban );
+                        Handler.getOperServ().sendServicesBan ( ban );
+                        oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
+                    }
+                } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
+                    if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
+                         ipCount % 10 == 0 ) {
+                        oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
+                    }
+                }
+                break;
+            
+            case KILL :
+                if ( ipCount > Trigger.getActionIP() ) {
+                    reason = "Cloning. Too many clients found from this IP.";
+                    oper.sendGlobOp ( "KILL: "+user.getFullMask()+" for cloning." );
+                    oper.sendRaw ( "KILL "+user.getName()+" :"+reason );
+                    Handler.deleteUser ( user );
+                }
+                break;
+                
+            default:
+                
+        }
+        
+        
+        
+
+  /*      if ( Trigger.getAction() == AKILL && ipCount > Trigger.getActionIP() ) {
+                String stamp = dateFormat.format ( new Date ( ) );
+                String reason = "Cloning. Too many clients found from this IP. 30 min ban.";
+                String percent;
+                boolean foundOperMatch = false;
+                String expire = Handler.expireToDateString ( stamp, "30m" );
+                ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
+                percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
+                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
+                    Handler.getOperServ().addServicesBan ( ban );
+                    Handler.getOperServ().sendServicesBan ( ban );
+                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
+                }
+        } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
+            if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
+                 ipCount % 10 == 0 ) {
+                oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
+            }
+        }
+        
+        if ( Trigger.getAction() == AKILL && rangeCount > Trigger.getActionRange()) {
+                String stamp = dateFormat.format ( new Date ( ) );
+                String reason = "Cloning. Too many clients found from this IPRANGE. 30 min ban.";
+                String percent;
+                boolean foundOperMatch = false;
+                String expire = Handler.expireToDateString ( stamp, "30m" );
+                ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getHostInfo().getRange(), reason, "OperServ", null, expire );
+                percent = String.format("%.02f", (float) rangeCount / Handler.getUserList().size() * 100 );
+                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
+                    Handler.getOperServ().addServicesBan ( ban );
+                    Handler.getOperServ().sendServicesBan ( ban );
+                    oper.sendGlobOp ( "AKILL: *!*@"+user.getHostInfo().getRange()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
+                }
+        } else if ( rangeCount > Trigger.getWarnRange() ) {
+            if ( rangeCount == ( Trigger.getWarnRange() + 1 ) ||
+                 rangeCount % 10 == 0 ) {
+                oper.sendGlobOp ( "Warning! possible clones: "+rangeCount+" clients from range: *!*@"+user.getHostInfo().getRange() );
+            }
+        }
+    */    
+        
     }
     
     
@@ -579,8 +705,11 @@ public class Handler extends HashNumeric {
     }
 
     /* Take array and cut it into string starting at position. Good for 
-       111reading in reasons, comments, messages */
+       reading in reasons, comments, messages */
     public static String cutArrayIntoString ( String[] data, int pos ) {
+        if ( data == null || data.length < pos ) {
+            return null;
+        }
         String buf = String.join ( " ", data );
         String[] arr = buf.split ( " ", pos+1 );
         return arr[pos];
@@ -931,14 +1060,34 @@ public class Handler extends HashNumeric {
     public static ArrayList<User> findUsersByMask ( String mask )  {
         ArrayList<User> ul = new ArrayList<> ( );
         for ( User user : uList )  {
-            if ( StringMatch.maskWild ( user.getString ( USER ) +"@"+user.getString ( HOST ) , mask )         ||
-                 StringMatch.maskWild ( user.getString ( USER ) +"@"+user.getString ( REALHOST ) , mask )     ||
-                 StringMatch.maskWild ( user.getString ( USER ) +"@"+user.getString ( IP ) , mask )  )  {
+            if ( StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask )         ||
+                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask )     ||
+                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask )  )  {
                  ul.add ( user );
             }  
         } 
         return ul;        
     }
+    
+    
+    public static ArrayList<User> findUsersByBan ( ServicesBan ban ) {
+        ArrayList<User> ul = new ArrayList<>();
+        if ( ban.getCidr() == null ) {
+            ul = findUsersByMask ( ban.getMask() );
+        } else {
+            for ( User u : uList ) {
+                try {
+                    if ( ban.getCidr().isInRange ( u.getIp() ) ) {
+                        ul.add ( u );
+                    }
+                } catch (UnknownHostException ex) {
+                    Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+        return ul;
+    }
+
     
    
     public static ArrayList<User> findUsersByNick ( String nick ) {
@@ -1004,49 +1153,58 @@ public class Handler extends HashNumeric {
         return  "INTERVAL "+( amount * multiply )+" "+timeUnit;
     }
  
-    public static String expireToDateString ( String datetime, String data ) {
+    public static Date expireToDate ( Date date, String data ) {
         String strBuf;
-        String state;
         int ms = 0;
         int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        Date date = null;
-        try {
-            System.out.println("expireToDateString: "+datetime);
-            date = dateFormat.parse ( datetime );
-        } catch (ParseException ex) {
-            Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
+        System.out.println("debug(0): datetime:"+dateFormat.format(date)+", data:"+data);
+ 
+        if ( data == null ) {
+            data = "30";
+
+        } else if ( data.contains("-") ) {
+            try {
+                date = dateFormat.parse ( data );
+            } catch ( ParseException ex ) {
+                Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
+                return null;
+            }
+            return date;
         }
         
         strBuf = data.substring ( 0, data.length ( ) - 1 );
-        
         try {
-            amount = Integer.parseInt ( strBuf );
+            amount = Integer.parseInt ( strBuf );            
         } catch ( NumberFormatException ex ) {
-            return "";
+            return null;
+        }
+       
+        System.out.println("debug: amount:"+amount+", ms:"+ms);
+        date.setTime ( date.getTime() + ( amount*ms ) );
+        return date;
+    }
+    
+    public static String expireToDateString ( String datetime, String data ) {
+        String strBuf;
+        int ms = 60*1000;
+        int amount;
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        System.out.println("debug(1): datetime:"+datetime+", data:"+data);
+
+        Date date;
+        try {
+            date = dateFormat.parse ( datetime );
+            amount = Integer.parseInt ( data );            
+        } catch ( NumberFormatException | ParseException ex ) {
+            Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
         }
         
-        state = String.valueOf ( data.charAt ( data.length ( ) - 1 ) );
-        switch ( state.toUpperCase().hashCode() ) {
-            case CHAR_m : 
-                ms = 60*1000;
-                break;
-                
-            case CHAR_h : 
-                ms = 60*60*1000;
-                break;
-                
-            case CHAR_d : 
-                ms = 60*60*24*1000;
-                break;
-                         
-            case CHAR_y : 
-                ms = 60*60*24*365*1000;
-                break;
-                 
-        }
-        date.setTime ( date.getTime() + ms );
+        System.out.println("debug: amount:"+amount+", ms:"+ms);
+        date.setTime ( date.getTime() + ( amount*ms ) );
         return dateFormat.format ( date );
     }
     
@@ -1148,4 +1306,5 @@ public class Handler extends HashNumeric {
     public static ArrayList<Chan> getChanList ( ) {
         return cList;
     }
+ 
 }
