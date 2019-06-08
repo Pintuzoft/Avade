@@ -168,6 +168,8 @@ public abstract class HashNumeric extends TextFormat {
     public static final int SFAKILL                     = -1580229460;
     public static final int BAHAMUT                     = 375102260;
     public static final int STOP                        = 2555906;
+    public static final int PRIMARY                     = 403216866;
+    public static final int SECONDARY                   = 1968996692;
     
     
     /* ROOTSERV */

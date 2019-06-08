@@ -425,9 +425,9 @@ public class OSDatabase extends Database {
         return sList;
     }
      
-    static boolean delServer ( String name ) {
+    static boolean delServer ( NetServer server ) {
         boolean deleted;
-        if ( ! activateConnection ( ) || ! serverExistInList ( name ) ) {
+        if ( ! activateConnection ( ) || ! serverExistInList ( server.getName() ) ) {
             return false;
         }
          
@@ -435,7 +435,7 @@ public class OSDatabase extends Database {
                        "where name = ?";
         try {
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, name );
+            ps.setString ( 1, server.getName() );
             ps.execute ( );
             res2.close ( );
             ps.close ( );
@@ -449,7 +449,7 @@ public class OSDatabase extends Database {
         return deleted;
     }
 
-    public static boolean addServer ( String name ) {
+    public static boolean addServer ( NetServer server ) {
         if ( ! activateConnection ( ) ) {
             return false;
         }
@@ -459,8 +459,8 @@ public class OSDatabase extends Database {
                        "on duplicate key update name = ?";
         try {
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, name );
-            ps.setString ( 2, name );
+            ps.setString ( 1, server.getName() );
+            ps.setString ( 2, server.getName() );
             ps.execute();
 
             res2.close ( );
@@ -472,6 +472,33 @@ public class OSDatabase extends Database {
             return false;
         }
     }
+    
+    static boolean updServer ( NetServer server ) {
+        if ( ! activateConnection ( ) ) {
+            return false;
+        }
+        String query = "update server "+
+                       "set primaryhub = ?,secondaryhub = ? "+
+                       "where name = ?";
+    
+        try {
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, server.getPrimary() );
+            ps.setString ( 2, server.getSecondary() );
+            ps.setString ( 3, server.getName() );
+            ps.execute();
+
+            res2.close ( );
+            ps.close ( );
+            return true;
+            
+        } catch ( SQLException ex ) {
+//            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+    }
+ 
+    
     
     static boolean serverExistInList ( String name ) {
         boolean found;
@@ -799,6 +826,6 @@ public class OSDatabase extends Database {
     static public void delLogEvent ( int id ) {
         Database.delLogEvent( "operlog", id );
     }
- 
+
  
 }

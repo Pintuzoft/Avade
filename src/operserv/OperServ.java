@@ -49,8 +49,9 @@ public class OperServ extends Service {
     private static ArrayList<ServicesBan> addLogServicesBans = new ArrayList<>(); /* Add new services bans logs */
 
     private static ArrayList<NetServer> servers = new ArrayList<> ( );   /* Server list */
-    private static ArrayList<NetServer> remServers = new ArrayList<> ( );   /* Remove Server list */
-    private static ArrayList<NetServer> addServers = new ArrayList<> ( );   /* Add Server list */
+    private static ArrayList<NetServer> remServers = new ArrayList<> ( );   /* Remove Server from list */
+    private static ArrayList<NetServer> addServers = new ArrayList<> ( );   /* Add Server into list */
+    private static ArrayList<NetServer> updServers = new ArrayList<> ( );   /* Update Server in list */
     private static ArrayList<SpamFilter> addSpamFilters = new ArrayList<>(); /* Add new spamfilters */
     private static ArrayList<SpamFilter> remSpamFilters = new ArrayList<>(); /* Remove spamfilters */
       
@@ -90,7 +91,7 @@ public class OperServ extends Service {
         sglines         = OSDatabase.getServicesBans ( SGLINE );
         spamfilters     = OSDatabase.getSpamFilters ( );
         staff           = OSDatabase.getAllStaff ( );
-        servers           = OSDatabase.getServerList ( );
+        servers         = OSDatabase.getServerList ( );
         setCommands ( );
     }
 
@@ -152,6 +153,7 @@ public class OperServ extends Service {
         this.checkUserList ( );
         todoAmount += this.checkAddServers ( );
         todoAmount += this.checkRemServers ( );
+        todoAmount += this.checkUpdServers ( );
         todoAmount += this.checkAddServicesBans ( );
         todoAmount += this.checkRemServicesBans ( );
         todoAmount += this.checkAddSpamFilters ( );
@@ -255,7 +257,7 @@ public class OperServ extends Service {
         }
         ArrayList<NetServer> sList = new ArrayList<>();
         for ( NetServer server : remServers ) {
-            if ( OSDatabase.delServer ( server.getName() ) ) {
+            if ( OSDatabase.delServer ( server ) ) {
                 sList.add ( server );
             }
         }
@@ -271,7 +273,7 @@ public class OperServ extends Service {
         }
         ArrayList<NetServer> sList = new ArrayList<>();
         for ( NetServer server : addServers ) {
-            if ( OSDatabase.addServer ( server.getName() ) ) {
+            if ( OSDatabase.addServer ( server ) ) {
                 sList.add ( server );
             }
         }
@@ -279,6 +281,22 @@ public class OperServ extends Service {
             addServers.remove ( server );
         }
         return addServers.size();
+    }
+
+    public int checkUpdServers ( ) {
+        if ( updServers.isEmpty() || ! OSDatabase.checkConn() ) {
+            return updServers.size();
+        }
+        ArrayList<NetServer> sList = new ArrayList<>();
+        for ( NetServer server : updServers ) {
+            if ( OSDatabase.updServer ( server ) ) {
+                sList.add ( server );
+            }
+        }
+        for ( NetServer server : sList ) {
+            updServers.remove ( server );
+        }
+        return updServers.size();
     }
     
     public int checkAddStaff ( ) {
@@ -818,11 +836,16 @@ public class OperServ extends Service {
         return false;
     }
 
-    /**
-     *
-     * @param type
-     * @return
-     */
+    public static NetServer getServer ( String name ) {
+        int hash = name.toUpperCase().hashCode();
+        for ( NetServer server : servers ) {
+            if ( server.getHashCode() == hash ) {
+                return server;
+            }
+        }
+        return null;
+    }
+    
     public static ArrayList<NetServer> getServers ( int type, boolean missing ) {
         ArrayList<NetServer> sList = new ArrayList<>();
         int pHash;
@@ -903,7 +926,9 @@ public class OperServ extends Service {
         NetServer server = new NetServer ( name, null, null );
         addServers.add ( server );
     }
-    
+    public static void addUpdServer ( NetServer server ) {
+        updServers.add ( server );
+    }
     
     public static ArrayList<Oper> getStaffPlus ( int hash ) {
         ArrayList<Oper> oList = new ArrayList<> ( );

@@ -34,6 +34,7 @@ public class CmdData {
     private int             sub;
     private int             sub2;
     private ServicesBan     ban;
+    private NetServer       server1;
 
     public CmdData ( )  {
         this.nick       = null;
@@ -117,5 +118,12 @@ public class CmdData {
     public void setServicesBan ( ServicesBan ban ) {
         this.ban = ban;
     }
+
+    public void setServer ( NetServer server ) {
+        this.server1 = server;
+    }
     
+    public NetServer getServer ( ) {
+        return this.server1;
+    }
 }

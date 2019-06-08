@@ -640,60 +640,7 @@ public class OSExecutor extends Executor {
         this.service.sendMsg (user, "Server "+name+" has been Jupitered." );
     }
     
-    private void doServer(User user, String[] cmd) {
-        // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <DEL> <SERVERNAME> 
-        //            0       1                          2       3     4            5     < 7
-        if ( cmd.length < 5 ) {
-            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SERVER <DEL|MISSING|LIST> [<servername>]" ) );
-            return;
-        }  
-        
-        ArrayList<NetServer> sList;
-        
-        switch ( cmd[4].toUpperCase().hashCode() ) {
-            case LIST :
-                this.service.sendMsg ( user, "*** Server List:");
-                this.service.sendMsg ( user, "  Hub(s):");
-                for ( NetServer server : OperServ.getServers ( HUB, false ) ) {
-                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
-                }
-                this.service.sendMsg ( user, "  Leaf(s):");
-                for ( NetServer server : OperServ.getServers ( LEAF, false ) ) {
-                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
-                }
-                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
-                this.service.sendMsg ( user, "*** End of List ***");
-                break;
-                
-            case DEL :
-                if ( cmd.length == 6 && OperServ.addDelServer ( cmd[5] ) ) {
-                    this.service.sendMsg ( user, "Server "+cmd[5]+" was successfully removed from list.");
-                } else {
-                    this.service.sendMsg ( user, "Error: Server "+cmd[5]+" was not removed from list.");
-                }
-                break;
-                
-            case MISSING :
-                this.service.sendMsg ( user, "*** Missing Servers:");
-                this.service.sendMsg ( user, "  Hub(s):");
-                for ( NetServer server : OperServ.getServers ( HUB, true ) ) {
-                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
-                }
-                this.service.sendMsg ( user, "  Leaf(s):");
-                for ( NetServer server : OperServ.getServers ( LEAF, true ) ) {
-                    this.service.sendMsg ( user, "    "+server.getName ( )+" -> P:"+server.getPrimary()+" S:"+server.getSecondary() );
-                }
-                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
-                this.service.sendMsg ( user, "*** End of List ***");
-                break;
-                
-            default :
-                this.service.sendMsg ( user, "Error: unknown command");
-                break;
 
-        }
-    }
-    
     private void doStaff ( User user, String[] cmd ) {
                 
         CmdData cmdData = this.validateCommandData ( user, STAFF, cmd );
@@ -868,7 +815,8 @@ public class OSExecutor extends Executor {
         }
         
     }
-      private void forcenick ( User user, String[] cmd ) {
+
+    private void forcenick ( User user, String[] cmd ) {
                
         CmdData cmdData = this.validateCommandData ( user, FORCENICK, cmd );
         switch ( cmdData.getStatus ( ) ) {
@@ -923,6 +871,96 @@ public class OSExecutor extends Executor {
         u.setName(newNick);
     }
       
+          
+    private void doServer(User user, String[] cmd) {
+        // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <DEL> <SERVERNAME> 
+        // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <SET> <SERVERNAME> <PRIMARY> <SERVERNAME> 
+        //            0       1                          2       3     4            5         6            7    < 9 
+        CmdData cmdData = this.validateCommandData ( user, SERVER, cmd );
+        
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SERVER <LIST|MISSING|SET|DEL|> [<servername>] [<PRIMARY|SECONDARY>] [<servername>]" ) );
+                return;           
+            
+            case SYNTAX_ERROR_DEL :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR_DEL, "SERVER DEL <servername>" ) );
+                return;
+                              
+            case SYNTAX_ERROR_SET :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR_SET, "SERVER SET <servername> <PRIMARY|SECONDARY> <servername>" ) );
+                return;
+                       
+            case NO_SUCH_SERVER :
+                this.service.sendMsg ( user, output ( NO_SUCH_SERVER, cmdData.getString1() ) );
+                return;
+        }
+        
+        
+        ArrayList<NetServer> sList;
+        
+        int sub = cmdData.getStatus ( );
+        
+        switch ( sub ) {
+            case LIST :
+                this.service.sendMsg ( user, "*** Server List:");
+                this.service.sendMsg ( user, "  Hub(s):");
+                for ( NetServer server : OperServ.getServers ( HUB, false ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
+                }
+                this.service.sendMsg ( user, "  Leaf(s):");
+                for ( NetServer server : OperServ.getServers ( LEAF, false ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
+                }
+ //               this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
+                this.service.sendMsg ( user, "*** End of List ***");
+                break;
+                
+            case DEL :
+                if ( cmd.length == 6 && OperServ.addDelServer ( cmdData.getString1() ) ) {
+                    this.service.sendMsg ( user, "Server "+cmd[5]+" was successfully removed from list.");
+                } else {
+                    this.service.sendMsg ( user, "Error: Server "+cmd[5]+" was not removed from list.");
+                }
+                break;
+                
+            case MISSING :
+                this.service.sendMsg ( user, "*** Missing Servers:");
+                this.service.sendMsg ( user, "  Hub(s):");
+                for ( NetServer server : OperServ.getServers ( HUB, true ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
+                }
+                this.service.sendMsg ( user, "  Leaf(s):");
+                for ( NetServer server : OperServ.getServers ( LEAF, true ) ) {
+                    this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
+                }
+//                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
+                this.service.sendMsg ( user, "*** End of List ***");
+                break;
+                
+            case SET :
+                NetServer server = cmdData.getServer();
+                String name = cmdData.getString1();
+                int sub2 = cmdData.getSub2();
+                if ( sub2 == PRIMARY ) {
+                    server.setPrimary ( name );
+                    OperServ.addUpdServer ( server );
+                    this.service.sendMsg ( user, "Primary server info for server: "+server.getName()+" has now been set to: "+server.getPrimary() );
+
+                } else if ( sub2 == SECONDARY ) {
+                    server.setSecondary ( name );
+                    OperServ.addUpdServer ( server );
+                    this.service.sendMsg ( user, "Secondary server info for server: "+server.getName()+" has now been set to: "+server.getSecondary() );
+                }
+                break;
+                
+            default :
+                this.service.sendMsg ( user, "Error: unknown command");
+                break;
+
+        }
+    }
+
      
       
     /*
@@ -995,7 +1033,9 @@ public class OSExecutor extends Executor {
         NickInfo oper;
         NickInfo ni;
         int sub;
-        int sub2;
+        int sub2 = 0;
+        int sub3;
+        int sub4;
         int flag;
         String time;
         String text;
@@ -1003,6 +1043,8 @@ public class OSExecutor extends Executor {
         String reason;
         String expire;
         ServicesBan ban = null;
+        NetServer server1 = null;
+        NetServer server2;
         
         switch ( command )  {
             
@@ -1196,6 +1238,52 @@ public class OSExecutor extends Executor {
                 }
                 break;
                 
+            case SERVER :
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER list                             = 5
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER  del  server                     = 6
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER  set  server  primary  server
+                //  0           1       2                           3         4       5        6       7    = 8
+                if ( isShorterThanLen( 5, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( sub = cmd[4].toUpperCase().hashCode() ) == 0 || 
+                            ( sub != LIST && sub != DEL && sub != SET && sub != MISSING ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );                
+                } else if ( sub == DEL && isShorterThanLen( 6, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR_DEL );                    
+                } else if ( sub == DEL && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
+                    cmdData.setString1 ( cmd[5] );
+                    cmdData.setStatus ( NO_SUCH_SERVER );                    
+                } else if ( sub == DEL ) {
+                    cmdData.setServer ( server1 );
+                    cmdData.setStatus ( DEL );
+                } else if ( sub == SET && isShorterThanLen( 8, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR_SET );                    
+                } else if ( sub == SET && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
+                    cmdData.setString1 ( cmd[5] );
+                    cmdData.setStatus ( NO_SUCH_SERVER );                    
+                } else if ( sub == SET && 
+                            ( ( sub2 = cmd[6].toUpperCase().hashCode() ) == 0 || 
+                                sub2 != PRIMARY && sub2 != SECONDARY ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR_SET );                    
+                } else {
+                    cmdData.setStatus ( sub );
+                    switch ( sub ) {
+                        case LIST :
+                        case MISSING :
+                            break;
+                        case DEL :
+                            cmdData.setServer ( server1 );
+                            break;
+                        case SET :
+                            cmdData.setServer ( server1 );
+                            cmdData.setSub2 ( sub2 );
+                            cmdData.setString1 ( cmd[7] );
+                            break;
+                        default :
+                    }
+                }
+                break;
+                
             default :
                 
         }
@@ -1203,6 +1291,9 @@ public class OSExecutor extends Executor {
         return cmdData;
     }
  
+    
+    
+    
     /* Send b message to all users identified to specific nickname */
     private void msgUsersByNick ( NickInfo ni, String msg )  {
         for ( User user : Handler.findUsersByNick ( ni )  )  {
@@ -1214,6 +1305,15 @@ public class OSExecutor extends Executor {
         switch ( code )  {
             case SYNTAX_ERROR :
                 return "Syntax: /OperServ "+args[0];
+                            
+            case SYNTAX_ERROR_DEL :
+                return "Syntax: /OperServ "+args[0];
+                            
+            case SYNTAX_ERROR_SET :
+                return "Syntax: /OperServ "+args[0];
+                   
+            case NO_SUCH_SERVER :
+                return "Error: server not found: "+args[0];
                    
             case SUB_SYNTAX_ERROR :
                 return "Sub-commands available: "+args[0];
@@ -1342,8 +1442,8 @@ public class OSExecutor extends Executor {
     }
 
     private static final int SYNTAX_ERROR           = 1001;
-    private static final int ACCESS_DENIED          = 1002;
-    private static final int NOT_ENOUGH_ACCESS      = 1003;
+    private static final int ACCESS_DENIED          = 1003;
+    private static final int NOT_ENOUGH_ACCESS      = 1004;
     private static final int BAN_ADD                = 1011;
     private static final int BAN_ADD_GLOB           = 1012;
     private static final int BAN_EXIST              = 1013;
@@ -1400,5 +1500,8 @@ public class OSExecutor extends Executor {
     private static final int SYNTAX_ERROR_ADD       = 3302;
     private static final int SYNTAX_ERROR_INFO      = 3303;
     private static final int SYNTAX_ERROR_LIST      = 3304;
+    private static final int SYNTAX_ERROR_SET       = 3305;
+
+    private static final int NO_SUCH_SERVER         = 3321;
 
 }

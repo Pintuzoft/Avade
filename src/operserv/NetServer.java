@@ -29,11 +29,19 @@ class NetServer {
     public String getPrimary() {
         return primary;
     }
-
+    
+    public void setPrimary ( String str ) {
+        this.primary = str;
+    }
+    
     public String getSecondary() {
         return secondary;
     }
-
+    
+    public void setSecondary ( String str ) {
+        this.secondary = str;
+    }
+    
     public int getHashCode ( ) {
         return this.hashCode;
     }
