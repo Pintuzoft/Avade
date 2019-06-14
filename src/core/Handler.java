@@ -883,16 +883,23 @@ public class Handler extends HashNumeric {
     /* MAINTENANCE METHODS */
     public int runSecondMaintenance() {
         int todoAmount = 0;
-        todoAmount += oper.secMaintenance ( );
         for ( User user : uList ) {
             user.secMaintenence ( );
         }
         /* Database updates */
-        todoAmount += updateServicesIDs();
+        todoAmount += oper.secMaintenance ( );
         todoAmount += NickServ.maintenance ( );
         todoAmount += ChanServ.maintenance ( );
+        todoAmount += NickServ.secMaintenance ( );
+        todoAmount += updateServicesIDs();
         return todoAmount;
     }
+    public int runMaintenance() {
+        int todoAmount = 0;
+       
+        return todoAmount;
+    }
+    
     private int updateServicesIDs ( ) {
         if ( updServicesID.isEmpty() || ! Database.activateConnection() ) {
             return updServicesID.size();

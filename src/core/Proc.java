@@ -76,27 +76,47 @@ public class Proc extends HashNumeric {
         long hourAgo = 0;
         long minAgo = 0;
         long secAgo = 0;
+        int maxSleep = 500;
+        int minSleep = 0;
         int todoAmount = 1;
-       
+        int sleep = 150;
+        int sleepStep = 50;
+        int commandChain = 0;
+         
         while ( run || todoAmount > 0 )  {
             /* Proc loop */
-            todoAmount = 1;
+            
+            /* Dynamic Sleep */
+            if ( commandChain == 0 ) {
+                if ( sleep < maxSleep ) {
+                    sleep += sleepStep;
+                }
+            } else {
+                if ( sleep > minSleep ) {
+                    sleep -= sleepStep;
+                }
+            }
+            
+            System.out.println ( "STATS DEBUG!: "+todoAmount+":"+sleep );
             
             this.read = Proc.conn.readLine();
              
             if ( this.read != null )  {
                 /* We found some new data, send it to the handler */ 
                 this.handler.process ( this.read );
+                commandChain++;
                
             } else {
                 /* We didnt find any new data so lets take a nap */
                 try {
-                    Thread.sleep ( 50 );          
-                   
+                    Thread.sleep ( sleep );          
+                    
                 } catch  ( InterruptedException ex )  {
                     Logger.getLogger ( Proc.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
                 }
-                
+                if ( commandChain > 0 ) {
+                    commandChain = 0;
+                }
             }      
             /* HOUR */
             hourAgo = System.currentTimeMillis ( ) - this.hourDelay;
@@ -110,7 +130,6 @@ public class Proc extends HashNumeric {
             if ( this.minMaintenance < minAgo )  {
                 this.handler.runMinuteMaintenance ( );
                 if ( Proc.conn.timedOut() ) { /* Did we time out? */
-                    System.out.println("1:");
                     Proc.conn.disconnect();
                     this.connect();
                     Handler.unloadServices ( );
@@ -121,14 +140,16 @@ public class Proc extends HashNumeric {
             /* SECOND */
             secAgo = System.currentTimeMillis ( ) - this.secondDelay;
             if ( this.secMaintenance < secAgo )  {
-                todoAmount = 0; 
-                todoAmount += this.handler.runSecondMaintenance ( );
+                todoAmount = this.handler.runSecondMaintenance ( );
+                todoAmount += this.handler.runMaintenance ( );
                 if ( Handler.sanityCheck ( ) ) {
                     Handler.initServices ( );
                 }
                 this.secMaintenance = System.currentTimeMillis ( );
             }
-
+            if ( todoAmount > 0 ) {
+                commandChain++;
+            }
         }
         // System.out.println("DEBUG!!!: OUTSIDE loop!!");
         do {

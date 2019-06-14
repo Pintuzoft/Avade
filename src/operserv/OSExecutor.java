@@ -461,10 +461,8 @@ public class OSExecutor extends Executor {
                 }
                 
                 percent = String.format("%.02f", (float) uList.size() / Handler.getUserList().size() * 100 );
-                
                 Handler.getOperServ().addServicesBan ( ban );
                 Handler.getOperServ().sendServicesBan ( ban );
-                
                 this.service.sendGlobOp ( output ( BAN_ADD_GLOB, cmdName.toLowerCase(), mask, ban.getInstater(), ""+uList.size(), percent, time ) );
                 
                 break;
@@ -472,10 +470,7 @@ public class OSExecutor extends Executor {
             default :
                 
         }
-        
-        this.service.sendMsg ( user, "this is the end!" );
-        
- 
+       
     }
 
 

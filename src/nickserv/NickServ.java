@@ -221,9 +221,7 @@ public class NickServ extends Service {
         
     }
 
-    
-    public static int maintenance ( ) {
-        int todoAmount = 0;
+    public static int secMaintenance ( ) {
         for ( NickInfo ni : niList ) {
             if ( ni.isState ( OLD ) ) {
                 if ( ni.getExp().isTimeToSendAnotherMail ( ) ) {
@@ -233,6 +231,11 @@ public class NickServ extends Service {
                 }
             }
         }
+        return 0;
+    }
+    
+    public static int maintenance ( ) {
+        int todoAmount = 0;
         todoAmount += handleRegNicks ( );
         todoAmount += handleChangedNicks ( );
         todoAmount += handleNewAuths ( );
@@ -271,64 +274,49 @@ public class NickServ extends Service {
     }
         /* Insert new auths */
     private static int handleFullNewAuths ( ) {
-        if ( NSDatabase.activateConnection() && newFullAuthList.size() > 0 ) {
-            ArrayList<NSAuth> auths = new ArrayList<>();
-            for ( NSAuth auth : newFullAuthList ) {
-                if ( NSDatabase.addFullAuth ( auth ) ) {
-                    auths.add ( auth );
-                }
-            }
-            for ( NSAuth auth : auths ) {
-                newFullAuthList.remove ( auth );
-            }
+        if ( ! NSDatabase.activateConnection() || newFullAuthList.isEmpty() ) {
+            return newFullAuthList.size();
+        }
+        NSAuth auth = newFullAuthList.get ( 0 );
+        if ( NSDatabase.addFullAuth ( auth ) ) {
+            newFullAuthList.remove ( auth );
         }
         return newFullAuthList.size();
     }
    
     private static int handleRegNicks ( ) {
-        if ( NSDatabase.activateConnection() && regList.size() > 0 ) {
-            ArrayList<NickInfo> nicks = new ArrayList<>();            
-            for ( NickInfo ni : regList.subList ( 0, getIndexFromSize ( regList.size() ) ) ) {
-                if ( NSDatabase.createNick ( ni ) == 1 ) {
-                    nicks.add ( ni );
-                }
-            }
-            for ( NickInfo ni : nicks ) {
-                regList.remove ( ni );
-            }
+        if ( ! NSDatabase.activateConnection() || regList.isEmpty() ) {
+            return regList.size();
+        }
+        NickInfo ni = regList.get ( 0 );
+        if ( NSDatabase.createNick ( ni ) == 1 ) {
+            regList.remove ( ni );
         }
         return regList.size();
     }
     
     /* Update all nicks in the change list */
     private static int handleChangedNicks ( ) {
-        if ( NSDatabase.activateConnection() && changeList.size() > 0 ) {
-            ArrayList<NickInfo> nicks = new ArrayList<>();
-            for ( NickInfo ni : changeList ) {
-                if ( NSDatabase.updateNick ( ni ) == 1 ) {
-                    ni.getChanges().clean();
-                    nicks.add ( ni );
-                }
-            }
-            for ( NickInfo ni : nicks ) {
-                changeList.remove ( ni );
-            }
+        if ( ! NSDatabase.activateConnection() || changeList.isEmpty() ) {
+            return changeList.size();
+        }
+        NickInfo ni = changeList.get ( 0 );
+        if ( NSDatabase.updateNick ( ni ) == 1 ) {
+            ni.getChanges().clean();
+            changeList.remove ( ni );
         }
         return changeList.size();
     }
        
     /* Update all nicks in the change list */
     private static int handleDeletedNicks ( ) {
-        if ( NSDatabase.activateConnection() && deleteList.size() > 0 ) {
-            ArrayList<NickInfo> nicks = new ArrayList<>();
-            for ( NickInfo ni : deleteList ) {
-                if ( NSDatabase.deleteNick ( ni ) ) {
-                    nicks.add ( ni );
-                }
-            }
-            for ( NickInfo ni : nicks ) {
-                deleteList.remove ( ni );
-            }
+        if ( ! NSDatabase.activateConnection() || deleteList.isEmpty() ) {
+            return deleteList.size();
+        }
+        System.out.println("DEBUG: deleteList size: "+deleteList.size());
+        NickInfo ni = deleteList.get(0);
+        if ( NSDatabase.deleteNick ( ni ) ) {
+            deleteList.remove ( ni );
         }
         return deleteList.size();
     }
