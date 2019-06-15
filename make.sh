@@ -2,10 +2,11 @@
                                                                                                                                           
 MISSING="";                                                                                                                               
 
+# Functions
+
 function addMissing {
    MISSING+="${1} ";
 }
-
 
 function sendError {
    echo "Error. The following softwares is missing:";
@@ -31,9 +32,8 @@ fi
 # Dependencies
 
 DEPENDENCIES="java:java javac:openjdk-devel ant:ant";
-
+IFS=':' read -ra DATA <<< "$SOFTWARE";
 for SOFTWARE in $DEPENDENCIES; do
-   IFS=':' read -ra DATA <<< "$SOFTWARE";
    FILE=${DATA[0]};
    RPM=${DATA[1]};
    echo -n "Checking for ${FILE^} - ";
@@ -49,7 +49,6 @@ done
 if [ "$MISSING" != "" ]; then
   sendError
 fi
-
 
 
 # Compile / Install
