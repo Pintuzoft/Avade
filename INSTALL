@@ -1,0 +1,129 @@
+############################
+### Install Instructions ###
+############################
+
+### Information ###
+The Avade software is an IRC Services software specifically developed to
+work with the bahamut IRCd and MariaDB/MySQL database in the background.
+
+These installation instructions will only describe the process of installing
+Avade IRC Services and not anything else. 
+
+
+### Install & Update ###
+
+
+1. Dependencies
+
+CentOS:
+yum install openjdk
+yum install openjdk-devel
+yum install ant
+
+
+2. Download
+
+Goto and download the latest release from:
+https://github.com/Pintuzoft/Avade/releases
+
+
+3. Install
+
+tar -zxvf Avade-<version>.tar.gz
+cd Avade-<version>
+./make.sh
+./make.sh install
+
+
+4. Setup Database ( MariaDB / MySQL )
+
+create database avade;
+grant all privileges on avade.* to 'avade'@'localhost' identified by 'avade123';
+
+
+5. Services Configuration
+
+Under "~/avade/" you will find, if installed correctly. the template.conf file.
+Use the template.conf file and create from it the file services.conf. Add the
+proper database login information into the services.conf file 
+
+Dont forget to set network name and change the salt to something completely 
+random. After setting the salt value please save it in a secure place perhaps in
+keepass or similar software. Avade uses the salt to encrypt and decrypt password
+and email information stored in the database so if you loose the salt value you 
+will loose your ability to encrypt/decrypt passwords and emails.
+
+Set the master nick correctly. This should be the nick you are using on the
+server.
+
+
+6. Starting Services
+
+The first time you start services it will look at the services configuration 
+and try login to the database. Once it does this it will look at the database
+and if its empty it will try create the tables it requires. If the database is
+running an older version of the database services will try to update it to the
+same version as itself automatically.
+
+Once the proper version of the database is available the master nick will be
+created (if not already existing) and give the nickname master access.
+
+
+7. Stopping Services
+
+Try avoid killing the process as this will potentially mean loss of data. Rather
+use the /RootServ STOP command to stop services. This will set services into a
+mode where it doesnt allow users to issue service commands and then try to work
+off all pending database work it can find. This means any pending nick or chan
+registration etc, or services logs that needs to be stored.
+
+So in short, use RootServ STOP to stop services..
+
+
+8. Updating Services
+
+1. Take a backup of the database!
+2. Then start the new version of Avade
+
+Once a new release of Avade has come available you can may download it as 
+described in step 2. And then install it as described in step 3. For updating
+the database check step 9. Make sure the services.conf is correct by identifying 
+new possible settings from template.conf and if any important new settings is 
+missing you will see them in the services.log. If you cant start services and
+it gives you an error regarding the configuration then consult the reference.conf
+and the template.conf and add any missing settings.
+
+
+9. Database Changes
+
+There will most likely always be database changes between releases, however
+unlike other IRC services softwares Avade will always try keep them up2date.
+This means that every time Avade is started it checks the config and connect to
+the database and it will automatically try apply any database changes it can 
+find in order to keep the database correct for that version of Avade.
+
+This way of handling the database changes is ofcourse dangerous but if you avoid
+altering data in the database it should be fine. This also means that you 
+essentially doesnt have to put much thought into the database during updates. 
+All you need to remember is to take a backup of the database before starting
+the new version of Avade IRC Services.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
