@@ -82,8 +82,8 @@ So in short, use RootServ STOP to stop services..
 
 8. Updating Services
 
-1. Take a backup of the database!
-2. Then start the new version of Avade
+- Take a backup of the database!
+- Then start the new version of Avade
 
 Once a new release of Avade has come available you can may download it as 
 described in step 2. And then install it as described in step 3. For updating
@@ -109,21 +109,10 @@ All you need to remember is to take a backup of the database before starting
 the new version of Avade IRC Services.
 
 
+############
+### HELP ###
+############
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+If you followed these instructions and did not manage to get a fully working
+services on your bahamut based network. You may join #avade in irc.avade.net
+for for further help.
