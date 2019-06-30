@@ -317,6 +317,18 @@ public class OSExecutor extends Executor {
         
         System.out.println("Bans: "+Handler.getOperServ().getAkillCount()+":"+Handler.getOperServ().getIgnoreCount());
         
+        if ( cmd.length > 4 && cmd[4].charAt(0) == '-' ) {
+            String[] buf = new String[6];
+            buf[0] = cmd[0];
+            buf[1] = cmd[1];
+            buf[2] = cmd[2];
+            buf[3] = cmd[3];
+            buf[4] = "DEL";
+            StringBuilder builder = new StringBuilder ( cmd[4] );
+            buf[5] = builder.deleteCharAt(0).toString();
+            cmd = buf;            
+        }
+
         CmdData cmdData = this.validateCommandData ( user, command, cmd );
         
         String cmdName = ServicesBan.getCommandByHash ( command );
@@ -1040,6 +1052,7 @@ public class OSExecutor extends Executor {
         ServicesBan ban = null;
         NetServer server1 = null;
         NetServer server2;
+        String[] buf = new String[6];
         
         switch ( command )  {
             
@@ -1047,13 +1060,14 @@ public class OSExecutor extends Executor {
             case SQLINE :
             case SGLINE :
             case IGNORE :
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL -*!*@1.2.3.4
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL list *!*@1.2.3.4
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL time 30 *!*@1.2.3.4 spamming is not allowed
                 //            0       1                          2      3    4  5           6 7                       = 8+
                 sub = cmd.length > 4 ? cmd[4].toUpperCase().hashCode() : 0;
                 if ( sub == TIME ) {
                     sub = ADD;
-                }
+                } 
                 time = cmd.length > 5 ? cmd[5] : "30";
                 reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : "SpamFiltered";
                 stamp = dateFormat.format ( new Date ( ) );

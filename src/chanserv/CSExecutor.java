@@ -692,52 +692,52 @@ import java.util.Random;
         }
     }
     
-    public void doListAccess ( User user, String[] cmd, int access )  {
-        //:Pintuz PRIVMSG ChanServ@services.avade.net :aop #avade list
-        //   0       1        2                         3    4     5   = 6
+    
+    public void doListAccess ( User user, String[] cmd, int access ) {
         ChanInfo ci;
         NickInfo ni;
         
-        if ( cmd.length < 6 || ! ( access == AOP || access == SOP || access == AKICK )  )  {
-            /* too short */
-            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SOP <#chan> <ADD|DEL|LIST> [<nick|#NUM>]" )  );
-
-        } else { 
-            ci = ChanServ.findChan ( cmd[4] );
-            ni = ci.getNickByUser ( user );
-
-            if ( ni == null )  {
-                /* no nick with access */
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, "NickServ" )  );
-
-            } else if ( ci == null )  {
-                /* no channel */
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] )  );
-
-            } else if ( ! ci.isFounder ( ni )  && ! ci.isAccess ( SOP, ni )  && ! ci.isAccess ( AOP, ni )  )  {
-                /* does not have access */
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, ci.getName ( )  )  );
-
+        CmdData cmdData = this.validateCommandData ( user, LISTACCESS, cmd );
+        String listName = getListName ( access );
+        
+        switch ( cmdData.getStatus() ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "INFO <#Chan>" ) ); 
+                return;
+            
+            case CHAN_NOT_REGISTERED :
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                return;
+                    
+            case CHAN_IS_FROZEN :
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                return;
+                       
+            case CHAN_IS_CLOSED :
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                return;
+                
+            case ACCESS_DENIED : 
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                return;
+                
+            default :
+                
+        }
+        ci = cmdData.getChanInfo ( );
+        String accStr = accessToString ( access );
+        this.showStart ( true, user, ci, f.b ( ) +accStr+" list for: "+f.b ( )  ); 
+        ArrayList<CSAcc> list = ci.getAccessList ( access );
+        for ( CSAcc acc : list )  {     
+            if ( acc.getNick ( ) != null )  {
+                this.service.sendMsg ( user,  " - "+acc.getNick().getString ( NAME )+" ("+acc.getNick ( ) .getString ( FULLMASK ) +") (nick)" );
             } else {
-                /* lets show the list */
-                String accStr = new String ( );
-                accStr = accessToString ( access );
-
-                this.showStart ( true, user, ci, f.b ( ) +accStr+" list for: "+f.b ( )  ); 
-                ArrayList<CSAcc> list = ci.getAccessList ( access );
-                 
-                int j = 0;
-                for ( CSAcc acc : list )  {     
-                    if ( acc.getNick ( ) != null )  {
-                        this.service.sendMsg ( user,  " - "+acc.getNick().getString ( NAME )+" ("+acc.getNick ( ) .getString ( FULLMASK ) +") (nick)" );
-                    } else {
-                        this.service.sendMsg ( user,  " - "+acc.getMask ( )+" (mask)" );
-                    }
-                }
-                this.showEnd ( user, accStr+" list" );
+                this.service.sendMsg ( user,  " - "+acc.getMask ( )+" (mask)" );
             }
-        } 
+        }
+        this.showEnd ( user, accStr+" list" ); 
     }
+
     private String getListName ( int access ) {
         switch ( access ) {
             case SOP :
@@ -1878,6 +1878,28 @@ import java.util.Random;
                 }
                 break;            
                    
+            case LISTACCESS :
+                //:DreamHealer PRIVMSG ChanServ@services.avade.net :aop #friends list
+                //           0       1                           2    3        4    5          =   6
+                if ( isShorterThanLen ( 6, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
+                    cmdData.setString1 ( cmd[4] );
+                    cmdData.setStatus ( CHAN_NOT_REGISTERED );
+                } else if ( ci.is ( FROZEN ) && ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setString1 ( ci.getName() );
+                    cmdData.setStatus ( CHAN_IS_FROZEN );
+                } else if ( ci.is ( CLOSED ) && ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setString1 ( ci.getName() );
+                    cmdData.setStatus ( CHAN_IS_CLOSED );
+                } else if ( ! ci.isAtleastAop ( user ) && ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setStatus ( ACCESS_DENIED );
+                } else {
+                    cmdData.setChanInfo ( ci );
+                }
+                break;
+
+
             case LIST :
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     cmdData.setStatus ( SYNTAX_ERROR );

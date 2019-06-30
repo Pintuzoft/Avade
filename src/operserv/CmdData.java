@@ -35,7 +35,8 @@ public class CmdData {
     private int             sub2;
     private ServicesBan     ban;
     private NetServer       server1;
-
+    private String[]        cmd;
+    
     public CmdData ( )  {
         this.nick       = null;
         this.status     = -1;
@@ -125,5 +126,13 @@ public class CmdData {
     
     public NetServer getServer ( ) {
         return this.server1;
+    }
+    
+    public void setCmd ( String[] cmd ) {
+        this.cmd = cmd;
+    }
+    
+    public String[] getCmd ( ) {
+        return this.cmd;
     }
 }

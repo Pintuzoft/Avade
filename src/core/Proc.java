@@ -80,7 +80,7 @@ public class Proc extends HashNumeric {
         int minSleep = 0;
         int todoAmount = 1;
         int sleep = 150;
-        int sleepStep = 50;
+        int sleepStep = 100;
         int commandChain = 0;
          
         while ( run || todoAmount > 0 )  {
@@ -92,9 +92,7 @@ public class Proc extends HashNumeric {
                     sleep += sleepStep;
                 }
             } else {
-                if ( sleep > minSleep ) {
-                    sleep -= sleepStep;
-                }
+                sleep = 0;
             }
             
             System.out.println ( "STATS DEBUG!: "+todoAmount+":"+sleep );
