@@ -110,6 +110,10 @@ public class CSHelper extends Helper {
             case CHANLIST :
                 this.chanList ( user );
                 break;
+                      
+            case LISTOPS :
+                this.listOps ( user );
+                break;
             
             case CHANFLAG :
                 this.chanFlag ( user );
@@ -422,6 +426,18 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
   
+    private void listOps(User user) {
+        this.showStart ( user, "ListOps" ); 
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ LISTOPS <#chan>"+f.b ( ) +""                                 );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Will list the founder and all access lists in order for a given channel"                   );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
+        this.service.sendMsg ( user, "   Keep this information to yourself"                                                         ); 
+        this.showEnd ( user );
+    }
+    
     public void mKick ( User user )  { 
         this.showStart ( user, "MKick" ); 
         this.service.sendMsg ( user, "   "                                                                                          );

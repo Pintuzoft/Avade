@@ -88,6 +88,7 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "MKICK",        0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "DROP",         0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "ACCESSLOG",    0,                          "View the AOP/SOP/AKICK logs" )         );
+        cmdList.add ( new CommandInfo ( "LISTOPS",      0,                          "View the AOP/SOP/AKICK lists" )         );
         cmdList.add ( new CommandInfo ( "TOPICLOG",     CMDAccess ( TOPICLOG ),     "View the topic logs" )         );
         cmdList.add ( new CommandInfo ( "LIST",         CMDAccess ( LIST ),         "List registered channels" )            );
         cmdList.add ( new CommandInfo ( "CHANLIST",     CMDAccess ( CHANLIST ),     "List chans associated with nick" )     );

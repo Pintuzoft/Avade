@@ -223,6 +223,7 @@ public abstract class HashNumeric extends TextFormat {
     
     public final static int KICKBAN                     = -2596887;
     public final static int LISTACCESS                  = 1234756482;
+    public final static int LISTOPS                     = 899964212;
      
     
     

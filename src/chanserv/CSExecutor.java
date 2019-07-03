@@ -134,6 +134,10 @@ import java.util.Random;
             case CHANLIST :
                 this.chanList ( user, cmd );
                 break;
+                           
+            case LISTOPS :
+                this.listOps ( user, cmd );
+                break;
                 
             /* Oper Only Commands */
             case TOPICLOG :
@@ -702,7 +706,7 @@ import java.util.Random;
         
         switch ( cmdData.getStatus() ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "INFO <#Chan>" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, listName+" <#Chan>" ) ); 
                 return;
             
             case CHAN_NOT_REGISTERED :
@@ -889,7 +893,7 @@ import java.util.Random;
  
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "INFO <#Chan>" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "UNBAN <#Chan>" ) ); 
                 return;
           
             case CHAN_NOT_EXIST :
@@ -1707,6 +1711,9 @@ import java.util.Random;
         
     }
 
+    
+    
+    
     private CSAcc getAcc ( int command, ChanInfo ci, NickInfo ni ) {
         return ci.getAccess ( command, ni );
     }
@@ -1714,6 +1721,57 @@ import java.util.Random;
         return ci.getAccess ( command, mask );
     }
 
+    
+    private void listOps(User user, String[] cmd) {
+        
+        CmdData cmdData = this.validateCommandData ( user, LISTOPS, cmd );
+         
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "LISTOPS <#Chan>" ) ); 
+                return;
+            
+            case CHAN_NOT_REGISTERED :
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                return;
+                    
+            case CHAN_IS_FROZEN :
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                return;
+                       
+            case CHAN_IS_CLOSED :
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                return;
+                
+            case ACCESS_DENIED : 
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                return;
+                
+            default :
+                
+        }
+        int[] lists = { SOP, AOP };
+        ChanInfo ci = cmdData.getChanInfo ( );
+        this.service.sendMsg ( user,  "FOUNDER: " );
+        this.service.sendMsg ( user,  "  "+ci.getFounder().getName()+" ("+ci.getFounder().getString ( FULLMASK )+")" );
+
+        for ( int access : lists ) {
+            String accStr = accessToString ( access );
+            this.service.sendMsg ( user,  accStr.toUpperCase()+": " );
+            ArrayList<CSAcc> list = ci.getAccessList ( access );
+            for ( CSAcc acc : list )  {     
+                if ( acc.getNick ( ) != null )  {
+                    this.service.sendMsg ( user,  "  "+acc.getNick().getString ( NAME )+" ("+acc.getNick().getString ( FULLMASK ) +")" );
+                } else {
+                    this.service.sendMsg ( user,  "  "+acc.getMask ( )+" (mask)" );
+                }
+            }
+        }
+        this.showEnd ( user, "LISTOPS" ); 
+
+    }
+
+    
     
     private CmdData validateCommandData ( User user, int command, String[] cmd )  {
         Chan c;
@@ -1878,6 +1936,27 @@ import java.util.Random;
                 }
                 break;            
                    
+            case LISTOPS :
+                //:DreamHealer PRIVMSG ChanServ@services.avade.net :listops #friends
+                //           0       1                           2        3        4              =   5
+                if ( isShorterThanLen ( 5, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
+                    cmdData.setString1 ( cmd[4] );
+                    cmdData.setStatus ( CHAN_NOT_REGISTERED );
+                } else if ( ci.is ( FROZEN ) && ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setString1 ( ci.getName() );
+                    cmdData.setStatus ( CHAN_IS_FROZEN );
+                } else if ( ci.is ( CLOSED ) && ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setString1 ( ci.getName() );
+                    cmdData.setStatus ( CHAN_IS_CLOSED );
+                } else if ( ! ci.isAtleastAop ( user ) && ! user.isAtleast ( IRCOP ) ) {
+                    cmdData.setStatus ( ACCESS_DENIED );
+                } else {
+                    cmdData.setChanInfo ( ci );
+                }
+                break;
+                
             case LISTACCESS :
                 //:DreamHealer PRIVMSG ChanServ@services.avade.net :aop #friends list
                 //           0       1                           2    3        4    5          =   6
