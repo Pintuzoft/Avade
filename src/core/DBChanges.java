@@ -40,27 +40,26 @@ public class DBChanges extends HashNumeric {
         } catch ( NumberFormatException ex ) {
             Proc.log ( DBChanges.class.getName ( ) , ex );
         }
-        
+        build++;
         int target = this.convertVersion ( this.version.getGeneration(), this.version.getYear(), this.version.getMonth(), this.version.getBuild() );
-        int current = this.convertVersion ( generation, year, month, build );
-
-        if ( target > current ) {
-            build++;
-            while ( ! this.applyChanges ( generation, year, month, build++ ) ) {
-                if ( build > 99 ) {
-                    build = 1;
-                    month++;
-                }
-                if ( month > 12 ) {
-                    month = 1;
-                    year++;
-                }
-                if ( year > 99 ) {
-                    year = 0;
-                    generation++;
-                }
+        int current = this.convertVersion ( generation, year, month, build++ );
+        
+        while ( target > current && ! this.applyChanges ( current ) ) {
+            if ( build > 9 ) {
+                build = 1;
+                month++;
             }
+            if ( month > 12 ) {
+                month = 1;
+                year++;
+            }
+            if ( year > 99 ) {
+                year = 0;
+                generation++;
+            }
+            current = this.convertVersion ( generation, year, month, build++ );
         }
+       
        // System.exit ( 1 );
  
     }
@@ -69,8 +68,7 @@ public class DBChanges extends HashNumeric {
         return ( gen*100000 + year*1000 + month*10 + build );
     }
     
-    private boolean applyChanges ( int gen, int year, int month, int build ) {
-        int target = this.convertVersion(gen, year, month, build);
+    private boolean applyChanges ( int target ) {
         int counter = 0;
         ArrayList<String> qList = new ArrayList<>();
         switch ( target ) {
