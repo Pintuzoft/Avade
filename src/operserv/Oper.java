@@ -21,6 +21,7 @@ import core.Proc;
 import core.HashNumeric;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nickserv.NickInfo;
@@ -38,7 +39,8 @@ public class Oper extends HashNumeric {
     private String          instater;
     private String[]        levels;
     private String[]        shortLevels;
-
+    private ArrayList<String> makill = new ArrayList<>();
+    
     private static String[] OPER_LEVEL = { 
         "User",
         "IRC Operator",
@@ -222,5 +224,27 @@ public class Oper extends HashNumeric {
 
     public NickInfo getNick() {
         return NickServ.findNick ( this.name );
+    }
+    
+    /* MAKILL */
+    public ArrayList<String> getMAkill ( ) {
+        return this.makill;
+    }
+    
+    public void addMAkill ( String ban ) {
+        this.makill.add ( ban );
+    }
+    
+    public void clearMakill ( ) {
+        this.makill.clear();
+    }
+
+    public boolean makillDuplicate(String string) {
+        for ( String ban : this.makill ) {
+            if ( ban.equalsIgnoreCase ( string ) ) {
+                return true;
+            }
+        }
+        return false;
     }
 } 

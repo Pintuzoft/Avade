@@ -97,6 +97,7 @@ public class Config extends HashNumeric {
     private int getpass = 5;
     private int getemail = 5;
     private int akill = 5;
+    private int makill = 5;
     private int banlog = 5;
     private int global = 5;
     private int ignore = 5;
@@ -462,6 +463,10 @@ public class Config extends HashNumeric {
             case AKILL :
                 this.akill = access;
                 break;
+                     
+            case MAKILL :
+                this.makill = access;
+                break;
                 
             case BANLOG :
                 this.banlog = access;
@@ -602,6 +607,9 @@ public class Config extends HashNumeric {
                 
             case AKILL :
                 return this.akill;
+                                
+            case MAKILL :
+                return this.makill;
                 
             case STAFF :
                 return this.staff;

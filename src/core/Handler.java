@@ -1118,7 +1118,7 @@ public class Handler extends HashNumeric {
         }
         return ul;
     }
-    
+        
     public static String expireToTime ( String data )  {
         String          strBuf;
         String          state;
@@ -1201,8 +1201,6 @@ public class Handler extends HashNumeric {
         int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        System.out.println("debug(1): datetime:"+datetime+", data:"+data);
-
         Date date;
         try {
             date = dateFormat.parse ( datetime );
@@ -1214,6 +1212,40 @@ public class Handler extends HashNumeric {
         
         System.out.println("debug: amount:"+amount+", ms:"+ms);
         date.setTime ( date.getTime() + ( amount*ms ) );
+        return dateFormat.format ( date );
+    }
+    
+    public static String expireWithCharToDateString ( String datetime, String data ) {
+        String          strBuf;
+        String          state;
+        int             multiply;
+        int             amount;
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date;
+        
+        try {
+            date = dateFormat.parse ( datetime );
+        } catch (ParseException ex) {
+            Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
+            return null;
+        }
+        if ( StringMatch.isInt ( data ) ) {
+            state = "m";
+            amount = Integer.parseInt ( data );
+            
+        } else {
+            strBuf = data.substring ( 0, data.length() - 1 );
+            amount = Integer.parseInt ( strBuf );
+            state = ""+data.charAt ( data.length() - 1 );
+        }
+        
+        switch ( state.toUpperCase().hashCode ( ) ) {
+            case CHAR_m: { multiply = 60; break;            }
+            case CHAR_h: { multiply = 60*60; break;         }
+            case CHAR_d: { multiply = 60*60*24; break;      }
+            default:     { multiply = 60;                   }
+        }
+        date.setTime ( date.getTime() + ( amount * multiply * 1000 ) );
         return dateFormat.format ( date );
     }
     

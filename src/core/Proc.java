@@ -95,8 +95,6 @@ public class Proc extends HashNumeric {
                 sleep = 0;
             }
             
-            System.out.println ( "STATS DEBUG!: "+todoAmount+":"+sleep );
-            
             this.read = Proc.conn.readLine();
              
             if ( this.read != null )  {

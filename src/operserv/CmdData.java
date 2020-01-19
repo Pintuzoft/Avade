@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import java.util.ArrayList;
 import nickserv.*;
 
 /**
@@ -36,6 +37,7 @@ public class CmdData {
     private ServicesBan     ban;
     private NetServer       server1;
     private String[]        cmd;
+    private ArrayList<String> makill = new ArrayList<>();
     
     public CmdData ( )  {
         this.nick       = null;
@@ -134,5 +136,14 @@ public class CmdData {
     
     public String[] getCmd ( ) {
         return this.cmd;
+    }
+    
+    /* MAKILL */
+    public void addMAKill ( String ban ) {
+        this.makill.add ( ban );
+    }
+    
+    public ArrayList<String> getMAkill ( ) {
+        return this.makill;
     }
 }

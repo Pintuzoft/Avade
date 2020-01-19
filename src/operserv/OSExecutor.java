@@ -139,6 +139,10 @@ public class OSExecutor extends Executor {
             case BAHAMUT :
                 this.bahamut ( user, cmd );
                 break;
+                    
+            case MAKILL :
+                this.makill ( user, cmd );
+                break;
                       
             default:
                 this.found = false; 
@@ -379,7 +383,7 @@ public class OSExecutor extends Executor {
                 return;
                 
             default :
-                
+
         }
         
         String string1 = cmdData.getString1();
@@ -446,8 +450,6 @@ public class OSExecutor extends Executor {
                 //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
                 ban = new ServicesBan ( command, ""+System.nanoTime(), false, mask, reason, oper.getString(NAME), null, expire );
 
-                System.out.println("matching with: "+mask);
-                
                 switch ( command ) {
                     case SQLINE :
                         uList = Handler.findUsersByNick ( mask );
@@ -477,6 +479,12 @@ public class OSExecutor extends Executor {
                 Handler.getOperServ().sendServicesBan ( ban );
                 this.service.sendGlobOp ( output ( BAN_ADD_GLOB, cmdName.toLowerCase(), mask, ban.getInstater(), ""+uList.size(), percent, time ) );
                 
+                // -OperServ(stats@dal.net)- *!*@159.65.148.178 has been added to my autokill list for 30 minutes.
+                this.service.sendMsg ( user, mask+" has been added to the akill list for "+time+" min." );
+                
+                // -OperServ(stats@dal.net)- This autokill's id is 1563280267K-k and the authorization id is 1563280267K-16159. Please send your reports@dal.net email as soon as possible.
+                this.service.sendMsg ( user, "The akill id is "+ban.getID()+". Please use the akill id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
+               
                 break;
                 
             default :
@@ -1032,6 +1040,84 @@ public class OSExecutor extends Executor {
         }
         return true;        
     }
+
+    private void makill(User user, String[] cmd) {
+        CmdData cmdData = this.validateCommandData ( user, MAKILL, cmd );
+        
+        switch ( cmdData.getStatus ( ) ) {
+            case SYNTAX_ERROR :
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <add> [<nick!user@host> <nick!user@host> ...]" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <commit> <length> <reason>" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );
+                return;
+   
+            case BADTIME :
+                this.service.sendMsg ( user, output ( BADTIME, "" ) );
+                return;
+                
+            case BADREASON :
+                this.service.sendMsg ( user, output ( BADREASON, "" ) );
+                return;
+                               
+            case ACCESS_DENIED :
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                return;
+                         
+            default :
+                
+        }
+        
+        ServicesBan ban = null;
+        switch ( cmdData.getSub() ) {
+            case COMMIT :
+                String time = cmdData.getString1 ( );
+                String reason = cmdData.getString2 ( );
+                String expire = cmdData.getString3 ( );
+                NickInfo oper = user.getOper().getNick();
+                String stamp = dateFormat.format ( new Date ( ) );
+                
+                ArrayList<User> uList = new ArrayList<>();
+                ArrayList<User> affectedUsers;
+                int numBans = 0;
+                boolean shouldAdd;
+                
+                for ( String str : cmdData.getMAkill() ) {
+                    shouldAdd = true;
+                    //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
+                    ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, str, reason, oper.getString(NAME), null, expire );
+                    affectedUsers = Handler.findUsersByBan ( ban );
+                    for ( User u : affectedUsers ) {
+                        if ( u.isAtleast ( IRCOP ) ) {
+                            this.service.sendMsg ( user, output ( BAN_MATCH_OPER, "Akill", str, "" ) );
+                            shouldAdd = false;
+                        } 
+                    }
+                    
+                    if ( shouldAdd ) {
+                        numBans++;
+                        uList.addAll ( affectedUsers );
+                        Handler.getOperServ().addServicesBan ( ban );
+                        Handler.getOperServ().sendServicesBan ( ban );
+                    }
+                }
+                
+                String percent = String.format("%.02f", (float) uList.size() / Handler.getUserList().size() * 100 );
+
+                if ( ban != null ) {
+                    this.service.sendGlobOp ( output ( MAKILL_ADD_GLOB, ban.getInstater(), ""+numBans, time, ""+uList.size(), percent ) );
+                } else {
+                    this.service.sendGlobOp ( output ( MAKILL_NOBAN_GLOB, "", "" ) );
+                }
+                break;
+                
+            default :
+                
+        }
+        
+        
+    }
+
+
     
     private CmdData validateCommandData ( User user, int command, String[] cmd ) {
         CmdData cmdData = new CmdData ( );
@@ -1046,6 +1132,7 @@ public class OSExecutor extends Executor {
         int flag;
         String time;
         String text;
+        String targets;
         String stamp;
         String reason;
         String expire;
@@ -1053,8 +1140,92 @@ public class OSExecutor extends Executor {
         NetServer server1 = null;
         NetServer server2;
         String[] buf = new String[6];
+        ArrayList<ServicesBan> bans = new ArrayList<>();
         
         switch ( command )  {
+            
+            case MAKILL :
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :MAKILL ADD nick!user@host ....
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :MAKILL COMMIT 30 reason here
+                //            0       1                          2      3       4  5      6    7   = 6
+                
+                sub = cmd.length > 4 ? cmd[4].toUpperCase().hashCode() : 0;
+                
+                if ( isShorterThanLen ( 6, cmd ) ) {
+                    cmdData.setStatus ( SYNTAX_ERROR );         
+                } 
+
+                cmdData.setSub ( sub );
+                
+                switch ( sub ) {
+                    case ADD :
+                        for ( int i = 5; i < cmd.length; i++ ) {
+                            if ( cmd[i].contains("!") && cmd[i].contains("@") ) {
+                                if ( OperServ.findBan ( AKILL, cmd[i] ) != null ) {
+                                    /* Ban exist */
+                                    this.service.sendMsg ( user, output ( BAN_EXIST, "AKill", cmd[i] ) );
+                                
+                                } else if ( user.getOper().makillDuplicate ( cmd[i] ) ) {
+                                    /* Ban exist in makill */
+                                    this.service.sendMsg ( user, output ( MAKILL_DUPLICATE, "MAKill", cmd[i] ) );
+
+                                } else if ( OperServ.isWhiteListed ( cmd[i] ) ) {
+                                    /* is whitelisted */
+                                    this.service.sendMsg ( user, output ( WHITELISTED, cmd[i] ) );
+                    
+                                } else {
+                                    /* Add as valid ban */
+                                    user.getOper().addMAkill ( cmd[i] );
+                                }
+                            }
+                        }
+                        this.service.sendMsg ( user, output ( ADDED_MAKILL, ""+user.getOper().getMAkill().size() ) );
+                        break;
+                    
+                    case RESET :
+                        user.getOper().clearMakill();
+                        this.service.sendMsg ( user, output ( RESET_MAKILL ) );
+                        break;
+                        
+                    case COMMIT :
+                        time = cmd.length > 5 ? cmd[5] : "30m";
+                        reason = cmd.length > 6 ? Handler.cutArrayIntoString ( cmd, 6 ) : "Banned";
+                        stamp = dateFormat.format ( new Date ( ) );
+                         
+                        if ( isShorterThanLen ( 7, cmd ) ) {
+                            cmdData.setStatus ( SYNTAX_ERROR );
+                        } else if ( ( expire = Handler.expireWithCharToDateString ( stamp, time ) ) == null ) {
+                            cmdData.setStatus ( BADTIME );
+
+                        } else if ( reason == null ) {
+                            cmdData.setStatus ( BADREASON );
+
+                        } else {
+                            for ( String str : user.getOper().getMAkill() ) {
+                                if ( OperServ.findBan ( AKILL, str ) != null ) {
+                                    /* Ban exist */
+                                    this.service.sendMsg ( user, output ( BAN_EXIST, "AKill", str ) );
+
+                                } else if ( OperServ.isWhiteListed ( str ) ) {
+                                    /* is whitelisted */
+                                    this.service.sendMsg ( user, output ( WHITELISTED, str ) );
+
+                                } else {
+                                    /* Add as valid ban */
+                                    cmdData.addMAKill ( str );
+                                    cmdData.setString1 ( time );
+                                    cmdData.setString2 ( reason );
+                                    cmdData.setString3 ( expire );
+                                }
+                            }
+                            user.getOper().clearMakill();
+                        }
+                        break;
+                        
+                    default :
+                    
+                }                
+                break;
             
             case AKILL :
             case SQLINE :
@@ -1069,7 +1240,7 @@ public class OSExecutor extends Executor {
                     sub = ADD;
                 } 
                 time = cmd.length > 5 ? cmd[5] : "30";
-                reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : "SpamFiltered";
+                reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : "Banned";
                 stamp = dateFormat.format ( new Date ( ) );
                                 
                 if ( isShorterThanLen ( 5, cmd ) ) {
@@ -1341,7 +1512,7 @@ public class OSExecutor extends Executor {
                 
             case BAN_ADD_GLOB :
                 return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+" min." ;
-
+            
             case BAN_EXIST :
                 return args[0]+" already exists for "+args[1]+".";
                 
@@ -1425,6 +1596,21 @@ public class OSExecutor extends Executor {
 
             case BADREASON :
                 return "Error: Bad reason string, consult the help text for syntax.";
+            
+            case ADDED_MAKILL :
+                return "MAKILL now contains "+args[0]+" masks.";
+            
+            case RESET_MAKILL :
+                return "MAKILL has been reset";
+
+            case MAKILL_ADD_GLOB :
+                return args[0]+" akilled "+args[1]+" hosts for "+args[2]+" min affecting "+args[3]+" users ["+args[4]+"%]." ;
+
+            case MAKILL_NOBAN_GLOB :
+                return "MAKILL has no bans present";
+            
+            case MAKILL_DUPLICATE :
+                return "MAKILL for "+args[1]+" is a duplicate.";
 
             case FILTER_EXISTS :
                 return "Error: There is already a spamfilter matching: "+args[0]+".";
@@ -1500,6 +1686,11 @@ public class OSExecutor extends Executor {
     private final static int SPAMFILTER_LIST        = 3103;
     private final static int BADTIME                = 3104;
     private final static int BADREASON              = 3105;
+    private final static int ADDED_MAKILL           = 3111;
+    private final static int RESET_MAKILL           = 3112;
+    private final static int MAKILL_ADD_GLOB        = 3113;
+    private final static int MAKILL_NOBAN_GLOB      = 3114;
+    private final static int MAKILL_DUPLICATE       = 3115;
 
     private final static int NICK_NOT_FOUND         = 3201;
     private final static int NICK_ALREADY_PRESENT   = 3202;

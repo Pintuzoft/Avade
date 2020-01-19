@@ -36,4 +36,8 @@ public class StringMatch {
         return str.matches ( wild.replace("?","(.)").replace("*","(.*)") ) ||
                 wild.matches (str.replace("?","(.)").replace("*","(.*)") );
     }
+    
+    public static boolean isInt ( String str ) {
+        return str.matches ( "[0-9]+" );
+    }
 }

@@ -123,6 +123,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "SERVER",    CMDAccess ( SERVER ),      "Handle server list" )                    );
         cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )    );
         cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )   );
+        cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )   );
     }
    
     public static ArrayList<CommandInfo> getCMDList ( int command ) {
@@ -134,19 +135,18 @@ public class OperServ extends Service {
     }
     
     public boolean checkAccess ( User user, int hashName ) {
-        int access              = user.getAccess ( );
+        int access = user.getAccess ( );
         if ( hashName == AUTOKILL ) {
             hashName = AKILL;
         }
-        CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
-        if ( access >= cmdInfo.getAccess ( ) )  {
+        CommandInfo cmdInfo = this.findCommandInfo ( hashName );
+        if ( cmdInfo != null && access >= cmdInfo.getAccess ( ) )  {
             return true;
         }
         return false;
     }
      
     public void hourMaintenance ( ) {
-        this.expireBans ( );
     }
     public int secMaintenance ( ) {
         int todoAmount = 0;
@@ -168,6 +168,7 @@ public class OperServ extends Service {
     public int minMaintenance ( ) {
         int todoAmount = 0;
         todoAmount += this.expireSpamFilter ( );
+        this.expireBans ( );
         return todoAmount;
     }
     
@@ -642,7 +643,7 @@ public class OperServ extends Service {
                         ban.getExpireSec ( ) +" "+
                         ban.getInstater ( ) +" "+
                         ( System.currentTimeMillis ( ) / 1000 ) +
-                        " :"+ban.getReason ( )+"[Ticket: AK"+ban.getID ( ) +"] "
+                        " :"+ban.getReason ( )+" [Ticket: "+ban.getID ( ) +"] "
                     );
                     break;
                     

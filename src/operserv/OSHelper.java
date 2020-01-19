@@ -53,6 +53,10 @@ class OSHelper extends Helper {
             case AKILL :
                 this.akill ( user );
                 break;
+                         
+            case MAKILL :
+                this.makill ( user );
+                break;
                 
             case SEARCHLOG :
                 this.searchLog ( user );
@@ -168,15 +172,41 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   AKill is a powerful command and allow staff remove unwanted clients from"                                  );
         this.service.sendMsg ( user, "   the network. You are unable to place akills that matches opers or white listed"                            );
-        this.service.sendMsg ( user, "   ips. Note that nick is passed using the command but the field is never used."                                                                                                      );
+        this.service.sendMsg ( user, "   ips. Note that nick is passed using the command but the field is never used."                              );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Place akills based on ip as the ircd's will use less resources on ips"                                     );
         this.showEnd ( user );
     }
+        
+    public void makill ( User user )  { 
+        this.showStart ( user, "MAKill" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ MAKILL <ADD> <nick!user@host> <nick!user@host> ..."+f.b ( ) +""              );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ MAKILL <COMMIT> <LENGTH> <REASON>"+f.b ( ) +""                               );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ MAKILL <RESET>"+f.b ( ) +""                                                  );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"    Ex: /OperServ AKILL ADD *!*@1.2.3.4 *!*@1.2.3.5 *!*@1.2.3.6"+f.b ( )+""                    );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"    Ex: /OperServ AKILL COMMIT 30d Flooding is not permitted"+f.b ( )+""                       );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"    Ex: /OperServ AKILL RESET"+f.b ( )+""                                                      );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   MAKill is a MASS-AKILL command and is powerful and allow staff to remove unwanted clients"                 );
+        this.service.sendMsg ( user, "   from the network. You are unable to place akills that matches opers or white listed"                       );
+        this.service.sendMsg ( user, "   ips. Note that nick is passed using the command but the field is never used. Also note that"               );
+        this.service.sendMsg ( user, "   this command is mainly for use by scripts and to minimize the amount of akill calls an oper"               );
+        this.service.sendMsg ( user, "   has to make to services to akill a huge list of masks."                                                    );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Note that this command was created to be able to akill by the masses. The add command"                     );
+        this.service.sendMsg ( user, "   will add the masks into a list and return statistic information about the current amount"                  );
+        this.service.sendMsg ( user, "   of masks in memory. The command will return error if an ip is not added to"                                );
+        this.service.sendMsg ( user, "   the list correctly for some reason like if its whitelisted or already akilled."                            );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   Place akills based on ips as the ircd's will use less resources on ips."                                   );
+        this.showEnd ( user );
+    }
     
     public void comment ( User user )  { 
-        this.showStart ( user, "AKill" );
+        this.showStart ( user, "Comment" );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ COMMENT <nick|chan> <comment>"+f.b ( ) +""                                   );
         this.service.sendMsg ( user, "   "                                                                                                          );
@@ -195,7 +225,7 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "   to a nick or channel."                                                                                     );
         this.showEnd ( user );
     }
-    
+        
     public void searchLog ( User user )  { 
         this.showStart ( user, "SearchLog" );
         this.service.sendMsg ( user, "   "                                                                                                          );

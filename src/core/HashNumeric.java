@@ -170,6 +170,9 @@ public abstract class HashNumeric extends TextFormat {
     public static final int STOP                        = 2555906;
     public static final int PRIMARY                     = 403216866;
     public static final int SECONDARY                   = 1968996692;
+    public static final int MAKILL                      = -2028186894;
+    public static final int RESET                       = 77866287;
+    public static final int COMMIT                      = 1993481527;
     
     
     /* ROOTSERV */
