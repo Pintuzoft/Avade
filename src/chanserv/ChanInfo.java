@@ -45,7 +45,7 @@ public class ChanInfo extends HashNumeric {
     private ChanSetting     settings;
     private CSFlag          chanFlag;
     private String          regTime;
-    private String          lastSeen; 
+    private String          lastUsed; 
     
     private ArrayList<CSAcc> klist;
     private ArrayList<CSAcc> slist;
@@ -58,7 +58,7 @@ public class ChanInfo extends HashNumeric {
     private CSChanges       changes = new CSChanges ( );
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, String regStamp, String lastSeen, ChanSetting settings )  {
+    public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, String regStamp, String lastUsed, ChanSetting settings )  {
         /* Load chan */
         this.name       = name;
         this.hashName   = this.name.toUpperCase().hashCode ( );
@@ -66,7 +66,7 @@ public class ChanInfo extends HashNumeric {
         this.desc       = desc;
         this.topic      = topic;
         this.regTime    = regStamp.substring(0,19);
-        this.lastSeen   = lastSeen.substring(0,19);
+        this.lastUsed   = lastUsed.substring(0,19);
         this.settings   = settings;
         this.attachFounder ( founder );
         this.klist      = new ArrayList<>();
@@ -88,7 +88,7 @@ public class ChanInfo extends HashNumeric {
         this.settings   = new ChanSetting ( );
         Date dateBuf    = new Date ( );
         this.regTime    = dateFormat.format ( dateBuf );
-        this.lastSeen   = dateFormat.format ( dateBuf );
+        this.lastUsed   = dateFormat.format ( dateBuf );
         this.klist      = new ArrayList<>();
         this.slist      = new ArrayList<>();
         this.alist      = new ArrayList<>();
@@ -172,8 +172,8 @@ public class ChanInfo extends HashNumeric {
                 }
                 return "";
                 
-            case LASTSEEN :
-                return this.lastSeen;
+            case LASTUSED :
+                return this.lastUsed;
 
             case REGTIME :
                 return this.regTime;
@@ -208,6 +208,11 @@ public class ChanInfo extends HashNumeric {
         return false;
     }
 
+    public void setLastUsed ( ) {
+        Date dateBuf    = new Date ( );
+        this.lastUsed   = dateFormat.format ( dateBuf );
+        this.changes.change ( LASTUSED );
+    }
      
     
     public String getPass ( )  {

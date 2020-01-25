@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import operserv.OperServ;
 
 /**
  *
@@ -219,7 +218,7 @@ import operserv.OperServ;
         user.getSID().add ( ni );          /* Add nick to user sid */
         NickServ.fixIdentState ( user );
         ni.getNickExp().reset ( );
-        ni.getChanges().hasChanged ( LASTSEEN );
+        ni.getChanges().hasChanged ( LASTUSED );
         NickServ.addToWorkList ( CHANGE, ni );
         Database.updateServicesID ( user.getSID() );
     }
@@ -373,7 +372,7 @@ import operserv.OperServ;
         }
         user.getSID().add ( ni );
         NickServ.fixIdentState ( user );
-        ni.getChanges().hasChanged ( LASTSEEN );
+        ni.getChanges().hasChanged ( LASTUSED );
         NickServ.addToWorkList ( CHANGE, ni );
     }
 
@@ -427,7 +426,7 @@ import operserv.OperServ;
         this.snoop.msg ( true, ni.getName ( ), user, cmd );
         NickServ.fixIdentState ( user );
         user.getSID().add ( ni );
-        ni.getChanges().hasChanged ( LASTSEEN );
+        ni.getChanges().hasChanged ( LASTUSED );
         NickServ.addToWorkList ( CHANGE, ni );
     }
     
@@ -456,7 +455,7 @@ import operserv.OperServ;
             this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER ) +"@"+ni.getName ( ) +"."+ ( ni.getOper().getString ( ACCSTRINGSHORT ) ) +"."+Proc.getConf().get (DOMAIN ) );
         }
         this.service.sendMsg ( user, f.b ( ) +"  Registered: "+f.b ( ) +ni.getString ( REGTIME ) );
-        this.service.sendMsg ( user, f.b ( ) +"    Lastseen: "+f.b ( ) +ni.getString ( LASTSEEN ) );
+        this.service.sendMsg ( user, f.b ( ) +"    Last seen: "+f.b ( ) +ni.getString ( LASTUSED ) );
         this.service.sendMsg ( user, f.b ( ) +"    Time now: "+f.b ( ) +dateFormat.format ( new Date ( ) ) );
         if ( ni.getSettings().getInfoStr().length() > 0 ) {
             this.service.sendMsg ( user, f.b ( ) +"    Settings: "+f.b ( ) +ni.getSettings().getInfoStr ( ) );

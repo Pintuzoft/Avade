@@ -609,7 +609,7 @@ import java.util.Random;
         this.service.sendMsg ( user, " Description: "+ci.getString ( DESCRIPTION ) );
         this.service.sendMsg ( user, "    Settings: "+ci.getSettings().getInfoStr ( ) );
         this.service.sendMsg ( user, "  Registered: "+ci.getString ( REGTIME ) );
-        this.service.sendMsg ( user, "    Lastseen: "+ci.getString ( LASTSEEN ) );
+        this.service.sendMsg ( user, "   Last used: "+ci.getString ( LASTUSED ) );
         this.service.sendMsg ( user, "    Time now: "+dateFormat.format ( new Date ( ) ) );
   
         if ( user.isAtleast ( IRCOP ) ) {

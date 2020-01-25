@@ -306,9 +306,15 @@ public class ChanServ extends Service {
     
     public void opUser ( Chan c, User user )  {
         // :Pintuz MODE #avade 0 +o Pintuz
+        ChanInfo ci;
         if ( ! c.isOp ( user )  )  {
             this.sendCmd ( "MODE "+c.getString ( NAME )+" +o "+user.getString ( NAME )  );
             c.chModeUser ( user, OP, OP, false );
+            if ( ( ci = ChanServ.findChan ( c.getString(NAME) ) ) != null ) {
+                ci.setLastUsed();
+                ci.getChanges().change ( LASTUSED );
+                ChanServ.changeList.add ( ci );
+            }
         }
     }
     
@@ -567,6 +573,7 @@ public class ChanServ extends Service {
                 return;
             }
         }
+        ci.setLastUsed();
         getWorkList(list).add ( ci );
     }
     

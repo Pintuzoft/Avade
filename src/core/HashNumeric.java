@@ -295,9 +295,7 @@ public abstract class HashNumeric extends TextFormat {
     public final static int TOPICLOG                    = -174652491;
     public final static int FORCENICK                   = 20432046;
 
-    public final static int LASTOPED                    = -675975722;
-
-    
+   
     /* NICKSETTING */
     public final static int ENFORCED                    = -1714819902;
     public final static int SECURED                     = -1606705235;
@@ -338,7 +336,7 @@ public abstract class HashNumeric extends TextFormat {
     /* NICKINFO */
     public final static int MAIL                        = 2358711;
     public final static int FULLMASK                    = 2114402811;
-    public final static int LASTSEEN                    = -675867119;
+    public final static int LASTUSED                    = -675794093;
     public final static int REGTIME                     = 1804414273;
         
     /* MEMOSERV */

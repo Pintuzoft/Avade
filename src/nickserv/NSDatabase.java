@@ -176,7 +176,7 @@ public class NSDatabase extends Database {
             String query;
             
             if ( ni.getChanges().hasChanged(FULLMASK) ||
-                 ni.getChanges().hasChanged(LASTSEEN) ) {
+                 ni.getChanges().hasChanged(LASTUSED) ) {
                 query = "update nick "
                        +"set mask = ?, stamp = now() "
                        +"where name = ?";

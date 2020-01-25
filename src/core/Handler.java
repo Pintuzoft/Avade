@@ -43,7 +43,6 @@ import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import operserv.ServicesBan;
 

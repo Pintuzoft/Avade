@@ -33,7 +33,7 @@ public class CSChanges extends Changes {
     private boolean close;
     private boolean auditorium;
     private boolean topic;
-    private boolean lastoped;
+    private boolean lastused;
     private boolean description;
     private boolean topiclock;
     private boolean modelock;
@@ -76,7 +76,7 @@ public class CSChanges extends Changes {
         this.close = false;
         this.auditorium = false;
         this.topic = false;
-        this.lastoped = false;
+        this.lastused = false;
         this.description = false;
         this.topiclock = false;
         this.modelock = false;
@@ -127,8 +127,8 @@ public class CSChanges extends Changes {
             case TOPIC :
                 return this.topic;
 
-            case LASTOPED :
-                return this.lastoped;
+            case LASTUSED :
+                return this.lastused;
 
             case DESCRIPTION :
                 return this.description;
@@ -208,6 +208,7 @@ public class CSChanges extends Changes {
     }
     
     public void change ( int what ) {
+        System.out.println("debug: change: "+what);
         switch ( what ) {
             case FREEZE :
                 this.freeze = true;
@@ -244,8 +245,8 @@ public class CSChanges extends Changes {
                 this.changed = true;
                 break;
 
-            case LASTOPED :
-                this.lastoped = true;
+            case LASTUSED :
+                this.lastused = true;
                 this.changed = true;
                 break;
 
@@ -397,8 +398,8 @@ public class CSChanges extends Changes {
             System.out.println("Changes: auditorium!");
         if ( this.topic )
             System.out.println("Changes: topic!");
-        if ( this.lastoped )
-            System.out.println("Changes: lastoped!");
+        if ( this.lastused )
+            System.out.println("Changes: lastused!");
         if ( this.description )
             System.out.println("Changes: description!");
         if ( this.topiclock )

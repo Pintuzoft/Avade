@@ -83,7 +83,7 @@ public class NSChanges extends Changes {
             case MAIL :
                 return this.mail;
 
-            case LASTSEEN :
+            case LASTUSED :
                 return this.lastseen;
 
             case NOOP :
@@ -143,7 +143,7 @@ public class NSChanges extends Changes {
                 this.changed = true;
                 break;
 
-            case LASTSEEN :
+            case LASTUSED :
                 this.lastseen = true;
                 this.changed = true;
                 break;

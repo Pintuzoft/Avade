@@ -117,7 +117,7 @@ public class CSDatabase extends Database {
                 ps.setString  ( 4, salt );             
                 ps.setString  ( 5, ci.getString ( DESCRIPTION )  );
                 ps.setString  ( 6, ci.getString ( REGTIME ) );
-                ps.setString  ( 7, ci.getString ( LASTSEEN ) );
+                ps.setString  ( 7, ci.getString ( LASTUSED ) );
                 ps.execute ( );
                 ps.close ( );
                 /*
@@ -207,17 +207,18 @@ public class CSDatabase extends Database {
                 String query;
                 if ( ci.getChanges().hasChanged ( FOUNDER ) ||
                      ci.getChanges().hasChanged ( DESCRIPTION ) ||
-                     ci.getChanges().hasChanged ( LASTOPED ) ) {
+                     ci.getChanges().hasChanged ( LASTUSED ) ) {
                     String salt = config.get ( SECRETSALT );
                     query = "UPDATE chan SET "+
-                            "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = FROM_UNIXTIME(UNIX_TIMESTAMP()) "+
+                            "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = ? "+
                             "WHERE name = ?";
                     ps = sql.prepareStatement ( query );
-                    ps.setString  ( 1, ci.getFounder ( ) .getName ( )  );
+                    ps.setString  ( 1, ci.getFounder ( ) .getName ( ) );
                     ps.setString  ( 2, ci.getPass ( ) );
                     ps.setString  ( 3, salt );
-                    ps.setString  ( 4, ci.getString ( DESCRIPTION )  );
-                    ps.setString  ( 5, ci.getString ( NAME )  ); 
+                    ps.setString  ( 4, ci.getString ( DESCRIPTION ) );
+                    ps.setString  ( 5, ci.getString ( LASTUSED ) );
+                    ps.setString  ( 6, ci.getString ( NAME )  ); 
                     ps.executeUpdate ( );
                     ps.close ( );
                 }

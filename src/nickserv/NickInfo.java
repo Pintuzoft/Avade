@@ -20,16 +20,12 @@ package nickserv;
 import chanserv.ChanInfo;
 import core.Expire;
 import core.Handler;
-import core.Proc;
 import core.HashNumeric;
 import memoserv.MSDatabase;
 import memoserv.MemoInfo;
 import operserv.Oper;
-import security.Hash;
-import server.ServSock;
 import user.User;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,7 +49,7 @@ public class NickInfo extends HashNumeric {
     private String                  mail; 
     private NickSetting             settings;
     private String                  regTime;
-    private String                  lastSeen; 
+    private String                  lastUsed; 
     private Date                    date; 
     private Oper                    oper; 
     private ArrayList<MemoInfo>     mList;
@@ -78,7 +74,7 @@ public class NickInfo extends HashNumeric {
         this.pass       = pass;
         this.mail       = mail; 
         this.regTime    = regStamp.substring(0,19);
-        this.lastSeen   = lastSeen.substring(0,19);
+        this.lastUsed   = lastSeen.substring(0,19);
         this.settings   = settings;
         this.exp        = exp;
         this.changes    = new NSChanges ( );
@@ -99,7 +95,7 @@ public class NickInfo extends HashNumeric {
         this.settings   = new NickSetting ( );
         String date = this.dateFormat.format ( new Date ( ) );
         this.regTime    = date;
-        this.lastSeen   = date; 
+        this.lastUsed   = date; 
         this.date       = new Date ( );
         this.oper       = null;
         this.changes    = new NSChanges ( );
@@ -123,7 +119,7 @@ public class NickInfo extends HashNumeric {
             this.mail       = "master@localhost";
             String date = this.dateFormat.format ( new Date ( ) );
             this.regTime    = date;
-            this.lastSeen   = date;
+            this.lastUsed   = date;
             this.date       = new Date ( );
             this.oper       = new Oper ( u.getString ( NAME ), 5, "" );
             this.exp        = new Expire ( );
@@ -174,8 +170,8 @@ public class NickInfo extends HashNumeric {
             case FULLMASK :
                 return this.name+"!"+this.user+"@"+this.host;
                 
-            case LASTSEEN :
-                return this.lastSeen;
+            case LASTUSED :
+                return this.lastUsed;
                 
             case REGTIME :
                 return this.regTime;
@@ -208,7 +204,7 @@ public class NickInfo extends HashNumeric {
     /* Returns true if nick is older than expiretime */
     public boolean olderThanExpireTime ( )  {
         return false;
-   //     return  ( ( System.currentTimeMillis ( ) /1000 - this.lastSeen )  > Handler.expireToTime ( Proc.getConf ( ) .get ( EXPIRE ) ) );
+   //     return  ( ( System.currentTimeMillis ( ) /1000 - this.lastUsed )  > Handler.expireToTime ( Proc.getConf ( ) .get ( EXPIRE ) ) );
     }
     
     /* Return true if last mail was sent more than a day ago */
@@ -223,7 +219,7 @@ public class NickInfo extends HashNumeric {
         }
         
         if ( this.pass.compareTo ( pass ) == 0 )  {
-            this.changes.hasChanged ( LASTSEEN );
+            this.changes.hasChanged ( LASTUSED );
             return true;
         }
         return false;
