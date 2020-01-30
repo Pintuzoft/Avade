@@ -21,6 +21,7 @@ import chanserv.ChanInfo;
 import core.Expire;
 import core.Handler;
 import core.HashNumeric;
+import core.Throttle;
 import memoserv.MSDatabase;
 import memoserv.MemoInfo;
 import operserv.Oper;
@@ -55,6 +56,7 @@ public class NickInfo extends HashNumeric {
     private ArrayList<MemoInfo>     mList;
     private Expire                  exp;
     private NSChanges               changes;
+    private Throttle                throttle;       /* throttle login attempts */
     private ArrayList<ChanInfo>     akickList = new ArrayList<>();
     private ArrayList<ChanInfo>     aopList = new ArrayList<>();
     private ArrayList<ChanInfo>     sopList = new ArrayList<>();
@@ -68,6 +70,7 @@ public class NickInfo extends HashNumeric {
         this.hashName   = name.toUpperCase().hashCode ( );
         this.hashMask   =  ( user+"@"+host ).toUpperCase().hashCode ( );
         this.user       = user;
+        this.host       = host;
         //this.ip         = ip;
         this.date       = new Date ( );
         this.oper       = null; 
@@ -78,6 +81,7 @@ public class NickInfo extends HashNumeric {
         this.settings   = settings;
         this.exp        = exp;
         this.changes    = new NSChanges ( );
+        this.throttle   = new Throttle ( );
         this.attachMemos ( ); 
      }
 
@@ -99,6 +103,7 @@ public class NickInfo extends HashNumeric {
         this.date       = new Date ( );
         this.oper       = null;
         this.changes    = new NSChanges ( );
+        this.throttle   = new Throttle ( );
         this.userIdent ( user );
         this.attachMemos ( );
     }
@@ -124,10 +129,12 @@ public class NickInfo extends HashNumeric {
             this.oper       = new Oper ( u.getString ( NAME ), 5, "" );
             this.exp        = new Expire ( );
             this.changes    = new NSChanges ( );
+            this.throttle   = new Throttle ( );
 
             this.userIdent ( u );
             this.attachMemos ( );
             this.settings = new NickSetting ( );
+
             Handler.getRootServ().sendMsg ( u, "Nick: "+u.getString ( NAME )+" has been registered to you using password: "+passwd );
         }
     }
@@ -138,9 +145,14 @@ public class NickInfo extends HashNumeric {
     
     public void setUserMask ( User user )  {
         this.user       = user.getString ( USER );
-        this.ip         = user.getString ( HOST );
+        this.host       = user.getString ( HOST );
+        this.ip         = user.getString ( IP );
         this.hashMask   =  ( user.getString(USER)+"@"+user.getString(HOST) ).toUpperCase().hashCode ( );
-        this.changes.hasChanged ( FULLMASK );
+        this.changes.change ( USER );
+        this.changes.change ( HOST );
+        this.changes.change ( IP );
+        this.changes.change ( FULLMASK );
+        NickServ.addToWorkList ( CHANGE, this );
     }
  
     /* Identify nick in user */
@@ -384,5 +396,9 @@ public class NickInfo extends HashNumeric {
     }
     public boolean isAuth ( ) {
         return this.mail.length() > 0;
+    }
+    
+    public Throttle getThrottle ( ) {
+        return this.throttle;
     }
 }

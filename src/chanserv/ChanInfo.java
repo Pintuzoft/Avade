@@ -23,6 +23,7 @@ import core.Handler;
 import core.ServicesID;
 import core.HashNumeric;
 import static core.HashNumeric.SOP;
+import core.Throttle;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
@@ -46,7 +47,8 @@ public class ChanInfo extends HashNumeric {
     private CSFlag          chanFlag;
     private String          regTime;
     private String          lastUsed; 
-    
+    private Throttle        throttle;       /* throttle login attempts */
+
     private ArrayList<CSAcc> klist;
     private ArrayList<CSAcc> slist;
     private ArrayList<CSAcc> alist;
@@ -69,6 +71,7 @@ public class ChanInfo extends HashNumeric {
         this.lastUsed   = lastUsed.substring(0,19);
         this.settings   = settings;
         this.attachFounder ( founder );
+        this.throttle   = new Throttle ( );
         this.klist      = new ArrayList<>();
         this.slist      = new ArrayList<>();
         this.alist      = new ArrayList<>();
@@ -86,6 +89,7 @@ public class ChanInfo extends HashNumeric {
         this.desc       = desc;
         this.topic      = topic;
         this.settings   = new ChanSetting ( );
+        this.throttle   = new Throttle ( );
         Date dateBuf    = new Date ( );
         this.regTime    = dateFormat.format ( dateBuf );
         this.lastUsed   = dateFormat.format ( dateBuf );
@@ -464,10 +468,7 @@ public class ChanInfo extends HashNumeric {
                 }
             }
         }
-        if ( isFounder(user) ) {
-            return true;
-        }
-        return false;
+        return isFounder ( user );
     }
 
     public boolean isAccess ( int access, NickInfo ni )  {
@@ -719,5 +720,8 @@ public class ChanInfo extends HashNumeric {
 
     void setChanFlag ( CSFlag chanFlag ) {
         this.chanFlag = chanFlag;
+    }
+    public Throttle getThrottle ( ) {
+        return this.throttle;
     }
 }

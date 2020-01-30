@@ -187,7 +187,6 @@ import java.util.regex.Pattern;
             cmdData = this.validateCommandData ( user, IDENTIFY, cmd );
         }
         
-        System.out.println(":0");
         switch ( cmdData.getStatus ( )  )  {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ID_ERROR, "" )  );
@@ -204,6 +203,10 @@ import java.util.regex.Pattern;
             case IS_FROZEN : 
                 this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
                 return;
+                              
+            case IS_THROTTLED : 
+                this.service.sendMsg ( user, output ( IS_THROTTLED, cmdData.getString1 ( ) ) );
+                return;
                              
             default :
                 
@@ -214,7 +217,7 @@ import java.util.regex.Pattern;
             ni.setUserMask ( user );        
         }  
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
-        ni.setUserMask ( user );           /* Set user mask */
+        //ni.setUserMask ( user );           /* Set user mask */
         user.getSID().add ( ni );          /* Add nick to user sid */
         NickServ.fixIdentState ( user );
         ni.getNickExp().reset ( );
@@ -358,6 +361,10 @@ import java.util.regex.Pattern;
              
             case IS_FROZEN : 
                 this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
+                return;
+
+            case IS_THROTTLED : 
+                this.service.sendMsg ( user, output ( IS_THROTTLED, cmdData.getString1 ( ) ) );
                 return;
             
             default : 
@@ -934,7 +941,10 @@ import java.util.regex.Pattern;
                 } else if ( ni.is ( FROZEN ) ) {
                     cmdData.setNick ( ni );
                     cmdData.setStatus ( IS_FROZEN ); 
-                } else if ( ! ni.identify ( user, cmd[5] ) ) {
+                } else if ( ni.getThrottle().isThrottled() ) {
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_THROTTLED );
+                 } else if ( ! ni.identify ( user, cmd[5] ) ) {
                     cmdData.setNick ( ni );
                     cmdData.setStatus ( IDENTIFY_FAIL );
                 } else {
@@ -951,7 +961,10 @@ import java.util.regex.Pattern;
                     cmdData.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.is ( FROZEN ) ) {
                     cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN ); 
+                    cmdData.setStatus ( IS_FROZEN );
+                } else if ( ni.getHashMask() != user.getHashMask() && ni.getThrottle().isThrottled() ) {
+                    cmdData.setNick ( ni );
+                    cmdData.setStatus ( IS_THROTTLED );
                 } else if ( ! ni.identify ( user, cmd[4] ) ) {
                     cmdData.setNick ( ni );
                     cmdData.setStatus ( IDENTIFY_FAIL ); 
@@ -1306,6 +1319,9 @@ import java.util.regex.Pattern;
  
             case IS_NOGHOST :
                 return "Error: Nick "+args[0]+" is set noghost by a network staff and cannot be ghosted.";
+             
+            case IS_THROTTLED :
+                return "Error: Throttled login attempts.";
  
             case GLOB_IS_NOGHOST :
                 return args[0]+" tried using GHOST on NOGHOST nick "+args[1]+".";
@@ -1373,7 +1389,8 @@ import java.util.regex.Pattern;
     private final static int IS_MARKED                = 2401; 
     private final static int IS_FROZEN                = 2402; 
     private final static int IS_NOGHOST               = 2403; 
-    private final static int GLOB_IS_NOGHOST          = 2404; 
+    private final static int IS_THROTTLED             = 2404; 
+    private final static int GLOB_IS_NOGHOST          = 2405; 
 
     private final static int NICKDROPPED              = 2501; 
     private final static int NICKDELETED              = 2502; 

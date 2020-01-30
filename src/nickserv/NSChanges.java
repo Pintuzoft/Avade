@@ -208,7 +208,7 @@ public class NSChanges extends Changes {
             System.out.println("Changes: showhost!");
         if ( this.changed ) 
             System.out.println("Changes: changed!");
-       
+        System.out.println("***** End of Changes *****");
     }
 
     

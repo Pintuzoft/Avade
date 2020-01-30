@@ -153,6 +153,7 @@ public class NSDatabase extends Database {
     /* NickServ Methods */
     public static int updateNick ( NickInfo ni )  {
         Config config = Proc.getConf ( );
+        
         ni.getChanges().printChanges();
         if ( ! ni.getChanges().changed ( ) ) {
             return 1;
@@ -166,26 +167,25 @@ public class NSDatabase extends Database {
             return -4;
         } 
         
-        System.out.println("updateNick0: "+ni.getString ( USER ) );
-        System.out.println("updateNick1: "+ni.getString ( IP ) );
-        System.out.println("updateNick2: "+ni.getString ( NAME ) );
+//        System.out.println("updateNick0: "+ni.getString ( USER ) );
+//        System.out.println("updateNick1: "+ni.getString ( IP ) );
+//        System.out.println("updateNick2: "+ni.getString ( NAME ) );
         
         /* Try change the nick */
         try {
             String salt = config.get ( SECRETSALT ); 
             String query;
-            
+
             if ( ni.getChanges().hasChanged(FULLMASK) ||
                  ni.getChanges().hasChanged(LASTUSED) ) {
                 query = "update nick "
                        +"set mask = ?, stamp = now() "
                        +"where name = ?";
                 ps = sql.prepareStatement ( query );
-                ps.setString   ( 1, ni.getString ( USER ) +"@"+ni.getString ( IP )            );
-                ps.setString   ( 2, ni.getString ( NAME )                                     );
+                ps.setString   ( 1, ni.getString(USER)+"@"+ni.getString(IP) );
+                ps.setString   ( 2, ni.getString ( NAME ) );
                 ps.executeUpdate ( );
                 ps.close ( );
-
             }
             
             String changes = new String ( );
@@ -756,6 +756,8 @@ public class NSDatabase extends Database {
              
             while ( res.next ( ) ) { 
                 buf = res.getString(3).split ( Pattern.quote ( "@" ) );
+                System.out.println("debug: buf[0]: "+buf[0]);
+                System.out.println("debug: buf[1]: "+buf[1]);
                 settings = getSettings ( res.getString ( 1 ) );
                 exp = getNickExp ( res.getString ( 1 ) );
                 exp = ( exp != null ? exp : new Expire ( ) );

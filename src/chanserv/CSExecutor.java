@@ -470,17 +470,21 @@ import java.util.Random;
                 return;
                 
             case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
                 return;
             
             case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
                 return;
             
+            case IS_THROTTLED : 
+                this.service.sendMsg ( user, output ( IS_THROTTLED, cmdData.getChanInfo().getName ( ) ) );
+                return;
+
             case INVALID_PASSWORD :
                 this.service.sendMsg ( user, output ( INVALID_PASSWORD, "" ) ); 
                 return; 
-                
+                                         
             default :
                 
         }
@@ -2122,6 +2126,9 @@ import java.util.Random;
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( CHAN_IS_CLOSED );
+                } else if ( ! ci.isFounder(user) && ci.getThrottle().isThrottled() ) {
+                    cmdData.setChanInfo ( ci );
+                    cmdData.setStatus ( IS_THROTTLED );
                 } else if ( ! ci.identify ( user, cmd[5] ) ) {
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( INVALID_PASSWORD ); 
@@ -2541,7 +2548,10 @@ import java.util.Random;
                 
             case CHAN_IS_CLOSED :
                 return "Channel "+args[0]+" is Closed by an IRC operator.";
-                
+
+            case IS_THROTTLED :
+                return "Error: Throttled login attempts.";
+                 
             case MODELOCK :
                 return "Channel "+args[0]+" has now locked its modes as: "+args[1]+".";
                 
@@ -2681,6 +2691,7 @@ import java.util.Random;
     private final static int CHAN_GETPASS               = 2301;
     
     private final static int IS_MARKED                  = 2401; 
+    private final static int IS_THROTTLED               = 2402;
  
     private final static int SHOWACCESSLOG              = 2501; 
     private final static int SHOWACCESSLOGOPER          = 2502; 
