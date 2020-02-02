@@ -18,14 +18,12 @@
 package memoserv;
 
 import chanserv.CSAcc;
-import chanserv.CSAccess;
 import chanserv.ChanInfo;
 import chanserv.ChanServ;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import core.Executor;
 import core.Handler;
-import core.Proc;
 import core.TextFormat;
 import mail.SendMail;
 import user.User;

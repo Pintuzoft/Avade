@@ -10,6 +10,9 @@ import java.util.regex.Pattern;
 import core.CIDRUtils;
 import core.HashNumeric;
 import java.net.UnknownHostException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nickserv.NickInfo;
@@ -22,9 +25,11 @@ import user.User;
 public class CSAcc extends HashNumeric {
     private static Pattern IPv4 = Pattern.compile ( "^(1?(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\.){3}(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])$", Pattern.CASE_INSENSITIVE );
     private static Pattern IPv6 = Pattern.compile ( "^([0-9A-Fa-f]{0,4}:){2,7}([0-9A-Fa-f]{1,4}$|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\\.|$)){4})$", Pattern.CASE_INSENSITIVE );
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private NickInfo ni;
     private int access;
+    private String lastOped;
     
     private boolean isCidr = false;
     private boolean isIPv4 = false;
@@ -47,12 +52,17 @@ public class CSAcc extends HashNumeric {
     private int cidr = -1;
     private int hashMask;
     
-    public CSAcc ( NickInfo ni, int access ) {
+    public CSAcc ( NickInfo ni, int access, String lastOped ) {
         this.ni = ni;
         this.access = access;
+        if ( lastOped != null ) {
+            this.lastOped = lastOped.substring(0,19);
+        } else {
+            this.lastOped = lastOped;
+        }
     }
     
-    public CSAcc ( String mask, int access ) {
+    public CSAcc ( String mask, int access, String lastOped ) {
         this.rawMask = mask;
         this.hashMask = mask.hashCode();
         String[] parts = mask.split("[!@/]");
@@ -63,6 +73,11 @@ public class CSAcc extends HashNumeric {
      //   System.out.println("CSAcc: user: "+this.user);
      //   System.out.println("CSAcc: host: "+this.host);
         this.access = access;
+        if ( lastOped != null ) {
+            this.lastOped = lastOped.substring(0,19);
+        } else {
+            this.lastOped = lastOped;
+        }
         try {
             if ( parts.length > 3 ) {
                 this.cidr = Integer.parseInt ( parts[3] );
@@ -246,6 +261,13 @@ public class CSAcc extends HashNumeric {
     
     public int getAccess ( ) {
         return this.access;
+    }
+
+    public String getLastOped ( ) {
+        return this.lastOped;
+    }
+    public void updateLastOped ( ) {
+        this.lastOped = dateFormat.format ( new Date ( ) );
     }
     
 }

@@ -41,8 +41,8 @@ public class DBChanges extends HashNumeric {
         build++;
         int target = this.convertVersion ( this.version.getGeneration(), this.version.getYear(), this.version.getMonth(), this.version.getBuild() );
         int current = this.convertVersion ( generation, year, month, build++ );
-        
-        while ( target > current && ! this.applyChanges ( current ) ) {
+         
+        while ( current <= target && ! this.applyChanges ( current ) ) {
             if ( build > 9 ) {
                 build = 1;
                 month++;
@@ -57,8 +57,8 @@ public class DBChanges extends HashNumeric {
             }
             current = this.convertVersion ( generation, year, month, build++ );
         }
-       
-       // System.exit ( 1 );
+   
+        //System.exit ( 1 );
  
     }
         
@@ -69,6 +69,7 @@ public class DBChanges extends HashNumeric {
     private boolean applyChanges ( int target ) {
         int counter = 0;
         ArrayList<String> qList = new ArrayList<>();
+        //System.out.println("debug: applyChanges ( "+target+" )");
         switch ( target ) {
             case 117021 :
                 qList.add ( "to: v1.1702-1 (Initial version)");
@@ -108,6 +109,11 @@ public class DBChanges extends HashNumeric {
                 qList.add ( "to: v1.1904-3");
                 qList.addAll ( this.db119043 ( ) );
                 qList.add ( "update settings set value = '1.1904-3' where name = 'version'" );
+
+            case 120011 :
+                qList.add ( "to: v1.2001-1");
+                qList.addAll ( this.db120011 ( ) );
+                qList.add ( "update settings set value = '1.2001-1' where name = 'version'" );
 
                 break;
                 
@@ -440,6 +446,11 @@ public class DBChanges extends HashNumeric {
     private ArrayList<String> db119043 ( ) {
         ArrayList<String> qList = new ArrayList<>();
         qList.add ( "drop table host;" );
+        return qList;
+    }
+    private ArrayList<String> db120011 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table chanaccess add lastoped datetime default null;" );
         return qList;
     }
     //

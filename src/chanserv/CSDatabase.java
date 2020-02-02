@@ -484,6 +484,36 @@ public class CSDatabase extends Database {
         return false;
     }
      
+    public static int updateChanAccessLastOped ( ChanInfo ci, CSAcc acc ) {
+        if ( ! activateConnection ( ) ) {
+            /* No SQL connection */
+            return -2;
+
+        } else if ( ci == null )  {
+            /* No valid chan was sent */
+            return -3;
+        } else {
+            try {
+                String query = "update chanaccess set lastoped = ? "
+                             + "where name = ? and nick = ?";
+                ps = sql.prepareStatement ( query );
+                ps.setString   ( 1, acc.getLastOped() );
+                ps.setString   ( 2, ci.getName() );
+                ps.setString   ( 3, acc.getNick().getName() );
+                ps.execute ( );
+                ps.close ( );
+                 
+                idleUpdate ( "updateChanAccessLastOped ( ) " );
+            } catch  ( SQLException ex )  {
+                /* Was not updated? return -1 */
+                Proc.log ( CSDatabase.class.getName ( ), ex );
+                return -1;
+            }
+            
+        }
+        return 1;
+    }
+
     public static int addChanAccess ( ChanInfo ci, CSAcc op, int access )  {
 
         if ( ! activateConnection ( )  )  {
@@ -676,6 +706,8 @@ public class CSDatabase extends Database {
     
     public static ArrayList<CSAcc> getChanAccess ( ChanInfo ci, int access )  {
         String[] buf;
+        NickInfo ni;
+        String stamp;
         ArrayList<CSAcc> opList = new ArrayList<> ( );
         if ( ! activateConnection ( )  )  {
             return opList;
@@ -699,7 +731,7 @@ public class CSDatabase extends Database {
                 default :
             } 
 
-            String query = "SELECT nick "
+            String query = "SELECT nick,lastoped "
                          + "FROM chanaccess "
                          + "WHERE name = ? "
                          + "AND access = ?";
@@ -708,19 +740,20 @@ public class CSDatabase extends Database {
             ps.setString  ( 2, acc );
             res3 = ps.executeQuery ( );
 
-            while ( res3.next ( )  )  { 
+            while ( res3.next ( ) ) { 
                 try {
-                    NickInfo ni = NickServ.findNick( res3.getString ( 1 ) );
+                    ni = NickServ.findNick( res3.getString ( 1 ) );
+                    stamp = res3.getString ( 2 );
                     if ( ni != null ) {
-                        chanOp = new CSAcc ( ni, access );
+                        chanOp = new CSAcc ( ni, access, stamp );
                     } else {
-                        System.out.println("DEBUG!!!!!: "+res3.getString ( 1 ) );
-                        chanOp = new CSAcc ( res3.getString ( 1 ), access );
+                        //System.out.println("DEBUG!!!!!: "+res3.getString ( 1 ) );
+                        chanOp = new CSAcc ( res3.getString ( 1 ), access, stamp );
                     }
                     opList.add ( chanOp );
 
                 } catch ( SQLException | NumberFormatException e )  {
-                    Proc.log ( CSDatabase.class.getName ( ) , e );
+                    Proc.log ( CSDatabase.class.getName ( ), e );
                 }
             }
             res3.close ( );
@@ -729,7 +762,7 @@ public class CSDatabase extends Database {
             return opList;
             
         } catch  ( SQLException ex )  {
-            Proc.log ( CSDatabase.class.getName ( ) , ex );
+            Proc.log ( CSDatabase.class.getName ( ), ex );
         } 
         return null;
     }

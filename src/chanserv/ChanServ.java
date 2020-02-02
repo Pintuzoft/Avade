@@ -182,18 +182,17 @@ public class ChanServ extends Service {
                  
             if ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
                 return;
+            }  else if ( ci.is ( RESTRICT ) ) {
+                banUser ( c, user, null );
+                kickUser ( c, user );
             }
-
+            
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
                 if ( ni == null || ( ni != null && ! ni.is ( NEVEROP ) ) ) {
                     opUser ( c, user );
-                }
-
-            } else if ( ci.is ( RESTRICT ) ) {
-                banUser ( c, user, null );
-                kickUser ( c, user );
-                
+                    ci.updateLastOped ( user );
+                }    
             } else if ( ci.isAkick ( user ) ) {
                 acc = ci.getAkickAccess ( user );
                 banUser ( c, user, ( acc.getRawMask() != null ? acc.getRawMask() : null ) );

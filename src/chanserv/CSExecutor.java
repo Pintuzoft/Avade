@@ -738,7 +738,11 @@ import java.util.Random;
         ArrayList<CSAcc> list = ci.getAccessList ( access );
         for ( CSAcc acc : list )  {     
             if ( acc.getNick ( ) != null )  {
-                this.service.sendMsg ( user,  " - "+acc.getNick().getString ( NAME )+" ("+acc.getNick ( ) .getString ( FULLMASK ) +") (nick)" );
+                if ( acc.getLastOped() != null ) {
+                    this.service.sendMsg ( user,  " - "+acc.getNick().getString ( NAME )+" ("+acc.getNick().getString ( FULLMASK )+") - [LastOped: "+acc.getLastOped()+"]" );
+                } else {
+                    this.service.sendMsg ( user,  " - "+acc.getNick().getString ( NAME )+" ("+acc.getNick().getString ( FULLMASK )+")" );
+                }
             } else {
                 this.service.sendMsg ( user,  " - "+acc.getMask ( )+" (mask)" );
             }
@@ -1765,7 +1769,7 @@ import java.util.Random;
             ArrayList<CSAcc> list = ci.getAccessList ( access );
             for ( CSAcc acc : list )  {     
                 if ( acc.getNick ( ) != null )  {
-                    this.service.sendMsg ( user,  "  "+acc.getNick().getString ( NAME )+" ("+acc.getNick().getString ( FULLMASK ) +")" );
+                    this.service.sendMsg ( user,  "  "+acc.getNick().getString ( NAME )+" ("+acc.getNick().getString ( FULLMASK ) +") - [LastOped: "+acc.getLastOped()+"]" );
                 } else {
                     this.service.sendMsg ( user,  "  "+acc.getMask ( )+" (mask)" );
                 }
@@ -1923,8 +1927,8 @@ import java.util.Random;
                     cmdData.setString1 ( (ni2 != null ? ni2.getName() : mask) );
                     cmdData.setStatus ( XOP_ALREADY_PRESENT );
                 } else if ( subcommand == ADD && 
-                            ( ( ni2 != null && ( acc = new CSAcc ( ni2, command ) ) == null ) ||
-                              ( mask != null && ( acc = new CSAcc ( mask, command ) ) == null ) ) ) {  
+                            ( ( ni2 != null && ( acc = new CSAcc ( ni2, command, null ) ) == null ) ||
+                              ( mask != null && ( acc = new CSAcc ( mask, command, null ) ) == null ) ) ) {  
                     cmdData.setStatus ( XOP_ADD_FAIL );
                 } else {
                     cmdData.setChanInfo ( ci );

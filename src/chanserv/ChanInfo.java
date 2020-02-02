@@ -55,10 +55,11 @@ public class ChanInfo extends HashNumeric {
     
     private ArrayList<CSAcc> addAccList;
     private ArrayList<CSAcc> remAccList;
+    private ArrayList<CSAcc> updAccList;
     
     private ArrayList<CSAccessLogEvent> newLogList;
     private CSChanges       changes = new CSChanges ( );
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, String regStamp, String lastUsed, ChanSetting settings )  {
         /* Load chan */
@@ -77,6 +78,7 @@ public class ChanInfo extends HashNumeric {
         this.alist      = new ArrayList<>();
         this.addAccList = new ArrayList<>();
         this.remAccList = new ArrayList<>();
+        this.updAccList = new ArrayList<>();
         this.newLogList = new ArrayList<>();
     }
     
@@ -98,12 +100,14 @@ public class ChanInfo extends HashNumeric {
         this.alist      = new ArrayList<>();
         this.addAccList = new ArrayList<>();
         this.remAccList = new ArrayList<>();
+        this.updAccList = new ArrayList<>();
         this.newLogList = new ArrayList<>();
         this.settings.set ( OPGUARD, true );
     }
 
     public void maintenence ( ) {
-        this.updateAccessChanges();
+        this.updateAccessChanges ( );
+        this.updateLastOpedChanges ( );
     }
      
     private void updateAccessChanges ( ) {
@@ -142,7 +146,21 @@ public class ChanInfo extends HashNumeric {
         }
     }
     
-
+    private void updateLastOpedChanges ( ) {
+        if ( CSDatabase.checkConn() && this.updAccList.size() > 0 ) {
+            ArrayList<CSAcc> access = new ArrayList<>();
+            for ( CSAcc acc : this.updAccList ) {
+               
+                if ( CSDatabase.updateChanAccessLastOped ( this, acc ) == 1 ) {
+                    access.add ( acc );
+                }
+                
+            }
+            for ( CSAcc acc : access ) {
+                this.updAccList.remove ( acc );
+            }
+        }
+    }
 
     
     /* Identify nick in user */
@@ -439,7 +457,6 @@ public class ChanInfo extends HashNumeric {
         if ( acc.getNick() != null ) {
             acc.getNick().addToAccessList ( access, this );
         }
-        System.out.println("addAccess(8)");
     }
     
     public CSAcc getAccessByNick ( int access, NickInfo ni ) {
@@ -469,6 +486,18 @@ public class ChanInfo extends HashNumeric {
             }
         }
         return isFounder ( user );
+    }
+    public void updateLastOped ( User user ) {
+        int[] types = { AOP, SOP };
+        for ( int type : types ) {
+            for ( CSAcc acc : getAccessList ( type ) ) {
+                if ( acc.matchUser ( user ) ) {
+                    acc.updateLastOped ( );
+                    updAccList.add ( acc );
+                    ChanServ.addToWorkList ( CHANGE, this );
+                }
+            }
+        }
     }
 
     public boolean isAccess ( int access, NickInfo ni )  {
@@ -535,7 +564,7 @@ public class ChanInfo extends HashNumeric {
     
     public CSAcc getAccess ( int subcommand, NickInfo ni2 ) {
         CSAcc acc = null;
-        System.out.println("---- getAccess(ni)");
+        //System.out.println("---- getAccess(ni)");
         if ( ni2 == null ) {
             return null;
         }
@@ -551,7 +580,7 @@ public class ChanInfo extends HashNumeric {
     
     public CSAcc getAccess ( int subcommand, String mask ) {
         CSAcc acc = null;
-        System.out.println("---- getAccess(mask)");
+        //System.out.println("---- getAccess(mask)");
         if ( mask == null ) {
             return null;
         }
@@ -566,7 +595,7 @@ public class ChanInfo extends HashNumeric {
     }
     
     public void addAccess ( int access, String mask )  {
-        CSAcc acc = new CSAcc ( mask, access );
+        CSAcc acc = new CSAcc ( mask, access, null );
         ArrayList<CSAcc> list = this.getAccessList ( access );
         list.add ( acc );
         this.addAccList.add ( acc );
@@ -724,4 +753,5 @@ public class ChanInfo extends HashNumeric {
     public Throttle getThrottle ( ) {
         return this.throttle;
     }
+    
 }
