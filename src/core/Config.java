@@ -304,10 +304,14 @@ public class Config extends HashNumeric {
             if ( this.triggerActionRange <= 0 ) 
                 printErrorAndExit ( "trigger->akillrange" );
         
+            
+            
+       
             /* SNOOP */
             String[] snoop = result.get("snoop").toString().replace("{","").replace("}","").split(",");            
             for ( String str : snoop ) {
                 String[] data = str.split("=");
+                System.out.println("DEBUG: "+data[0]+" : "+data[1]);
                 switch ( data[0].trim().toUpperCase().hashCode() ) {
                     case ROOTSERV :
                         this.snoopRootServ = data[1];
@@ -318,6 +322,7 @@ public class Config extends HashNumeric {
                         break;
                     
                     case NICKSERV :
+                        System.out.println("DEBUG: snoopNickServ[1]: "+data[1]);
                         this.snoopNickServ = data[1];
                         break;
                     
@@ -745,6 +750,7 @@ public class Config extends HashNumeric {
                 return this.snoopOperServ;
                 
             case SNOOPNICKSERV :
+                System.out.println("DEBUG: SNOOPNICKSERV -> "+this.snoopNickServ);
                 return this.snoopNickServ;
                 
             case SNOOPCHANSERV :

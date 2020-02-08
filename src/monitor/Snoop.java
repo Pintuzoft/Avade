@@ -18,12 +18,9 @@
 package monitor;
 
 import core.Database;
-import core.Proc;
 import core.HashNumeric;
 import core.Service;
 import user.User;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -51,14 +48,20 @@ public class Snoop extends HashNumeric {
             }
             ++index;
         }
-        str += " -  ( "+ ( user != null ? user.getFullMask ( ) : "-" ) +" ) ";
+        str += " - ("+ ( user != null ? user.getFullMask ( ) : "-" ) +")";
         return str;
     }
 
     protected void sendTo ( boolean ok, User user, String[] msg )  {
         this.service.send ( 
             Service.RAW, 
-            ":"+this.service.getName ( ) +" PRIVMSG "+this.chan+" :"+this.fixArray ( ok, user, msg )
+            ":"+this.service.getName()+" PRIVMSG "+this.chan+" :"+this.fixArray ( ok, user, msg )
+        );
+    }
+    protected void sendTo ( boolean ok, User user, String[] msg, String error )  {
+        this.service.send ( 
+            Service.RAW, 
+            ":"+this.service.getName()+" PRIVMSG "+this.chan+" :"+this.fixArray ( ok, user, msg )+" ["+error+"]"
         );
     }
     public void log ( boolean ok, String target, User user, String[] msg )  {

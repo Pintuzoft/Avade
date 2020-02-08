@@ -29,13 +29,64 @@ public class NSSnoop extends Snoop {
 
     public NSSnoop ( NickServ service )  {
         super ( );
-        String channel          = Proc.getConf ( ) .get (SNOOPNICKSERV );
         this.service            = service;
-        this.chan               = channel;
+        this.chan               = Proc.getConf().get ( SNOOPNICKSERV );
     }
  
     public void msg ( boolean ok, String target, User user, String[] cmd )  { 
         this.log ( ok, target, user, cmd ); 
         this.sendTo ( ok, user, cmd ); 
+    }
+    
+    public void msg ( boolean ok, int error, String target, User user, String[] cmd )  {
+        String errstr = err2str(error);
+        // System.out.println("DEBUG: msg: "+errstr+" ("+error+")");
+        if ( ok ) {
+            this.log ( ok, target, user, cmd ); 
+        }
+        this.sendTo ( ok, user, cmd, errstr ); 
+    }
+    private static String err2str ( int error ) {
+        switch ( error ) {
+            case SYNTAX_ERROR :         return "SYNTAX_ERROR";
+            case SYNTAX_REG_ERROR :     return "SYNTAX_REG_ERROR";
+            case INVALID_EMAIL :        return "INVALID_EMAIL";
+            case NICK_ALREADY_REGGED :  return "NICK_ALREADY_REGGED";
+            case INVALID_NICK :         return "INVALID_NICK";
+            case REGISTER :             return "REGISTER";
+            
+            case SYNTAX_ID_ERROR :      return "SYNTAX_ID_ERROR";
+            case NICK_NOT_REGISTERED :  return "NICK_NOT_REGISTERED";
+            case PASSWD_ERROR :         return "PASSWD_ERROR";
+            case IS_FROZEN :            return "IS_FROZEN";
+            case IS_THROTTLED :         return "IS_THROTTLED";
+            
+            case IS_MARKED :            return "IS_MARKED";
+            
+            case ACCESS_DENIED_OPER :   return "ACCESS_DENIED_OPER";
+            case ACCESS_DENIED_SA :     return "ACCESS_DENIED_SA";
+            case LIST :                 return "LIST";
+
+            case SIDENTIFY :            return "SIDENTIFY";
+
+            case SYNTAX_GHOST_ERROR :   return "SYNTAX_GHOST_ERROR";
+            case NO_SUCH_NICK :         return "NO_SUCH_NICK";
+            case IS_NOGHOST :           return "IS_NOGHOST";
+
+            case INFO :                 return "INFO";
+            
+            case SET :                  return "SET";
+
+            case AUTH :                 return "AUTH";
+            case AUTHMAIL :             return "AUTHMAIL";
+            case AUTHPASS :             return "AUTHPASS";
+            case NO_AUTH_FOUND :        return "NO_AUTH_FOUND";
+            
+            case SETEMAIL :             return "SETEMAIL";
+            case SETPASSWD :            return "SETPASSWD";
+                
+            
+            default : return "UnDefined";
+        }
     } 
 } 

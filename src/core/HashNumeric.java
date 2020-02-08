@@ -458,7 +458,53 @@ public abstract class HashNumeric extends TextFormat {
       /* STATIC INT */
     public static final int RAW                         = 80904;
     
-     
+    /* SNOOP */
+    public static final int SYNTAX_REG_ERROR            = 228863233;
+    public static final int INVALID_EMAIL               = -1112393964;
+    public static final int NICK_ALREADY_REGGED         = -1169624971;
+    public static final int INVALID_NICK                = -1421092661;
+    
+    public static final int SYNTAX_ID_ERROR             = -107542880;
+    public static final int NICK_NOT_REGISTERED         = 583065578;
+    public static final int PASSWD_ERROR                = 2085745927;
+    public static final int IS_FROZEN                   = 319895381;
+    public static final int IS_THROTTLED                = 2049769861;
+    
+    public static final int IS_MARKED                   = 504674529;
+
+    public static final int ACCESS_DENIED_OPER          = -1657667049;
+    public static final int ACCESS_DENIED_SA            = -1655354281;
+ 
+    public static final int SYNTAX_GHOST_ERROR          = -1629380164;
+    public static final int NO_SUCH_NICK                = -630840995;
+    public static final int IS_NOGHOST                  = -256884935;
+
+    public static final int NO_AUTH_FOUND               = 716854089;
+    public static final int ACCESS_DENIED               = 1006971606;
+    public static final int SETTING_NOT_FOUND           = 391296903;
+
+    public static final int CMD_NOT_FOUND_ERROR         = -173192678;
+    public static final int NICK_NEW_MASK               = -287949913;
+    public static final int SHOW_HELP                   = 912458563;
+    public static final int REGISTER_SEC                = 610829461;
+    public static final int REGISTER_DONE               = 1755407262;
+    public static final int PASSWD_ACCEPTED             = 1917430824;
+    public static final int NICKDROPPED                 = -518725923;
+    public static final int NICKDELETED                 = -893999306;
+    public static final int GLOB_IS_NOGHOST             = -1048802208;
+    public static final int NICKFLAG_EXIST              = -101876761;
+    public static final int NICK_SET_FLAG               = -249918811;
+    public static final int NICK_GETEMAIL               = 287380322;
+    public static final int INVALID_PASS                = -1421040263;
+    public static final int NICK_IS_NOW                 = 1715513981;
+    public static final int NICK_AUTHED                 = 1487994019;
+    public static final int NICK_IS_NOT                 = 1715513978;
+    public static final int DB_ERROR                    = -516264217;
+    public static final int IDENT_NICK_DELETED          = -2018832084;
+    public static final int NICK_DELETED                = 1080155933;
+    public static final int ACCESS_DENIED_SRA           = 223625433;
+    public static final int ACCESS_DENIED_DELETE_OPER   = 1463855225;
+    public static final int NICK_GETPASS                = -544602261;
     
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );

@@ -189,6 +189,7 @@ public class ChanServ extends Service {
             
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
+                ci.setLastUsed ( );
                 if ( ni == null || ( ni != null && ! ni.is ( NEVEROP ) ) ) {
                     opUser ( c, user );
                     ci.updateLastOped ( user );

@@ -753,5 +753,5 @@ public class ChanInfo extends HashNumeric {
     public Throttle getThrottle ( ) {
         return this.throttle;
     }
-    
+
 }
