@@ -458,7 +458,7 @@ public abstract class HashNumeric extends TextFormat {
       /* STATIC INT */
     public static final int RAW                         = 80904;
     
-    /* SNOOP */
+    /* SNOOP NICKSERV */
     public static final int SYNTAX_REG_ERROR            = 228863233;
     public static final int INVALID_EMAIL               = -1112393964;
     public static final int NICK_ALREADY_REGGED         = -1169624971;
@@ -505,6 +505,107 @@ public abstract class HashNumeric extends TextFormat {
     public static final int ACCESS_DENIED_SRA           = 223625433;
     public static final int ACCESS_DENIED_DELETE_OPER   = 1463855225;
     public static final int NICK_GETPASS                = -544602261;
+    
+    /* SNOOP CHANSERV */
+    public final static int NOT_ENOUGH_ACCESS          = -1745701241;
+     
+    public final static int NICK_NOT_AUTHED            = 299818415;
+    public final static int NICK_NOT_IDENTIFIED        = 834563587;
+    public final static int CHAN_NOT_REGISTERED        = -1958828005;
+    public final static int CHAN_ALREADY_REGGED        = 583448742;
+    public final static int CHAN_WHY                   = -2079190725;
+    public final static int CHAN_NOT_EXIST             = 1742993822;
+    public final static int NICK_NOT_EXIST             = 1537465455;
+    public final static int USER_NOT_ONLINE            = -2081960365;
+
+    public final static int USER_NOT_OP                = 190590433;
+    
+    public final static int NICK_HAS_NOOP              = -1524398237;
+ 
+    public final static int WILL_NOW                   = -382153527;
+    public final static int WILL_NOW_NOT               = -751854019;
+    
+    public final static int IS_NOW                     = -2125479391;
+    public final static int IS_NOT                     = -2125479394;
+     
+    public final static int INVALID_PASSWORD           = 1094975491;
+     
+    public final static int DB_NICK_ERROR              = -1563547539;
+     
+    public final static int NICK_IS_FOUNDER            = 26449878;
+    public final static int NICK_IS_SOP                = 1715518779;
+    public final static int NICK_IS_OP                 = 193886522;
+    public final static int NICK_NOT_FOUND             = 1538132218;
+    public final static int NICK_CHANGED               = 268636600;
+    public final static int NICK_NOT_PRESENT           = 1032677427;
+    
+    public final static int NICK_NOT_IDENTED_OP        = 830831385;
+    public final static int NICK_NEVEROP               = 1374491761;
+
+    public final static int NICK_ADDED                 = 186025220;
+    public final static int NICK_NOT_ADDED             = 1533170296;
+    public final static int NICK_NOT_DELETED           = -1393549423;
+    public final static int NICK_VERBOSE_ADDED         = 1220179943;
+    public final static int NICK_VERBOSE_DELETED       = -1529567936;
+    public final static int NICK_INVITED               = 1489723775;
+
+    public final static int NICK_OP                    = -1635024835;
+    public final static int NICK_DEOP                  = 698828158;
+    public final static int NICK_VERBOSE_OP            = 862466106;
+    public final static int NICK_VERBOSE_DEOP          = -99096005;
+    
+    public final static int NICK_MDEOP_CHAN            = 1949119486;
+    public final static int NICK_MDEOP                 = 197108755;
+    public final static int NICK_MKICK_CHAN            = -1640108454;
+    public final static int NICK_MKICK                 = 197320759;
+    
+    public final static int LIST_NOT_WIPED             = 1342428656;
+    public final static int LIST_WIPED                 = 2112290300;
+    public final static int LIST_VERBOSE_WIPED         = 44287455;
+
+    public final static int CHAN_IS_FROZEN             = 1040268968;
+    public final static int CHAN_IS_CLOSED             = 948833652;
+   
+    public final static int CHAN_SET_FLAG              = 1557826454; 
+    public final static int CHANFLAG_EXIST             = 103651606; 
+    
+    public final static int ALREADY_ON_LIST            = -19278345; 
+    
+    public final static int CHAN_GETPASS               = -901929894;
+     
+    public final static int SHOWACCESSLOG              = -1644065565; 
+    public final static int SHOWACCESSLOGOPER          = 1996456369; 
+    public final static int SHOWTOPICLOG               = 443386290; 
+    public final static int SHOW_LIST                  = 912581792; 
+
+    public final static int CHANNELDROPPED             = 1559147869; 
+    public final static int CHANNELDELETED             = 1183874486; 
+
+    public final static int NO_SUCH_CHANFLAG           = 1591381688; 
+    public final static int BAD_CHANFLAG_VALUE         = 1929103146; 
+
+    public final static int XOP_NOT_FOUND              = -929875376; 
+    public final static int XOP_ADD_FAIL               = -625622686; 
+    public final static int XOP_ALREADY_PRESENT        = 2130003854; 
+
+    public final static int CHAN_INFO                  = -30814853; 
+    public final static int CHAN_UNBAN                 = -944182391; 
+    public final static int ACCESS_LIST                = 1149892249; 
+    public final static int ACCESS_ADDED               = 1276598853; 
+    public final static int ACCESS_DELETED             = 1149397022; 
+
+    public final static int SET_DESCRIPTION            = 979264351; 
+    public final static int SET_TOPICLOCK              = -1494105347; 
+    public final static int SET_MODELOCK               = -679771989; 
+    public final static int SET_KEEPTOPIC              = 683437293; 
+    public final static int SET_IDENT                  = 330142611; 
+    public final static int SET_OPGUARD                = 815113799; 
+    public final static int SET_RESTRICT               = -397294055; 
+    public final static int SET_VERBOSE                = -1867609499; 
+    public final static int SET_MAILBLOCK              = 2106005849; 
+    public final static int SET_LEAVEOPS               = 1516887032; 
+    public final static int SET_AUTOAKICK              = -220341765;
+
     
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );

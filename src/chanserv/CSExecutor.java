@@ -222,6 +222,7 @@ import java.util.Random;
             }
         }
         this.service.sendMsg ( user, "*** End of List ***" );
+        this.snoop.msg ( true, ni.getName ( ), user, cmd );
 
     }
      
@@ -233,31 +234,38 @@ import java.util.Random;
 
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "OP <#Chan> [<nick>]" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "OP <#Chan> [<nick>]" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                 
             case CHAN_NOT_EXIST :
                 this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case CHAN_IS_CLOSED : 
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN : 
                 this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
                 
             case NICK_NOT_PRESENT :
                 this.service.sendMsg ( user, output ( NICK_NOT_PRESENT, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_PRESENT, cmdData.getString1 ( ), user, cmd );
                 return;
                   
             default :
@@ -276,8 +284,9 @@ import java.util.Random;
         int hashCode = target.getHash ( );
         if ( ni.getHashName ( ) == hashCode || user.getHash ( ) == hashCode )  {
             /* oping himself */
-            this.service.sendMsg ( user, output ( NICK_OP, target.getString ( NAME ) , ci.getName ( ) ) ); 
-            Handler.getChanServ ( ) .opUser (c, target );
+            this.service.sendMsg ( user, output ( NICK_OP, target.getString ( NAME ), ci.getName ( ) ) ); 
+            this.snoop.msg ( true, NICK_OP, target.getString ( NAME ), user, cmd );
+            Handler.getChanServ().opUser (c, target );
 
         } else {
             /* oping someone else */
@@ -286,16 +295,19 @@ import java.util.Random;
                 if ( ( tNick = ci.getNickByUser ( target ) ) == null )  {
                     /* no access nick */
                     this.service.sendMsg ( user, output (NICK_NOT_IDENTED_OP, target.getString ( NAME ) ) );
+                    this.snoop.msg ( false, NICK_NOT_IDENTED_OP, target.getString ( NAME ), user, cmd );
 
                 } else if ( tNick.getSettings().is ( NEVEROP ) ) {
                     /* never wants op */
                     this.service.sendMsg (user, output (NICK_NEVEROP, target.getString ( NAME )  )  );
+                    this.snoop.msg ( false, NICK_NEVEROP, target.getString ( NAME ), user, cmd );
 
                 } else {
                     if ( ci.getSettings().is ( VERBOSE ) ) {
                         this.service.sendOpMsg (ci, output (NICK_VERBOSE_OP, user.getString ( NAME ), target.getString ( NAME ), ci.getName ( ) ) );
                     }
                     this.service.sendMsg (user, output (NICK_OP, target.getString ( NAME ), ci.getName ( ) ) );
+                    this.snoop.msg ( true, NICK_OP, target.getString ( NAME ), user, cmd );
                     Handler.getChanServ().opUser (c, target );
                 }
             } else {
@@ -304,6 +316,7 @@ import java.util.Random;
                     this.service.sendOpMsg (ci, output (NICK_NEVEROP, user.getString ( NAME ), target.getString ( NAME ), ci.getName ( ) ) );
                 }
                 this.service.sendMsg (user, output (NICK_OP, target.getString ( NAME ), ci.getName ( ) ) );
+                this.snoop.msg ( true, NICK_OP, target.getString ( NAME ), user, cmd );
                 Handler.getChanServ().opUser (c, target );
             }
         } 
@@ -319,30 +332,37 @@ import java.util.Random;
             
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DEOP <#Chan> [<nick>]" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                 
             case CHAN_NOT_EXIST :
                 this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan ( ) .getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case CHAN_IS_CLOSED : 
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN : 
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
                 
             case NICK_NOT_PRESENT :
                 this.service.sendMsg ( user, output ( NICK_NOT_PRESENT, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_PRESENT, cmdData.getString1 ( ), user, cmd );
                 return;
                               
             default :
@@ -357,9 +377,10 @@ import java.util.Random;
             target = user;
         }
         int hashCode = target.getHash ( );
-        if ( ni.getHashName ( )  == hashCode || user.getHash ( )  == hashCode )  {
-            /* oping himself */
+        if ( ni.getHashName ( ) == hashCode || user.getHash ( ) == hashCode )  {
+            /* deoping himself */
             Handler.getChanServ().deOpUser ( c, user );
+            this.snoop.msg ( true, NICK_DEOP, user.getName(), user, cmd );
 
         } else {
             /* oping someone else */ 
@@ -369,6 +390,7 @@ import java.util.Random;
             }
             this.service.sendMsg ( user, output ( NICK_DEOP, target.getString ( NAME ), ci.getName ( ) ) );
             Handler.getChanServ().deOpUser ( c, target );
+            this.snoop.msg ( true, NICK_DEOP, target.getString ( NAME ), user, cmd );
         } 
         
     }
@@ -390,22 +412,27 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "REGISTER <#Chan> <password> <description>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                 
             case NICK_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getUser ( ).getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getUser().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getUser().getString ( NAME ), user, cmd );
                 return;
                 
             case CHAN_NOT_EXIST :
                 this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_ALREADY_REGGED : 
-                this.service.sendMsg ( user, output ( CHAN_ALREADY_REGGED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_ALREADY_REGGED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_ALREADY_REGGED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
             
             case USER_NOT_OP :
-                this.service.sendMsg ( user, output ( USER_NOT_OP, cmdData.getUser ( ).getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( USER_NOT_OP, cmdData.getUser().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, USER_NOT_OP, cmdData.getUser().getString ( NAME ), user, cmd );
                 return;
                               
             default :
@@ -452,7 +479,8 @@ import java.util.Random;
         this.service.sendMsg ( user, output ( REGISTER_DONE, ci.getString ( NAME )  )  );
         this.service.sendMsg ( user, f.b ( ) +output ( REGISTER_SEC, "" ) +f.b ( )  );
         user.getSID().add ( ci ); /* identified to the channel */
-        this.snoop.msg ( true, ci.getName ( ) , user, cmd );
+        this.snoop.msg ( true, REGISTER_DONE, ci.getName ( ), user, cmd );
+
     }
 
     public void identify ( User user, String[] cmd )  {
@@ -460,29 +488,39 @@ import java.util.Random;
         //       0         1               2                    3      4     5
         CmdData cmdData = this.validateCommandData ( user, IDENTIFY, cmd );
         
+        if ( cmd.length >= 6 ) {
+            cmd[5] = "pass_redacted";
+        }
+        
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "IDENTIFY <#Chan> <password>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN :
                 this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
             
             case CHAN_IS_CLOSED :
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
             
             case IS_THROTTLED : 
                 this.service.sendMsg ( user, output ( IS_THROTTLED, cmdData.getChanInfo().getName ( ) ) );
+                this.snoop.msg ( false, IS_THROTTLED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
 
             case INVALID_PASSWORD :
                 this.service.sendMsg ( user, output ( INVALID_PASSWORD, "" ) ); 
+                this.snoop.msg ( false, INVALID_PASSWORD, user.getName ( ), user, cmd );
                 return; 
                                          
             default :
@@ -491,6 +529,7 @@ import java.util.Random;
         ChanInfo ci = cmdData.getChanInfo ( );
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ci.getString ( NAME )  )  ); 
         user.getSID().add ( ci );
+        this.snoop.msg ( true, PASSWD_ACCEPTED, ci.getString ( NAME ), user, cmd );
           
     } 
  
@@ -503,26 +542,32 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DROP <#Chan> <password>" ) ); 
+                this.snoop.msg ( false, INVALID_PASSWORD, user.getName ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
             
             case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
             
             case INVALID_PASSWORD :
                 this.service.sendMsg ( user, output ( INVALID_PASSWORD, "" ) ); 
+                this.snoop.msg ( false, INVALID_PASSWORD, user.getName ( ), user, cmd );
                 return; 
             
             case IS_MARKED :
                 this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, IS_MARKED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;     
             
             default :
@@ -533,7 +578,8 @@ import java.util.Random;
         this.service.sendMsg ( user, output ( CHANNELDROPPED, ci.getString ( NAME ) ) );
         CSLogEvent log = new CSLogEvent ( ci.getName(), DROP, user.getFullMask(), "" );
         ChanServ.addLog ( log );
-        
+        this.snoop.msg ( true, CHANNELDROPPED, ci.getString ( NAME ), user, cmd );
+
     }
 
     
@@ -545,19 +591,23 @@ import java.util.Random;
         
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DELETE <#chan>" )  );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DELETE <#chan>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                 
             case ACCESS_DENIED :
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;     
                            
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] ) );
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmd[4], user, cmd );
                 return;
                        
             case IS_MARKED :
                 this.service.sendMsg ( user, output ( IS_MARKED, cmd[4] ) );
+                this.snoop.msg ( false, IS_MARKED, cmd[4], user, cmd );
                 return;
              
             default :
@@ -568,6 +618,7 @@ import java.util.Random;
         this.service.sendMsg ( user, output ( CHANNELDELETED, ci.getString ( NAME ) ) );
         CSLogEvent log = new CSLogEvent ( ci.getName(), DELETE, user.getFullMask(), user.getOper().getName() );
         ChanServ.addLog ( log );
+        this.snoop.msg ( true, CHANNELDELETED, ci.getName(), user, cmd );
     }
 
     
@@ -581,19 +632,23 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
         
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "INFO <#Chan>" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "INFO <#Chan>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                     
             case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                        
             case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
             
             default :
@@ -632,8 +687,8 @@ import java.util.Random;
         }
         
         this.showEnd ( user, "Info" );
-
-    
+        this.snoop.msg ( true, CHAN_INFO, ci.getName ( ), user, cmd );
+ 
     }
 
     private void access ( int access, User user, String[] cmd ) {
@@ -659,13 +714,14 @@ import java.util.Random;
         NickInfo ni;
         
         if ( ! CSDatabase.checkConn ( )  )  {
-            Handler.getChanServ ( ) .sendMsg ( user, "Database offline. Please try again in a little while." );
+            Handler.getChanServ().sendMsg ( user, "Database offline. Please try again in a little while." );
             return;
         }
         
         if ( cmd.length < 6 || ! ( access == AOP || access == SOP || access == AKICK )  )  {
             /* too short or wrong*/
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "AKICK <#chan> <ADD|DEL|LIST> [<nick|#NUM>]" )  );
+            this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
         } 
         
         ci = ChanServ.findChan ( cmd[4] );
@@ -674,14 +730,17 @@ import java.util.Random;
         if ( ni == null )  {
             /* no nick with access */
             this.service.sendMsg ( user, output ( ACCESS_DENIED, "NickServ" ) );
+            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
 
         } else if ( ci == null )  {
             /* no channel */
             this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] ) );
+            this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmd[4], user, cmd );
         
         } else if ( ! ci.isFounder ( ni )  )  {
             /* does not have access */
             this.service.sendMsg ( user, output ( ACCESS_DENIED, ci.getName ( ) ) );
+            this.snoop.msg ( false, ACCESS_DENIED, ci.getName ( ), user, cmd );
 
         } else {
             String acc = null;
@@ -691,10 +750,11 @@ import java.util.Random;
                 ci.wipeAccessList ( access );
                 this.service.sendMsg ( user, output ( LIST_WIPED, acc, ci.getName ( ) ) );
                 this.service.sendOpMsg ( ci, output ( LIST_VERBOSE_WIPED, ni.getName ( ), acc, ci.getName ( ) ) );
-                this.snoop.msg ( true, ci.getName ( ), user, cmd );
+                this.snoop.msg ( true, LIST_WIPED, ci.getName ( ), user, cmd );
 
             } else {
                 this.service.sendMsg ( user, output ( LIST_NOT_WIPED, acc, ci.getName ( ) ) );
+                this.snoop.msg ( false, LIST_NOT_WIPED, ci.getName ( ), user, cmd );
 
             }
         }
@@ -710,23 +770,28 @@ import java.util.Random;
         
         switch ( cmdData.getStatus() ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, listName+" <#Chan>" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, listName+" <#Chan>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                     
             case CHAN_IS_FROZEN :
                 this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                        
             case CHAN_IS_CLOSED :
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
                 return;
                 
             default :
@@ -747,7 +812,8 @@ import java.util.Random;
                 this.service.sendMsg ( user,  " - "+acc.getMask ( )+" (mask)" );
             }
         }
-        this.showEnd ( user, accStr+" list" ); 
+        this.showEnd ( user, accStr+" list" );
+        this.snoop.msg ( true, ACCESS_LIST, ci.getName ( ), user, cmd );
     }
 
     private String getListName ( int access ) {
@@ -796,43 +862,53 @@ import java.util.Random;
         
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, listName+" <#Chan> <add|del|list> <nick|mask|#num>" ) ); 
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, listName+" <#Chan> <add|del|list> <nick|mask|#num>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
                  
             case NICK_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;                 
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN : 
                 this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
 
             case CHAN_IS_CLOSED : 
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName(), user, cmd );
                 return;
                 
             case ACCESS_DENIED :
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1() ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1(), user, cmd );
                 return;
                 
             case NOT_ENOUGH_ACCESS :
                 this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, "" ) ); 
+                this.snoop.msg ( false, NOT_ENOUGH_ACCESS, user.getName ( ), user, cmd );
                 return;
                     
             case XOP_NOT_FOUND :
                 this.service.sendMsg ( user, output ( XOP_NOT_FOUND, "" ) ); 
+                this.snoop.msg ( false, XOP_NOT_FOUND, user.getName ( ), user, cmd );
                 return;
                    
             case XOP_ADD_FAIL :
                 this.service.sendMsg ( user, output ( XOP_ADD_FAIL, "" ) ); 
+                this.snoop.msg ( false, XOP_ADD_FAIL, user.getName ( ), user, cmd );
                 return;
                      
             case XOP_ALREADY_PRESENT :
                 this.service.sendMsg ( user, output ( XOP_ALREADY_PRESENT, cmdData.getString1(), this.getListStr ( access ) ) ); 
+                this.snoop.msg ( false, XOP_ALREADY_PRESENT, cmdData.getString1(), user, cmd );
                 return;
             
             default :
@@ -875,6 +951,7 @@ import java.util.Random;
                     c.addCheckUsers();
                 }
                 ci.changed();
+                this.snoop.msg ( true, ACCESS_ADDED, ci.getName(), user, cmd );
                 break;
                 
             case DEL :
@@ -885,6 +962,7 @@ import java.util.Random;
                     this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni.getString ( NAME ), what, listName ) );
                 }
                 ci.changed();
+                this.snoop.msg ( true, ACCESS_DELETED, ci.getName(), user, cmd );
                 break;
                 
             default :
@@ -902,30 +980,37 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "UNBAN <#Chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
           
             case CHAN_NOT_EXIST :
-                this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getChan ( ).getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;          
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
           
             case NICK_NOT_EXIST :
                 this.service.sendMsg ( user, output ( NICK_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case NICK_ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( NICK_ACCESS_DENIED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( NICK_ACCESS_DENIED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, NICK_ACCESS_DENIED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                     
             case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                        
             case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             default :
@@ -940,6 +1025,7 @@ import java.util.Random;
             this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , target.getString ( NAME ) , "UnBan" )  );
         } 
         Handler.getChanServ().unBanUser ( c, target );
+        this.snoop.msg ( true, CHAN_UNBAN, ci.getName ( ), user, cmd );
     }
 
     private void invite ( User user, String[] cmd )  {
@@ -951,26 +1037,32 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "INVITE <#Chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
           
             case CHAN_NOT_EXIST :
-                this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getChan ( ).getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;          
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
           
             case NICK_ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( NICK_ACCESS_DENIED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( NICK_ACCESS_DENIED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, NICK_ACCESS_DENIED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                     
             case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                        
             case CHAN_IS_CLOSED :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             default :
@@ -980,9 +1072,11 @@ import java.util.Random;
         ChanInfo ci = cmdData.getChanInfo ( );
         NickInfo ni = cmdData.getNick ( ); 
         if ( ci.getSettings().is ( VERBOSE ) ) {
-            this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ), ci.getName ( ), "invite" )  );
+            this.service.sendOpMsg ( ci, output ( NICK_INVITED, ni.getName(), ci.getName ( ) )  );
         } 
-        Handler.getChanServ().invite ( c, user );        
+        Handler.getChanServ().invite ( c, user );
+        this.snoop.msg ( true, NICK_INVITED, ni.getName(), user, cmd );
+        
     }
      
     /* Tells a channel staff how a user has access to a channel */
@@ -995,18 +1089,22 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "WHY <#Chan> <nick>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
                  
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan ( ) .getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case NICK_NOT_EXIST : 
                 this.service.sendMsg ( user, output ( NICK_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED :
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
                 return;
                 
             default : 
@@ -1022,6 +1120,7 @@ import java.util.Random;
         } else {
             this.service.sendMsg ( user, "User "+target.getString ( NAME ) +" has "+access+" access to channel "+ci.getName ( ) +" through the nickname "+aNick );
         }
+        this.snoop.msg ( true, CHAN_WHY, user.getName ( ), user, cmd );
     }
       
     /**
@@ -1038,26 +1137,32 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET <#Chan> <option> <on|off>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
                  
             case NICK_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;                 
             
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan ( ) .getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN : 
-                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
 
             case CHAN_IS_CLOSED : 
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo ( ).getName ( ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED :
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             default :
@@ -1093,18 +1198,21 @@ import java.util.Random;
                 doDescription ( user, ci, cmd );
                 ci.getChanges().change ( DESCRIPTION );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_DESCRIPTION, ci.getName(), user, cmd );
                 break;
 
             case TOPICLOCK :
                 doTopicLock ( user, ci, setting );
                 ci.getChanges().change ( TOPICLOCK );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_TOPICLOCK, ci.getName(), user, cmd );
                 break;
             
             case MODELOCK :
                 doModeLock ( user, ci, cmd );
                 ci.getChanges().change ( MODELOCK );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_MODELOCK, ci.getName(), user, cmd );
                 break;
 
             case KEEPTOPIC :
@@ -1112,6 +1220,7 @@ import java.util.Random;
                 ci.getSettings().set ( KEEPTOPIC, flag );
                 ci.getChanges().change ( KEEPTOPIC );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_KEEPTOPIC, ci.getName(), user, cmd );
                 break;
 
             case IDENT :
@@ -1119,6 +1228,7 @@ import java.util.Random;
                 ci.getSettings().set ( IDENT, flag );
                 ci.getChanges().change ( IDENT );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_IDENT, ci.getName(), user, cmd );
                 break;
 
             case OPGUARD :
@@ -1126,6 +1236,7 @@ import java.util.Random;
                 ci.getSettings().set ( OPGUARD, flag );
                 ci.getChanges().change ( OPGUARD );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_OPGUARD, ci.getName(), user, cmd );
                 break;
 
             case RESTRICT :
@@ -1133,6 +1244,7 @@ import java.util.Random;
                 ci.getSettings().set ( RESTRICT, flag );
                 ci.getChanges().change ( RESTRICT );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_RESTRICT, ci.getName(), user, cmd );
                 break;
 
             case VERBOSE :
@@ -1140,6 +1252,7 @@ import java.util.Random;
                 ci.getSettings().set ( VERBOSE, flag );
                 ci.getChanges().change ( VERBOSE );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_VERBOSE, ci.getName(), user, cmd );
                 break;
 
             case MAILBLOCK :
@@ -1147,6 +1260,7 @@ import java.util.Random;
                 ci.getSettings().set ( MAILBLOCK, flag );
                 ci.getChanges().change ( MAILBLOCK );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_MAILBLOCK, ci.getName(), user, cmd );
                 break;
 
             case LEAVEOPS :
@@ -1154,6 +1268,7 @@ import java.util.Random;
                 ci.getSettings().set ( LEAVEOPS, flag );
                 ci.getChanges().change ( LEAVEOPS );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_LEAVEOPS, ci.getName(), user, cmd );
                 break;
              
             case AUTOAKICK :
@@ -1161,10 +1276,12 @@ import java.util.Random;
                 ci.getSettings().set ( AUTOAKICK, flag );
                 ci.getChanges().change ( AUTOAKICK );
                 ChanServ.addToWorkList ( CHANGE, ci );
+                this.snoop.msg ( true, SET_AUTOAKICK, ci.getName(), user, cmd );
                 break;
  
             default :
                 this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
+                this.snoop.msg ( false, SETTING_NOT_FOUND, ci.getName(), user, cmd );
 
         }
     }
@@ -1173,18 +1290,22 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "GETPASS <#chan>" )  );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                 
             case ACCESS_DENIED :
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1 ( ), user, cmd );
                 return;     
                            
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] ) );
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmd[4], user, cmd );
                 return;
                        
             case IS_MARKED :
                 this.service.sendMsg ( user, output ( IS_MARKED, cmd[4] ) );
+                this.snoop.msg ( false, IS_MARKED, cmd[4], user, cmd );
                 return;
              
             default : 
@@ -1197,6 +1318,7 @@ import java.util.Random;
         ChanServ.addLog ( log );
         this.service.sendMsg ( user, output ( CHAN_GETPASS, ci.getPass() ) );
         this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ci.getName() );
+        this.snoop.msg ( true, CHAN_GETPASS, ci.getName(), user, cmd );
     }
     
     private void changeFlag ( int flag, User user, String[] cmd )  {
@@ -1208,21 +1330,27 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, ChanSetting.hashToStr ( flag )+" <[-]chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                  
             case ACCESS_DENIED :
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1 ( ), user, cmd );
                 return;                 
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHANFLAG_EXIST :
                 this.service.sendMsg ( user, output ( CHANFLAG_EXIST, cmdData.getChanInfo().getName ( ), cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHANFLAG_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;     
                       
             case IS_MARKED :
                 this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, IS_MARKED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;     
             
             default :
@@ -1242,6 +1370,7 @@ import java.util.Random;
                 instater = NickServ.findNick ( ci.getSettings().getInstater ( flag ) );
                 if ( ! user.isIdented ( instater ) && ! user.isAtleast ( SRA ) ) {
                     this.service.sendMsg ( user, "Error: flag can only be removed by: "+instater.getName()+" or a SRA+." );
+                    this.snoop.msg ( false, ACCESS_DENIED_SRA, ci.getName ( ), user, cmd );
                     return;
                 }
                 if ( ( relay = ChanServ.findChan ( ci.getName()+"-relay" ) ) != null ) {
@@ -1250,6 +1379,8 @@ import java.util.Random;
                 this.service.sendMsg ( user, "Please note that the auditorium channel mode handles joins/parts differently than normal and will cause "+
                                              "users becoming out of sync. Its for that reason recommended to masskick the channel after removing the mode to sort the possible desync." );
                 this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :-A");
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
+                break;
             case UNMARK :
             case UNFREEZE :
             case REOPEN :
@@ -1257,6 +1388,7 @@ import java.util.Random;
                 instater = NickServ.findNick ( ci.getSettings().getInstater ( flag ) );
                 if ( ! user.isIdented ( instater ) && ! user.isAtleast ( SRA ) ) {
                     this.service.sendMsg ( user, "Error: flag can only be removed by: "+instater.getName()+" or a SRA+." );
+                    this.snoop.msg ( false, ACCESS_DENIED_SRA, ci.getName ( ), user, cmd );
                     return;
                 }
                 ci.getSettings().set ( flag, "" );
@@ -1266,11 +1398,13 @@ import java.util.Random;
                 ChanServ.addLog ( log );
                 this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getName(), "Un"+ci.getSettings().modeString ( flag ) ) );
                 this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been Un"+ci.getSettings().modeString ( flag )+" by: "+oper.getName() );
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
                 break;
                 
             case AUDITORIUM :
                 if ( ( relay = ChanServ.findChan ( ci.getName()+"-relay" ) ) != null ) {
                     this.service.sendMsg ( user, "Error: Relay channel: "+ci.getName()+"-relay is already registered." );
+                    this.snoop.msg ( true, CHAN_ALREADY_REGGED, ci.getName ( ), user, cmd );
                     return;
                 }
                 Random rand = new Random ( );
@@ -1291,6 +1425,8 @@ import java.util.Random;
                 this.service.sendMsg ( user, "will cause users becoming out of sync. Its for that reason recommended to masskick the channel" );
                 this.service.sendMsg ( user, "after removing the mode to sort the possible desync." );
                 this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :+A");
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
+                break;
             case MARK :
             case FREEZE :
             case CLOSE :
@@ -1302,10 +1438,12 @@ import java.util.Random;
                 ChanServ.addLog ( log );
                 this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getName(), ci.getSettings().modeString ( flag ) )  );
                 this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been "+ci.getSettings().modeString ( flag )+" by: "+oper.getName() );
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
                 break;
                 
             default :  
-                
+                this.snoop.msg ( false, SYNTAX_ERROR, ci.getName ( ), user, cmd );
+
         }
     }
       
@@ -1393,22 +1531,27 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) )  {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MDEOP <#Chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_EXIST :
                 this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan ( ) .getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case ACCESS_DENIED :
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
                 return;
                 
             case NOT_ENOUGH_ACCESS :
                 this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NOT_ENOUGH_ACCESS, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             default : 
@@ -1431,7 +1574,8 @@ import java.util.Random;
         this.snoop.msg ( true, cmd[4]+" ["+ni.getString ( NAME ) +"]", user, cmd );
         CSLogEvent log = new CSLogEvent ( ci.getName(), MDEOP, user.getFullMask(), ( isOper ? ni.getName() : null ) );
         ChanServ.addLog ( log );
-        ChanServ.deopAll ( c ); 
+        ChanServ.deopAll ( c );
+        this.snoop.msg ( true, NICK_MDEOP_CHAN, ci.getName ( ), user, cmd );
     }
     
     public void mKick ( User user, String[] cmd )  {
@@ -1443,22 +1587,27 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MKICK <#Chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_EXIST :
                 this.service.sendMsg ( user, output ( CHAN_NOT_EXIST, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_EXIST, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan ( ) .getString ( NAME ) ) ); 
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
                 return;
                 
             case NOT_ENOUGH_ACCESS :
                 this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, NOT_ENOUGH_ACCESS, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             default :
@@ -1475,13 +1624,15 @@ import java.util.Random;
         }
         
         if ( ci.getSettings().is ( VERBOSE ) )  {
-            this.service.sendOpMsg ( ci, output ( NICK_MKICK_CHAN, ni.getString ( NAME ) , ci.getName ( )  )  );
+            this.service.sendOpMsg ( ci, output ( NICK_MKICK_CHAN, ni.getString ( NAME ), ci.getName ( )  )  );
         }                    
         this.service.sendMsg ( user, output ( NICK_MKICK, c.getString ( NAME ) ) );
         CSLogEvent log = new CSLogEvent ( ci.getName(), MKICK, user.getFullMask(), ( isOper ? ni.getName() : null )  );
         ChanServ.addLog ( log );
         this.snoop.msg ( true, cmd[4]+" ["+ni.getString ( NAME ) +"]", user, cmd );
-        ci.kickAll ( "Masskick" );
+        ci.kickAll ( "Masskick by "+ni.getName() );
+        this.snoop.msg ( true, NICK_MKICK_CHAN, ci.getName(), user, cmd );
+
     }
     
     public void list ( User user, String[] cmd )  { /* DONE? */
@@ -1496,10 +1647,12 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "LIST <pattern>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
             
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
             
             default :
@@ -1516,6 +1669,8 @@ import java.util.Random;
             this.service.sendMsg ( user, buf );
         }
         this.showEnd ( user, "Info" );
+        this.snoop.msg ( true, SHOW_LIST, user.getName(), user, cmd );
+        
     }
     
     
@@ -1532,18 +1687,22 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "ACCESSLOG <chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
                 
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1() ) );
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1(), user, cmd );
                 return;
                 
             case CHAN_IS_CLOSED :
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName(), user, cmd );
                 return;
                 
             default :
@@ -1562,7 +1721,7 @@ import java.util.Random;
             }
         }
         this.service.sendMsg ( user, "*** End of Logs ***" );
-         
+        this.snoop.msg ( true, SHOWACCESSLOG, ci.getName(), user, cmd );     
     }
  
     private void topiclog ( User user, String[] cmd ) {
@@ -1576,14 +1735,17 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "ACCESSLOG <chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, cmdData.getChanInfo().getName(), user, cmd );
                 return;
 
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1() ) );
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1(), user, cmd );
                 return;
                 
             case CHAN_IS_CLOSED :
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName(), user, cmd );
                 return;
                 
             default :
@@ -1598,7 +1760,7 @@ import java.util.Random;
         }
         
         this.service.sendMsg ( user, "*** End of Logs ***" );
-
+        this.snoop.msg ( true, SHOWTOPICLOG, ci.getName(), user, cmd );
     }
     
     
@@ -1609,30 +1771,37 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "CHANFLAG <chan> <flag> <value>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
 
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1() ) );
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1(), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN :
-                this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName() ) );
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName(), user, cmd );
                 return;
                        
             case CHAN_IS_CLOSED :
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName() ) );
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName(), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
             
             case NO_SUCH_CHANFLAG : 
                 this.service.sendMsg ( user, output ( NO_SUCH_CHANFLAG, cmdData.getString1 ( ) ) );
+                this.snoop.msg ( false, NO_SUCH_CHANFLAG, cmdData.getString1 ( ), user, cmd );
                 return;
             
             case BAD_CHANFLAG_VALUE : 
                 this.service.sendMsg ( user, output ( BAD_CHANFLAG_VALUE ) );
+                this.snoop.msg ( false, BAD_CHANFLAG_VALUE, user.getName(), user, cmd );
                 return;
             
             default :
@@ -1664,6 +1833,7 @@ import java.util.Random;
                 ChanServ.addToWorkList ( CHANGE, ci );
                 this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
                 this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
                 break;
 
             case NO_NOTICE :
@@ -1681,6 +1851,7 @@ import java.util.Random;
                 ChanServ.addToWorkList ( CHANGE, ci );
                 this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
                 this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
                 break;
                 
             case GREETMSG :
@@ -1690,6 +1861,7 @@ import java.util.Random;
                 ChanServ.addToWorkList ( CHANGE, ci );
                 this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+" :"+message );
                 this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+message );
+                this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
                 break;
                 
             case LIST :
@@ -1710,17 +1882,16 @@ import java.util.Random;
                 this.service.sendMsg ( user, "  - EXEMPT_INVITES: "+( cf.isExempt_invites()? "ON" : "OFF" ) );
                 this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
                 this.service.sendMsg ( user, "*** End of List ***" );
+                this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );
                 break;
                 
             default :
-                
+
         }
         
         
     }
-
-    
-    
+ 
     
     private CSAcc getAcc ( int command, ChanInfo ci, NickInfo ni ) {
         return ci.getAccess ( command, ni );
@@ -1737,22 +1908,27 @@ import java.util.Random;
         switch ( cmdData.getStatus ( ) ) {
             case SYNTAX_ERROR :
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "LISTOPS <#Chan>" ) ); 
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
             
             case CHAN_NOT_REGISTERED :
                 this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                     
             case CHAN_IS_FROZEN :
                 this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_FROZEN, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                        
             case CHAN_IS_CLOSED :
                 this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ) ) ); 
+                this.snoop.msg ( false, CHAN_IS_CLOSED, cmdData.getChanInfo().getName ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
                 
             default :
@@ -1776,7 +1952,7 @@ import java.util.Random;
             }
         }
         this.showEnd ( user, "LISTOPS" ); 
-
+        this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );
     }
 
     
@@ -2510,6 +2686,9 @@ import java.util.Random;
                 
             case NICK_VERBOSE_ADDED :
                 return f.b ( ) +args[0]+f.b ( ) +" has added "+args[1]+" to the "+args[2]+" list.";
+                          
+            case NICK_INVITED :
+                return f.b ( ) +args[0]+f.b ( ) +" was invited to "+args[2]+".";
                 
             case NICK_VERBOSE_DELETED :
                 return f.b ( ) +args[0]+f.b ( ) +" has removed "+args[1]+" from the "+args[2]+" list.";
@@ -2611,104 +2790,5 @@ import java.util.Random;
     }
    
      
-    private final static int SYNTAX_ERROR               = 1001;
-    private final static int SYNTAX_ID_ERROR            = 1002;
-    private final static int SYNTAX_REG_ERROR           = 1003;
-
-    private final static int CMD_NOT_FOUND_ERROR        = 1021;
-    private final static int SHOW_HELP                  = 1022;
-
-    private final static int ACCESS_DENIED              = 1101;
-    private final static int NOT_ENOUGH_ACCESS          = 1102;
-    private final static int SETTING_NOT_FOUND          = 1151;
-    private final static int NICK_NOT_REGISTERED        = 1152;
-    private final static int NICK_NOT_AUTHED            = 1153;
-    private final static int NICK_NOT_IDENTIFIED        = 1154;
-    private final static int CHAN_NOT_REGISTERED        = 1155;
-    private final static int CHAN_ALREADY_REGGED        = 1156;
-    private final static int CHAN_NOT_EXIST             = 1157;
-    private final static int NICK_NOT_EXIST             = 1158;
-    private final static int USER_NOT_ONLINE            = 1159;
-
-    private final static int USER_NOT_OP                = 1161;
     
-    private final static int NICK_HAS_NOOP              = 1171;
-
-    
-    private final static int WILL_NOW                   = 1201;
-    private final static int WILL_NOW_NOT               = 1202;
-    
-    private final static int IS_NOW                     = 1221;
-    private final static int IS_NOT                     = 1222;
-    
-    private final static int PASSWD_ERROR               = 1301;
-    private final static int INVALID_EMAIL              = 1302;
-    private final static int INVALID_PASSWORD           = 1303;
-    
-    private final static int PASSWD_ACCEPTED            = 1351;
- 
-    private final static int DB_ERROR                   = 1401;
-    private final static int DB_NICK_ERROR              = 1402;
-    
-    private final static int REGISTER_DONE              = 1501;
-    private final static int REGISTER_SEC               = 1502;
-
-    private final static int NICK_IS_FOUNDER            = 1601;
-    private final static int NICK_IS_SOP                = 1602;
-    private final static int NICK_IS_OP                 = 1603;
-    private final static int NICK_NOT_FOUND             = 1604;
-    private final static int NICK_CHANGED               = 1605;
-    private final static int NICK_NOT_PRESENT           = 1606;
-    
-    private final static int NICK_NOT_IDENTED_OP        = 1616;
-    private final static int NICK_NEVEROP               = 1617;
-
-    private final static int NICK_ADDED                 = 2001;
-    private final static int NICK_NOT_ADDED             = 2002;
-    private final static int NICK_DELETED               = 2003;
-    private final static int NICK_NOT_DELETED           = 2004;
-    private final static int NICK_VERBOSE_ADDED         = 2005;
-    private final static int NICK_VERBOSE_DELETED       = 2006;
-
-    private final static int NICK_OP                    = 2051;
-    private final static int NICK_DEOP                  = 2052;
-    private final static int NICK_VERBOSE_OP            = 2053;
-    private final static int NICK_VERBOSE_DEOP          = 2054;
-    
-    private final static int NICK_MDEOP_CHAN            = 2061;
-    private final static int NICK_MDEOP                 = 2062;
-    private final static int NICK_MKICK_CHAN            = 2063;
-    private final static int NICK_MKICK                 = 2064;
-    
-    private final static int LIST_NOT_WIPED             = 2101;
-    private final static int LIST_WIPED                 = 2102;
-    private final static int LIST_VERBOSE_WIPED         = 2103;
-
-    private final static int CHAN_IS_FROZEN             = 2201;
-    private final static int CHAN_IS_CLOSED             = 2202;
-   
-    private final static int CHAN_SET_FLAG              = 2211; 
-    private final static int CHANFLAG_EXIST             = 2212; 
-    
-    private final static int ALREADY_ON_LIST            = 2221; 
-    
-    private final static int CHAN_GETPASS               = 2301;
-    
-    private final static int IS_MARKED                  = 2401; 
-    private final static int IS_THROTTLED               = 2402;
- 
-    private final static int SHOWACCESSLOG              = 2501; 
-    private final static int SHOWACCESSLOGOPER          = 2502; 
-    private final static int SHOWTOPICLOG               = 2511; 
-
-    private final static int CHANNELDROPPED             = 2601; 
-    private final static int CHANNELDELETED             = 2602; 
-
-    private final static int NO_SUCH_CHANFLAG           = 2651; 
-    private final static int BAD_CHANFLAG_VALUE         = 2652; 
-
-    private final static int XOP_NOT_FOUND              = 2701; 
-    private final static int XOP_ADD_FAIL               = 2702; 
-    private final static int XOP_ALREADY_PRESENT        = 2703; 
-
  }
