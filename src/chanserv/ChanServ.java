@@ -364,7 +364,8 @@ public class ChanServ extends Service {
     static ArrayList<ChanInfo> searchChans ( String string ) {
         ArrayList<ChanInfo> chans = new ArrayList<>();
         for ( ChanInfo ci : ciList ) {
-            if ( StringMatch.wild ( ci.getName(), string ) ) {
+            if ( StringMatch.wild ( ci.getName().toUpperCase(), string.toUpperCase() ) ||
+                 StringMatch.wild ( ci.getString (TOPIC).toUpperCase(), string.toUpperCase() ) ) {
                 chans.add ( ci );
             }
         }

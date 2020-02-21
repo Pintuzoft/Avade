@@ -175,7 +175,7 @@ public class NickServ extends Service {
     static ArrayList<NickInfo> searchNicks ( String string ) {
         ArrayList<NickInfo> nicks = new ArrayList<>();
         for ( NickInfo ni : niList) {
-            if ( StringMatch.wild ( ni.getName(), string ) ) {
+            if ( StringMatch.wild ( ni.getName().toUpperCase(), string.toUpperCase() ) ) {
                 nicks.add ( ni );
             }
         }
