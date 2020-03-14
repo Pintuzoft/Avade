@@ -174,13 +174,13 @@ public class OSExecutor extends Executor {
             this.service.sendMsg ( user, "  ID Chans: "+u.getIDChans ( )                                            );
             if ( u.getSID ( )  != null )  {
                 this.service.sendMsg ( user, "ServicesID: "+u.getSID ( ) .getID ( )                                 );
-                if ( u.getSID ( ) .getOper ( )  != null )  {
-                    this.service.sendMsg ( user, "   ID Oper: "+u.getSID ( ) .getOper ( ) .getString ( NAME )       );
+                if ( u.getSID().getOper ( )  != null )  {
+                    this.service.sendMsg ( user, "   ID Oper: "+u.getSID().getOper().getString ( NAME ) );
                 }
             }
             this.service.sendMsg ( user, "        IP: " + u.getString ( IP )                                        );
             this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes().is ( IDENT )+" ), oper ( "+u.getModes().is ( OPER )+" ) , admin ( "+u.getModes().is ( ADMIN )+" ) , sadmin ( "+u.getModes().is ( SADMIN )+" ) " );
-            this.service.sendMsg ( user, "    Server: "+u.getServ ( ) .getName ( )                                  );
+            this.service.sendMsg ( user, "    Server: "+u.getServ().getName ( )                                     );
             for ( Chan c : user.getChans() ) {
                 this.service.sendMsg ( user, "   Channel: "+c.getString ( NAME )                                    );
             }
@@ -200,7 +200,7 @@ public class OSExecutor extends Executor {
             return;
         }
         
-        if (  ( s = Handler.findServer ( cmd[4] )  )  != null )  {
+        if ( ( s = Handler.findServer ( cmd[4] ) ) != null ) {
             this.service.sendMsg ( user, "*** Server INFO ***"              );
             this.service.sendMsg ( user, "     Name: "+s.getName ( )        );
             this.service.sendMsg ( user, "    Users: "+s.size ( )           );
@@ -1113,8 +1113,6 @@ public class OSExecutor extends Executor {
             default :
                 
         }
-        
-        
     }
 
 
@@ -1318,9 +1316,6 @@ public class OSExecutor extends Executor {
                 break;
             
             
-                
-                
-                
             case SPAMFILTER :
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SPAMFILTER add hello?hello?hello flags 1d spamming is not allowed
                 //            0       1                          2           3   4                 5     6  7       8+              = 9+
