@@ -174,7 +174,7 @@ public class CSDatabase extends Database {
                 */
                 
                 query = "insert into chansetting "+
-                        "values (?,1,'OFF',1,1,0,0,0,0,'+nt',null,null,null,null,null)";
+                        "values (?,1,'OFF',1,1,0,0,0,0,0,'+nt',null,null,null,null,null)";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );

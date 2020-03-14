@@ -515,5 +515,13 @@ public class NickServ extends Service {
         /* When all is done lets put the nick in the delete list */
         NickServ.addToWorkList ( DELETE, ni );
     }    
+
+    public int getNickRegStats() {
+        return regList.size();
+    }
+
+    public int getChangesStats() {
+        return changeList.size();
+    }
     
 }

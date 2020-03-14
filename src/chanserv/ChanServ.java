@@ -216,9 +216,11 @@ public class ChanServ extends Service {
                 ci.kickAll ( "Channel is CLOSED" );
             } else {
                 ci.getChanFlag().syncChangedValuesWithNetwork();
-                if ( ci.is ( TOPICLOCK )  || ci.is ( KEEPTOPIC )  )  {
-                    c.setTopic ( ci.getTopic ( )  );
-                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
+                if ( ci.is ( TOPICLOCK )  || ci.is ( KEEPTOPIC ) ) {
+                    if ( ci.getTopic ( ) != null ) {
+                        c.setTopic ( ci.getTopic ( )  );
+                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
+                    }
                 }
                 if ( ci.is ( AUDITORIUM ) ) {
                     this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :+A" );
@@ -594,6 +596,14 @@ public class ChanServ extends Service {
         /* All initial work has been done lets remove it from the database */
         ChanServ.addToWorkList ( DELETE, ci );
         ci.getFounder().remFromAccessList ( FOUNDER, ci );
+    }
+
+    public int getChanRegStats() {
+        return regList.size();
+    }
+
+    public int getChangesStats() {
+        return changeList.size();
     }
      
 }

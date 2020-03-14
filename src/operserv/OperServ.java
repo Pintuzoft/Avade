@@ -64,10 +64,10 @@ public class OperServ extends Service {
     
     private ArrayList<User> chList = new ArrayList<>();     /* users who are schedualed for ban checks */
     
-    private OSExecutor                  executor;   /* Object that parse and execute commands */
-    private OSHelper                    helper;     /* Object that parse and respond to help queries */
-    private OSSnoop                     snoop;      /* Object for monitoring and reporting */
-    private SimpleDateFormat            sdf;
+    private OSExecutor executor;   /* Object that parse and execute commands */
+    private OSHelper helper;     /* Object that parse and respond to help queries */
+    private OSSnoop snoop;      /* Object for monitoring and reporting */
+    private SimpleDateFormat sdf;
     
     private Oper operNick = new Oper ( "OperServ", 4, "OperServ" );
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
@@ -360,7 +360,7 @@ public class OperServ extends Service {
         int[] commands = new int[] { AKILL, SGLINE, SQLINE };
         Random rand = new Random ( );
         
-        
+        /* this looks unnecessary? */
         for ( User u : this.chList ) {
             ban = null;
             for ( int command : commands ) {

@@ -73,7 +73,7 @@ public class Database extends HashNumeric {
                     sql = DriverManager.getConnection ( "jdbc:mysql://"+conf.get ( MYSQLHOST ) +":"+Integer.parseInt ( conf.get ( MYSQLPORT )  ) +"/"+conf.get (MYSQLDB ) , conf.get ( MYSQLUSER ) , conf.get ( MYSQLPASS )  );           
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database connection established." );
+                        Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
                     }
                 } 
             }
@@ -84,12 +84,20 @@ public class Database extends HashNumeric {
                 if ( attempts == 1 ) {
                     Handler.getOperServ().sendGlobOp ( "Database connection lost." );
                 } else {
-                    Handler.getOperServ().sendGlobOp ( "Database re-connection attempt failed." );
+                    Handler.getOperServ().sendGlobOp ( "Database re-connection attempt failed - "+getServiceStats ( ) );
                 }
                 lastGlobops = System.currentTimeMillis();
             }
             lastConnectAttempt = System.currentTimeMillis();
         }
+    }
+    protected static String getServiceStats ( ) {
+        int chanRegs = Handler.getChanServ().getChanRegStats ( );
+        int chanChanges = Handler.getChanServ().getChangesStats ( );
+        
+        int nickRegs = Handler.getNickServ().getNickRegStats ( );
+        int nickChanges = Handler.getNickServ().getChangesStats ( );
+        return "Channels(new/changed): "+chanRegs+"/"+chanChanges+", Nicks(new/changed): "+nickRegs+"/"+nickChanges;
     }
     
     protected static void idleUpdate ( String where )  {
