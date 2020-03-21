@@ -223,7 +223,6 @@ import java.util.Random;
         }
         this.service.sendMsg ( user, "*** End of List ***" );
         this.snoop.msg ( true, ni.getName ( ), user, cmd );
-
     }
      
     public void op ( User user, String[] cmd )  {
@@ -320,7 +319,7 @@ import java.util.Random;
                 Handler.getChanServ().opUser (c, target );
             }
         } 
-        
+        ci.changed();        
     }
     public void deop ( User user, String[] cmd )  {
         //:Pintuz PRIVMSG ChanServ@services.avade.net :op #avade dreamhealer
@@ -391,8 +390,8 @@ import java.util.Random;
             this.service.sendMsg ( user, output ( NICK_DEOP, target.getString ( NAME ), ci.getName ( ) ) );
             Handler.getChanServ().deOpUser ( c, target );
             this.snoop.msg ( true, NICK_DEOP, target.getString ( NAME ), user, cmd );
-        } 
-        
+        }
+        ci.changed();        
     }
  
     
@@ -406,7 +405,6 @@ import java.util.Random;
         // :DreamHea1er PRIVMSG ChanServ@services.sshd.biz :register chan pass description
         //       0         1              2                     3      4    5      6        = 7
          
-        int result;
         CmdData cmdData = this.validateCommandData ( user, REGISTER, cmd );
   
         switch ( cmdData.getStatus ( ) ) {
@@ -450,7 +448,6 @@ import java.util.Random;
             topic = new Topic ("", ni.getName(), System.currentTimeMillis());
         }
         
-        
         ci = new ChanInfo ( c.getString(NAME), ni, cmd[5], description, topic );
         ChanServ.addToWorkList ( REGISTER, ci );
         ChanServ.addChan ( ci );
@@ -466,10 +463,6 @@ import java.util.Random;
         ci.getChanges().change ( TOPIC );
         ci.setChanFlag( new CSFlag ( ci.getName() ) );
         
-        ChanServ.addToWorkList ( CHANGE, ci );
-        
-        
-        
         CSLogEvent log = new CSLogEvent ( ci.getName(), REGISTER, ci.getFounder().getString ( FULLMASK ), ci.getFounder().getName() );
         ChanServ.addLog ( log );
 
@@ -480,7 +473,7 @@ import java.util.Random;
         this.service.sendMsg ( user, f.b ( ) +output ( REGISTER_SEC, "" ) +f.b ( )  );
         user.getSID().add ( ci ); /* identified to the channel */
         this.snoop.msg ( true, REGISTER_DONE, ci.getName ( ), user, cmd );
-
+        ci.changed();
     }
 
     public void identify ( User user, String[] cmd )  {
@@ -530,7 +523,7 @@ import java.util.Random;
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ci.getString ( NAME )  )  ); 
         user.getSID().add ( ci );
         this.snoop.msg ( true, PASSWD_ACCEPTED, ci.getString ( NAME ), user, cmd );
-          
+        ci.changed();          
     } 
  
     private void drop ( User user, String[] cmd ) {
@@ -688,7 +681,6 @@ import java.util.Random;
         
         this.showEnd ( user, "Info" );
         this.snoop.msg ( true, CHAN_INFO, ci.getName ( ), user, cmd );
- 
     }
 
     private void access ( int access, User user, String[] cmd ) {
@@ -745,7 +737,8 @@ import java.util.Random;
         } else {
             String acc = null;
             acc = accessToString ( access );
-            
+            ChanServ.addToWorkList ( CHANGE, ci );
+
             if ( CSDatabase.wipeAccessList ( ci, access )  )  {
                 ci.wipeAccessList ( access );
                 this.service.sendMsg ( user, output ( LIST_WIPED, acc, ci.getName ( ) ) );
@@ -937,7 +930,6 @@ import java.util.Random;
             what = "-";
         }
         
-        
         switch ( subcommand ) {
             case ADD :
                 ci.removeFromAll ( acc );
@@ -968,7 +960,7 @@ import java.util.Random;
             default :
                 
         }
-        
+        ci.changed();
     }
     
     private void unban ( User user, String[] cmd )  {
@@ -1026,6 +1018,7 @@ import java.util.Random;
         } 
         Handler.getChanServ().unBanUser ( c, target );
         this.snoop.msg ( true, CHAN_UNBAN, ci.getName ( ), user, cmd );
+        ci.changed();
     }
 
     private void invite ( User user, String[] cmd )  {
@@ -1076,7 +1069,7 @@ import java.util.Random;
         } 
         Handler.getChanServ().invite ( c, user );
         this.snoop.msg ( true, NICK_INVITED, ni.getName(), user, cmd );
-        
+        ci.changed();
     }
      
     /* Tells a channel staff how a user has access to a channel */
@@ -1146,8 +1139,8 @@ import java.util.Random;
                 return;                 
             
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
-                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN : 
@@ -1197,21 +1190,18 @@ import java.util.Random;
             case DESCRIPTION :
                 doDescription ( user, ci, cmd );
                 ci.getChanges().change ( DESCRIPTION );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_DESCRIPTION, ci.getName(), user, cmd );
                 break;
 
             case TOPICLOCK :
                 doTopicLock ( user, ci, setting );
                 ci.getChanges().change ( TOPICLOCK );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_TOPICLOCK, ci.getName(), user, cmd );
                 break;
             
             case MODELOCK :
                 doModeLock ( user, ci, cmd );
                 ci.getChanges().change ( MODELOCK );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_MODELOCK, ci.getName(), user, cmd );
                 break;
 
@@ -1219,7 +1209,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "keep your topic if channel goes empty.", "forget the topic if the channel goes empty." );
                 ci.getSettings().set ( KEEPTOPIC, flag );
                 ci.getChanges().change ( KEEPTOPIC );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_KEEPTOPIC, ci.getName(), user, cmd );
                 break;
 
@@ -1227,7 +1216,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "require channel ops to identify to their nicks.", "require channel ops to identify to their nicks." );
                 ci.getSettings().set ( IDENT, flag );
                 ci.getChanges().change ( IDENT );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_IDENT, ci.getName(), user, cmd );
                 break;
 
@@ -1235,7 +1223,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "guard channel ops.", "require ops to identify to their nicks." );
                 ci.getSettings().set ( OPGUARD, flag );
                 ci.getChanges().change ( OPGUARD );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_OPGUARD, ci.getName(), user, cmd );
                 break;
 
@@ -1243,7 +1230,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "restrict users from entering the channel.", "restrict users from entering the channel." );
                 ci.getSettings().set ( RESTRICT, flag );
                 ci.getChanges().change ( RESTRICT );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_RESTRICT, ci.getName(), user, cmd );
                 break;
 
@@ -1251,7 +1237,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "notify current ops of channel changes.", "notify current ops of channel changes." );
                 ci.getSettings().set ( VERBOSE, flag );
                 ci.getChanges().change ( VERBOSE );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_VERBOSE, ci.getName(), user, cmd );
                 break;
 
@@ -1259,7 +1244,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "deny the channel password to be mailed to the founders email.", "deny the channel password to be mailed to the founders mail." );
                 ci.getSettings().set ( MAILBLOCK, flag );
                 ci.getChanges().change ( MAILBLOCK );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_MAILBLOCK, ci.getName(), user, cmd );
                 break;
 
@@ -1267,7 +1251,6 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "leave ops ( @ )  to the first user entering the channel after its been empty.", "leave ops(@)." );
                 ci.getSettings().set ( LEAVEOPS, flag );
                 ci.getChanges().change ( LEAVEOPS );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_LEAVEOPS, ci.getName(), user, cmd );
                 break;
              
@@ -1275,15 +1258,15 @@ import java.util.Random;
                 this.sendWillOutput ( user, flag, "remove matching users on akick.", "leave ops(@)." );
                 ci.getSettings().set ( AUTOAKICK, flag );
                 ci.getChanges().change ( AUTOAKICK );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.snoop.msg ( true, SET_AUTOAKICK, ci.getName(), user, cmd );
                 break;
  
             default :
                 this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
                 this.snoop.msg ( false, SETTING_NOT_FOUND, ci.getName(), user, cmd );
-
+                return;
         }
+        ci.changed();
     }
     private void getPass ( User user, String[] cmd ) {
         CmdData cmdData = this.validateCommandData ( user, GETPASS, cmd );
@@ -1363,8 +1346,6 @@ import java.util.Random;
         ChanInfo relay;
         NickInfo instater;
         
-        System.err.println("DEBUG!!!!!: flag:"+flag+":"+ci.getSettings().modeString ( flag ));
-        
         switch ( command ) {
             case UNAUDITORIUM :
                 instater = NickServ.findNick ( ci.getSettings().getInstater ( flag ) );
@@ -1393,12 +1374,12 @@ import java.util.Random;
                 }
                 ci.getSettings().set ( flag, "" );
                 ci.getChanges().change ( flag );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getName() );
                 ChanServ.addLog ( log );
                 this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getName(), "Un"+ci.getSettings().modeString ( flag ) ) );
                 this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been Un"+ci.getSettings().modeString ( flag )+" by: "+oper.getName() );
                 this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
+                ci.changed();
                 break;
                 
             case AUDITORIUM :
@@ -1415,7 +1396,6 @@ import java.util.Random;
                 settings.setModeLock("+spt-n");
                 relay.setTopic ( topic );
                 relay.setSettings ( settings );
-                ChanServ.addToWorkList ( REGISTER, ci );
                 ChanServ.addChan ( relay );
                 this.service.sendMsg ( user, "Relay channel: "+relay.getName()+" has been registered to you. This is the channel " );
                 this.service.sendMsg ( user, "where regular user chat will end up instead of the main channel. Keep this channel secret." );
@@ -1426,19 +1406,21 @@ import java.util.Random;
                 this.service.sendMsg ( user, "after removing the mode to sort the possible desync." );
                 this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :+A");
                 this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
+                ChanServ.addToWorkList ( REGISTER, ci );
                 break;
+
             case MARK :
             case FREEZE :
             case CLOSE :
             case HOLD :
                 ci.getSettings().set ( flag, oper.getName() );
                 ci.getChanges().change ( flag );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getName() );
                 ChanServ.addLog ( log );
                 this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getName(), ci.getSettings().modeString ( flag ) )  );
                 this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been "+ci.getSettings().modeString ( flag )+" by: "+oper.getName() );
                 this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
+                ci.changed();
                 break;
                 
             default :  
@@ -1576,6 +1558,7 @@ import java.util.Random;
         ChanServ.addLog ( log );
         ChanServ.deopAll ( c );
         this.snoop.msg ( true, NICK_MDEOP_CHAN, ci.getName ( ), user, cmd );
+        ci.changed();
     }
     
     public void mKick ( User user, String[] cmd )  {
@@ -1632,7 +1615,7 @@ import java.util.Random;
         this.snoop.msg ( true, cmd[4]+" ["+ni.getString ( NAME ) +"]", user, cmd );
         ci.kickAll ( "Masskick by "+ni.getName() );
         this.snoop.msg ( true, NICK_MKICK_CHAN, ci.getName(), user, cmd );
-
+        ci.changed();
     }
     
     public void list ( User user, String[] cmd )  { /* DONE? */
@@ -1680,6 +1663,7 @@ import java.util.Random;
         
         if ( ! CSDatabase.checkConn() ) {
             this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
         }
         
         CmdData cmdData = this.validateCommandData ( user, ACCESSLOG, cmd );
@@ -1830,7 +1814,6 @@ import java.util.Random;
                 }
                 ci.getChanFlag().setShortFlag ( command, sho );
                 ci.getChanges().change ( command );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
                 this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
                 this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
@@ -1848,7 +1831,6 @@ import java.util.Random;
                 boolean boo = ( commandVal.equalsIgnoreCase ( "ON" ) );
                 ci.getChanFlag().setBooleanFlag ( command, boo );
                 ci.getChanges().change ( command );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
                 this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
                 this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
@@ -1858,7 +1840,6 @@ import java.util.Random;
                 String message = Handler.cutArrayIntoString ( cmd, 6 );
                 ci.getChanFlag().setGreetmsg ( message );
                 ci.getChanges().change ( command );
-                ChanServ.addToWorkList ( CHANGE, ci );
                 this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+" :"+message );
                 this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+message );
                 this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
@@ -1883,13 +1864,12 @@ import java.util.Random;
                 this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
                 this.service.sendMsg ( user, "*** End of List ***" );
                 this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );
-                break;
+                return;
                 
             default :
-
+                return;
         }
-        
-        
+        ci.changed();
     }
  
     
@@ -2083,9 +2063,7 @@ import java.util.Random;
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( CHAN_IS_CLOSED );  
-                } else if ( ni == null || 
-                            ( ! ci.isAtleastSop ( ni ) && ni.getHashName() != ni2.getHashName() ) ||
-                            ( ci.isAkick ( ni ) ) ) {
+                } else if ( ni == null || ( ! ci.isAtleastSop ( ni ) && ni.getHashName() != ni2.getHashName() ) ) {
                     cmdData.setString1 ( user.getString ( NAME ) );
                     cmdData.setStatus ( ACCESS_DENIED );
                 } else if ( ni2 != null && ! ni2.isAuth ( ) ) {
@@ -2171,6 +2149,8 @@ import java.util.Random;
                 }
                 break;
                 
+            //:DreamHealer PRIVMSG ChanServ@services.avade.net :set #chan opguard on
+            //           0       1                           2    3     4       5  6
             case SET :
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     cmdData.setStatus ( SYNTAX_ERROR );

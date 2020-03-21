@@ -60,6 +60,7 @@ public class CSAcc extends HashNumeric {
         } else {
             this.lastOped = lastOped;
         }
+        this.hashMask = 0;
     }
     
     public CSAcc ( String mask, int access, String lastOped ) {
@@ -254,6 +255,10 @@ public class CSAcc extends HashNumeric {
     public String getMask ( ) {
         return this.nick+"!"+this.user+"@"+this.host+( isCidr ? "/"+this.cidr : "" );
     } 
+    
+    public int getHashMask ( ) {
+        return this.hashMask;
+    }
     
     public String getRawMask ( ) {
         return this.rawMask;

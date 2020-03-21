@@ -80,7 +80,7 @@ public class Database extends HashNumeric {
         } catch  ( SQLException | NumberFormatException ex )  {
             sql = null;
             attempts++;
-            if ( System.currentTimeMillis() - lastGlobops >= 60000 ) {
+            if ( System.currentTimeMillis() - lastGlobops >= 10000 ) {
                 if ( attempts == 1 ) {
                     Handler.getOperServ().sendGlobOp ( "Database connection lost." );
                 } else {
@@ -94,10 +94,9 @@ public class Database extends HashNumeric {
     protected static String getServiceStats ( ) {
         int chanRegs = Handler.getChanServ().getChanRegStats ( );
         int chanChanges = Handler.getChanServ().getChangesStats ( );
-        
         int nickRegs = Handler.getNickServ().getNickRegStats ( );
         int nickChanges = Handler.getNickServ().getChangesStats ( );
-        return "Channels(new/changed): "+chanRegs+"/"+chanChanges+", Nicks(new/changed): "+nickRegs+"/"+nickChanges;
+        return "(new/changed): Channels:"+chanRegs+"/"+chanChanges+" Nicks:"+nickRegs+"/"+nickChanges;
     }
     
     protected static void idleUpdate ( String where )  {

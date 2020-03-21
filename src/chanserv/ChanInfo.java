@@ -58,7 +58,7 @@ public class ChanInfo extends HashNumeric {
     private ArrayList<CSAcc> updAccList;
     
     private ArrayList<CSAccessLogEvent> newLogList;
-    private CSChanges       changes = new CSChanges ( );
+    private CSChanges        changes = new CSChanges ( );
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, String regStamp, String lastUsed, ChanSetting settings )  {
@@ -106,10 +106,18 @@ public class ChanInfo extends HashNumeric {
     }
 
     public void maintenence ( ) {
+        this.printStats ( );
         this.updateAccessChanges ( );
         this.updateLastOpedChanges ( );
     }
      
+    private void printStats ( ) {
+        System.out.println ( "STATS: addAccList:"+this.addAccList.size() );
+        System.out.println ( "STATS: remAccList:"+this.remAccList.size() );
+        System.out.println ( "STATS: updAccList:"+this.updAccList.size() );
+        System.out.println ( "STATS: newLogList:"+this.newLogList.size() );
+    }
+    
     private void updateAccessChanges ( ) {
         if ( CSDatabase.checkConn() && this.addAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
@@ -150,11 +158,9 @@ public class ChanInfo extends HashNumeric {
         if ( CSDatabase.checkConn() && this.updAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
             for ( CSAcc acc : this.updAccList ) {
-               
                 if ( CSDatabase.updateChanAccessLastOped ( this, acc ) == 1 ) {
                     access.add ( acc );
                 }
-                
             }
             for ( CSAcc acc : access ) {
                 this.updAccList.remove ( acc );
@@ -493,13 +499,42 @@ public class ChanInfo extends HashNumeric {
             for ( CSAcc acc : getAccessList ( type ) ) {
                 if ( acc.matchUser ( user ) ) {
                     acc.updateLastOped ( );
-                    updAccList.add ( acc );
+                    this.addToAccList ( UPDACCLIST, acc );
                     ChanServ.addToWorkList ( CHANGE, this );
                 }
             }
         }
     }
-
+    private ArrayList<CSAcc> getAccList ( int name ) {
+        switch ( name ) {
+            case ADDACCLIST :
+                return addAccList;
+                
+            case UPDACCLIST :
+                return updAccList;
+                
+            case REMACCLIST :
+                return remAccList;
+                
+            default :
+                return new ArrayList<>();
+        }
+    }
+    public void addToAccList ( int list, CSAcc acc ) {
+        for ( CSAcc a : getAccList ( list ) ) {
+            if ( acc.getHashMask ( ) == 0 && a.getHashMask() == 0 ) {
+                if ( acc.getNick().getHashName() == a.getNick().getHashName() ) {
+                    return;
+                }
+            } else if ( acc.getHashMask() != 0 && a.getHashMask() != 0 ) {
+                if ( acc.getHashMask() == a.getHashMask() ) {
+                    return;
+                }
+            }
+        }
+        getAccList(list).add ( acc );
+    }
+    
     public boolean isAccess ( int access, NickInfo ni )  {
         ArrayList<CSAcc> aList = getAccessList ( access );
         for ( CSAcc acc : aList )  {

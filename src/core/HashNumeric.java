@@ -606,6 +606,9 @@ public abstract class HashNumeric extends TextFormat {
     public final static int SET_LEAVEOPS               = 1516887032; 
     public final static int SET_AUTOAKICK              = -220341765;
 
+    public final static int ADDACCLIST                 = -448746274;
+    public final static int REMACCLIST                 = 1498428101;
+    public final static int UPDACCLIST                 = -298666154;
     
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );
