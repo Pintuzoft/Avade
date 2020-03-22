@@ -493,28 +493,17 @@ public class ChanServ extends Service {
         return logs.size();
     }
     private static int writeAccessLogs ( ) {
-System.out.println("DEBUG!!: 0:"+accessLogs.size());
         if ( CSDatabase.activateConnection ( ) && accessLogs.size() > 0 ) {
-System.out.println("DEBUG!!: 1");
             ArrayList<CSAccessLogEvent> eLogs = new ArrayList<>();
-System.out.println("DEBUG!!: 2");
             for ( CSAccessLogEvent log : accessLogs.subList ( 0, getIndexFromSize ( accessLogs.size() ) ) ) {
-System.out.println("DEBUG!!: 3");
                 if ( CSDatabase.accesslogEvent ( log ) ) {
-System.out.println("DEBUG!!: 4");
                     eLogs.add ( log );
                 }
-System.out.println("DEBUG!!: 5");
             }
-System.out.println("DEBUG!!: 6");
             for ( CSAccessLogEvent log : eLogs ) {
-System.out.println("DEBUG!!: 7");
                 accessLogs.remove ( log );
-System.out.println("DEBUG!!: 8");
             }
-System.out.println("DEBUG!!: 9");
         }
-System.out.println("DEBUG!!: 10");
         return accessLogs.size();
     }
 

@@ -236,6 +236,7 @@ public class NickServ extends Service {
     
     public static int maintenance ( ) {
         int todoAmount = 0;
+        todoAmount += writeLogs ( );
         todoAmount += handleRegNicks ( );
         todoAmount += handleChangedNicks ( );
         todoAmount += handleNewAuths ( );
@@ -243,7 +244,22 @@ public class NickServ extends Service {
         todoAmount += handleDeletedNicks ( );
         return todoAmount;
     }
- 
+  
+    private static int writeLogs ( ) {
+        if ( NSDatabase.activateConnection ( ) && logs.size() > 0 ) {
+            ArrayList<NSLogEvent> eLogs = new ArrayList<>();
+            for ( NSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
+                if ( NSDatabase.logEvent ( log ) > 0 ) {
+                    eLogs.add ( log );
+                }
+            }
+            for ( NSLogEvent log : eLogs ) {
+                logs.remove ( log );
+            }
+        }
+        return logs.size();
+    }
+    
     
     /*** HANDLE PENDING NICKS ***/
     
@@ -352,20 +368,7 @@ public class NickServ extends Service {
     public static void addLog ( NSLogEvent log ) {
         logs.add ( log );
     }
-    private static void writeLogs ( ) {
-        if ( NSDatabase.checkConn() && logs.size() > 0 ) {
-            ArrayList<NSLogEvent> eLogs = new ArrayList<>();
-            for ( NSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
-                if ( NSDatabase.logEvent ( log ) > 0 ) {
-                    eLogs.add ( log );
-                }
-            }
-            for ( NSLogEvent log : eLogs ) {
-                logs.remove ( log );
-            }
-        }
-    }
-    
+     
     static void addNewAuth ( NSAuth mail ) {
         newAuthList.add ( mail );
     }

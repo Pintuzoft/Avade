@@ -175,26 +175,24 @@ public class Database extends HashNumeric {
         4 rows in set  ( 0.00 sec ) */
     
     /* LOGGING */
-    public static void log ( String target, String body )  {
-
-        if ( ! activateConnection ( )  )  {
+    public static void log ( String target, String body ) {
+        if ( ! activateConnection ( ) ) {
             /* No SQL connection */ 
             Proc.log ( "ERROR LOGGING!" );
             return;
         } else {
              try { 
-                String query = "INSERT INTO log  ( target,body,stamp )  "
-                             + "VALUES  ( ?, ?, UNIX_TIMESTAMP ( )  ) ";
+                String query = "INSERT INTO log ( target, body, stamp ) "
+                             + "VALUES ( ?, ?, UNIX_TIMESTAMP ( ) )";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, target );
                 ps.setString  ( 2, body );
                 ps.execute ( );
                 ps.close ( );
                   
-                idleUpdate ( "log ( ) " );
+                idleUpdate ( "log ( )" );
             } catch  ( SQLException ex )  {
-                /* Nick already exists? return -1 */
-                Proc.log ( Database.class.getName ( ) , ex );
+                Proc.log ( Database.class.getName ( ), ex );
             }
         } 
     }
