@@ -112,6 +112,7 @@ public class Config extends HashNumeric {
     private int comment = 5;
     private int topiclog = 5;
     private int forcenick = 5;
+    private int snooplog = 5;
     
     public Config ( ) { 
         fileName = "services.conf"; 
@@ -528,6 +529,10 @@ public class Config extends HashNumeric {
             case FORCENICK :
                 this.forcenick = access;
                 break;
+            
+            case SNOOPLOG :
+                this.snooplog = access;
+                break;
 
             default :
         }
@@ -688,6 +693,9 @@ public class Config extends HashNumeric {
                 
             case FORCENICK :
                 return this.forcenick;
+                
+            case SNOOPLOG :
+                return this.snooplog;
                 
             /* TRIGGER */
             case TRIGGERWARNIP :

@@ -395,6 +395,40 @@ public class OSDatabase extends Database {
         } 
         return lsList;
     }
+    static ArrayList<OSSnoopLogEvent> getSnoopLogList ( String target, boolean full ) {
+        ArrayList<OSSnoopLogEvent> lsList = new ArrayList<>();
+        String table;
+        
+        if ( ! activateConnection ( ) )  {
+            return lsList;
+        }
+        
+        try {
+            String query = "select target,body,stamp "+
+                           "from log "+
+                           "where target = ? "+
+                           ( ! full ? "and stamp > now() - interval 1 year " : "" )+
+                           "order by stamp asc;";
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, target );
+            res = ps.executeQuery ( );
+
+            while ( res.next ( )  )  {
+                lsList.add ( new OSSnoopLogEvent ( 
+                    res.getString(1),
+                    res.getString(2),
+                    (res.getString(3)!=null?res.getString(3):null) )
+                );
+            }
+            res2.close ( );
+            ps.close ( );
+            idleUpdate ( "getLogSearchList ( ) " );
+         
+        } catch  ( SQLException ex )  {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );   
+        } 
+        return lsList;
+    }
 
     static ArrayList<NetServer> getServerList ( ) {
         ArrayList<NetServer> sList = new ArrayList<>();
@@ -666,8 +700,6 @@ public class OSDatabase extends Database {
         return lsList;
     }
 
-   
-     
     static public boolean addStaff ( Oper oper ) {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -691,7 +723,6 @@ public class OSDatabase extends Database {
         } 
         return true;
     }
-    
     
     public static boolean delStaff ( Oper oper )  {
         if ( ! activateConnection ( ) ) {

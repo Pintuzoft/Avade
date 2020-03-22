@@ -115,6 +115,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db120011 ( ) );
                 qList.add ( "update settings set value = '1.2001-1' where name = 'version'" );
 
+            case 120031 :
+                qList.add ( "to: v1.2003-1");
+                qList.addAll ( this.db120031 ( ) );
+                qList.add ( "update settings set value = '1.2003-1' where name = 'version'" );
+
                 break;
                 
             default :
@@ -241,7 +246,7 @@ public class DBChanges extends HashNumeric {
 
         // Chanacclog
         qList.add ( "create table chanacclog (id int primary key auto_increment, name varchar(32), nick varchar(32), oldaccess varchar(8) default null, access varchar(8), instater varchar(32), stamp datetime default now());" );
-        qList.add ( "INSERT INTO chanacclog (name,nick,access,instater,stamp) select c.name,c.nick,c.access,c.instater,from_unixtime(c.stamp) from chanaccess as c;" );
+        qList.add ( "insert into chanacclog (name,nick,access,instater,stamp) select c.name,c.nick,c.access,c.instater,from_unixtime(c.stamp) from chanaccess as c;" );
          
         // Cleanup access lists
         qList.add ( "alter table chanaccess drop instater;" );
@@ -451,6 +456,14 @@ public class DBChanges extends HashNumeric {
     private ArrayList<String> db120011 ( ) {
         ArrayList<String> qList = new ArrayList<>();
         qList.add ( "alter table chanaccess add lastoped datetime default null;" );
+        return qList;
+    }
+    private ArrayList<String> db120031 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table log add stamp2 datetime;" );
+        qList.add ( "update log set stamp2=from_unixtime(stamp);" );
+        qList.add ( "alter table log drop stamp;" );
+        qList.add ( "alter table log change stamp2 stamp datetime;" );
         return qList;
     }
     //

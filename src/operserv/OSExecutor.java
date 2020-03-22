@@ -103,6 +103,10 @@ public class OSExecutor extends Executor {
             case SEARCHLOG :
                 this.doSearchLog ( user, cmd );
                 break;
+                           
+            case SNOOPLOG :
+                this.doSnoopLog ( user, cmd );
+                break;
                     
             case COMMENT :
                 this.comment ( user, cmd );
@@ -550,6 +554,34 @@ public class OSExecutor extends Executor {
             this.service.sendMsg ( user, output ( SHOWCOMMENT, comment.getStamp(), comment.getInstater(), comment.getComment() ) );
         }
         this.service.sendMsg ( user, "*** End of log/comments ***" );
+    }
+    
+    private void doSnoopLog ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SNOOPLOG <nick|chan> [FULL]
+        //            0       1                          2          3           4      5 < 6
+        NickInfo ni;
+        ChanInfo ci;
+        
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SNOOPLOG <nick|chan> [<FULL>]" )  );
+            return;
+        }
+        
+        String target = cmd[4];
+        boolean full = false;
+        
+        if ( cmd.length > 5 && cmd[5].toUpperCase().hashCode() == FULL ) {
+            full = true;
+        }
+        
+        ArrayList<OSSnoopLogEvent> lsList = OSDatabase.getSnoopLogList ( target, full );
+        
+        this.service.sendMsg ( user, "*** Logs for "+target+( ! full ? " (1year)" : "" )+":" );
+        for ( OSSnoopLogEvent log : lsList ) {
+            this.service.sendMsg ( user, output ( SHOWSNOOPLOG, log.getStamp(), log.getTarget(), log.getBody() ) );
+        }
+
+        this.service.sendMsg ( user, "*** End of log ***" );
     }
 
     private void comment(User user, String[] cmd) {
@@ -1571,6 +1603,9 @@ public class OSExecutor extends Executor {
             case SHOWLOG :
                 return "["+args[0]+"] "+args[1]+" "+(args[1].length()==2?"":" ")+args[1]+" "+(args[1].length()==2?"":" ")+args[3]+" "+( args[4] != null && args[4].length() > 0 ? "["+args[4]+"]" : "" );
             
+            case SHOWSNOOPLOG :
+                return "["+args[0]+"] "+args[1]+" : "+args[2];
+            
             case SHOWAUDIT :
                 return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+" "+args[3]+" "+( args[4] != null ? "["+args[4]+"]" : "" )+(args[5] != null ? ": "+args[5] : "");
                              
@@ -1663,8 +1698,9 @@ public class OSExecutor extends Executor {
     private static final int GLOB_STAFF_DEL         = 1202;
 
     private static final int SHOWLOG                = 2001;
-    private static final int SHOWAUDIT              = 2002;
-    private static final int SHOWAUDITGLOBAL        = 2003;
+    private static final int SHOWSNOOPLOG           = 2002;
+    private static final int SHOWAUDIT              = 2003;
+    private static final int SHOWAUDITGLOBAL        = 2004;
     
     private static final int SHOWCOMMENT            = 2011;
     private static final int ADD_COMMENT            = 2012;

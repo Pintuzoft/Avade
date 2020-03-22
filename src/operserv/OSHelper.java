@@ -61,6 +61,10 @@ class OSHelper extends Helper {
             case SEARCHLOG :
                 this.searchLog ( user );
                 break;
+                               
+            case SNOOPLOG :
+                this.snoopLog ( user );
+                break;
                        
             case COMMENT :
                 this.comment ( user );
@@ -268,6 +272,24 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "     Wk                        Wipe AKICK list"                                                               );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   IRCop interference will mark the event with the oper nickname"                                             );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   Never share the information that is delivered by this command as it will show ips"                         );
+        this.service.sendMsg ( user, "   and other perhaps sensitive information regarding the nick or channel."                                    );
+        this.showEnd ( user );
+    }    
+    
+    public void snoopLog ( User user )  { 
+        this.showStart ( user, "SnoopLog" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ SNOOPLOG <nick|#chan> [<FULL>]"+f.b ( ) +""                                  );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   The log search command is a powerful tool for operators to search through"                                 );
+        this.service.sendMsg ( user, "   the more granular events of a nick or channel. The output will show used commands"                         );
+        this.service.sendMsg ( user, "   like identify, op/deop and even info done on the nick or chan."                                            );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   By default the command will show 1 year worth of logs and by using the FULL"                               );
+        this.service.sendMsg ( user, "   command you can see the entire history of the nick or channel."                                            );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Never share the information that is delivered by this command as it will show ips"                         );

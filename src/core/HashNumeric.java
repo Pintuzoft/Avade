@@ -57,7 +57,8 @@ public abstract class HashNumeric extends TextFormat {
     public final static int SNOOPNICKSERV               = -1977995474;
     public final static int SNOOPCHANSERV               = -616064099;
     public final static int SNOOPMEMOSERV               = 1609099653;
-
+    public final static int SNOOPLOG                    = 1467300047;
+    
     public final static int SERVICEUSER                 = 225567712;
     public final static int SERVICEHOST                 = 225177021;
     public final static int SERVICEGCOS                 = 225135573;
