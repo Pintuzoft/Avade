@@ -371,7 +371,7 @@ import java.util.regex.Pattern;
             this.service.sendMsg ( user, f.b ( ) +"    "+ni2.getName ( ) +" - ("+ni2.getString ( FULLMASK )+")" );
         }
         this.showEnd ( user, "Info" );
-        this.snoop.msg ( true, LIST, cmd[4], user, cmd );
+        this.snoop.msg ( true, LIST, user.getOper().getName(), user, cmd );
     }
   
     public void sIdentify ( User user, String[] cmd )  {

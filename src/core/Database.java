@@ -183,7 +183,7 @@ public class Database extends HashNumeric {
         } else {
              try { 
                 String query = "INSERT INTO log ( target, body, stamp ) "
-                             + "VALUES ( ?, ?, UNIX_TIMESTAMP ( ) )";
+                             + "VALUES ( ?, ?, NOW() )";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, target );
                 ps.setString  ( 2, body );

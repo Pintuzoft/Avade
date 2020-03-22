@@ -1652,7 +1652,7 @@ import java.util.Random;
             this.service.sendMsg ( user, buf );
         }
         this.showEnd ( user, "Info" );
-        this.snoop.msg ( true, SHOW_LIST, user.getName(), user, cmd );
+        this.snoop.msg ( true, SHOW_LIST, user.getOper().getName(), user, cmd );
         
     }
     
