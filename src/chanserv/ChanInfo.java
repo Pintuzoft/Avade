@@ -637,23 +637,23 @@ public class ChanInfo extends HashNumeric {
     }
  
     public void removeFromAll ( CSAcc acc ) {
-        CSAcc rem;
         int[] accessList = { SOP, AOP, AKICK };
         for ( int access : accessList ) {
+            CSAcc rem = null;
             for ( CSAcc entry : getAccessList ( access ) ) {
                 if ( entry.getNick() != null && 
                      acc.getNick() != null &&
                      entry.matchNick ( acc.getNick() ) ) {
-                    rem = acc;
+                    rem = entry;
                 } else if ( entry.getMask() != null &&
                             acc.getMask() != null &&
                             entry.matchMask(acc.getMask()) ) {
-                    rem = acc;
+                    rem = entry;
                 }
             }
-            getAccessList(access).remove ( acc );
-            if ( acc != null && acc.getNick() != null ) {
-                acc.getNick().remFromAccessList ( access, this );
+            getAccessList(access).remove ( rem );
+            if ( rem != null && rem.getNick() != null ) {
+                rem.getNick().remFromAccessList ( access, this );
             }
         }
     }
@@ -661,6 +661,7 @@ public class ChanInfo extends HashNumeric {
     public void removeFromAll ( NickInfo ni ) {
         int[] accessList = { SOP, AOP, AKICK };
         for ( int access : accessList ) {
+            System.out.println("debug: access("+access+")");
             CSAcc rem = null;
             for ( CSAcc entry : getAccessList ( access ) ) {
                 if ( entry.getNick() != null && entry.matchNick ( ni ) ) {

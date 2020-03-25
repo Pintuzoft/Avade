@@ -232,7 +232,7 @@ public class CSAcc extends HashNumeric {
     }
     
     public boolean matchNick ( NickInfo ni ) {
-        if ( this.ni != null ) {
+        if ( this.ni != null && ni != null ) {
             return ( this.ni.getHashName() == ni.getHashName() );
         }
         return false;
