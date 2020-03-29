@@ -19,7 +19,10 @@ package monitor;
 
 import core.Database;
 import core.HashNumeric;
+import core.Log;
+import core.LogEvent;
 import core.Service;
+import java.util.ArrayList;
 import user.User;
 
 /**
@@ -27,9 +30,10 @@ import user.User;
  * @author DreamHealer
  */
 public class Snoop extends HashNumeric {
-    protected String            chan;
-    protected Service           service;
-
+    protected String chan;
+    protected Service service;
+    protected static ArrayList<SnoopLog> logs = new ArrayList<>();
+            
     public Snoop ( )  { }
 
     public String fixArray ( boolean ok, User user, String[] arr )  {
@@ -52,6 +56,31 @@ public class Snoop extends HashNumeric {
         return str;
     }
 
+    public int maintenance ( ) {
+        int todoAmount = 0;
+        todoAmount += writeLogs ( );
+        return todoAmount;
+    }
+    
+    private static int writeLogs ( ) {
+        if ( Database.activateConnection ( ) && logs.size() > 0 ) {
+            ArrayList<SnoopLog> eLogs = new ArrayList<>();
+            for ( SnoopLog log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
+                if ( Database.SnoopLog ( log ) ) {
+                    eLogs.add ( log );
+                }
+            }
+            for ( SnoopLog log : eLogs ) {
+                logs.remove ( log );
+            }
+        }
+        return logs.size();
+    }
+    
+    protected static int getIndexFromSize ( int size ) {
+        return size > 5 ? 5 : size;
+    }
+    
     protected void sendTo ( boolean ok, User user, String[] msg )  {
         this.service.send ( 
             Service.RAW, 
@@ -64,10 +93,11 @@ public class Snoop extends HashNumeric {
             ":"+this.service.getName()+" PRIVMSG "+this.chan+" :"+this.fixArray ( ok, user, msg )+" ["+error+"]"
         );
     }
-    public void log ( boolean ok, String target, User user, String[] msg )  {
-        Database.log ( 
-            target, 
-            this.fixArray ( ok, user, msg )
-        );
+    public void log ( boolean ok, String target, User user, String[] message )  {
+        logs.add ( new SnoopLog ( target, this.fixArray ( ok, user, message ) ) );
+//        Database.log ( 
+//            target, 
+//            this.fixArray ( ok, user, message )
+//        );
     }
 }

@@ -134,7 +134,7 @@ import java.util.Date;
     public String getName ( ) { 
         return this.name; 
     }
-
+    
     protected static int getIndexFromSize ( int size ) {
         return size > 5 ? 5 : size;
     }

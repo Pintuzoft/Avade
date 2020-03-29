@@ -38,7 +38,7 @@ public class ChanServ extends Service {
     private static ChanServ     service;
     private CSExecutor          executor;    /* Object that parse and execute commands */
     private CSHelper            helper;        /* Object that parse and respond to help queries */ 
-    private CSSnoop             snoop;        /* Object that parse and respond to help queries */
+    private static CSSnoop      snoop;        /* Object that parse and respond to help queries */
     private static ArrayList<CSLogEvent> logs = new ArrayList<>();
     private static ArrayList<CSAccessLogEvent> accessLogs = new ArrayList<>();
     private static ArrayList<ChanInfo> regList = new ArrayList<>();
@@ -58,7 +58,7 @@ public class ChanServ extends Service {
  
     private void initChanServ ( )  {
         is              = true;
-        this.snoop      = new CSSnoop ( this ); 
+        snoop           = new CSSnoop ( this ); 
         this.executor   = new CSExecutor ( this, this.snoop );
         this.helper     = new CSHelper ( this, this.snoop ); 
         this.f          = new TextFormat ( );
@@ -146,7 +146,7 @@ public class ChanServ extends Service {
       
     public void snoopAndLog ( User user, String[] cmd )  {
         try { 
-            this.snoop.msg ( false, "NickServ", user, cmd );
+            snoop.msg ( false, "NickServ", user, cmd );
             this.accessDenied ( user );
         } catch ( Exception e )  {
             Proc.log ( ChanServ.class.getName ( ) , e );
@@ -437,6 +437,7 @@ public class ChanServ extends Service {
     
     public static int maintenance ( )  {
         int todoAmount = 0;
+        todoAmount += snoop.maintenance();
         todoAmount += writeLogs ( );
         todoAmount += writeAccessLogs ( );
         todoAmount += handleRegList ( );

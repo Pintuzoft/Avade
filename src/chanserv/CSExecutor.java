@@ -183,7 +183,6 @@ import java.util.Random;
         }
     }
     
-    @SuppressWarnings("empty-statement")
     public void chanList ( User user, String[] cmd ) {
         //:Pintuz PRIVMSG ChanServ@services.avade.net :chanlist <nick>
         //  0      1        2                          3         4      5          = 6
@@ -429,8 +428,8 @@ import java.util.Random;
                 return;
             
             case USER_NOT_OP :
-                this.service.sendMsg ( user, output ( USER_NOT_OP, cmdData.getUser().getString ( NAME ) ) ); 
-                this.snoop.msg ( false, USER_NOT_OP, cmdData.getUser().getString ( NAME ), user, cmd );
+                this.service.sendMsg ( user, output ( USER_NOT_OP, cmdData.getChan().getString ( NAME ) ) ); 
+                this.snoop.msg ( false, USER_NOT_OP, cmdData.getChan().getString ( NAME ), user, cmd );
                 return;
                               
             default :
@@ -472,6 +471,7 @@ import java.util.Random;
         this.service.sendMsg ( user, output ( REGISTER_DONE, ci.getString ( NAME )  )  );
         this.service.sendMsg ( user, f.b ( ) +output ( REGISTER_SEC, "" ) +f.b ( )  );
         user.getSID().add ( ci ); /* identified to the channel */
+        cmd[5] = "pass_redacted";
         this.snoop.msg ( true, REGISTER_DONE, ci.getName ( ), user, cmd );
         ci.changed();
     }
@@ -568,6 +568,7 @@ import java.util.Random;
         }
         ChanInfo ci = cmdData.getChanInfo ( );
         Handler.getChanServ().dropChan ( ci );
+        cmd[5] = "pass_redacted";
         this.service.sendMsg ( user, output ( CHANNELDROPPED, ci.getString ( NAME ) ) );
         CSLogEvent log = new CSLogEvent ( ci.getName(), DROP, user.getFullMask(), "" );
         ChanServ.addLog ( log );
@@ -1017,6 +1018,7 @@ import java.util.Random;
             this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getString ( NAME ) , target.getString ( NAME ) , "UnBan" )  );
         } 
         Handler.getChanServ().unBanUser ( c, target );
+        this.service.sendMsg ( user, output ( CHAN_UNBAN, target.getName(), ci.getName() ) );
         this.snoop.msg ( true, CHAN_UNBAN, ci.getName ( ), user, cmd );
         ci.changed();
     }
@@ -1553,7 +1555,6 @@ import java.util.Random;
             this.service.sendOpMsg ( ci, output ( NICK_MDEOP_CHAN, ni.getString ( NAME ), ci.getName ( ) ) );
         }                                      
         this.service.sendMsg ( user, output ( NICK_MDEOP, c.getString ( NAME )  )  );
-        this.snoop.msg ( true, cmd[4]+" ["+ni.getString ( NAME ) +"]", user, cmd );
         CSLogEvent log = new CSLogEvent ( ci.getName(), MDEOP, user.getFullMask(), ( isOper ? ni.getName() : null ) );
         ChanServ.addLog ( log );
         ChanServ.deopAll ( c );
@@ -1612,7 +1613,6 @@ import java.util.Random;
         this.service.sendMsg ( user, output ( NICK_MKICK, c.getString ( NAME ) ) );
         CSLogEvent log = new CSLogEvent ( ci.getName(), MKICK, user.getFullMask(), ( isOper ? ni.getName() : null )  );
         ChanServ.addLog ( log );
-        this.snoop.msg ( true, cmd[4]+" ["+ni.getString ( NAME ) +"]", user, cmd );
         ci.kickAll ( "Masskick by "+ni.getName() );
         this.snoop.msg ( true, NICK_MKICK_CHAN, ci.getName(), user, cmd );
         ci.changed();
@@ -1741,8 +1741,7 @@ import java.util.Random;
         this.service.sendMsg(user, "*** Access Log for "+ci.getName()+":");
         for ( Topic topic : tList ) {
             this.service.sendMsg ( user, output ( SHOWTOPICLOG, topic.getTimeStr(), topic.getSetter(), topic.getTopic() ) );
-        }
-        
+        }       
         this.service.sendMsg ( user, "*** End of Logs ***" );
         this.snoop.msg ( true, SHOWTOPICLOG, ci.getName(), user, cmd );
     }
@@ -2314,7 +2313,7 @@ import java.util.Random;
                     cmdData.setChanInfo ( ci );
                     cmdData.setStatus ( CHAN_ALREADY_REGGED );      
                 } else if ( ! c.isOp ( user ) ) {
-                    cmdData.setUser ( user );
+                    cmdData.setChan ( c );                   
                     cmdData.setStatus ( USER_NOT_OP );
                 } else {
                     cmdData.setChan(c);
@@ -2596,7 +2595,7 @@ import java.util.Random;
                 return "Error: no such user "+f.b ( ) +args[0]+f.b ( ) +".";
                 
             case USER_NOT_OP :
-                return "Error: You need to be op ( @ )  in "+f.b ( ) +args[0]+f.b ( ) +" to perform that command.";
+                return "Error: You need to be op(@) in "+f.b ( ) +args[0]+f.b ( ) +" to perform that command.";
                 
             case NICK_HAS_NOOP :
                 return "Error: "+args[0]+" does not wish to be added to any channel list  ( noop ) ";
@@ -2674,22 +2673,22 @@ import java.util.Random;
                 return f.b ( ) +args[0]+f.b ( ) +" has removed "+args[1]+" from the "+args[2]+" list.";
                 
             case NICK_VERBOSE_OP :
-                return f.b ( ) +args[0]+f.b ( ) +" has oped ( @ )  "+args[1]+" in "+args[2]+".";
+                return f.b ( ) +args[0]+f.b ( ) +" has oped(@) "+args[1]+" in "+args[2]+".";
                 
             case NICK_VERBOSE_DEOP :
-                return f.b ( ) +args[0]+f.b ( ) +" has deOped ( @ )  "+args[1]+" in "+args[2]+".";
+                return f.b ( ) +args[0]+f.b ( ) +" has deOped(@) "+args[1]+" in "+args[2]+".";
                 
             case NICK_OP :
-                return f.b ( ) +args[0]+f.b ( ) +" has been oped ( @ )  in "+args[1]+"."; 
+                return f.b ( ) +args[0]+f.b ( ) +" has been oped(@) in "+args[1]+"."; 
                 
             case NICK_DEOP :
-                return f.b ( ) +args[0]+f.b ( ) +" has been deOped ( @ )  in "+args[1]+".";
+                return f.b ( ) +args[0]+f.b ( ) +" has been deOped(@) in "+args[1]+".";
                 
             case NICK_MDEOP_CHAN :
                 return f.b ( ) +args[0]+f.b ( ) +" used MDEOP on "+args[1]+".";
                 
             case NICK_MDEOP :
-                return "Channel "+f.b ( ) +args[0]+f.b ( ) +" has been Mass-DeOped ( @ ) .";
+                return "Channel "+f.b ( ) +args[0]+f.b ( ) +" has been Mass-DeOped(@) .";
                 
             case NICK_MKICK_CHAN :
                 return f.b ( ) +args[0]+f.b ( ) +" used MKICK on "+args[1]+".";
@@ -2726,6 +2725,9 @@ import java.util.Random;
                      
             case CHAN_GETPASS :
                 return "Password is: "+args[0]+".";
+                               
+            case CHAN_UNBAN :
+                return "Bans for "+args[0]+" has been cleared on "+args[1]+".";
                     
             case IS_MARKED :
                 return "Error: Chan "+args[0]+" is MARKed by a network staff.";

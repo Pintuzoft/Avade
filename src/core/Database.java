@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import monitor.SnoopLog;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import operserv.OSLogEvent;
@@ -196,6 +197,34 @@ public class Database extends HashNumeric {
             }
         } 
     }
+    
+    public static boolean SnoopLog ( SnoopLog log ) {
+        if ( ! activateConnection ( ) ) {
+            /* No SQL connection */ 
+            Proc.log ( "ERROR LOGGING!" );
+            return false;
+        } else {
+             try { 
+                String query = "INSERT INTO log ( target, body, stamp ) "
+                             + "VALUES ( ?, ?, ? )";
+                ps = sql.prepareStatement ( query );
+                ps.setString  ( 1, log.getTarget() );
+                ps.setString  ( 2, log.getMessage() );
+                ps.setString  ( 3, log.getStamp() );
+                ps.execute ( );
+                ps.close ( );
+                  
+                idleUpdate ( "log ( )" );
+                return true;
+            } catch  ( SQLException ex )  {
+                Proc.log ( Database.class.getName ( ), ex );
+                return false;
+            }
+        }
+
+    }
+
+    
     
     /* LOG EVENT */
     static public int logEvent ( String table, LogEvent log ) {
