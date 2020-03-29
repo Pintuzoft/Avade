@@ -95,9 +95,5 @@ public class Snoop extends HashNumeric {
     }
     public void log ( boolean ok, String target, User user, String[] message )  {
         logs.add ( new SnoopLog ( target, this.fixArray ( ok, user, message ) ) );
-//        Database.log ( 
-//            target, 
-//            this.fixArray ( ok, user, message )
-//        );
     }
 }

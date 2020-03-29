@@ -391,6 +391,12 @@ public class NickInfo extends HashNumeric {
     
     /****************/
     
+    public void setLastUsed ( ) {
+        Date dateBuf    = new Date ( );
+        this.lastUsed   = dateFormat.format ( dateBuf );
+        this.changes.change ( LASTUSED );
+    }
+     
     public NSChanges getChanges ( ) {
         return this.changes;
     }

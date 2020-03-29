@@ -246,6 +246,7 @@ import java.util.regex.Pattern;
         user.getSID().add ( ni );          /* Add nick to user sid */
         NickServ.fixIdentState ( user );
         ni.getNickExp().reset ( );
+        ni.setLastUsed();
         ni.getChanges().hasChanged ( LASTUSED );
         NickServ.addToWorkList ( CHANGE, ni );
         Database.updateServicesID ( user.getSID() );

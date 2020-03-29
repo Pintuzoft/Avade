@@ -153,7 +153,6 @@ public class NSDatabase extends Database {
     /* NickServ Methods */
     public static int updateNick ( NickInfo ni )  {
         Config config = Proc.getConf ( );
-        
         ni.getChanges().printChanges();
         if ( ! ni.getChanges().changed ( ) ) {
             return 1;
@@ -175,15 +174,16 @@ public class NSDatabase extends Database {
         try {
             String salt = config.get ( SECRETSALT ); 
             String query;
-
-            if ( ni.getChanges().hasChanged(FULLMASK) ||
-                 ni.getChanges().hasChanged(LASTUSED) ) {
+            String mask = ni.getString(USER)+"@"+ni.getString(IP);
+            if ( ni.getChanges().hasChanged ( FULLMASK ) ||
+                 ni.getChanges().hasChanged ( LASTUSED ) ) {
                 query = "update nick "
-                       +"set mask = ?, stamp = now() "
+                       +"set mask = ?, stamp = ? "
                        +"where name = ?";
                 ps = sql.prepareStatement ( query );
-                ps.setString   ( 1, ni.getString(USER)+"@"+ni.getString(IP) );
-                ps.setString   ( 2, ni.getString ( NAME ) );
+                ps.setString   ( 1, mask );
+                ps.setString   ( 2, ni.getString ( LASTUSED ) );
+                ps.setString   ( 3, ni.getString ( NAME ) );
                 ps.executeUpdate ( );
                 ps.close ( );
             }

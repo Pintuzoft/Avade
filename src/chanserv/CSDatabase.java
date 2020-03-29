@@ -108,8 +108,8 @@ public class CSDatabase extends Database {
             
             try {
                 String salt = config.get ( SECRETSALT );
-                String query = "INSERT INTO chan ( name, founder, pass, description, regstamp, stamp )  "
-                             + "VALUES  ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
+                String query = "insert into chan ( name, founder, pass, description, regstamp, stamp )  "
+                             + "values ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.setString  ( 2, ci.getFounder().getName ( )  );
@@ -331,8 +331,8 @@ public class CSDatabase extends Database {
                 
                 if ( ci.getChanges().hasChanged ( TOPIC ) ) {
                     if ( ci.getTopic() != null && ci.getTopic().getTopic() != null && ci.getTopic().getTopic().length() > 0 ) {
-                        query = "INSERT INTO topiclog ( name,setter,stamp,topic ) "+
-                                "VALUES  ( ?, ?, ?, ? )";
+                        query = "insert into topiclog ( name,setter,stamp,topic ) "+
+                                "values ( ?, ?, ?, ? )";
                         ps = sql.prepareStatement ( query );
                         ps.setString ( 1, ci.getName ( ) );
                         ps.setString ( 2, ci.getTopic().getSetter ( ) );
@@ -544,10 +544,10 @@ public class CSDatabase extends Database {
                     default :
                         
                 }
-                String query = "INSERT INTO chanaccess ( name,access,nick )  "
-                             + "VALUES  ( ?, ?, ? ) "
-                             + "ON DUPLICATE KEY "
-                             + "UPDATE access = ?";
+                String query = "insert into chanaccess ( name,access,nick )  "
+                             + "values ( ?, ?, ? ) "
+                             + "on duplicate key "
+                             + "update access = ?";
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, ci.getName ( )  );
                 ps.setString   ( 2, acc );
@@ -580,9 +580,9 @@ public class CSDatabase extends Database {
         } else {
             /* Try add the chan */          
             try {    
-                String query = "DELETE FROM chanaccess "
-                             + "WHERE name = ? "
-                             + "AND nick = ?";
+                String query = "delete from chanaccess "
+                             + "where name = ? "
+                             + "and nick = ?";
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, ci.getName ( )  );
                 ps.setString   ( 2, access.getNick ( ) !=null ? access.getNick().getName ( ) : access.getMask ( ) );
@@ -606,11 +606,11 @@ public class CSDatabase extends Database {
             return ncaList;
         }
         try {
-            String query = "SELECT N.name,CA.name,CA.access "+
-                           "FROM nick AS N "+
-                           "JOIN chanaccess AS CA ON CA.nick = N.name "+
-                           "WHERE N.name = ? "+
-                           "AND CA.access = ?";
+            String query = "select n.name,ca.name,ca.access "+
+                           "from nick as n "+
+                           "join chanaccess as ca on ca.nick = n.name "+
+                           "where n.name = ? "+
+                           "and ca.access = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ni.getName ( )  );
             ps.setString  ( 2, access );
@@ -638,9 +638,9 @@ public class CSDatabase extends Database {
         
         String query;
         try { 
-            query = "SELECT topic,setter,unix_timestamp(stamp) "+
-                    "FROM topiclog "+
-                    "WHERE name = ? "+
+            query = "select topic,setter,unix_timestamp(stamp) "+
+                    "from topiclog "+
+                    "where name = ? "+
                     "order by stamp desc "+
                     "limit 1";
             ps = sql.prepareStatement ( query );
@@ -731,10 +731,10 @@ public class CSDatabase extends Database {
                 default :
             } 
 
-            String query = "SELECT nick,lastoped "
-                         + "FROM chanaccess "
-                         + "WHERE name = ? "
-                         + "AND access = ?";
+            String query = "select nick,lastoped "
+                         + "from chanaccess "
+                         + "where name = ? "
+                         + "and access = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName ( )  );
             ps.setString  ( 2, acc );
@@ -775,19 +775,19 @@ public class CSDatabase extends Database {
         }
         
         try {
-            String query = "DELETE FROM chan WHERE name = ?";
+            String query = "delete from chan where name = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName ( )  );
             ps.execute ( );
             ps.close ( );
 
-            query = "DELETE FROM chanaccess WHERE name = ?";
+            query = "delete from chanaccess where name = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName ( )  );
             ps.execute ( );
             ps.close ( );
 
-            query = "DELETE FROM chansetting WHERE name = ?";
+            query = "delete from chansetting where name = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName ( )  );
             ps.execute ( );
@@ -810,11 +810,11 @@ public class CSDatabase extends Database {
             return settings;
         }
         try {
-            String query = "SELECT keeptopic,topiclock,ident,opguard,"+
+            String query = "select keeptopic,topiclock,ident,opguard,"+
                            "restricted,verbose,mailblock,leaveops,autoakick,"+
                            "modelock,mark,freeze,close,hold,auditorium "+
-                           "FROM chansetting "+
-                           "WHERE name = ?;";
+                           "from chansetting "+
+                           "where name = ?;";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, name );
             res2 = ps.executeQuery ( );
@@ -878,9 +878,9 @@ public class CSDatabase extends Database {
 
             }
 
-            String query = "DELETE FROM chanaccess "
-                         + "WHERE name = ? "
-                         + "AND access = ?";
+            String query = "delete from chanaccess "
+                         + "where name = ? "
+                         + "and access = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName ( )  );
             ps.setString  ( 2, acc );
@@ -912,9 +912,9 @@ public class CSDatabase extends Database {
         try { 
             now = System.currentTimeMillis();
             String salt = config.get ( SECRETSALT );
-            String query = "SELECT name,founder,AES_DECRYPT(pass,?) as pass,description,regstamp,stamp "
-                         + "FROM chan " 
-                         + "ORDER BY name";
+            String query = "select name,founder,AES_DECRYPT(pass,?) as pass,description,regstamp,stamp "
+                         + "from chan " 
+                         + "order by name";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, salt ); 
             res = ps.executeQuery ( );
@@ -973,11 +973,11 @@ public class CSDatabase extends Database {
         }
         try { 
             String salt = config.get ( SECRETSALT );
-            String query = "SELECT C.name,C.founder,AES_DECRYPT(C.pass,?),C.description,C.regstamp,C.stamp "
-                         + "FROM chan AS C "
-                         + "WHERE C.name RLIKE ? "
-                         + "OR C.description RLIKE ? "
-                         + "ORDER BY C.name ASC";
+            String query = "select c.name,c.founder,AES_DECRYPT(c.pass,?),c.description,c.regstamp,c.stamp "
+                         + "from chan as c "
+                         + "where c.name rlike ? "
+                         + "or c.description rlike ? "
+                         + "order by c.name asc";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, salt );
             ps.setString  ( 2, "^"+pattern+"$" );
