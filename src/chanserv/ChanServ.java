@@ -350,12 +350,9 @@ public class ChanServ extends Service {
     
     /* Registered entities */
     public static ChanInfo findChan ( String source )  {
-        if ( ! is )  {
-            return null;
-        }
-        int hash = source.toUpperCase ( ) .hashCode ( );
+        int hash = source.toUpperCase().hashCode ( );
         for ( ChanInfo ci : ciList )  {
-            if ( hash == ci.getHashName ( )  )  {
+            if ( hash == ci.getHashName ( ) ) {
                 return ci;
             }
         } 

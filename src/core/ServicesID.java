@@ -190,10 +190,11 @@ public class ServicesID extends HashNumeric {
     public void printSID ( )  {
         System.out.println ( "ServicesID ( "+this.id+" )  {" );
         System.out.println ( "    niList ( "+this.niList.size ( ) +" ) " );
+        System.out.println ( "    ciList ( "+this.ciList.size ( ) +" ) " );
         if ( this.user != null )  {
             System.out.println ( "    User ( "+user.getString ( NAME ) +" ) " );
         } else {
-            System.out.println ( "    User ( NULL ) " );
+            //System.out.println ( "    User ( NULL ) " );
         }
         System.out.println ( "}" );
     }

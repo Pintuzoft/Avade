@@ -90,6 +90,7 @@ public class Handler extends HashNumeric {
         this.config = Proc.getConf ( );
         db              = new Database ( );
         Handler.initServices ( );
+        Database.loadSIDs ( );
         this.trigger    = new Trigger ( );
         this.services   = new Services ( );
         date            = new Date ( );
