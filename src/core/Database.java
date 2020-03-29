@@ -338,11 +338,8 @@ public class Database extends HashNumeric {
                     sid.setNiList ( nList );
                 }
                 if ( res.getString("nicks") != null ) {
-                    System.out.println("DEBUG: chans: '"+res.getString("chans")+"'");
                     cList = stringToChans ( res.getString("chans") );
-                    System.out.println("DEBUG: chans_count: "+cList.size());
                     sid.setCiList ( cList );
-                    sid.printSID();
                 }
                 Handler.addSplitSID ( sid );
             }
@@ -395,12 +392,9 @@ public class Database extends HashNumeric {
     private static ArrayList<ChanInfo> stringToChans ( String in ) {
         ArrayList<ChanInfo> cList = new ArrayList<>();
         ChanInfo ci;
-        System.out.println("DEBUG: stringsToChans("+in+")");
         String[] chans = in.split(",");
         for ( String chan : chans ) {
-            System.out.println("DEBUG: channame: "+chan);
             if ( ( ci = ChanServ.findChan ( chan ) ) != null ) {
-                System.out.println("DEBUG: ChanInfo: "+ci.getName());
                 cList.add ( ci );
             }
         }
