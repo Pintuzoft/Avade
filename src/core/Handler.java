@@ -899,14 +899,22 @@ public class Handler extends HashNumeric {
         return todoAmount;
     }
     
+    public static void addUpdateSID ( ServicesID servicesId ) {
+        for ( ServicesID sid : updServicesID ) {
+            if ( sid.getID() == servicesId.getID() ) {
+                return;
+            }
+        }
+        updServicesID.add ( servicesId );
+    }
+    
     private int updateServicesIDs ( ) {
         if ( updServicesID.isEmpty() || ! Database.activateConnection() ) {
             return updServicesID.size();
         }
         ArrayList<ServicesID> sids = new ArrayList<>(); 
         for ( ServicesID sid : updServicesID ) {
-            if ( ( sid.getNiList().size() == 0 && sid.getCiList().size() == 0 ) ||
-                Database.updateServicesID ( sid ) ) {
+            if ( Database.updateServicesID ( sid ) ) {
                 sids.add ( sid );
             }
         } 

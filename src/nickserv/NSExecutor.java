@@ -513,13 +513,9 @@ import java.util.regex.Pattern;
         }
         ni = cmdData.getNick ( );
         this.showStart ( true, user, ni, f.b ( ) +"Info for: "+f.b ( ) ); 
-        if ( ni.getSettings().is ( SHOWHOST ) ) {
-            this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER )+"@"+ni.getString ( HOST ) );
-        } else {
-            this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER ) +"@"+ni.getName ( ) +"."+ ( ni.getOper().getString ( ACCSTRINGSHORT ) ) +"."+Proc.getConf().get (DOMAIN ) );
-        }
+        this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER )+"@"+ni.getString ( HOST ) );        
         this.service.sendMsg ( user, f.b ( ) +"  Registered: "+f.b ( ) +ni.getString ( REGTIME ) );
-        this.service.sendMsg ( user, f.b ( ) +"    Last seen: "+f.b ( ) +ni.getString ( LASTUSED ) );
+        this.service.sendMsg ( user, f.b ( ) +"   Last seen: "+f.b ( ) +ni.getString ( LASTUSED ) );
         this.service.sendMsg ( user, f.b ( ) +"    Time now: "+f.b ( ) +dateFormat.format ( new Date ( ) ) );
         if ( ni.getSettings().getInfoStr().length() > 0 ) {
             this.service.sendMsg ( user, f.b ( ) +"    Settings: "+f.b ( ) +ni.getSettings().getInfoStr ( ) );
@@ -688,7 +684,10 @@ import java.util.regex.Pattern;
                 NickServ.addToWorkList ( CHANGE, ni );
                 log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
                 NickServ.addLog ( log );
-                this.service.sendMsg ( user, output ( NICK_SET_FLAG, ni.getName(), ni.getSettings().modeString ( flag ) )  );
+                if ( command == FREEZE ) {
+                    NickServ.unIdentifyAllFromNick ( ni );
+                }
+                this.service.sendMsg ( user, output ( NICK_SET_FLAG, ni.getName(), ni.getSettings().modeString ( flag ) ) );
                 this.service.sendGlobOp ( "Nick "+ni.getName()+" has been "+ni.getSettings().modeString(flag)+" by "+oper.getName() );
                 this.snoop.msg ( true, flag, cmdData.getNick().getName ( ), user, cmd );
                 break;

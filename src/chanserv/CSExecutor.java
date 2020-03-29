@@ -2041,8 +2041,10 @@ import java.util.Random;
                     cmdData.setStatus ( SYNTAX_ERROR );
                 } 
                 ci = ChanServ.findChan ( cmd[4] );
-                ni = ci.getNickByUser ( user );
-                
+                ni = null;
+                if (ci != null) {
+                    ni = ci.getNickByUser ( user );
+                }
                 if ( ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
                     mask = cmd[6];
                 }

@@ -212,15 +212,29 @@ public class NickServ extends Service {
         if ( ni == null ) {
             return;
         }
-        for ( User user : Handler.findUsersByNick(ni) ) {
+        for ( User user : Handler.findUsersByNick ( ni ) ) {
             if ( ni.getHashName() != user.getHash() ) {
                 user.getSID().del ( ni );
                 Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
             }
         }
-        
     }
-
+    
+    static void unIdentifyAllFromNick ( NickInfo ni ) {
+        if (ni == null) {
+            return;
+        }
+        for ( User user : Handler.findUsersByNick ( ni ) ) {
+            user.getSID().del ( ni );
+            Handler.addUpdateSID ( user.getSID() );
+            if ( user.getHashName() == ni.getHashName() ) {
+                ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+user.getString ( NAME ) +" 0 -r" );
+                Handler.getGuestServ().addNick ( user, ni );
+            }
+            Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
+        }
+    }
+    
     public static int secMaintenance ( ) {
         for ( NickInfo ni : niList ) {
             if ( ni.isState ( OLD ) ) {

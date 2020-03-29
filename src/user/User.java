@@ -248,7 +248,7 @@ public class User extends HashNumeric {
         }
     }
 
-    public void unIdentify(NickInfo ni) {
+    public void unIdentify ( NickInfo ni ) {
         if ( this.sid != null ) {
             this.sid.unIdentify ( ni );
         }
@@ -324,6 +324,9 @@ public class User extends HashNumeric {
   
     @Override
     public int hashCode ( ) {
+        return this.hashName;
+    }
+    public int getHashName ( ) {
         return this.hashName;
     }
 
