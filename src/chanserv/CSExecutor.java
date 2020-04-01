@@ -866,8 +866,8 @@ import java.util.Random;
                 return;                 
             
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
-                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_IS_FROZEN : 
@@ -2052,7 +2052,7 @@ import java.util.Random;
                 subcommand = cmd[5].toUpperCase().hashCode ( );
                 if ( subcommand != ADD && subcommand != DEL ) {
                     cmdData.setStatus ( SYNTAX_ERROR );
-                } else if ( ni2 == null && mask == null ) {
+                } else if ( ni2 == null && ! ( mask.contains("!") && mask.contains("@") ) ) {
                     cmdData.setString1 ( cmd[6] );
                     cmdData.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ci == null ) {
