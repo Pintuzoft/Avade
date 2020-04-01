@@ -242,8 +242,8 @@ import java.util.Random;
                 return;
                 
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
-                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_IS_CLOSED : 
@@ -339,8 +339,8 @@ import java.util.Random;
                 return;
                 
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
-                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case CHAN_IS_CLOSED : 
@@ -1580,8 +1580,8 @@ import java.util.Random;
                 return;
                 
             case CHAN_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ) ) ); 
-                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getChan().getString ( NAME ), user, cmd );
+                this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmdData.getString1 ( ) ) ); 
+                this.snoop.msg ( false, CHAN_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
                 return;
                 
             case ACCESS_DENIED : 
@@ -2332,7 +2332,7 @@ import java.util.Random;
                     cmdData.setString1 ( cmd[4] );
                     cmdData.setStatus ( CHAN_NOT_EXIST );                
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
-                    cmdData.setChan ( c );
+                    cmdData.setString1 ( cmd[4] );
                     cmdData.setStatus ( CHAN_NOT_REGISTERED );
                 } else if ( ci.getSettings().is ( FROZEN ) ) {
                     cmdData.setChanInfo ( ci );
@@ -2362,7 +2362,7 @@ import java.util.Random;
                     cmdData.setString1 ( cmd[4] );
                     cmdData.setStatus ( CHAN_NOT_EXIST );                
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
-                    cmdData.setChan ( c );
+                    cmdData.setString1 ( cmd[4] );
                     cmdData.setStatus ( CHAN_NOT_REGISTERED );
                 } else if ( user.isAtleast ( CSOP ) && ( ni = user.getSID().getTopOperNick ( ) ) != null ) {
                     cmdData.setChan ( c );

@@ -119,6 +119,11 @@ public class DBChanges extends HashNumeric {
                 qList.add ( "to: v1.2003-1");
                 qList.addAll ( this.db120031 ( ) );
                 qList.add ( "update settings set value = '1.2003-1' where name = 'version'" );
+            
+            case 120041 :
+                qList.add ( "to: v1.2004-1");
+                qList.addAll ( this.db120041 ( ) );
+                qList.add ( "update settings set value = '1.2004-1' where name = 'version'" );
 
                 break;
                 
@@ -464,6 +469,12 @@ public class DBChanges extends HashNumeric {
         qList.add ( "update log set stamp2=from_unixtime(stamp);" );
         qList.add ( "alter table log drop stamp;" );
         qList.add ( "alter table log change stamp2 stamp datetime;" );
+        return qList;
+    }
+    
+    private ArrayList<String> db120041 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table chanaccess add constraint foreign key (nick) references nick (name) on delete cascade on update cascade;" );
         return qList;
     }
     //

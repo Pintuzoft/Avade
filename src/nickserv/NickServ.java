@@ -492,6 +492,7 @@ public class NickServ extends Service {
         /* Message all currently idented users then unident them */
         ArrayList<User> uList = Handler.findUsersByNick ( ni );
         ArrayList<ChanInfo> cList;
+        ArrayList<ChanInfo> remList = new ArrayList<>();
         CSAcc acc = null;
         int[] lists = { SOP, AOP, AKICK };
         HashMap<Integer,Integer> map = new HashMap ( );
@@ -499,22 +500,25 @@ public class NickServ extends Service {
         map.put ( SOP, "DELSOP".hashCode() );
         map.put ( AKICK, "DELAKICK".hashCode() );
         
-        for ( ChanInfo ci : ni.getChanAccess ( FOUNDER )  ) {
+        remList.addAll ( ni.getChanAccess ( FOUNDER ) );
+        for ( ChanInfo ci : remList ) {
             Handler.getChanServ().dropChan ( ci );
             CSLogEvent log = new CSLogEvent ( ci.getName(), EXPIREFOUNDER, "", "" );
             CSDatabase.logEvent ( log );
         }
 
         for ( int list : lists ) {
-            for ( ChanInfo ci : ni.getChanAccess ( list ) ) {
+            remList.addAll(ni.getChanAccess(list));
+            for ( ChanInfo ci : remList ) {
                 if ( ( acc = ci.getAccess ( list, ni ) ) != null ) {
                     ci.delAccess ( list, acc );
                     CSAccessLogEvent log = new CSAccessLogEvent ( ci.getName(), map.get ( list ), ni.getName() );
                     ChanServ.addAccessLog ( log );
                 }
             }
+            remList.clear();
         }
-              
+         
         for ( User user : uList ) {
             this.sendMsg ( user, "You have now been unidentified from nick: "+ni.getName());
             this.sendMsg ( user, "Nick "+ni.getName()+" which you are identified to has now been dropped");

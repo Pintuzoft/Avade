@@ -485,7 +485,6 @@ import java.util.regex.Pattern;
         ni = cmdData.getNick ( );
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSKILL "+ni.getName ( ) +" :Ghost exorcised by: "+user.getString ( NAME ) ); /* kill the ghosted nick */
-        this.snoop.msg ( true, ni.getName ( ), user, cmd );
         NickServ.fixIdentState ( user );
         user.getSID().add ( ni );
         ni.getChanges().hasChanged ( LASTUSED );
