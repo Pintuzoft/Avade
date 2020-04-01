@@ -508,7 +508,7 @@ public class NickServ extends Service {
         }
 
         for ( int list : lists ) {
-            remList.addAll(ni.getChanAccess(list));
+            remList.addAll ( ni.getChanAccess ( list ) );
             for ( ChanInfo ci : remList ) {
                 if ( ( acc = ci.getAccess ( list, ni ) ) != null ) {
                     ci.delAccess ( list, acc );
@@ -516,11 +516,11 @@ public class NickServ extends Service {
                     ChanServ.addAccessLog ( log );
                 }
             }
-            remList.clear();
+            remList.clear ( );
         }
          
         for ( User user : uList ) {
-            this.sendMsg ( user, "You have now been unidentified from nick: "+ni.getName());
+            this.sendMsg ( user, "You have now been unidentified from nick: "+ni.getName ( ) );
             this.sendMsg ( user, "Nick "+ni.getName()+" which you are identified to has now been dropped");
             user.unIdentify ( ni );
         }
@@ -535,12 +535,12 @@ public class NickServ extends Service {
         NickServ.addToWorkList ( DELETE, ni );
     }    
 
-    public int getNickRegStats() {
-        return regList.size();
+    public int getNickRegStats ( ) {
+        return regList.size ( );
     }
 
-    public int getChangesStats() {
-        return changeList.size();
+    public int getChangesStats ( ) {
+        return changeList.size ( );
     }
     
 }
