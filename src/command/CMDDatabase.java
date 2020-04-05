@@ -42,31 +42,36 @@ public class CMDDatabase extends Database {
         NickInfo ni;
         ChanInfo ci;
         Command command;
+    
         LinkedList<Command> cList = new LinkedList<> ( );
         if ( ! activateConnection ( )  )  {
             return cList;
         }
         try {
-            String query = "SELECT id, target, targettype, command, extra "
+            String query = "SELECT id,target,targettype,command,extra,extra2 "
                          + "FROM command "
                          + "ORDER BY id ASC;";
             preparedStmt = sql.prepareStatement ( query );
             res = preparedStmt.executeQuery ( );
 
-            while ( res.next ( )  )  {
+            while ( res.next ( ) ) {
                 try {
-                    if ( res.getString(3).toUpperCase().hashCode ( ) == 1 ) {
-                        if (  ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
-                            cList.add ( 
-                                new Command ( 
-                                    res.getString ( 1 ), 
-                                    ni, 
-                                    11, 
-                                    res.getString(4).toUpperCase().hashCode ( ), 
-                                    res.getString(5)
-                                )
-                            );
-                        }
+                    switch ( res.getString(3).toUpperCase().hashCode ( ) ) {
+                        case NICKINFO :
+                            if ( ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
+                                cList.add ( 
+                                    new Command ( 
+                                        res.getString ( 1 ), 
+                                        ni, 
+                                        res.getString(3).toUpperCase().hashCode ( ), 
+                                        res.getString(4).toUpperCase().hashCode ( ), 
+                                        res.getString(5),
+                                        res.getString(6)
+                                    )
+                                );
+                            }
+                            break;
+                        
                     }
                 } catch ( SQLException e ) {
                     Proc.log ( CMDDatabase.class.getName ( ), e );
@@ -79,6 +84,7 @@ public class CMDDatabase extends Database {
         } catch  ( SQLException ex )  {
             Proc.log ( CMDDatabase.class.getName ( ) , ex );
         }
+        System.out.println("debug: getCommands(end): "+cList.size());
         return cList;
     }
     

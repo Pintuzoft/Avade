@@ -64,6 +64,10 @@ public class OSExecutor extends Executor {
             case CINFO :
                 this.doCInfo ( user, cmd );
                 break;
+                          
+            case NINFO :
+                this.doNInfo ( user, cmd );
+                break;
                 
             case SINFO :
                 this.doSInfo ( user, cmd );
@@ -289,6 +293,39 @@ public class OSExecutor extends Executor {
         } 
     }
 
+    private void doNInfo ( User user, String[] cmd ) {
+        //:DreamHealer PRIVMSG OperServ@stats.avade.net :ninfo pintuz
+        //           0       1                        2      3      4
+        NickInfo ni;
+        if ( ! OperServ.enoughAccess ( user, NINFO ) ) {
+            return;
+        }
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, "Syntax: /OperServ NINFO <nick>" );
+            return;
+        }
+        
+        ni = NickServ.findNick(cmd[4]);
+        if ( ni == null ) {
+            this.service.sendMsg ( user, "Error: Nick "+cmd[4]+" is not registered" );
+            return;
+        }
+        
+        this.service.sendMsg ( user, "*** NInfo: "+ni.getName() );
+        this.service.sendMsg ( user, "      user: "+ni.getString(USER) );
+        this.service.sendMsg ( user, "      host: "+ni.getString(HOST) );
+        this.service.sendMsg ( user, "        IP: "+ni.getString(IP) );
+        this.service.sendMsg ( user, "      mail: "+ni.getString(MAIL) );
+        this.service.sendMsg ( user, "  settings: "+ni.getSettings().getInfoStr() );
+        this.service.sendMsg ( user, "   regtime: "+ni.getString(REGTIME) );
+        this.service.sendMsg ( user, "  lastused: "+ni.getString(LASTUSED) );
+        this.service.sendMsg ( user, "      oper: "+ni.getOper().getString(ACCSTRING) );
+        this.service.sendMsg ( user, "  throttle: "+ni.getThrottle().isThrottled() );
+        this.service.sendMsg ( user, "      auth: "+ni.getAuth() );
+        this.service.sendMsg ( user, "*** End of NInfo *** " );
+        
+    }
+    
     private void doUList ( User user )  {
         Server s = Handler.findServer ( Proc.getConf().get ( CONNNAME ) );
         if ( ! OperServ.enoughAccess ( user, UINFO ) ) {

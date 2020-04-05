@@ -30,14 +30,16 @@ public class Command extends HashNumeric {
     private int         targetType;
     private int         command;
     private String      extra;
+    private String      extra2;
     
-    public Command ( String id, Object target, int targetType, int command, String extra )  {
+    public Command ( String id, Object target, int targetType, int command, String extra, String extra2 )  {
         this.id = id;
         this.hash = id.hashCode ( );
         this.target = target;
         this.targetType = targetType;
         this.command = command;
         this.extra = extra;
+        this.extra = extra2;
     }
 
     public String getID ( ) {
@@ -61,6 +63,10 @@ public class Command extends HashNumeric {
     } 
 
     public String getExtra() {
+        return extra;
+    }
+    
+    public String getExtra2() {
         return extra;
     }
     

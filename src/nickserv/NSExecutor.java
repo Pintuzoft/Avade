@@ -176,10 +176,12 @@ import java.util.regex.Pattern;
                 
         }
         
-        NickInfo ni = new NickInfo ( user, pass, mail );
+        NickInfo ni = new NickInfo ( user, pass );
+        NSAuth auth = new NSAuth ( MAIL, ni.getName(), mail );
+        NickServ.addNewAuth ( auth );
         NickServ.addToWorkList ( REGISTER, ni );
         NickServ.addNick ( ni );
-        SendMail.sendNickRegisterMail ( ni );
+        SendMail.sendNickRegisterMail ( ni, auth );
         user.getSID().add ( ni );
         NSLogEvent log = new NSLogEvent ( ni.getName(), REGISTER, user.getFullMask(), null );
         NickServ.addLog ( log );
@@ -993,20 +995,22 @@ import java.util.regex.Pattern;
         if ( NSDatabase.authMail ( ni, command ) ) {
              if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
                 for ( User u : uList )  {
-                    this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getName ( )  )  );
+                    this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getName ( ) ) );
                 }
             }
             ni.setEmail( NSDatabase.getMailByNick ( ni.getName() ) );
+            NSLogEvent log = new NSLogEvent ( ni.getName(), AUTHMAIL, "web!web@"+command.getExtra2 ( ), null );
+            NickServ.addLog ( log );
             return true;
         }
         return false;
     }
  
     private boolean isGuestNick ( User user ) {
-        return user.getString(NAME).toUpperCase().startsWith("GUEST");
+        return user.getString(NAME).toUpperCase().startsWith ( "GUEST" );
     }
  
-    private CmdData validateCommandData ( User user, int command, String[] cmd )  {
+    private CmdData validateCommandData ( User user, int command, String[] cmd ) {
         NickInfo ni;
         String nick = new String ( );
         String pass = new String ( ); 

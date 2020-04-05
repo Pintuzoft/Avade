@@ -83,6 +83,7 @@ public class Config extends HashNumeric {
     private int panic = 5;
     private int uinfo = 5;
     private int cinfo = 5;
+    private int ninfo = 5;
     private int sinfo = 5;
     private int ulist = 5;
     private int jupe = 5;
@@ -413,6 +414,10 @@ public class Config extends HashNumeric {
             case CINFO :
                 this.cinfo = access;
                 break;
+                          
+            case NINFO :
+                this.ninfo = access;
+                break;
                 
             case SINFO :
                 this.sinfo = access;
@@ -605,6 +610,9 @@ public class Config extends HashNumeric {
                 
             case CINFO :
                 return this.cinfo;
+                           
+            case NINFO :
+                return this.ninfo;
                 
             case SINFO :
                 return this.sinfo;

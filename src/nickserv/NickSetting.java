@@ -290,7 +290,7 @@ public class NickSetting extends HashNumeric {
         this.noghost    = new String ( );
     }
 
-    boolean getAuth ( )  {
+    public boolean getAuth ( )  {
         return this.auth;
     }
    

@@ -86,7 +86,7 @@ public class NickInfo extends HashNumeric {
      }
 
     /* REGISTER */
-    public NickInfo ( User user, String pass, String mail )  {
+    public NickInfo ( User user, String pass )  {
         /* Register nickname */ 
         this.name       = user.getString ( NAME );
         this.user       = user.getString ( USER );
@@ -95,7 +95,7 @@ public class NickInfo extends HashNumeric {
         this.hashName   = this.name.toUpperCase().hashCode ( );
         this.hashMask   = ( user.getString(USER)+"@"+user.getString(IP) ).toUpperCase().hashCode ( ); 
         this.pass       = pass;
-        this.mail       = mail; 
+        this.mail       = new String(); 
         this.settings   = new NickSetting ( );
         String date = this.dateFormat.format ( new Date ( ) );
         this.regTime    = date;
@@ -401,6 +401,9 @@ public class NickInfo extends HashNumeric {
         return this.changes;
     }
     public boolean isAuth ( ) {
+        if ( this.mail == null ) {
+            return false;
+        }
         return this.mail.length() > 0;
     }
     

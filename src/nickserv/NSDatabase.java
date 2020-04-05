@@ -119,14 +119,14 @@ public class NSDatabase extends Database {
             ps.close();
             
             /* MAIL */
-            query = "insert into maillog (nick,mail,stamp) "+
-                    "values (?,aes_encrypt(?,?),now())";
-            ps = sql.prepareStatement ( query );
-            ps.setString ( 1, ni.getName() );
-            ps.setString ( 2, ni.getEmail() );
-            ps.setString ( 3, salt );
-            ps.execute();
-            ps.close();
+            //query = "insert into maillog (nick,mail,stamp) "+
+            //        "values (?,aes_encrypt(?,?),now())";
+            //ps = sql.prepareStatement ( query );
+            //ps.setString ( 1, ni.getName() );
+            //ps.setString ( 2, ni.getEmail() );
+            //ps.setString ( 3, salt );
+            //ps.execute();
+            //ps.close();
             
             /* SETTINGS */
             query = "insert into nicksetting  ( name,noop,neverop,mailblock,showemail,showhost )  "
@@ -511,11 +511,11 @@ public class NSDatabase extends Database {
         try {
             query = "update maillog "+
                     "set auth = null "+
-                    "where name = ? "+
+                    "where nick = ? "+
                     "and auth = ?";
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, ni.getName ( )  );
-            ps.setString   ( 2, command.getExtra() );
+            ps.setString   ( 2, command.getExtra ( ) );
             ps.executeUpdate ( );
             ps.close ( );
 
@@ -739,8 +739,8 @@ public class NSDatabase extends Database {
             String query = "select n.name,"+
                            "  n.hashcode,"+
                            "  n.mask,"+
-                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name order by stamp desc limit 1) as pass,"+
-                           "  (select aes_decrypt(mail,?) from maillog where nick=n.name order by stamp desc limit 1) as mail,"+
+                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as pass,"+
+                           "  (select aes_decrypt(mail,?) from maillog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as mail,"+
                            "  n.regstamp,"+
                            "  n.stamp "+
                            "from nick as n "+

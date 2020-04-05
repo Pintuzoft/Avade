@@ -20,6 +20,7 @@ package mail;
 import core.Proc;
 import core.HashNumeric;
 import memoserv.MemoInfo;
+import nickserv.NSAuth;
 import nickserv.NickInfo;
 
 /**
@@ -28,30 +29,33 @@ import nickserv.NickInfo;
  */
 public class SendMail extends HashNumeric {
     
-    public SendMail ( )  {  }
+    public SendMail ( ) { }
     
     /* REGISTER MAIL */
-    public static void sendNickRegisterMail ( NickInfo ni )  {
-        Mail mail = new Mail ( 
+    public static void sendNickRegisterMail ( NickInfo ni, NSAuth auth ) {
+        Mail mail = new Mail (
             ni.getString ( MAIL ), 
-            mailStr ( NICKREG_SUBJECT, "" ), 
+            mailStr ( NICKREG_SUBJECT, "" ),
+            auth.getAuth(),
             mailStr ( 
                 NICKREG_BODY, 
                 ni.getName ( ), 
-                Proc.getConf ( ) .get ( AUTHURL ), 
-                ni.getString ( AUTH ) 
+                Proc.getConf().get ( AUTHURL ),
+                auth.getAuth()
             )
         );
         MXDatabase.sendMail ( mail );
     }
     
     /* NEW MEMO */
-    public static void sendNewMemo ( NickInfo ni, MemoInfo mi )  {   
+    public static void sendNewMemo ( NickInfo ni, MemoInfo mi ) {   
         Mail mail = new Mail ( 
             ni.getString ( MAIL ), 
             mailStr ( NEWMEMO_SUBJECT, "" ), 
+            null,
             mailStr ( 
-                NEWMEMO_BODY, 
+                NEWMEMO_BODY,
+                null,
                 ni.getName ( ), 
                 mi.getSender ( )
             )  
@@ -60,14 +64,12 @@ public class SendMail extends HashNumeric {
     }
       
     /* EXPIRE NICK */
-    public static void sendExpNick ( NickInfo ni )  {   
+    public static void sendExpNick ( NickInfo ni ) {   
         Mail mail = new Mail ( 
             ni.getString ( MAIL ), 
+            null,
             mailStr ( EXPNICK_SUBJECT, "" ), 
-            mailStr ( 
-                EXPNICK_BODY, 
-                ni.getName ( )
-            )  
+            mailStr ( EXPNICK_BODY, ni.getName ( ) )  
         );
         MXDatabase.sendMail ( mail );
     }

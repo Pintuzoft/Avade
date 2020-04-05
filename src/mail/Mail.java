@@ -22,15 +22,17 @@ package mail;
  * @author DreamHealer
  */
 public class Mail {
-    private String      to;
-    private String      subject;
-    private String      body;
+    private String to;
+    private String subject;
+    private String auth;
+    private String body;
     
-    public Mail ( String to, String subject, String body )  {
+    public Mail ( String to, String subject, String auth, String body )  {
         this.to         = to;
         this.subject    = subject;
+        this.auth       = auth;
         this.body       = body;
-        System.out.println ( "Mail ( "+this.to+", "+this.subject+", "+this.body+" );" );
+        System.out.println ( "Mail ( "+this.to+", "+this.subject+", "+this.auth+", "+this.body+" );" );
     }
     
     public String getTo ( ) { 
@@ -38,6 +40,9 @@ public class Mail {
     } 
     public String getSubject ( ) { 
         return this.subject;
+    }     
+    public String getAuth ( ) { 
+        return this.auth;
     } 
     public String getBody ( ) { 
         return this.body;

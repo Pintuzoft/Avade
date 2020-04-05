@@ -104,6 +104,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "HELP",      1,                         "Show help information" )                       );
         cmdList.add ( new CommandInfo ( "UINFO",     CMDAccess ( UINFO ),       "Show user information" )                       );
         cmdList.add ( new CommandInfo ( "CINFO",     CMDAccess ( CINFO ),       "Show channel information" )                    );
+        cmdList.add ( new CommandInfo ( "NINFO",     CMDAccess ( CINFO ),       "Show nick information" )                       );
         cmdList.add ( new CommandInfo ( "ULIST",     CMDAccess ( ULIST ),       "Show user list" )                              );
         cmdList.add ( new CommandInfo ( "CLIST",     CMDAccess ( CLIST ),       "Show user list" )                              );
         cmdList.add ( new CommandInfo ( "SLIST",     CMDAccess ( SLIST ),       "Show server list" )                            );

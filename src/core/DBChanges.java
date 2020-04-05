@@ -125,6 +125,16 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db120041 ( ) );
                 qList.add ( "update settings set value = '1.2004-1' where name = 'version'" );
 
+            case 120042 :
+                qList.add ( "to: v1.2004-2");
+                qList.addAll ( this.db120042 ( ) );
+                qList.add ( "update settings set value = '1.2004-2' where name = 'version'" );
+
+            case 120043 :
+                qList.add ( "to: v1.2004-3");
+                qList.addAll ( this.db120043 ( ) );
+                qList.add ( "update settings set value = '1.2004-3' where name = 'version'" );
+
                 break;
                 
             default :
@@ -477,5 +487,20 @@ public class DBChanges extends HashNumeric {
         qList.add ( "alter table chanaccess add constraint foreign key (nick) references nick (name) on delete cascade on update cascade;" );
         return qList;
     }
+
+    private ArrayList<String> db120042 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table command add extra2 varchar(64);" );
+        return qList;
+    }
+        
+    private ArrayList<String> db120043 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "insert into nicklog (name,flag,usermask,stamp) (select name,'R' as flag,concat('*!*@',substring(mask, instr(mask, '@')+1)) as usermask,regstamp as stamp from nick);" );
+        qList.add ( "insert into nicklog (name,flag,usermask,stamp) (select name,'Am' as flag,concat('*!*@',substring(mask, instr(mask, '@')+1)) as usermask,regstamp as stamp from nick);" );
+        qList.add ( "insert into chanlog (name,flag,usermask,stamp) select c.name as name,'R' as flag,concat('*!*@',substring(n.mask, instr(n.mask, '@')+1)) as usermask,c.regstamp as stamp from chan as c join nick as n on n.name=c.founder;" );
+        return qList;
+    }
+        
     //
 }

@@ -146,6 +146,7 @@ public abstract class HashNumeric extends TextFormat {
     /* OPERSERV */
     public static final int UINFO                       = 80751235;
     public static final int CINFO                       = 64127857;
+    public static final int NINFO                       = 74286588;
     public static final int SINFO                       = 78904193;
     public static final int ULIST                       = 80836211;
     public static final int CLIST                       = 64212833;

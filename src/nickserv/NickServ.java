@@ -282,14 +282,14 @@ public class NickServ extends Service {
             for ( NSAuth auth : newAuthList ) {
                 switch ( auth.getType() ) {
                     case MAIL :
-                        if ( NSDatabase.addMail (auth ) ) {
-                            auths.add (auth );
+                        if ( NSDatabase.addMail ( auth ) ) {
+                            auths.add ( auth );
                         }
                         break;
                         
                     case PASS :
-                        if ( NSDatabase.addPass (auth ) ) {
-                            auths.add (auth );
+                        if ( NSDatabase.addPass ( auth ) ) {
+                            auths.add ( auth );
                         }
                         break;
                 }

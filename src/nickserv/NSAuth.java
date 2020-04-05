@@ -46,7 +46,7 @@ public class NSAuth {
     }
     
     public void hash ( ) {
-        String buf = this.nick+this.value+System.currentTimeMillis();
+        String buf = this.nick+this.value+System.currentTimeMillis()+( Hash.md5 ( ""+System.nanoTime() ) );
         this.auth = Hash.md5 ( buf );
     }
 

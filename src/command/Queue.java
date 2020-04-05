@@ -33,30 +33,29 @@ public class Queue extends HashNumeric {
     private LinkedList<Command>     buf;
     private long                    time;
     
-    public Queue ( )  {
+    public Queue ( ) {
         this.cList = new LinkedList<> ( );
     }
     
-    public void maintenance ( )  {
-        if ( time < ( System.currentTimeMillis ( )  )  )  {
-            //System.out.println ( "Queue: "+time+" < "+System.currentTimeMillis ( )  );
+    public void maintenance ( ) {
+        if ( time < ( System.currentTimeMillis ( ) ) ) {
+            //System.out.println ( "Queue: "+time+" < "+System.currentTimeMillis ( ) );
             this.retrieve ( );
             this.next ( );
             time = System.currentTimeMillis ( ) + ( 5000 );
         }
     }
     
-    public void retrieve ( )  {
-        if ( this.cList.isEmpty ( )  )  {
-            this.cList = CMDDatabase.getCommands ( );
-        } else {
+    public void retrieve ( ) {
+        this.cList = CMDDatabase.getCommands ( );
+        if ( ! this.cList.isEmpty ( ) ) {
             boolean found;
             this.buf = CMDDatabase.getCommands ( );
-            for ( Command cmd : this.buf )  {
+            for ( Command cmd : this.buf ) {
                 found = false;
                 try {
                     for ( Command cmd2 : this.cList )  {
-                        if ( cmd.getHashCode ( ) == cmd2.getHashCode ( )  )  {
+                        if ( cmd.getHashCode ( ) == cmd2.getHashCode ( ) ) {
                             found = true;
                         }
                     }
@@ -64,7 +63,7 @@ public class Queue extends HashNumeric {
                         this.cList.add ( cmd );
                     }
                 } catch ( Exception e )  {
-                    Proc.log ( Queue.class.getName ( ) , e );
+                    Proc.log ( Queue.class.getName ( ), e );
                 }
             }
         }
@@ -73,9 +72,9 @@ public class Queue extends HashNumeric {
     
     public void next ( )  {
         Command command;
-        if ( ! cList.isEmpty ( )  )  {
+        if ( ! cList.isEmpty ( ) ) {
             /* Something is in queue */
-            if (  ( command = this.cList.pop ( )  )  != null )  {
+            if (  ( command = this.cList.pop ( ) ) != null ) {
                 this.execute ( command );
             }
         }
@@ -83,15 +82,14 @@ public class Queue extends HashNumeric {
 
     private void execute ( Command command )  {
         boolean res = false;
-        if ( command.getTargetType ( )  == NICKINFO )  {
+        if ( command.getTargetType ( ) == NICKINFO )  {
             /* Target is a nickname */ 
             NickInfo ni =  ( NickInfo )  command.getTarget ( );
             NickInfo ni2;
-            switch ( command.getCommand ( )  )  {
-                case AUTHMAIL : { 
+            switch ( command.getCommand ( ) ) {
+                case AUTH : { 
                     ni2 = NickServ.findNick ( ni.getName ( )  );                  
                     res = Handler.getNickServ().authorizeNick ( ni2, command );
-              //      System.out.println ( "debug: nickname: "+ni2.getName ( ) +" ( "+ni2.getSettings().is ( AUTH ) +" ) " );
                 }
             } 
         }
@@ -100,7 +98,7 @@ public class Queue extends HashNumeric {
             this.cList.add ( command );
         } else {
             /* Good result lets remove it from the database */
-            CMDDatabase.deleteCommand ( command.getID ( )  );
+            CMDDatabase.deleteCommand ( command.getID ( ) );
         }
     }
 }
