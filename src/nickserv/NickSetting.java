@@ -18,8 +18,6 @@
 package nickserv;
 
 import core.HashNumeric;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * create table nicksetting  ( name varchar ( 32 ) , enforce bool not null, secure bool not null, private bool not null, noop bool not null, neverop bool not null, mailblock bool not null, showemail bool not null, showhost bool not null, primary key  ( name ) , constraint foreign key  ( name )  references nick  ( name )  on delete cascade on update cascade )  ENGINE=InnoDB;
@@ -75,8 +73,12 @@ public class NickSetting extends HashNumeric {
 
             case SHOWHOST :
                 return this.showHost;
- 
+
+            case AUTH :
+                return this.auth;
+                
             /* Oper */
+            case MARKED :
             case MARK :
                 return this.mark.length() > 0;
             
@@ -90,9 +92,7 @@ public class NickSetting extends HashNumeric {
 
             case NOGHOST :
                 return this.noghost.length() > 0;
-           
             
-                
             default: 
                 return false;
 
@@ -135,14 +135,17 @@ public class NickSetting extends HashNumeric {
             instater = new String ( );
         } 
         switch ( mode ) { 
+            case MARKED :
             case MARK :
                this.mark = instater;
                break;
             
+            case FROZEN :
             case FREEZE :
                this.freeze = instater;
                break;
 
+            case HELD :
             case HOLD :
                this.hold = instater;
                break;
@@ -157,6 +160,7 @@ public class NickSetting extends HashNumeric {
     }
     public String getInstater ( int mode ) {
         switch ( mode ) {
+            case MARKED :
             case MARK :
                 return this.mark;
             
@@ -176,38 +180,41 @@ public class NickSetting extends HashNumeric {
         }
     }
     public String modeString ( int mode )  {
-         switch ( mode )  { 
-             case NOOP :
-                 return "NoOp";
-                 
-             case NEVEROP :
-                 return "NeverOp";
-                 
-             case MAILBLOCKED :
-                 return "MailBlock";
-                 
-             case SHOWEMAIL :
-                 return "ShowEmail";
-                 
-             case SHOWHOST :
-                 return "ShowHost";
-                 
-             case MARK :
-                 return "Marked";
-                     
-             case FREEZE :
-                 return "Frozen";
-                 
-             case HOLD :
-                 return "Held";
-                 
-             case NOGHOST :
-                 return "NoGhost";
-                 
-             default:
-                 return "";
-            
-         } 
+        switch ( mode )  { 
+            case NOOP :
+                return "NoOp";
+
+            case NEVEROP :
+                return "NeverOp";
+
+            case MAILBLOCKED :
+                return "MailBlock";
+
+            case SHOWEMAIL :
+                return "ShowEmail";
+
+            case SHOWHOST :
+                return "ShowHost";
+
+            case MARKED :
+            case MARK :
+                return "Marked";
+
+            case FROZEN :
+            case FREEZE :
+                return "Frozen";
+
+            case HELD :
+            case HOLD :
+                return "Held";
+
+            case NOGHOST :
+                return "NoGhost";
+
+            default:
+                return "";
+
+        } 
     } 
      
     private String isFirst ( boolean first ) {
@@ -216,67 +223,21 @@ public class NickSetting extends HashNumeric {
     
     public String getInfoStr ( )  {
         String buf      = new String ( );
-        boolean first   = true;
-         
+        boolean first   = true;         
+        int[] sList = { NOOP, NEVEROP, MAILBLOCKED, 
+                        SHOWEMAIL, SHOWHOST, MARK, 
+                        FREEZE, HOLD, NOGHOST };
         
-        if ( is ( NOOP )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( NOOP );
-            first = true;
+        for ( int setting : sList ) {
+            if ( is ( setting ) ) {
+                buf += this.isFirst ( first ); 
+                buf += this.modeString ( setting );
+                first = true;
+            }
         }
-        
-        if ( is ( NEVEROP )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( NEVEROP );
-            first = true;
-        }
-        
-        if ( is ( MAILBLOCKED )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( MAILBLOCKED );
-            first = true;
-        }
-        
-        if ( is ( SHOWEMAIL )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( SHOWEMAIL );
-            first = true;
-        }
-        
-        if ( is ( SHOWHOST )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( SHOWHOST );
-            first = true;
-        }
-        
-        if ( is ( MARK )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( MARK );
-            first = true;
-        }
-              
-        if ( is ( FREEZE )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( FREEZE );
-            first = true;
-        }
-        
-        if ( is ( HOLD )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( HOLD );
-            first = true;
-        }
-         
-        if ( is ( NOGHOST )  )  {
-            buf += this.isFirst ( first ); 
-            buf += this.modeString ( NOGHOST );
-            first = true;
-        }
-         
         return buf; 
     }  
- 
-    
+  
     public void allFalse ( )  {
         this.mailBlock  = false;
         this.neverOp    = false;

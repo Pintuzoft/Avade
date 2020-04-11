@@ -82,7 +82,7 @@ public class CMDDatabase extends Database {
             idleUpdate ( "getCommands ( )" ); 
          
         } catch  ( SQLException ex )  {
-            Proc.log ( CMDDatabase.class.getName ( ) , ex );
+            Proc.log ( CMDDatabase.class.getName ( ), ex );
         }
         System.out.println("debug: getCommands(end): "+cList.size());
         return cList;

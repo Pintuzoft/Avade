@@ -136,6 +136,10 @@ public class NSHelper extends Helper {
             case EMAIL :
                 this.setEmail ( user );
                 break;
+             
+            case PASSWD :
+                this.setPasswd ( user );
+                break;
  
             default :
                 this.setMain ( user );
@@ -314,6 +318,8 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"MAILBLOCK"+f.b ( ) +"  Disable ability to send mails to nick"                              );
         this.service.sendMsg ( user, "       "+f.b ( ) +"SHOWEMAIL"+f.b ( ) +"  Show email in info"                                                 );
         this.service.sendMsg ( user, "       "+f.b ( ) +"SHOWHOST"+f.b ( ) +"   Show real host in info"                                             );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"EMAIL"+f.b ( ) +"      Set a new email on nick"                                            );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"PASSWD"+f.b ( ) +"     Set a new password on nick"                                         );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                           );
@@ -400,6 +406,22 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
      
+    private void setPasswd ( User user ) {
+        this.showStart ( user, "Set Passwd" );
+        this.service.sendMsg ( user, "   "                                                                    );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET PASSWD <pass> <email>"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "                                                                    );
+        this.service.sendMsg ( user, "   This command will set a new pass to the current nickname. After"     );
+        this.service.sendMsg ( user, "   the new pass has been set you will be sent a auth mail. You need"    );
+        this.service.sendMsg ( user, "   to follow the instructions in that mail to fully set the new"        );
+        this.service.sendMsg ( user, "   pass. Make sure to use a valid email as validation through mail"     );
+        this.service.sendMsg ( user, "   is required."                                                        );
+        this.service.sendMsg ( user, "   "                                                                    );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                       );
+        this.service.sendMsg ( user, "   Do not share your email."                                            );
+        this.showEnd ( user );
+    }
+     
     
     
     /*** OPER COMMANDS ***/
@@ -411,14 +433,14 @@ public class NSHelper extends Helper {
             return;
         }
         this.showStart ( user, "Delete" );
-        this.service.sendMsg ( user, "   "                                                                                              );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: Delete <nick>"+f.b ( ) +""                                                 );
-        this.service.sendMsg ( user, "   "                                                                                              );
-        this.service.sendMsg ( user, "   This command will delete a nickname from the database."                                        );
-        this.service.sendMsg ( user, "   "                                                                                              );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security Recommendations"+f.r ( )                                                  );
-        this.service.sendMsg ( user, "   Deleting anything from the database should be used with causion"                               );
-        this.service.sendMsg ( user, "   and only if absolutely required."                                          );
+        this.service.sendMsg ( user, "   "                                                                       );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: Delete <nick>"+f.b ( ) +""                          );
+        this.service.sendMsg ( user, "   "                                                                       );
+        this.service.sendMsg ( user, "   This command will delete a nickname from the database."                 );
+        this.service.sendMsg ( user, "   "                                                                       );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security Recommendations"+f.r ( )                           );
+        this.service.sendMsg ( user, "   Deleting anything from the database should be used with causion"        );
+        this.service.sendMsg ( user, "   and only if absolutely required."                                       );
         this.showEnd ( user ); 
     } 
     private void freeze ( User user ) {
@@ -426,16 +448,16 @@ public class NSHelper extends Helper {
             return;
         }
         this.showStart ( user, "Freeze" );
-        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "                                                                                         );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ FREEZE [-]<nick>"+f.b ( ) +""                               );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   This command will set the freeze flag or remove it from a nick. When the flag is"       );
-        this.service.sendMsg ( user, "   set the nick will not work properly anymore. NickServ will unidentify all users from "     );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   This command will set the freeze flag or remove it from a nick. When the flag is"         );
+        this.service.sendMsg ( user, "   set the nick will not work properly anymore. NickServ will unidentify all users from "    );
         this.service.sendMsg ( user, "   the nick and it will be unuseable."                                                       );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
-        this.service.sendMsg ( user, "   Freeze is a major inconvenience to the user, so please refrain from using the "            );
-        this.service.sendMsg ( user, "   command unless absolutely required. This command is logged."                               );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                            );
+        this.service.sendMsg ( user, "   Freeze is a major inconvenience to the user, so please refrain from using the "           );
+        this.service.sendMsg ( user, "   command unless absolutely required. This command is logged."                              );
         this.showEnd ( user );      
     }
 
@@ -444,16 +466,16 @@ public class NSHelper extends Helper {
             return;
         }
         this.showStart ( user, "Hold" );
-        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "                                                                                         );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ HOLD [-]<nick>"+f.b ( ) +""                                 );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   This command will set the hold flag or remove it from a nick. When the flag is"         );
-        this.service.sendMsg ( user, "   set the nick will not expire."                                                          );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
-        this.service.sendMsg ( user, "   Holding a nick can be nice however please make sure the nick remain active"          );
-        this.service.sendMsg ( user, "   and healthy. Keeping a nick registered for selfish reasons is bad for the network."     );
-        this.service.sendMsg ( user, "   This command is logged."                                                                   );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   This command will set the hold flag or remove it from a nick. When the flag is"           );
+        this.service.sendMsg ( user, "   set the nick will not expire."                                                            );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                            );
+        this.service.sendMsg ( user, "   Holding a nick can be nice however please make sure the nick remain active"               );
+        this.service.sendMsg ( user, "   and healthy. Keeping a nick registered for selfish reasons is bad for the network."       );
+        this.service.sendMsg ( user, "   This command is logged."                                                                  );
         this.showEnd ( user );      
     }
 
@@ -462,16 +484,16 @@ public class NSHelper extends Helper {
             return;
         }
         this.showStart ( user, "Mark" );
-        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "                                                                                         );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ MARK [-]<nick>"+f.b ( ) +""                                 );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   This command will set the mark flag or remove it from a nick. When the flag is"         );
-        this.service.sendMsg ( user, "   set the nick will be locked from ownership commands including sendpass and getpass"     );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
-        this.service.sendMsg ( user, "   Marking a nick should only be done if there is a conflict of ownership. The flag"       );
-        this.service.sendMsg ( user, "   will stop users and opers from using ownership commands on the nick. This command"      );
-        this.service.sendMsg ( user, "   is logged."                                                                   );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   This command will set the mark flag or remove it from a nick. When the flag is"           );
+        this.service.sendMsg ( user, "   set the nick will be locked from ownership commands including sendpass and getpass"       );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                            );
+        this.service.sendMsg ( user, "   Marking a nick should only be done if there is a conflict of ownership. The flag"         );
+        this.service.sendMsg ( user, "   will stop users and opers from using ownership commands on the nick. This command"        );
+        this.service.sendMsg ( user, "   is logged."                                                                               );
         this.showEnd ( user );  
     }
 
@@ -480,17 +502,17 @@ public class NSHelper extends Helper {
             return;
         }
         this.showStart ( user, "Mark" );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ NOGHOST [-]<nick>"+f.b ( ) +""                                 );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   This command will set the NoGhost flag or remove it from a nick. When the flag is"         );
-        this.service.sendMsg ( user, "   set services will not allow the nick to be ghosted by anyone and send a globops"     );
-        this.service.sendMsg ( user, "   message showing who is trying to ghost it."                                                );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
-        this.service.sendMsg ( user, "   NoGhost a nick should only be done if there is a conflict of ownership where someone"       );
-        this.service.sendMsg ( user, "   is trying to steal it by ghosting the nick while the user is trying to resolve"      );
-        this.service.sendMsg ( user, "   ownership issues. While NoGhost is set the nick is fully useable."                         );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ NOGHOST [-]<nick>"+f.b ( ) +""                              );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   This command will set the NoGhost flag or remove it from a nick. When the flag is"        );
+        this.service.sendMsg ( user, "   set services will not allow the nick to be ghosted by anyone and send a globops"          );
+        this.service.sendMsg ( user, "   message showing who is trying to ghost it."                                               );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                            );
+        this.service.sendMsg ( user, "   NoGhost a nick should only be done if there is a conflict of ownership where someone"     );
+        this.service.sendMsg ( user, "   is trying to steal it by ghosting the nick while the user is trying to resolve"           );
+        this.service.sendMsg ( user, "   ownership issues. While NoGhost is set the nick is fully useable."                        );
         this.showEnd ( user );  
     }
 

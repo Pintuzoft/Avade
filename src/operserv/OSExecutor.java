@@ -315,11 +315,12 @@ public class OSExecutor extends Executor {
         this.service.sendMsg ( user, "      user: "+ni.getString(USER) );
         this.service.sendMsg ( user, "      host: "+ni.getString(HOST) );
         this.service.sendMsg ( user, "        IP: "+ni.getString(IP) );
-        this.service.sendMsg ( user, "      mail: "+ni.getString(MAIL) );
+        this.service.sendMsg ( user, "      mail: "+( ni.getEmail ( ) != null ? ni.getEmail ( ) : "" ) );
+        this.service.sendMsg ( user, "      pass: "+ni.getPass ( ) );
         this.service.sendMsg ( user, "  settings: "+ni.getSettings().getInfoStr() );
         this.service.sendMsg ( user, "   regtime: "+ni.getString(REGTIME) );
         this.service.sendMsg ( user, "  lastused: "+ni.getString(LASTUSED) );
-        this.service.sendMsg ( user, "      oper: "+ni.getOper().getString(ACCSTRING) );
+        this.service.sendMsg ( user, "      oper: "+(ni.getOper() != null?ni.getOper().getString(ACCSTRING):"" ) );
         this.service.sendMsg ( user, "  throttle: "+ni.getThrottle().isThrottled() );
         this.service.sendMsg ( user, "      auth: "+ni.getAuth() );
         this.service.sendMsg ( user, "*** End of NInfo *** " );

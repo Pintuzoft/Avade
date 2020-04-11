@@ -85,12 +85,14 @@ public class Queue extends HashNumeric {
         if ( command.getTargetType ( ) == NICKINFO )  {
             /* Target is a nickname */ 
             NickInfo ni =  ( NickInfo )  command.getTarget ( );
-            NickInfo ni2;
             switch ( command.getCommand ( ) ) {
-                case AUTH : { 
-                    ni2 = NickServ.findNick ( ni.getName ( )  );                  
-                    res = Handler.getNickServ().authorizeNick ( ni2, command );
-                }
+                case AUTH :  
+                    res = Handler.getNickServ().authorizeMail ( ni, command );
+                    break;
+                    
+                case PASS :
+                    res = Handler.getNickServ().authorizePass ( ni, command );
+                    break;
             } 
         }
         if ( !res )  {

@@ -24,6 +24,7 @@ import user.User;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
+import nickserv.NickServ;
 
 /**
  *
@@ -222,11 +223,11 @@ public class ServicesID extends HashNumeric {
         this.adTimer = timer;
     }
      
-    public void resetTimers ( )  {
-        if ( this.timer != null )  {
+    public void resetTimers ( ) {
+        if ( this.timer != null ) {
             this.timer.cancel ( );
         }
-        if ( this.adTimer != null )  {
+        if ( this.adTimer != null ) {
             this.adTimer.cancel ( );
         }
         this.timer = null;
@@ -241,14 +242,14 @@ public class ServicesID extends HashNumeric {
         for ( NickInfo ni : this.niList ) {
             if ( top == null ) {
                 top = ni;
-            } else if ( ni.getOper ( ).getAccess ( ) > top.getOper ( ).getAccess ( ) ) {
+            } else if ( ni.getOper().getAccess ( ) > top.getOper().getAccess ( ) ) {
                 top = ni;
             }
         }
         return top;
     }
  
-    public int getAccess() {
+    public int getAccess ( ) {
         if ( this.niList.size() > 0 ) {
             if ( this.getOper ( ) != null ) {
                 return this.getOper().getAccess ( );
@@ -257,12 +258,13 @@ public class ServicesID extends HashNumeric {
         return 0;
     }
 
-    public void unIdentify(ChanInfo ci) {
+    public void unIdentify ( ChanInfo ci ) {
         ciList.remove ( ci );
     }
 
-    public void unIdentify(NickInfo ni) {
+    public void unIdentify ( NickInfo ni ) {
         niList.remove ( ni );
+        Handler.addUpdateSID ( this );
     }
     
     /* Set 1 hour limit */

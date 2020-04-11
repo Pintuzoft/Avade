@@ -199,7 +199,7 @@ import java.util.regex.Pattern;
  
         CmdData cmdData;
         
-        if ( cmd.length == 6 ) {        
+        if ( cmd.length > 5 ) {        
             cmdData = this.validateCommandData ( user, IDENTIFY_NICK, cmd );
             cmd[5] = "pass_redacted";
         } else {
@@ -585,23 +585,23 @@ import java.util.regex.Pattern;
             
             switch ( cmd[4].toUpperCase().hashCode ( ) ) {
                 case NOOP :
-                    doSetBoolean ( NOOP, "NoOp", user, ni, enable );
+                    doSetBoolean ( NOOP, "NoOp", user, ni, enable, cmd );
                     break;
                     
                 case NEVEROP :
-                    doSetBoolean ( NEVEROP, "NeverOp", user, ni, enable );
+                    doSetBoolean ( NEVEROP, "NeverOp", user, ni, enable, cmd );
                     break;
                     
                 case MAILBLOCK :
-                    doSetBoolean ( MAILBLOCK, "MailBlock", user, ni, enable );
+                    doSetBoolean ( MAILBLOCK, "MailBlock", user, ni, enable, cmd );
                     break;
                     
                 case SHOWEMAIL :
-                    doSetBoolean ( SHOWEMAIL, "ShowEmail", user, ni, enable );
+                    doSetBoolean ( SHOWEMAIL, "ShowEmail", user, ni, enable, cmd );
                     break;
                     
                 case SHOWHOST :
-                    doSetBoolean ( SHOWHOST, "ShowHost", user, ni, enable );
+                    doSetBoolean ( SHOWHOST, "ShowHost", user, ni, enable, cmd );
                     break;
                     
                 case EMAIL :
@@ -613,10 +613,9 @@ import java.util.regex.Pattern;
                     break;
                     
                 default : 
-                    this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] )  );
-               
+                    this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
+                    this.snoop.msg ( false, SET, ni.getName(), user, cmd );
             }
-            this.snoop.msg ( true, SET, ni.getName(), user, cmd );
         }
     }
     
@@ -851,13 +850,13 @@ import java.util.regex.Pattern;
 
         }
     }
-
-    
-    public void doSetBoolean ( int cmd, String command, User user, NickInfo ni, boolean enable )  {
-        this.sendIsOutput ( user, enable, command );
-        ni.getSettings().set ( cmd, enable );
-        ni.getChanges().change ( cmd );
+ 
+    public void doSetBoolean ( int command, String cmdStr, User user, NickInfo ni, boolean enable, String[] cmd )  {
+        this.sendIsOutput ( user, enable, cmdStr );
+        ni.getSettings().set ( command, enable );
+        ni.getChanges().change ( command );
         NickServ.addToWorkList ( CHANGE, ni );
+        this.snoop.msg ( true, SET, ni.getName(), user, cmd );        
     }
 
     public void doSetString ( int hash, String command, User user, String[] cmd ) {
@@ -870,7 +869,7 @@ import java.util.regex.Pattern;
             cmd[5] = "pass_redacted";
         }
         if ( cmd.length > 6 ) {
-            cmd[5] = "email_redacted";
+            cmd[6] = "email_redacted";
         }
         
         switch ( cmdData.getStatus ( ) ) {
@@ -924,8 +923,8 @@ import java.util.regex.Pattern;
             default :
 
         }
-        NickInfo ni = cmdData.getNick();
-        String value = cmdData.getString1();
+        NickInfo ni = cmdData.getNick ( );
+        String value = cmdData.getString1 ( );
         NSAuth auth;
         NSLogEvent log;
         
@@ -993,13 +992,37 @@ import java.util.regex.Pattern;
         //NickServ.addToWorkList ( CHANGE, ni );
         
         if ( NSDatabase.authMail ( ni, command ) ) {
-             if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
+            if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
                 for ( User u : uList )  {
                     this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getName ( ) ) );
                 }
             }
-            ni.setEmail( NSDatabase.getMailByNick ( ni.getName() ) );
+            ni.setEmail ( NSDatabase.getMailByNick ( ni.getName() ) );
             NSLogEvent log = new NSLogEvent ( ni.getName(), AUTHMAIL, "web!web@"+command.getExtra2 ( ), null );
+            NickServ.addLog ( log );
+            return true;
+        }
+        return false;
+    }
+    public boolean authPass ( NickInfo ni, Command command )  { 
+        ArrayList<User> uList;
+        //ni.getSettings().set ( AUTH, true );
+        //ni.getChanges().hasChanged ( AUTH );
+        //NickServ.addToWorkList ( CHANGE, ni );
+        
+        if ( NSDatabase.authPass ( ni, command ) ) {
+            if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
+                for ( User u : uList )  {
+                    this.service.sendMsg ( u, output ( PASS_AUTHED, ni.getName ( ) ) );
+                    this.service.sendMsg ( u, output ( PASS_AUTHED_UNIDENT, ni.getName ( ) ) );
+                    u.unIdentify ( ni );
+                    if ( u.getHashName() == ni.getHashName() ) {
+                        NickServ.fixIdentState ( u );
+                    }
+                }
+            }
+            ni.setPass ( NSDatabase.getPassByNick ( ni.getName() ) );
+            NSLogEvent log = new NSLogEvent ( ni.getName(), AUTHPASS, "web!web@"+command.getExtra2 ( ), null );
             NickServ.addLog ( log );
             return true;
         }
@@ -1377,8 +1400,14 @@ import java.util.regex.Pattern;
                 return "IMPORTANT: Never share your passwords, not even with network staff.";
             
             case NICK_AUTHED : 
-                return "The nickname "+args[0]+" is now fully registered and authorized.";
+                return "The email for "+args[0]+" is now fully set and authorized.";
+                               
+            case PASS_AUTHED : 
+                return "The password for "+args[0]+" is now fully set and authorized.";
                       
+            case PASS_AUTHED_UNIDENT : 
+                return "You have been unindentified from nick "+args[0]+" as a new password has been set.";
+                            
             case NO_AUTH_FOUND : 
                 return "The authcode you provided did not match any pending objects.";
            

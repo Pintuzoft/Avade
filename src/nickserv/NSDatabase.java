@@ -471,7 +471,7 @@ public class NSDatabase extends Database {
         NickSetting settings;
         settings = new NickSetting ( );
 
-        if ( ! activateConnection ( )  )  {
+        if ( ! activateConnection ( ) ) {
             return settings;
         }
         try {
@@ -498,7 +498,7 @@ public class NSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "getSettings ( ) " );
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( NSDatabase.class.getName ( ), ex );
         } 
         return settings;
     }
@@ -514,8 +514,32 @@ public class NSDatabase extends Database {
                     "where nick = ? "+
                     "and auth = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getName ( )  );
-            ps.setString   ( 2, command.getExtra ( ) );
+            ps.setString ( 1, ni.getName ( ) );
+            ps.setString ( 2, command.getExtra ( ) );
+            ps.executeUpdate ( );
+            ps.close ( );
+
+            idleUpdate ( "authMail ( )" );
+            return true;
+        } catch ( SQLException e )  {
+            Proc.log ( NSDatabase.class.getName ( ), e );
+        }
+        return false;
+    }
+    
+    public static boolean authPass ( NickInfo ni, Command command )  {
+        if ( ! activateConnection ( ) ) {
+            return false;
+        }
+        String query;
+        try {
+            query = "update passlog "+
+                    "set auth = null "+
+                    "where nick = ? "+
+                    "and auth = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, ni.getName ( ) );
+            ps.setString ( 2, command.getExtra ( ) );
             ps.executeUpdate ( );
             ps.close ( );
 
@@ -582,7 +606,7 @@ public class NSDatabase extends Database {
         try {
             String query = "insert into nickexp "
                          + " ( name,lastsent,mailcount )  "
-                         + "values  ( ?,?,? )  "
+                         + "values  ( ?, ?, ? )  "
                          + "on duplicate key "
                          + "update lastsent = ?, mailcount = ?";
             ps = sql.prepareStatement ( query );
@@ -635,7 +659,7 @@ public class NSDatabase extends Database {
             ps.close();
             
         } catch ( SQLException ex ) {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( NSDatabase.class.getName ( ), ex );
         }
         return aList;
     }
@@ -650,7 +674,7 @@ public class NSDatabase extends Database {
                        "from maillog "+
                        "where nick = ? "+
                        "and auth is null "+
-                       "order by stamp asc "+
+                       "order by stamp desc "+
                        "limit 1";
         
         try {
@@ -660,7 +684,38 @@ public class NSDatabase extends Database {
             ps.setString ( 2, nick );
             res = ps.executeQuery ( );
             if ( res.next ( ) ) {
-                mail = res.getString("mail");
+                mail = ( res.getString("mail") != "null" ? res.getString("mail") : null );
+            }
+            res.close();
+            ps.close();
+            
+        } catch ( SQLException ex ) {
+            Proc.log ( NSDatabase.class.getName ( ), ex );
+        }
+        return mail;
+    }
+    
+    static String getPassByNick ( String nick ) {
+        String pass = null;
+        if ( ! activateConnection ( ) ) {
+            return pass;
+        }
+        
+        String query = "select aes_decrypt(pass,?) as pass "+
+                       "from passlog "+
+                       "where nick = ? "+
+                       "and auth is null "+
+                       "order by stamp desc "+
+                       "limit 1";
+        
+        try {
+            String salt = Proc.getConf().get ( SECRETSALT );
+            ps = sql.prepareStatement ( query );
+            ps.setString ( 1, salt );
+            ps.setString ( 2, nick );
+            res = ps.executeQuery ( );
+            if ( res.next ( ) ) {
+                pass = res.getString("pass");
             }
             res.close();
             ps.close();
@@ -668,8 +723,9 @@ public class NSDatabase extends Database {
         } catch ( SQLException ex ) {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
         }
-        return mail;
+        return pass;
     }
+    
     static boolean addMail ( NSAuth mail ) {
         if ( ! activateConnection() ) {
             return false;
@@ -767,6 +823,7 @@ public class NSDatabase extends Database {
                  
                 ni = new NickInfo ( 
                     res.getString ( 1 ),
+                    res.getInt ( 2 ),
                     buf[0],
                     buf[1],
                     res.getString ( 4 ),
@@ -782,6 +839,9 @@ public class NSDatabase extends Database {
                 System.out.println(" - Access: "+oper.getAccess() );
                 System.out.println(" - Instater: "+oper.getString ( INSTATER ) );
                 
+                if ( ni.getEmail() != null ) {
+                    ni.getSettings().set ( AUTH, true );
+                }
                 ni.setOper ( OperServ.getOper ( ni.getName() ) );
                 nList.add ( ni );
                 $count++; 

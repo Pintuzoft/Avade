@@ -612,6 +612,11 @@ public abstract class HashNumeric extends TextFormat {
     public final static int REMACCLIST                 = 1498428101;
     public final static int UPDACCLIST                 = -298666154;
     
+    public final static int PASS_AUTHED                = 1669279797;
+    public final static int PASS_AUTHED_UNIDENT        = -1581635379;
+    
+    
+    
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );
     }

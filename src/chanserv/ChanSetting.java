@@ -166,18 +166,22 @@ public class ChanSetting extends HashNumeric {
             instater = new String ( );
         }
         switch ( mode )  {
+            case MARKED :
             case MARK :
                 this.mark = instater;
                 break;
              
+            case FROZEN :
             case FREEZE :
                 this.freeze = instater;
                 break;
              
+            case CLOSED :
             case CLOSE :
                 this.close = instater;
                 break;
              
+            case HELD :
             case HOLD :
                 this.hold = instater;
                 break;
@@ -193,15 +197,19 @@ public class ChanSetting extends HashNumeric {
     
     public String getInstater ( int mode ) {
         switch ( mode ) {
+            case MARKED :
             case MARK :
                 return this.mark;
             
+            case HELD :
             case HOLD :
                 return this.hold;
             
+            case FROZEN :
             case FREEZE :
                 return this.freeze;
             
+            case CLOSED :
             case CLOSE :
                 return this.close;
             
@@ -254,15 +262,19 @@ public class ChanSetting extends HashNumeric {
                  
             /* Oper Only */
             case MARK :
+            case MARKED :
                 return "Marked";
                  
             case FREEZE :
+            case FROZEN :
                 return "Frozen";
                  
             case CLOSE :
+            case CLOSED :
                 return "Closed";
                  
             case HOLD :
+            case HELD :
                 return "Held";
                  
             case AUDITORIUM :
@@ -289,13 +301,19 @@ public class ChanSetting extends HashNumeric {
     public String getInfoStr ( )  {
         String buf = new String ( );
         boolean first = true;
-        try {
-            if ( is ( KEEPTOPIC )  )  {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( KEEPTOPIC );
-                first = false;
+        int[] sList = { KEEPTOPIC, IDENT, OPGUARD, 
+                        RESTRICT, MAILBLOCKED, VERBOSE,
+                        LEAVEOPS, AUTOAKICK, MARKED,
+                        FROZEN, CLOSED, HELD, 
+                        AUDITORIUM };
+        try { 
+            for ( int setting : sList ) {
+                if ( is ( setting ) ) {
+                    buf += this.isFirst ( first );
+                    buf += this.modeString ( setting );
+                }
             }
-
+            
             if ( is ( TOPICLOCK )  && this.topicLock != OFF )  {
                 String acc = new String ( );
                 switch ( this.topicLock )  {
@@ -318,71 +336,6 @@ public class ChanSetting extends HashNumeric {
                 first = false;
             }
 
-            if ( is ( IDENT ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( IDENT );
-                first = false;
-            }
-
-            if ( is ( OPGUARD ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( OPGUARD );
-                first = false;
-            }
-
-            if ( is ( RESTRICT ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( RESTRICT );
-                first = false;
-            }
-
-            if ( is ( MAILBLOCKED ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( MAILBLOCKED );
-                first = false;
-            }
-
-            if ( is ( VERBOSE ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( VERBOSE );
-                first = false;
-            }
-
-            if ( is ( LEAVEOPS ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( LEAVEOPS );
-            }      
-            
-            if ( is ( AUTOAKICK ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( AUTOAKICK );
-            }      
-
-            /* Oper only */
-            if ( is ( MARKED ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( MARK );
-            }
-            
-            if ( is ( FROZEN ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( FREEZE );
-            }
-            
-            if ( is ( CLOSED ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( CLOSE );
-            }
-            
-            if ( is ( HELD ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( HOLD );
-            }
-
-            if ( is ( AUDITORIUM ) ) {
-                buf += this.isFirst ( first );
-                buf += this.modeString ( AUDITORIUM );
-            }
             return buf; 
         } catch ( Exception e )  {
             Proc.log ( ChanSetting.class.getName ( ) , e );
@@ -415,12 +368,15 @@ public class ChanSetting extends HashNumeric {
 
     public static String hashToStr ( int hash ) {
         switch ( hash ) {
+            case FROZEN :
             case FREEZE :
                 return "FREEZE";
 
+            case CLOSED :
             case CLOSE :
                 return "CLOSE";
 
+            case HELD :
             case HOLD :
                 return "HOLD";
 

@@ -39,7 +39,7 @@ public class Command extends HashNumeric {
         this.targetType = targetType;
         this.command = command;
         this.extra = extra;
-        this.extra = extra2;
+        this.extra2 = extra2;
     }
 
     public String getID ( ) {
@@ -67,7 +67,7 @@ public class Command extends HashNumeric {
     }
     
     public String getExtra2() {
-        return extra;
+        return extra2;
     }
     
 }

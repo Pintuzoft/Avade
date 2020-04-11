@@ -64,10 +64,10 @@ public class NickInfo extends HashNumeric {
     private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /* DATABASE */
-    public NickInfo ( String name, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
+    public NickInfo ( String name, int hash, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
         // System.out.println ( "Debug: NickInfo ( "+name+" )" );
         this.name       = name;
-        this.hashName   = name.toUpperCase().hashCode ( );
+        this.hashName   = hash;
         this.hashMask   =  ( user+"@"+host ).toUpperCase().hashCode ( );
         this.user       = user;
         this.host       = host;
@@ -101,7 +101,7 @@ public class NickInfo extends HashNumeric {
         this.regTime    = date;
         this.lastUsed   = date; 
         this.date       = new Date ( );
-        this.oper       = null;
+        this.oper       = new Oper ( );
         this.changes    = new NSChanges ( );
         this.throttle   = new Throttle ( );
         this.userIdent ( user );
@@ -349,6 +349,7 @@ public class NickInfo extends HashNumeric {
     
     public void setEmail ( String mail ) {
         this.mail = mail;
+        this.settings.set ( AUTH, true );
     }
     
     /*** AOP/SOP/FOUNDER LISTS ***/

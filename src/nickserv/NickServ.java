@@ -422,7 +422,7 @@ public class NickServ extends Service {
     }
     
     /* auth a nick and send message to all identified nicks currently online */
-    public boolean authorizeNick ( NickInfo ni, Command command )  {
+    public boolean authorizeMail ( NickInfo ni, Command command )  {
         User user;
         
         if ( ni == null || command == null ) {
@@ -432,11 +432,19 @@ public class NickServ extends Service {
         user = Handler.findUser ( ni.getName ( ) );
         
         if ( this.executor.authMail ( ni, command ) ) {
-            if ( user != null )  {
-                if ( user.getSID().isIdentified ( ni )  )  {
-                    fixIdentState ( user );
-                }
-            }
+            fixIdentState ( user );
+            return true;
+        }
+        return false;
+    }
+ 
+    /* auth a nick and send message to all identified nicks currently online */
+    public boolean authorizePass ( NickInfo ni, Command command )  {
+        if ( ni == null || command == null ) {
+            return false;
+        }         
+ 
+        if ( this.executor.authPass ( ni, command ) ) {
             return true;
         }
         return false;
@@ -456,11 +464,12 @@ public class NickServ extends Service {
     
     public static void fixIdentState ( User u )  {
         NickInfo ni;
+
         if ( u == null ) {
             return;
         }
         
-        ni = NickServ.findNick ( u.getHash ( ) );
+        ni = NickServ.findNick ( u.getHashName ( ) );
         
         if ( ni != null ) {
             if ( u.getSID() != null && u.getSID().isIdentified ( ni ) ) {
@@ -477,11 +486,13 @@ public class NickServ extends Service {
                 Handler.getMemoServ().checkNick ( ni, u );
 
             } else {
+                ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 -r" );
                 Handler.getGuestServ().addNick ( u, ni );      
             }
 
         } else {
             /* Oreggat nick */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 -r" );
             Handler.getNickServ().adNick ( u ); /* let nickserv advertise registration */
             u.resetState ( );
         }
