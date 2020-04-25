@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -25,6 +25,7 @@ import core.Proc;
 import core.TextFormat;
 import static core.HashNumeric.SA;
 import static core.HashNumeric.SRA;
+import core.HashString;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import mail.SendMail;
@@ -53,87 +54,71 @@ import java.util.regex.Pattern;
     }
 
     public void parse ( User user, String[] cmd ) {
+        HashString command;
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
             this.help ( user );
             return; 
         }
         
-        switch ( cmd[3].toUpperCase().hashCode ( ) ) {
-            case REGISTER :
-                this.register ( user, cmd );
-                break;
-                
-            case IDENTIFY :
-                this.identify ( user, cmd );
-                break;
-                
-             case AUTH :
-                this.auth ( user, cmd );
-                break;
-                
-            case DROP :
-                this.drop ( user, cmd );
-                break;
-                
-            case SIDENTIFY :
-                this.sIdentify ( user, cmd );
-                break;
-                
-            case GHOST :
-                this.ghost ( user, cmd );
-                break;
-                
-            case SET :
-                this.set ( user, cmd );
-                break;
-                
-            case INFO :
-                this.info ( user, cmd );
-                break;
-                
-            /* Oper */
-            case LIST :
-                this.list ( user, cmd );
-                break;
-                       
-            case MARK :
-                this.changeFlag ( MARK, user, cmd );
-                break;
-                 
-            case FREEZE :
-                this.changeFlag ( FREEZE, user, cmd );
-                break;
-                
-            case HOLD :
-                this.changeFlag ( HOLD, user, cmd );
-                break;
-                
-            case NOGHOST :
-                this.changeFlag ( NOGHOST, user, cmd );
-                break;
-                
-            case GETPASS :
-                this.getPass ( user, cmd );
-                break;
-                          
-            case GETEMAIL :
-                this.getEmail ( user, cmd );
-                break;
-                
-            case DELETE :
-                this.delete ( user, cmd );
-                break;
-                
-
-            default :
-                this.help ( user );
+        command = new HashString ( cmd[3] );
         
-        }  
+        if ( command.is(REGISTER) ) {
+            this.register ( user, cmd );
+        
+        } else if ( command.is(IDENTIFY) ) {
+            this.identify ( user, cmd );
+        
+        } else if ( command.is(AUTH) ) {
+            this.auth ( user, cmd );
+        
+        } else if ( command.is(DROP) ) {
+            this.drop ( user, cmd );
+        
+        } else if ( command.is(SIDENTIFY) ) {
+            this.sIdentify ( user, cmd );
+        
+        } else if ( command.is(GHOST) ) {
+            this.ghost ( user, cmd );
+        
+        } else if ( command.is(SET) ) {
+            this.set ( user, cmd );
+        
+        } else if ( command.is(INFO) ) {
+            this.info ( user, cmd );
+        
+        } else if ( command.is(LIST) ) {
+            this.list ( user, cmd );
+        
+        } else if ( command.is(MARK) ) {
+            this.changeFlag ( MARK, user, cmd );
+        
+        } else if ( command.is(FREEZE) ) {
+            this.changeFlag ( FREEZE, user, cmd );
+        
+        } else if ( command.is(HOLD) ) {
+            this.changeFlag ( HOLD, user, cmd );
+        
+        } else if ( command.is(NOGHOST) ) {
+            this.changeFlag ( NOGHOST, user, cmd );
+        
+        } else if ( command.is(GETPASS) ) {
+            this.getPass ( user, cmd );
+        
+        } else if ( command.is(GETEMAIL) ) {
+            this.getEmail ( user, cmd );
+        
+        } else if ( command.is(DELETE) ) {
+            this.delete ( user, cmd );
+        
+        } else {
+            this.help ( user );
+        }
+         
     }
  
     public void help ( User user )  {
         this.service.sendMsg ( user, output ( CMD_NOT_FOUND_ERROR, "" )  );
-        this.service.sendMsg ( user, output ( SHOW_HELP, new String[] {this.service.getName ( ) } )  );
+        this.service.sendMsg ( user, output ( SHOW_HELP, new String[] { this.service.getNameStr() } )  );
     }
 
     public void register ( User user, String[] cmd )  { /* DONE? */
@@ -142,7 +127,7 @@ import java.util.regex.Pattern;
         String pass = "";
         String mail = "";
         
-        CmdData cmdData = this.validateCommandData ( user, REGISTER, cmd );
+        CMDResult result = this.validateCommandData ( user, REGISTER, cmd );
         
         if ( cmd.length >= 6 ) {
             pass = cmd[4];
@@ -151,31 +136,27 @@ import java.util.regex.Pattern;
             cmd[5] = "email_redacted";
         }
         
-        switch ( cmdData.getStatus ( )  )  {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_REG_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_REG_ERROR, user.getName(), user, cmd );
-                return;
-                               
-            case INVALID_EMAIL :
-                this.service.sendMsg ( user, output ( INVALID_EMAIL, cmdData.getString1() ) );
-                this.snoop.msg ( false, INVALID_EMAIL, cmdData.getString1(), user, cmd );
-                return; 
-
-            case NICK_ALREADY_REGGED :
+                return;            
+        
+        } else if ( result.is(INVALID_EMAIL) ) {
+                this.service.sendMsg (user, output (INVALID_EMAIL, result.getString1() ) );
+                this.snoop.msg (false, INVALID_EMAIL, new HashString ( result.getString1() ), user, cmd );
+                return;             
+        
+        } else if ( result.is(NICK_ALREADY_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_ALREADY_REGGED, user.getString ( NAME ) ) );
                 this.snoop.msg ( false, NICK_ALREADY_REGGED, user.getName(), user, cmd );
-                return;  
-
-            case INVALID_NICK :
+                return;              
+        
+        } else if ( result.is(INVALID_NICK) ) {
                 this.service.sendMsg ( user, output ( INVALID_NICK, user.getString ( NAME ) ) );
                 this.snoop.msg ( false, INVALID_NICK, user.getName(), user, cmd );
-                return;  
-
-            default :
-                
+                return;             
         }
-        
+          
         NickInfo ni = new NickInfo ( user, pass );
         NSAuth auth = new NSAuth ( MAIL, ni.getName(), mail );
         NickServ.addNewAuth ( auth );
@@ -197,52 +178,45 @@ import java.util.regex.Pattern;
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :identify dreamhealer moew   = 6
         //       0         1               2                    3      4           5
  
-        CmdData cmdData;
+        CMDResult result;
         
         if ( cmd.length > 5 ) {        
-            cmdData = this.validateCommandData ( user, IDENTIFY_NICK, cmd );
+            result = this.validateCommandData ( user, IDENTIFY_NICK, cmd );
             cmd[5] = "pass_redacted";
         } else {
-            cmdData = this.validateCommandData ( user, IDENTIFY, cmd );
+            result = this.validateCommandData ( user, IDENTIFY, cmd );
             if ( cmd.length == 5 ) {
                 cmd[4] = "pass_redacted";
             }
         }
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ID_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_ID_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case NICK_NOT_REGGED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
-                return;
-                
-            case IDENTIFY_FAIL :
-                this.service.sendMsg ( user, output ( PASSWD_ERROR, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, PASSWD_ERROR, cmdData.getNick().getName ( ), user, cmd );
-                return;
-
-            case IS_FROZEN : 
-                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, IS_FROZEN, cmdData.getString1 ( ), user, cmd );
-                return;
-                              
-            case IS_THROTTLED : 
-                this.service.sendMsg ( user, output ( IS_THROTTLED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, IS_THROTTLED, cmdData.getString1 ( ), user, cmd );
-                return;
-                             
-            default :
-
-        }
-        NickInfo ni = cmdData.getNick ( );
-        if ( ni.getHashMask ( ) != user.getHashMask ( ) ) {
+                return;            
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
+                this.snoop.msg (false, NICK_NOT_REGISTERED, new HashString(result.getString1()), user, cmd );
+                return;            
+        } else if ( result.is(IDENTIFY_FAIL) ) {
+                this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName ( ), user, cmd );
+                return;            
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
+                this.snoop.msg (false, IS_FROZEN, new HashString(result.getString1()), user, cmd );
+                return;            
+        } else if ( result.is(IS_THROTTLED) ) {
+                this.service.sendMsg (user, output (IS_THROTTLED, result.getString1 ( ) ) );
+                this.snoop.msg (false, IS_THROTTLED, new HashString(result.getString1()), user, cmd );
+                return;            
+        }  
+         
+        NickInfo ni = result.getNick ( );
+        if ( ! ni.is(user) ) {
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );        
-        }  
+        }
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         //ni.setUserMask ( user );           /* Set user mask */
         user.getSID().add ( ni );          /* Add nick to user sid */
@@ -258,42 +232,35 @@ import java.util.regex.Pattern;
     private void drop ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :drop <pass>   = 5
         //       0         1               2                    3    4           
-        CmdData cmdData = this.validateCommandData ( user, DROP, cmd );
+        CMDResult result = this.validateCommandData ( user, DROP, cmd );
         
         if ( cmd.length == 5 ) {
             cmd[4] = "pass_redacted";
         }
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DROP <pass>" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case NICK_NOT_REGGED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
-                return;
-                
-            case IDENTIFY_FAIL :
-                this.service.sendMsg ( user, output ( PASSWD_ERROR, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, PASSWD_ERROR, cmdData.getNick().getName ( ), user, cmd );
-                return;
-                 
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;     
-
-            case IS_FROZEN : 
-                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, IS_FROZEN, cmdData.getString1 ( ), user, cmd );
-                return;
-                        
-            default :
-                
+                return;            
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
+                this.snoop.msg (false, NICK_NOT_REGISTERED, new HashString(result.getString1()), user, cmd );
+                return;            
+        } else if ( result.is(IDENTIFY_FAIL) ) {
+                this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName(), user, cmd );
+                return;            
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;             
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
+                this.snoop.msg (false, IS_FROZEN, result.getString1(), user, cmd );
+                return;            
         }
-        NickInfo ni = cmdData.getNick ( );
+         
+        NickInfo ni = result.getNick ( );
         
         Handler.getNickServ().dropNick ( ni );
         this.service.sendMsg ( user, output ( NICKDROPPED, ni.getString ( NAME ) ) );
@@ -307,37 +274,34 @@ import java.util.regex.Pattern;
     private void delete ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :drop <pass>   = 5
         //       0         1               2                    3    4           
-        CmdData cmdData = this.validateCommandData ( user, DELETE, cmd );
+        CMDResult result = this.validateCommandData ( user, DELETE, cmd );
         
-        switch ( cmdData.getStatus ( )  )  {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DELETE <nick>" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
-                
-            case NICK_NOT_REGGED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
+        
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
+                this.snoop.msg (false, NICK_NOT_REGISTERED, result.getString1(), user, cmd );
                 return;
-                
-            case IDENTIFY_FAIL :
-                this.service.sendMsg ( user, output ( PASSWD_ERROR, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, PASSWD_ERROR, cmdData.getNick().getName ( ), user, cmd );
+        
+        } else if ( result.is(IDENTIFY_FAIL) ) {
+                this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr( ) ) ); 
+                this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName(), user, cmd );
                 return;
-                 
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;     
-            
-            default :
-                
-        }
-        NickInfo ni = cmdData.getNick ( );
+        
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr( ) ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;
+        }  
+         
+        NickInfo ni = result.getNick ( );
         Handler.getNickServ().dropNick ( ni );
-        this.service.sendMsg ( user, output ( NICKDELETED, ni.getString ( NAME ) ) );
+        this.service.sendMsg ( user, output ( NICKDELETED, ni.getNameStr() ) );
         this.service.sendGlobOp ( "Nick "+ni.getName()+" has been DELETED by "+user.getOper().getName() );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), DELETE, user.getFullMask(), user.getOper().getName() );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), DELETE, user.getFullMask(), user.getOper().getNameStr() );
         NickServ.addLog ( log );
         this.snoop.msg ( true, DELETE, ni.getName(), user, cmd );
     }
@@ -347,31 +311,28 @@ import java.util.regex.Pattern;
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :list dream*
         //      0          1            2                     3    4     = 5
     
-        CmdData cmdData = this.validateCommandData ( user, LIST, cmd );
+        CMDResult result = this.validateCommandData ( user, LIST, cmd );
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "LIST <pattern>" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case ACCESS_DENIED_OPER :
+                return;            
+        
+        } else if ( result.is(ACCESS_DENIED_OPER) ) {
                 this.service.sendMsg ( user, output ( ACCESS_DENIED_OPER, "" ) );
                 this.snoop.msg ( false, ACCESS_DENIED_OPER, "", user, cmd );
-                return;
-                      
-            case ACCESS_DENIED_SA :
+                return;            
+        
+        } else if ( result.is(ACCESS_DENIED_SA) ) {
                 this.service.sendMsg ( user, output ( ACCESS_DENIED_SA, "" ) );
                 this.snoop.msg ( false, ACCESS_DENIED_SA, "", user, cmd );
-                return;
-                
-            default : 
-                
+                return;            
         }
+        
         ArrayList<NickInfo> nList = NickServ.searchNicks ( cmd[4] );
         this.service.sendMsg ( user, f.b ( ) +"List:"+f.b ( ) ); 
         for ( NickInfo ni2 : nList ) {
-            this.service.sendMsg ( user, f.b ( ) +"    "+ni2.getName ( ) +" - ("+ni2.getString ( FULLMASK )+")" );
+            this.service.sendMsg ( user, f.b ( ) +"    "+ni2.getName()+" - ("+ni2.getString ( FULLMASK )+")" );
         }
         this.showEnd ( user, "Info" );
         this.snoop.msg ( true, LIST, user.getOper().getName(), user, cmd );
@@ -383,49 +344,46 @@ import java.util.regex.Pattern;
         //       0         1               2                    3      4           5
 
         NickInfo ni;
-        CmdData cmdData;
+        CMDResult result;
         
         if ( cmd.length == 6 ) {        
-            cmdData = this.validateCommandData ( user, IDENTIFY_NICK, cmd );
+            result = this.validateCommandData ( user, IDENTIFY_NICK, cmd );
             cmd[5] = "pass_redacted";
         } else {
-            cmdData = this.validateCommandData ( user, IDENTIFY, cmd );
+            result = this.validateCommandData ( user, IDENTIFY, cmd );
             if ( cmd.length == 5 ) {
                 cmd[4] = "pass_redacted";
             }
         }
-          
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :      
+         
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ID_ERROR, "" )  );
                 this.snoop.msg ( false, SYNTAX_ID_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case NICK_NOT_REGGED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmdData.getString1 ( ), user, cmd );
-                return;
-            
-            case IDENTIFY_FAIL :
-                this.service.sendMsg ( user, output ( PASSWD_ERROR, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, PASSWD_ERROR, cmdData.getNick().getName ( ), user, cmd );
-                return;
-             
-            case IS_FROZEN : 
-                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, IS_FROZEN, cmdData.getString1 ( ), user, cmd );
-                return;
-
-            case IS_THROTTLED : 
-                this.service.sendMsg ( user, output ( IS_THROTTLED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, IS_THROTTLED, cmdData.getString1 ( ), user, cmd );
-                return;
-            
-            default : 
+                return;            
         
-        }
-        ni = cmdData.getNick ( );
-        if ( ni.getHashMask ( ) != user.getHashMask ( ) ) {
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
+                this.snoop.msg (false, NICK_NOT_REGISTERED, result.getString1 ( ), user, cmd );
+                return;            
+        
+        } else if ( result.is(IDENTIFY_FAIL) ) {
+                this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName ( ), user, cmd );
+                return;            
+        
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
+                this.snoop.msg (false, IS_FROZEN, result.getString1 ( ), user, cmd );
+                return;            
+        
+        } else if ( result.is(IS_THROTTLED) ) {
+                this.service.sendMsg (user, output (IS_THROTTLED, result.getString1 ( ) ) );
+                this.snoop.msg (false, IS_THROTTLED, result.getString1 ( ), user, cmd );
+                return;            
+        }  
+         
+        ni = result.getNick ( );
+        if ( ! ni.isMask(user) ) {
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );
         } else {
@@ -442,51 +400,43 @@ import java.util.regex.Pattern;
         NickInfo ni;
         String nick = new String ( );
         
-        CmdData cmdData = this.validateCommandData ( user, GHOST, cmd );
+        CMDResult result = this.validateCommandData ( user, GHOST, cmd );
  
-        if ( cmdData.getStatus ( ) != SYNTAX_ERROR )  {
+        if ( result.getStatus ( ) != SYNTAX_ERROR )  {
             nick = cmd[4];       
             cmd[5] = "pass_redacted";
         }
         
-        switch ( cmdData.getStatus ( )  )  {
-            case SYNTAX_ERROR : 
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_GHOST_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_GHOST_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case NICK_NOT_REGGED :
+                return;            
+        } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, nick ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, user.getName(), user, cmd );
-                return;
-                
-            case IDENTIFY_FAIL :
+                return;            
+        } else if ( result.is(IDENTIFY_FAIL) ) {
                 this.service.sendMsg ( user, output ( PASSWD_ERROR, nick ) );
                 this.snoop.msg ( false, PASSWD_ERROR, nick, user, cmd );
-                return;
-            
-            case NO_SUCH_NICK : 
-                this.service.sendMsg ( user, output ( NO_SUCH_NICK, cmdData.getString1 ( ) ) );
+                return;            
+        } else if ( result.is(NO_SUCH_NICK) ) {
+                this.service.sendMsg (user, output (NO_SUCH_NICK, result.getString1 ( ) ) );
                 this.snoop.msg ( false, NO_SUCH_NICK, user.getName(), user, cmd );
-                return;
-            
-            case IS_FROZEN : 
-                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getString1 ( ) ) );
+                return;            
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
                 this.snoop.msg ( false, IS_FROZEN, user.getName(), user, cmd );
-                return;
-            
-            case IS_NOGHOST : 
-                this.service.sendMsg ( user, output ( IS_NOGHOST, cmdData.getString1 ( ) ) );
-                this.service.sendGlobOp ( output ( GLOB_IS_NOGHOST, user.getFullMask(), cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, IS_NOGHOST, cmdData.getString1 ( ), user, cmd );
-                return;
-            
-            default:
-       
-        }
-        ni = cmdData.getNick ( );
+                return;            
+        } else if ( result.is(IS_NOGHOST) ) {
+                this.service.sendMsg (user, output (IS_NOGHOST, result.getString1 ( ) ) );
+                this.service.sendGlobOp (output (GLOB_IS_NOGHOST, user.getFullMask(), result.getString1 ( ) ) );
+                this.snoop.msg (false, IS_NOGHOST, result.getString1 ( ), user, cmd );
+                return;            
+        }  
+         
+        ni = result.getNick ( );
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
-        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSKILL "+ni.getName ( ) +" :Ghost exorcised by: "+user.getString ( NAME ) ); /* kill the ghosted nick */
+        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSKILL "+ni.getName()+" :Ghost exorcised by: "+user.getName() ); /* kill the ghosted nick */
         NickServ.fixIdentState ( user );
         user.getSID().add ( ni );
         ni.getChanges().hasChanged ( LASTUSED );
@@ -498,22 +448,20 @@ import java.util.regex.Pattern;
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :info dreamhealer
         //      0          1            2                     3       4     = 5
         NickInfo ni;
-        CmdData cmdData = this.validateCommandData ( user, INFO, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        CMDResult result = this.validateCommandData ( user, INFO, cmd );
+        
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case NICK_NOT_REGGED :
+                return;            
+        
+        } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;
-                
-            default : 
-        
+                return;            
         }
-        ni = cmdData.getNick ( );
+         
+        ni = result.getNick ( );
         this.showStart ( true, user, ni, f.b ( ) +"Info for: "+f.b ( ) ); 
         this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER )+"@"+ni.getString ( HOST ) );        
         this.service.sendMsg ( user, f.b ( ) +"  Registered: "+f.b ( ) +ni.getString ( REGTIME ) );
@@ -555,7 +503,10 @@ import java.util.regex.Pattern;
         /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :set enforce on          */
         /*      0          1               2                 3     4     5 = 6      */
         NickInfo ni;
-
+        boolean enable;
+        HashString command;
+        HashString subcommand;
+        
         if ( cmd.length < 6 )  {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET <option> ON/OFF" ) );
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
@@ -566,101 +517,80 @@ import java.util.regex.Pattern;
 
         } else if ( ! user.isIdented ( ni ) ) {
             /* User not idented */
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, ni.getName() ) );
+            this.service.sendMsg ( user, output ( ACCESS_DENIED, ni.getNameStr() ) );
             this.snoop.msg ( false, ACCESS_DENIED, ni.getName(), user, cmd );            
 
         } else {
-            boolean enable  = false; 
-            switch ( cmd[5].toUpperCase().hashCode ( ) ) {
-                case ON :
-                    enable = true;
-                    break;
-                    
-                case OFF :
-                    enable = false;
-                    break;
-                    
-                default :
-            } 
+            enable = false;
+            command = new HashString ( cmd[4] );
+            subcommand = new HashString ( cmd[5] );
             
-            switch ( cmd[4].toUpperCase().hashCode ( ) ) {
-                case NOOP :
-                    doSetBoolean ( NOOP, "NoOp", user, ni, enable, cmd );
-                    break;
-                    
-                case NEVEROP :
-                    doSetBoolean ( NEVEROP, "NeverOp", user, ni, enable, cmd );
-                    break;
-                    
-                case MAILBLOCK :
-                    doSetBoolean ( MAILBLOCK, "MailBlock", user, ni, enable, cmd );
-                    break;
-                    
-                case SHOWEMAIL :
-                    doSetBoolean ( SHOWEMAIL, "ShowEmail", user, ni, enable, cmd );
-                    break;
-                    
-                case SHOWHOST :
-                    doSetBoolean ( SHOWHOST, "ShowHost", user, ni, enable, cmd );
-                    break;
-                    
-                case EMAIL :
-                    doSetString ( SETEMAIL, "Email", user, cmd );
-                    break;
-                             
-                case PASSWD :
-                    doSetString ( SETPASSWD, "Passwd", user, cmd );
-                    break;
-                    
-                default : 
-                    this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
-                    this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            if ( subcommand.is(ON) ) {
+                enable = true;
+            } else if ( subcommand.is(OFF) ) {
+                enable = false;
             }
+             
+            if ( command.is(NOOP) ) {
+                doSetBoolean ( NOOP, "NoOp", user, ni, enable, cmd );
+            } else if ( command.is(NEVEROP) ) {
+                doSetBoolean ( NEVEROP, "NeverOp", user, ni, enable, cmd );
+            } else if ( command.is(MAILBLOCK) ) {
+                doSetBoolean ( MAILBLOCK, "MailBlock", user, ni, enable, cmd );
+            } else if ( command.is(SHOWEMAIL) ) {
+                doSetBoolean ( SHOWEMAIL, "ShowEmail", user, ni, enable, cmd );
+            } else if ( command.is(SHOWHOST) ) {
+                doSetBoolean ( SHOWHOST, "ShowHost", user, ni, enable, cmd );
+            } else if ( command.is(EMAIL) ) {
+                doSetString ( SETEMAIL, user, cmd );
+            } else if ( command.is(PASSWD) ) {
+                doSetString ( SETPASSWD, user, cmd );
+            } else {
+                this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
+                this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            }  
+             
         }
     }
     
-    private void changeFlag ( int flag, User user, String[] cmd ) {
-        CmdData cmdData = this.validateCommandData ( user, flag, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+    private void changeFlag ( HashString flag, User user, String[] cmd ) {
+        CMDResult result = this.validateCommandData ( user, flag, cmd );
+        
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, NickSetting.hashToStr ( flag )+" <[-]nick>" )  );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
-                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1 ( ), user, cmd );
-                return;     
-                           
-            case NICK_NOT_REGGED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
-                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;
-                
-            case NICKFLAG_EXIST :
-                this.service.sendMsg ( user, output ( NICKFLAG_EXIST, cmdData.getNick().getName(), cmdData.getString1 ( ) ) ); 
-                this.snoop.msg ( false, NICKFLAG_EXIST, cmdData.getNick().getName(), user, cmd );
-                return;     
-                      
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;     
-            
-            default : 
-                
-        }
+                return;            
         
-        NickInfo ni = cmdData.getNick ( );
+        } else if ( result.is(ACCESS_DENIED) ) {
+                this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1 ( ) ) ); 
+                this.snoop.msg (false, ACCESS_DENIED, new HashString ( result.getString1() ), user, cmd );
+                return;             
+        
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
+                this.snoop.msg ( false, NICK_NOT_REGISTERED, new HashString ( cmd[4] ), user, cmd );
+                return;            
+        
+        } else if ( result.is(NICKFLAG_EXIST) ) {
+                this.service.sendMsg (user, output (NICKFLAG_EXIST, result.getNick().getNameStr(), result.getString1 ( ) ) ); 
+                this.snoop.msg (false, NICKFLAG_EXIST, result.getNick().getName(), user, cmd );
+                return;             
+        
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getName ( ), user, cmd );
+                return;             
+        }
+         
+        NickInfo ni = result.getNick ( );
         NickInfo oper = user.getOper().getNick ( );
-        int command = cmdData.getCommand ( );
+        HashString command = result.getCommand ( );
         NSLogEvent log;
         
-        switch ( command ) {
-            case UNNOGHOST :
-            case UNMARK :
-            case UNFREEZE :
-            case UNHOLD :
+        if ( command.is(UNNOGHOST) ||
+             command.is(UNMARK) ||
+             command.is(UNFREEZE) ||
+             command.is(UNHOLD) ) {
                 NickInfo instater = NickServ.findNick ( ni.getSettings().getInstater ( flag ) );
                 if ( ! user.isIdented ( instater ) && ! user.isAtleast ( SRA ) ) {
                     this.service.sendMsg ( user, "Error: flag can only be removed by: "+instater.getName()+" or a SRA+." );
@@ -669,66 +599,62 @@ import java.util.regex.Pattern;
                 ni.getSettings().set ( flag, "" );
                 ni.getChanges().change ( flag );
                 NickServ.addToWorkList ( CHANGE, ni );
-                log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
+                log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getNameStr() );
                 NickServ.addLog ( log );
-                this.service.sendMsg ( user, output ( NICK_SET_FLAG, ni.getName(), "Un"+ni.getSettings().modeString ( flag ) ) );
+                this.service.sendMsg ( user, output ( NICK_SET_FLAG, ni.getNameStr(), "Un"+ni.getSettings().modeString ( flag ) ) );
                 this.service.sendGlobOp ( "Nick "+ni.getName()+" has been Un"+ni.getSettings().modeString(flag)+" by "+oper.getName() );
-                this.snoop.msg ( true, flag, cmdData.getNick().getName ( ), user, cmd );
-                break;
-                
-            case NOGHOST :
-            case MARK :
-            case FREEZE :
-            case HOLD :
+                this.snoop.msg (true, flag, result.getNick().getName ( ), user, cmd );            
+        
+        } else if ( command.is(NOGHOST) ||
+                    command.is(MARK) ||
+                    command.is(FREEZE) ||
+                    command.is(HOLD) ) {
                 ni.getSettings().set ( flag, oper.getName() );
                 ni.getChanges().change ( flag ); 
                 NickServ.addToWorkList ( CHANGE, ni );
-                log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
+                log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getNameStr() );
                 NickServ.addLog ( log );
                 if ( command == FREEZE ) {
                     NickServ.unIdentifyAllFromNick ( ni );
                 }
-                this.service.sendMsg ( user, output ( NICK_SET_FLAG, ni.getName(), ni.getSettings().modeString ( flag ) ) );
+                this.service.sendMsg ( user, output ( NICK_SET_FLAG, ni.getNameStr(), ni.getSettings().modeString ( flag ) ) );
                 this.service.sendGlobOp ( "Nick "+ni.getName()+" has been "+ni.getSettings().modeString(flag)+" by "+oper.getName() );
-                this.snoop.msg ( true, flag, cmdData.getNick().getName ( ), user, cmd );
-                break;
-                
-            default :  
-                this.snoop.msg ( false, flag, cmdData.getNick().getName ( ), user, cmd );
+                this.snoop.msg (true, flag, result.getNick().getName ( ), user, cmd );            
         
-        } 
+        } else {
+            this.snoop.msg (false, flag, result.getNick().getName ( ), user, cmd );
+        }
+         
     }
     
     /* Can possibly merge getPass and getEmail methods in the future */
     private void getPass ( User user, String[] cmd ) {
-        CmdData cmdData = this.validateCommandData ( user, GETPASS, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        CMDResult result = this.validateCommandData ( user, GETPASS, cmd );
+        
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) ); 
-                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1 ( ), user, cmd );
-                return;     
-                           
-            case NICK_NOT_REGGED :
+                return;            
+        
+        } else if ( result.is(ACCESS_DENIED) ) {
+                this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1 ( ) ) ); 
+                this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
+                return;            
+        
+        } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;
-                    
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;     
-            
-            default : 
+                return;            
         
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getName ( ), user, cmd );
+                return;            
         }
-        NickInfo ni = cmdData.getNick ( ); 
+         
+        NickInfo ni = result.getNick ( ); 
         NickInfo oper = user.getOper().getNick ( );
-        int command = cmdData.getCommand ( );
+        HashString command = result.getCommand ( );
         this.service.sendMsg ( user, "*** Password log of "+ni.getName()+":" );
         if ( ! NSDatabase.checkConn() ) {
             this.service.sendMsg ( user, "No passwords currently available as no database connection is present." );
@@ -740,40 +666,35 @@ import java.util.regex.Pattern;
             }
         }       
         this.service.sendMsg ( user, "*** End of log ***" );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getNameStr() );
         NickServ.addLog ( log );
         this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ni.getName() );
     }
  
     private void getEmail ( User user, String[] cmd ) {
-        CmdData cmdData = this.validateCommandData ( user, GETEMAIL, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        CMDResult result = this.validateCommandData ( user, GETEMAIL, cmd );
+        
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;
-                
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, cmdData.getString1 ( ) ) );
-                this.snoop.msg ( false, ACCESS_DENIED, cmdData.getString1 ( ), user, cmd );
-                return;     
-                           
-            case NICK_NOT_REGGED :
+                return;            
+        } else if ( result.is(ACCESS_DENIED) ) {
+                this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1 ( ) ) );
+                this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
+                return;            
+        } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;
-                     
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;     
-            
-            default : 
-        
+                return;            
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getName ( ), user, cmd );
+                return;            
         }
-        NickInfo ni = cmdData.getNick ( ); 
+        
+        NickInfo ni = result.getNick ( ); 
         NickInfo oper = user.getOper().getNick ( );
-        int command = cmdData.getCommand ( );
+        HashString command = result.getCommand ( );
         this.service.sendMsg ( user, "*** Email log of "+ni.getName()+":" );
         
         if ( ! NSDatabase.checkConn() ) {
@@ -786,7 +707,7 @@ import java.util.regex.Pattern;
             }
         }       
         this.service.sendMsg ( user, "*** End of log ***" );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getName() );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getNameStr() );
         NickServ.addLog ( log );
         this.service.sendGlobOp ( oper.getName()+" used GETEMAIL on: "+ni.getName() );
     }
@@ -794,64 +715,54 @@ import java.util.regex.Pattern;
     
     
     private void auth ( User user, String[] cmd ) {
-        CmdData cmdData = this.validateCommandData ( user, AUTH, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        CMDResult result = this.validateCommandData ( user, AUTH, cmd );
+        
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );                
-                return;
-                
-            case NICK_NOT_REGGED :
+                return;            
+        } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;
-                     
-            case NO_AUTH_FOUND :
+                return;            
+        } else if ( result.is(NO_AUTH_FOUND) ) {
                 this.service.sendMsg ( user, output ( NO_AUTH_FOUND, "" ) );
                 this.snoop.msg ( false, NO_AUTH_FOUND, user.getName(), user, cmd );
-                return;
-                     
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;     
-            
-            case IS_FROZEN :
-                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_FROZEN, cmdData.getNick().getName ( ), user, cmd );
-                return;
-            
-            default : 
-        
+                return;            
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getNameStr(), user, cmd );
+                return;            
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg (user, output (IS_FROZEN, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_FROZEN, result.getNick().getName(), user, cmd );
+                return;            
         }
         
-        NickInfo ni = cmdData.getNick();
-        NSAuth auth = cmdData.getAuth();
+        NickInfo ni = result.getNick();
+        NSAuth auth = result.getAuth();
         NickServ.addNewFullAuth ( auth );
         NSLogEvent log;
-        switch ( auth.getType() ) {
-            case MAIL :
+        
+        if ( auth.getType().is(MAIL) ) {
                 ni.setEmail ( auth.getValue() );
                 log = new NSLogEvent ( ni.getName(), AUTHMAIL, user, null );
                 NickServ.addLog ( log );
                 NickServ.notifyIdentifiedUsers ( ni, "A new mail has been fully authed and added to nick: "+ni.getName() );
-                this.snoop.msg ( true, AUTHMAIL, ni.getName ( ), user, cmd );
-                break;
-            case PASS :
+                this.snoop.msg ( true, AUTHMAIL, ni.getName ( ), user, cmd );            
+        
+        } else if ( auth.getType().is(PASS) ) {
                 ni.setPass ( auth.getValue() );
                 log = new NSLogEvent ( ni.getName(), AUTHPASS, user, null );
                 NickServ.addLog ( log );
                 NickServ.notifyIdentifiedUsers ( ni, "A new password has been fully authed and added to nick: "+ni.getName() );
                 NickServ.unIdentifyAllButOne ( ni );
-                this.snoop.msg ( true, AUTHPASS, ni.getName ( ), user, cmd );
-                break;
-                
-            default :
-
+                this.snoop.msg ( true, AUTHPASS, ni.getName ( ), user, cmd );            
         }
+         
     }
  
-    public void doSetBoolean ( int command, String cmdStr, User user, NickInfo ni, boolean enable, String[] cmd )  {
+    public void doSetBoolean ( HashString command, String cmdStr, User user, NickInfo ni, boolean enable, String[] cmd )  {
         this.sendIsOutput ( user, enable, cmdStr );
         ni.getSettings().set ( command, enable );
         ni.getChanges().change ( command );
@@ -859,11 +770,11 @@ import java.util.regex.Pattern;
         this.snoop.msg ( true, SET, ni.getName(), user, cmd );        
     }
 
-    public void doSetString ( int hash, String command, User user, String[] cmd ) {
+    public void doSetString ( HashString command, User user, String[] cmd ) {
         /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :set command <pass> <newemail>            */
         /*      0          1               2                 3       4      5           6   = 7      */
         
-        CmdData cmdData = this.validateCommandData ( user, hash, cmd );
+        CMDResult result = this.validateCommandData (user, command, cmd );
         
         if ( cmd.length > 5 ) {
             cmd[5] = "pass_redacted";
@@ -872,64 +783,53 @@ import java.util.regex.Pattern;
             cmd[6] = "email_redacted";
         }
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
-                switch ( hash ) {
-                    case SETEMAIL :
-                        this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET EMAIL <pass> <email>" ) );
-                        this.snoop.msg ( false, SETEMAIL, user.getName(), user, cmd );
-                        break;
-                        
-                    case SETPASSWD :
-                        this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET PASSWD <current-pass> <new-pass>" ) );
-                        this.snoop.msg ( false, SETPASSWD, user.getName(), user, cmd );
-                        break;
-                        
-                    default :
-
+        if ( result.is(SYNTAX_ERROR) ) {
+                if ( command.is(SETEMAIL) ) {
+                    this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET EMAIL <pass> <email>" ) );
+                    this.snoop.msg ( false, SETEMAIL, user.getName(), user, cmd );
+                } else if ( command.is(SETPASSWD) ) {
+                    this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET PASSWD <current-pass> <new-pass>" ) );
+                    this.snoop.msg ( false, SETPASSWD, user.getName(), user, cmd );
                 }
                 return;
                 
-            case NICK_NOT_REGGED :
+        } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;
-                
-            case IS_FROZEN :
-                this.service.sendMsg ( user, output ( IS_FROZEN, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_FROZEN, cmdData.getNick().getName ( ), user, cmd );
-                return;
-                         
-            case IS_MARKED :
-                this.service.sendMsg ( user, output ( IS_MARKED, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, IS_MARKED, cmdData.getNick().getName ( ), user, cmd );
-                return;
-                
-            case IDENTIFY_FAIL :
-                this.service.sendMsg ( user, output ( PASSWD_ERROR, cmdData.getNick().getName ( ) ) ); 
-                this.snoop.msg ( false, PASSWD_ERROR, cmdData.getNick().getName ( ), user, cmd );
-                return;
-                
-            case INVALID_EMAIL :
-                this.service.sendMsg ( user, output ( INVALID_EMAIL, cmdData.getString1 ( ) )  );
-                this.snoop.msg ( false, INVALID_EMAIL, cmdData.getString1(), user, cmd );
-                return;
-                
-            case INVALID_PASS :
+                return;            
+        
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg (user, output (IS_FROZEN, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_FROZEN, result.getNick().getNameStr(), user, cmd );
+                return;            
+        
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;            
+        
+        } else if ( result.is(IDENTIFY_FAIL) ) {
+                this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr() ) ); 
+                this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName(), user, cmd );
+                return;            
+        
+        } else if ( result.is(INVALID_EMAIL) ) {
+                this.service.sendMsg (user, output (INVALID_EMAIL, result.getString1 ( ) )  );
+                this.snoop.msg (false, INVALID_EMAIL, result.getString1(), user, cmd );
+                return;            
+        
+        } else if ( result.is(INVALID_PASS) ) {
                 this.service.sendMsg ( user, output ( INVALID_PASS, "" )  );
                 this.snoop.msg ( false, INVALID_PASS, user.getName(), user, cmd );
-                return;
-                
-            default :
-
+                return;            
         }
-        NickInfo ni = cmdData.getNick ( );
-        String value = cmdData.getString1 ( );
+        
+        NickInfo ni = result.getNick ( );
+        String value = result.getString1 ( );
         NSAuth auth;
         NSLogEvent log;
         
-        switch ( hash ) {
-            case SETEMAIL :
+        if ( command.is(SETEMAIL) ) {
                 auth = new NSAuth ( MAIL, ni.getName(), value );
                 NickServ.addNewAuth ( auth );
                 ni.getChanges().hasChanged ( MAIL );
@@ -937,10 +837,9 @@ import java.util.regex.Pattern;
                 log = new NSLogEvent ( ni.getName(), MAIL, user.getFullMask(), null );
                 NickServ.addLog ( log );
                 this.service.sendMsg ( user, "New mail has been set. A verification mail will shortly be sent, please follow the instruction in that mail." );
-                this.snoop.msg ( true, SETEMAIL, ni.getName(), user, cmd );        
-                break;
-                
-            case SETPASSWD :
+                this.snoop.msg ( true, SETEMAIL, ni.getName(), user, cmd );              
+        
+        } else if ( command.is(SETPASSWD) ) {
                 auth = new NSAuth ( PASS, ni.getName(), value );
                 NickServ.addNewAuth ( auth );
                 ni.getChanges().hasChanged ( PASS );
@@ -948,13 +847,9 @@ import java.util.regex.Pattern;
                 log = new NSLogEvent ( ni.getName(), PASS, user.getFullMask(), null );
                 NickServ.addLog ( log );
                 this.service.sendMsg ( user, "New password has been set. A verification mail will shortly be sent, please follow the instruction in that mail." );
-                this.snoop.msg ( true, SETPASSWD, ni.getName(), user, cmd );        
-                break;
-                
-            default :
-
+                this.snoop.msg ( true, SETPASSWD, ni.getName(), user, cmd );             
         }
-        
+         
     }
 
     public void sendIsOutput ( User user, boolean enable, String str )  {
@@ -994,10 +889,10 @@ import java.util.regex.Pattern;
         if ( NSDatabase.authMail ( ni, command ) ) {
             if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
                 for ( User u : uList )  {
-                    this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getName ( ) ) );
+                    this.service.sendMsg ( u, output ( NICK_AUTHED, ni.getNameStr() ) );
                 }
             }
-            ni.setEmail ( NSDatabase.getMailByNick ( ni.getName() ) );
+            ni.setEmail ( NSDatabase.getMailByNick ( ni.getNameStr() ) );
             NSLogEvent log = new NSLogEvent ( ni.getName(), AUTHMAIL, "web!web@"+command.getExtra2 ( ), null );
             NickServ.addLog ( log );
             return true;
@@ -1012,16 +907,16 @@ import java.util.regex.Pattern;
         
         if ( NSDatabase.authPass ( ni, command ) ) {
             if ( ( uList = Handler.findUsersByNick ( ni ) ) != null ) {
-                for ( User u : uList )  {
-                    this.service.sendMsg ( u, output ( PASS_AUTHED, ni.getName ( ) ) );
-                    this.service.sendMsg ( u, output ( PASS_AUTHED_UNIDENT, ni.getName ( ) ) );
-                    u.unIdentify ( ni );
-                    if ( u.getHashName() == ni.getHashName() ) {
-                        NickServ.fixIdentState ( u );
+                for ( User user : uList )  {
+                    this.service.sendMsg (user, output ( PASS_AUTHED, ni.getNameStr() ) );
+                    this.service.sendMsg (user, output ( PASS_AUTHED_UNIDENT, ni.getNameStr() ) );
+                    user.unIdentify ( ni );
+                    if ( user.is(ni) ) {
+                        NickServ.fixIdentState (user );
                     }
                 }
             }
-            ni.setPass ( NSDatabase.getPassByNick ( ni.getName() ) );
+            ni.setPass ( NSDatabase.getPassByNick ( ni.getNameStr() ) );
             NSLogEvent log = new NSLogEvent ( ni.getName(), AUTHPASS, "web!web@"+command.getExtra2 ( ), null );
             NickServ.addLog ( log );
             return true;
@@ -1033,442 +928,403 @@ import java.util.regex.Pattern;
         return user.getString(NAME).toUpperCase().startsWith ( "GUEST" );
     }
  
-    private CmdData validateCommandData ( User user, int command, String[] cmd ) {
+    private CMDResult validateCommandData ( User user, HashString command, String[] cmd ) {
         NickInfo ni;
         String nick = new String ( );
         String pass = new String ( ); 
-        CmdData cmdData = new CmdData ( );
+        CMDResult result = new CMDResult ( );
         User target;
         int minlen = 4;
         boolean checkNick   = false;
         boolean checkPass   = false;
         boolean needAccess  = false;
-         
-        switch ( command )  {
-            case REGISTER : 
+        
+        if ( command.is(REGISTER) ) {
                 if ( isShorterThanLen ( 6, cmd )  )  {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ! validEmail ( cmd[5] )  )  {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( INVALID_EMAIL );
-                } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) != null ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( NICK_ALREADY_REGGED );
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( INVALID_EMAIL );
+                } else if ( ( ni = NickServ.findNick ( user.getName() ) ) != null ) {
+                    result.setNick ( ni );
+                    result.setStatus ( NICK_ALREADY_REGGED );
                 } else if ( this.isGuestNick ( user ) ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( INVALID_NICK );
+                    result.setString1 ( user.getString ( NAME ) );
+                    result.setStatus ( INVALID_NICK );
                 }
-                break;
-                         
-            case IDENTIFY_NICK :
+        
+        } else if ( command.is(IDENTIFY_NICK) ) {
                 if ( isShorterThanLen ( 6, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( NICK_NOT_REGGED );
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.is ( FROZEN ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN ); 
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN ); 
                 } else if ( ni.getThrottle().isThrottled() ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_THROTTLED );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_THROTTLED );
                  } else if ( ! ni.identify ( user, cmd[5] ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IDENTIFY_FAIL );
+                    result.setNick ( ni );
+                    result.setStatus ( IDENTIFY_FAIL );
                 } else {
-                    cmdData.setNick ( ni );
+                    result.setNick ( ni );
                 }
-                break; 
-               
-            case DROP :
-            case IDENTIFY :
+        
+        } else if ( command.is(DROP) ||
+                    command.is(IDENTIFY) ) {
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( NICK_NOT_REGGED );
+                    result.setString1 ( user.getString ( NAME ) );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.is ( FROZEN ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN );
-                } else if ( ni.getHashMask() != user.getHashMask() && ni.getThrottle().isThrottled() ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_THROTTLED );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN );
+                } else if ( ! ni.is(user) && ni.getThrottle().isThrottled() ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_THROTTLED );
                 } else if ( ! ni.identify ( user, cmd[4] ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IDENTIFY_FAIL ); 
+                    result.setNick ( ni );
+                    result.setStatus ( IDENTIFY_FAIL ); 
                 } else {
-                    cmdData.setNick ( ni );
+                    result.setNick ( ni );
                 }
-                break;
-                
-            case AUTH :
+        
+        } else if ( command.is(AUTH) ) {
                 /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :auth <authcode>          */
                 /*      0          1               2                 3     4        = 5      */
                 NSAuth auth;
                 
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( NICK_NOT_REGGED );
+                    result.setString1 ( user.getString ( NAME ) );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.is ( FROZEN ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN ); 
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN ); 
                 } else if ( ni.is ( MARKED ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_MARKED ); 
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED ); 
                 } else if ( ( auth = NSDatabase.fetchAuth ( user, cmd[4] ) ) == null ) {
-                    cmdData.setStatus ( NO_AUTH_FOUND );
+                    result.setStatus ( NO_AUTH_FOUND );
                 } else {
-                    cmdData.setAuth ( auth );
-                    cmdData.setNick ( ni );
-                }
-                break; 
-                
-            case GHOST :
+                    result.setAuth ( auth );
+                    result.setNick ( ni );
+                }   
+        
+        } else if ( command.is(GHOST) ) {
                 if ( isShorterThanLen ( 6, cmd )  )  {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
-                    cmdData.setStatus ( NICK_NOT_REGGED );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ( target = Handler.findUser ( cmd[4] ) ) == null ) {
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( NO_SUCH_NICK );    
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NO_SUCH_NICK );    
                 } else if ( ni.is ( FROZEN ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN );
                 } else if ( ni.is ( NOGHOST ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_NOGHOST ); 
+                    result.setNick ( ni );
+                    result.setStatus ( IS_NOGHOST ); 
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
-                    cmdData.setStatus ( IDENTIFY_FAIL );
+                    result.setStatus ( IDENTIFY_FAIL );
                 } else {
-                    cmdData.setNick ( ni );
-                }
-                break; 
-            
-            case INFO :
+                    result.setNick ( ni );
+                }            
+        
+        } else if ( command.is(INFO) ) {
                 if ( isShorterThanLen ( 4, cmd )  )  {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
-                    cmdData.setStatus ( NICK_NOT_REGGED );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( 0 );
+                    result.setNick ( ni );
                 }
-                break;
-            
-            case SET :
+                
+        } else if ( command.is(SET) ) {
                 needAccess = true; 
                 if ( isShorterThanLen ( 6, cmd )  )  {
-                    cmdData.setStatus ( SYNTAX_ERROR );
-                } 
-                break; 
-                                
-            /* OPER ONLY */
-            case LIST :
+                    result.setStatus ( SYNTAX_ERROR );
+                }
+                
+        } else if ( command.is(LIST) ) {
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ! user.isAtleast ( IRCOP ) ) {
-                    cmdData.setStatus ( ACCESS_DENIED_OPER );
+                    result.setStatus ( ACCESS_DENIED_OPER );
                 } else if ( ! user.isAtleast ( SA ) ) {
-                    cmdData.setStatus ( ACCESS_DENIED_SA );
-                } 
-                break;
-               
-            case NOGHOST :
-            case MARK :    
-            case FREEZE :
-            case HOLD :
-                boolean unset = ( cmd.length > 4 && cmd[4].charAt(0) == '-' );
-                cmdData.setCommand ( command );
+                    result.setStatus ( ACCESS_DENIED_SA );
+                }
+                
+        } else if ( command.is(NOGHOST) ||
+                    command.is(MARK) ||
+                    command.is(FREEZE) ||
+                    command.is(HOLD) ) {
+               boolean unset = ( cmd.length > 4 && cmd[4].charAt(0) == '-' );
+                result.setCommand ( command );
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ! NickServ.enoughAccess ( user, command ) ) {
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( ( ni = NickServ.findNick ( cmd[4].replace ( "-", "" ) ) ) == null ) {
-                    cmdData.setString1 ( cmd[4].replace ( "-", "" ) );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ni.is ( MARK ) && ( command != MARK || command == MARK && cmd[4].charAt(0) != '-' ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_MARKED );
+                    result.setString1 ( cmd[4].replace ( "-", "" ) );
+                    result.setStatus ( NICK_NOT_REGISTERED );
+                } else if ( ni.isSet(MARK) && ( command != MARK || command == MARK && cmd[4].charAt(0) != '-' ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
                 } else if ( ( ni.is ( command ) && ! unset ) || ( ! ni.is (command ) && unset ) ) {
-                    cmdData.setNick ( ni );
+                    result.setNick ( ni );
                     String buf = unset ? "Un" : "";
-                    cmdData.setString1 ( buf+this.getCommandStr ( command ) );
-                    cmdData.setStatus ( NICKFLAG_EXIST );
+                    result.setString1 ( buf+this.getCommandStr ( command ) );
+                    result.setStatus ( NICKFLAG_EXIST );
                 } else {
-                    cmdData.setNick ( ni );
+                    result.setNick ( ni );
                     if ( unset ) {
-                        cmdData.setCommand ( this.getAntiCommand ( command ) );
+                        result.setCommand ( this.getAntiCommand ( command ) );
                     }
                 }
-                break;
                 
-            case GETEMAIL :
-            case GETPASS :
-                cmdData.setCommand ( command );
+        } else if ( command.is(GETEMAIL) ||
+                    command.is(GETPASS) ) {
+                result.setCommand ( command );
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ! NickServ.enoughAccess ( user, command ) ) {
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ni.is ( MARK ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_MARKED );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
                 } else {
-                    cmdData.setNick ( ni );
-                }
-                break;
-
-            case SETEMAIL :
+                    result.setNick ( ni );
+                }            
+            
+        } else if ( command.is(SETEMAIL) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
-                    cmdData.setString1 ( user.getString(NAME) );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
+                    result.setString1 ( user.getString(NAME) );
+                    result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ni.is ( FROZEN ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN );
                 } else if ( ni.is ( MARK ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_MARKED );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IDENTIFY_FAIL );
+                    result.setNick ( ni );
+                    result.setStatus ( IDENTIFY_FAIL );
                 } else if ( ! validEmail ( cmd[6] )  )  {
-                    cmdData.setString1 ( cmd[6] );
-                    cmdData.setStatus ( INVALID_EMAIL );
+                    result.setString1 ( cmd[6] );
+                    result.setStatus ( INVALID_EMAIL );
                 } else {
-                    cmdData.setString1 ( cmd[6] );
-                    cmdData.setNick ( ni );
+                    result.setString1 ( cmd[6] );
+                    result.setNick ( ni );
                 }
-                break;
                 
-            case SETPASSWD :
-                System.out.println("0:");
+        } else if ( command.is(SETPASSWD) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
-                System.out.println("1:");
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
-                System.out.println("2:");
-                    cmdData.setString1 ( user.getString(NAME) );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
+                    result.setString1 ( user.getString(NAME) );
+                    result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ni.is ( FROZEN ) ) {
-                System.out.println("3:");
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_FROZEN );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN );
                 } else if ( ni.is ( MARK ) ) {
-                System.out.println("4:");
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_MARKED );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
-                System.out.println("5:");
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IDENTIFY_FAIL );
+                    result.setNick ( ni );
+                    result.setStatus ( IDENTIFY_FAIL );
                 } else if ( cmd[6].length() < 8 ) {
-                System.out.println("6:");
-                    cmdData.setStatus ( INVALID_PASS );
+                    result.setStatus ( INVALID_PASS );
                 } else {
-                System.out.println("7:");
-                    cmdData.setString1 ( cmd[6] );
-                    cmdData.setNick ( ni );
+                    result.setString1 ( cmd[6] );
+                    result.setNick ( ni );
                 }
-                System.out.println("8:");
-                break;
                 
-            case DELETE : 
-                 cmdData.setCommand ( command );
+        } else if ( command.is(DELETE) ) {
+                 result.setCommand ( command );
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ! NickServ.enoughAccess ( user, command ) ) {
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
-                    cmdData.setString1 ( cmd[4] );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ni.is ( MARK ) ) {
-                    cmdData.setNick ( ni );
-                    cmdData.setStatus ( IS_MARKED );
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
                 } else {
-                    cmdData.setNick ( ni );
+                    result.setNick ( ni );
                 }
-                break;
                 
-            default :
-                
-        } 
-        return cmdData;
+        }
+        return result;
     }
     
-    private int getAntiCommand ( int command ) {
-        switch ( command ) {
-            case MARK :
-                return UNMARK;   
-            case FREEZE :
-                return UNFREEZE;
-            case CLOSE :
-                return REOPEN;
-            case HOLD :
-                return UNHOLD;
-            case NOGHOST :
-                return UNNOGHOST;
-            default :
-                return 0;
+    private HashString getAntiCommand ( HashString command ) {
+        if      ( command.is(MARK) )        { return UNMARK;        } 
+        else if ( command.is(FREEZE) )      { return UNFREEZE;      } 
+        else if ( command.is(CLOSE) )       { return REOPEN;        } 
+        else if ( command.is(HOLD) )        { return UNHOLD;        } 
+        else if ( command.is(NOGHOST) )     { return UNNOGHOST;     } 
+        else {
+            return null;
         }
     }
-    private String getCommandStr ( int command ) {
-        switch ( command ) {
-            case MARK :
-                return "Marked";
-            case FREEZE :
-                return "Frozen";
-            case CLOSE :
-                return "Closed";
-            case HOLD :
-                return "Held";
-            case NOGHOST :
-                return "NoGhost";
-            default :
-                return "";
+    private String getCommandStr ( HashString command ) {
+        if ( command.is(MARK) )             { return "Marked";      }
+        else if ( command.is(FREEZE) )      { return "Frozen";      } 
+        else if ( command.is(CLOSE) )       { return "Closed";      } 
+        else if ( command.is(HOLD) )        { return "Held";        } 
+        else if ( command.is(NOGHOST) )     { return "NoGhost";     } 
+        else {
+            return "";
         }
+       
     }
     
-     public String output ( int code, String... args )  {
-        switch ( code )  {
-            case SYNTAX_ERROR :
-                return "Syntax: /NickServ "+args[0]+"";
+    public String output ( HashString code, String... args )  {
+        
+        if ( code.is(SYNTAX_ERROR) ) {
+            return "Syntax: /NickServ "+args[0]+"";
+        
+        } else if ( code.is(SYNTAX_ID_ERROR) ) {
+            return "Syntax: /NickServ IDENTIFY <nickname> <password>";
+        
+        } else if ( code.is(SYNTAX_REG_ERROR) ) {
+            return "Syntax: /NickServ REGISTER <password> <email>";
+        
+        } else if ( code.is(SYNTAX_GHOST_ERROR) ) {
+            return "Syntax: /NickServ GHOST <nickname> <password>";
+        
+        } else if ( code.is(NO_SUCH_NICK) ) {
+            return "Error: user "+args[0]+" is not online";
+        
+        } else if ( code.is(CMD_NOT_FOUND_ERROR) ) {
+            return "Syntax Error! For information regarding commands please issue:";
+        
+        } else if ( code.is(SHOW_HELP) ) {
+            return "    /"+args[0]+" HELP";
+        
+        } else if ( code.is(PASSWD_ERROR) ) {
+            return "Error: Wrong password for nick: "+args[0];
+        
+        } else if ( code.is(INVALID_EMAIL) ) {
+            return "Error: "+args[0]+" is not a valid email-adress";
+        
+        } else if ( code.is(INVALID_PASS) ) {
+            return "Error: password is not valid, it might be too short or too easy.";
+        
+        } else if ( code.is(INVALID_NICK) ) {
+            return "Error: "+args[0]+" is not a valid nick for registration";
+        
+        } else if ( code.is(ACCESS_DENIED) ) {
+            return "Access denied. Please identify to "+args[0]+" before proceeding.";
+        
+        } else if ( code.is(SETTING_NOT_FOUND) ) {
+            return "Error: Setting "+args[0]+" not found.";
+        
+        } else if ( code.is(NICK_NOT_REGISTERED) ) {
+            return "Error: nick "+args[0]+" is not registered";
+        
+        } else if ( code.is(NICK_ALREADY_REGGED) ) {
+            return "Error: nick "+f.b ( ) +args[0]+f.b ( ) +" is already registered.";
+        
+        } else if ( code.is(NICK_IS_NOW) ) {
+            return "Your nick now has option "+args[0]+" set.";
+        
+        } else if ( code.is(NICK_IS_NOT) ) {
+            return "Your nick has been stripped from option "+args[0]+".";
+        
+        } else if ( code.is(PASSWD_ACCEPTED) ) {
+            return "Password accepted for nick: "+args[0]+". You are now identified.";
+        
+        } else if ( code.is(DB_ERROR) ) {
+            return "Error: Database error. Please try again in a few minutes.";
+        
+        } else if ( code.is(REGISTER_DONE) ) {
+            return "Nick "+args[0]+" was successfully registered to you. Please remember your password. Please check your mail for further instructions.";
+        
+        } else if ( code.is(REGISTER_SEC) ) {
+            return "IMPORTANT: Never share your passwords, not even with network staff.";
+        
+        } else if ( code.is(NICK_AUTHED) ) {
+            return "The email for "+args[0]+" is now fully set and authorized.";
+        
+        } else if ( code.is(PASS_AUTHED) ) {
+            return "The password for "+args[0]+" is now fully set and authorized.";
+        
+        } else if ( code.is(PASS_AUTHED_UNIDENT) ) {
+            return "You have been unindentified from nick "+args[0]+" as a new password has been set.";
+        
+        } else if ( code.is(NO_AUTH_FOUND) ) {
+            return "The authcode you provided did not match any pending objects.";
+        
+        } else if ( code.is(NICK_NEW_MASK) ) {
+            return "Last login from "+args[0]+".";
+        
+        } else if ( code.is(IDENT_NICK_DELETED) ) {
+            return "You have been unindentified from nick "+args[0]+" as it was deleted from services.";
+        
+        } else if ( code.is(NICK_DELETED) ) {
+            return "Nickname "+args[0]+" has been deleted from services.";
+        
+        } else if ( code.is(ACCESS_DENIED_SRA) ) {
+            return "Access denied. You need to be atleast SRA to use this command.";
+        
+        } else if ( code.is(ACCESS_DENIED_SA) ) {
+            return "Access denied. You need to be atleast SA to use this command.";
+        
+        } else if ( code.is(ACCESS_DENIED_OPER) ) {
+            return "No such command.";
+        
+        } else if ( code.is(ACCESS_DENIED_DELETE_OPER) ) {
+            return "Access denied. You cannot delete a SA+.";
+        
+        } else if ( code.is(NICK_SET_FLAG) ) {
+            return "Nick "+args[0]+" is now "+args[1]+".";
+        
+        } else if ( code.is(NICKFLAG_EXIST) ) {
+            return "Nick "+args[0]+" is already "+args[1]+".";
+        
+        } else if ( code.is(NICK_GETPASS) ) {
+            return "Password is: "+args[0]+".";
+        
+        } else if ( code.is(NICK_GETEMAIL) ) {
+            return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+"";
+        
+        } else if ( code.is(IS_MARKED) ) {
+            return "Error: Nick "+args[0]+" is MARKed by a network staff blocking certain functionality.";
+        
+        } else if ( code.is(IS_FROZEN) ) {
+            return "Error: Nick "+args[0]+" is frozen by a network staff and cannot be used.";
+        
+        } else if ( code.is(IS_NOGHOST) ) {
+            return "Error: Nick "+args[0]+" is set noghost by a network staff and cannot be ghosted.";
+        
+        } else if ( code.is(IS_THROTTLED) ) {
+            return "Error: Throttled login attempts.";
+        
+        } else if ( code.is(GLOB_IS_NOGHOST) ) {
+            return args[0]+" tried using GHOST on NOGHOST nick "+args[1]+".";
+        
+        } else if ( code.is(NICKDROPPED) ) {
+            return "Nick: "+args[0]+" was successfully dropped.";
+        
+        } else if ( code.is(NICKDELETED) ) {
+            return "Nick: "+args[0]+" was successfully deleted.";
             
-            case SYNTAX_ID_ERROR : 
-                return "Syntax: /NickServ IDENTIFY <nickname> <password>";
-            
-            case SYNTAX_REG_ERROR : 
-                return "Syntax: /NickServ REGISTER <password> <email>";
-            
-            case SYNTAX_GHOST_ERROR : 
-                return "Syntax: /NickServ GHOST <nickname> <password>";
-           
-            case NO_SUCH_NICK : 
-                return "Error: user "+args[0]+" is not online";
-            
-            case CMD_NOT_FOUND_ERROR : 
-                return "Syntax Error! For information regarding commands please issue:";
-           
-            case SHOW_HELP :
-                return "    /"+args[0]+" HELP";
-            
-            case PASSWD_ERROR : 
-                return "Error: Wrong password for nick: "+args[0];
-           
-            case INVALID_EMAIL : 
-                return "Error: "+args[0]+" is not a valid email-adress";
-           
-            case INVALID_PASS : 
-                return "Error: password is not valid, it might be too short or too easy.";
-           
-            case INVALID_NICK : 
-                return "Error: "+args[0]+" is not a valid nick for registration";
-           
-            case ACCESS_DENIED : 
-                return "Access denied. Please identify to "+args[0]+" before proceeding.";
-  
-            case SETTING_NOT_FOUND :
-                return "Error: Setting "+args[0]+" not found.";
-            
-            case NICK_NOT_REGISTERED :
-                return "Error: nick "+args[0]+" is not registered";
-           
-            case NICK_ALREADY_REGGED : 
-                return "Error: nick "+f.b ( ) +args[0]+f.b ( ) +" is already registered.";
-   
-            case NICK_IS_NOW : 
-                return "Your nick now has option "+args[0]+" set.";
-           
-            case NICK_IS_NOT : 
-                return "Your nick has been stripped from option "+args[0]+".";
-  
-            case PASSWD_ACCEPTED : 
-                return "Password accepted for nick: "+args[0]+". You are now identified.";
-            
-            case DB_ERROR : 
-                return "Error: Database error. Please try again in a few minutes."; 
-            
-            case REGISTER_DONE :
-                return "Nick "+args[0]+" was successfully registered to you. Please remember your password. Please check your mail for further instructions.";
-            
-            case REGISTER_SEC :
-                return "IMPORTANT: Never share your passwords, not even with network staff.";
-            
-            case NICK_AUTHED : 
-                return "The email for "+args[0]+" is now fully set and authorized.";
-                               
-            case PASS_AUTHED : 
-                return "The password for "+args[0]+" is now fully set and authorized.";
-                      
-            case PASS_AUTHED_UNIDENT : 
-                return "You have been unindentified from nick "+args[0]+" as a new password has been set.";
-                            
-            case NO_AUTH_FOUND : 
-                return "The authcode you provided did not match any pending objects.";
-           
-            case NICK_NEW_MASK : 
-                return "Last login from "+args[0]+".";
-            
-            /*** OPER MESSAGES ***/
-            case IDENT_NICK_DELETED : 
-                return "You have been unindentified from nick "+args[0]+" as it was deleted from services.";
-            
-            case NICK_DELETED : 
-                return "Nickname "+args[0]+" has been deleted from services.";
-            
-            case ACCESS_DENIED_SRA : 
-                return "Access denied. You need to be atleast SRA to use this command.";
-                   
-            case ACCESS_DENIED_SA : 
-                return "Access denied. You need to be atleast SA to use this command.";
-                      
-            case ACCESS_DENIED_OPER : 
-                return "No such command.";
-            
-            case ACCESS_DENIED_DELETE_OPER :
-                return "Access denied. You cannot delete a SA+.";
-           
-            case NICK_SET_FLAG :
-                return "Nick "+args[0]+" is now "+args[1]+".";
-                
-            case NICKFLAG_EXIST :
-                return "Nick "+args[0]+" is already "+args[1]+".";
-                     
-            case NICK_GETPASS :
-                return "Password is: "+args[0]+".";
-                      
-            case NICK_GETEMAIL :
-                return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+"";
-                       
-            case IS_MARKED :
-                return "Error: Nick "+args[0]+" is MARKed by a network staff blocking certain functionality.";
-                        
-            case IS_FROZEN :
-                return "Error: Nick "+args[0]+" is frozen by a network staff and cannot be used.";
- 
-            case IS_NOGHOST :
-                return "Error: Nick "+args[0]+" is set noghost by a network staff and cannot be ghosted.";
-             
-            case IS_THROTTLED :
-                return "Error: Throttled login attempts.";
- 
-            case GLOB_IS_NOGHOST :
-                return args[0]+" tried using GHOST on NOGHOST nick "+args[1]+".";
- 
-            case NICKDROPPED :
-                return "Nick: "+args[0]+" was successfully dropped.";                    
-
-            case NICKDELETED :
-                return "Nick: "+args[0]+" was successfully deleted.";                    
-
-            default: { 
-                return "";
-            }
+        } else {
+            return "";
         }
+         
     }
  } 

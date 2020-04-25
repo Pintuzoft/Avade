@@ -21,6 +21,7 @@ import nickserv.NickInfo;
 import nickserv.NickServ;
 import chanserv.ChanInfo;
 import core.Database;
+import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -56,23 +57,23 @@ public class CMDDatabase extends Database {
 
             while ( res.next ( ) ) {
                 try {
-                    switch ( res.getString(3).toUpperCase().hashCode ( ) ) {
-                        case NICKINFO :
-                            if ( ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
-                                cList.add ( 
-                                    new Command ( 
-                                        res.getString ( 1 ), 
-                                        ni, 
-                                        res.getString(3).toUpperCase().hashCode ( ), 
-                                        res.getString(4).toUpperCase().hashCode ( ), 
-                                        res.getString(5),
-                                        res.getString(6)
-                                    )
-                                );
-                            }
-                            break;
-                        
+                    HashString type = new HashString ( res.getString(3) );
+                    
+                    if ( type.is(NICKINFO) ) {
+                        if ( ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
+                            cList.add ( 
+                                new Command ( 
+                                    res.getString ( 1 ), 
+                                    ni, 
+                                    type, 
+                                    new HashString ( res.getString(4) ), 
+                                    res.getString(5),
+                                    res.getString(6)
+                                )
+                            );
+                        }
                     }
+                     
                 } catch ( SQLException e ) {
                     Proc.log ( CMDDatabase.class.getName ( ), e );
                 }    

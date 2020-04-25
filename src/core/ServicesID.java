@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -101,9 +101,8 @@ public class ServicesID extends HashNumeric {
         if ( ni == null ) {
             return;
         }
-       
-        for ( NickInfo nid : this.niList )  {
-            if ( nid.getHashName ( ) == ni.getHashName ( )  )  {
+        for ( NickInfo nick : this.niList )  {
+            if ( nick.is(ni) ) {
                 return;
             }
         } 
@@ -116,9 +115,9 @@ public class ServicesID extends HashNumeric {
             return;
         }
        
-        for ( NickInfo nid : this.niList )  {
-            if ( nid.getHashName ( ) == ni.getHashName ( )  )  {
-                ni2 = nid;
+        for ( NickInfo nick : this.niList )  {
+            if ( nick.is(ni) ) {
+                ni2 = nick;
             }
         } 
         if ( ni2 != null )  {
@@ -130,8 +129,8 @@ public class ServicesID extends HashNumeric {
         if ( ci == null ) {
             return;
         }
-        for ( ChanInfo cid : this.ciList )  {
-            if ( cid.getHashName ( )  == ci.getHashName ( )  )  {
+        for ( ChanInfo chan : this.ciList )  {
+            if ( chan.is(ci) ) {
                 this.printSID ( );
                 return;
             }
@@ -144,8 +143,8 @@ public class ServicesID extends HashNumeric {
         if ( ni == null ) {
             return false;
         }
-        for ( NickInfo nid : this.niList )  { 
-            if ( nid.getHashName ( )  == ni.getHashName ( )  )  { 
+        for ( NickInfo nick : this.niList )  { 
+            if ( nick.is(ni) ) { 
                 return true;
             }
         }
@@ -153,8 +152,8 @@ public class ServicesID extends HashNumeric {
     }
     
     public boolean isIdentified ( ChanInfo ci )  {
-        for ( ChanInfo cid : this.ciList )  {
-            if ( cid.getHashName ( )  == ci.getHashName ( )  )  {
+        for ( ChanInfo chan : this.ciList )  {
+            if ( chan.is(ci) ) {
                 return true;
             }
         }
@@ -272,7 +271,7 @@ public class ServicesID extends HashNumeric {
         this.splitExpire = ( System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ) ) ;
     }
 
-    /* Return true if expire time is in the past */
+    /* Return true if expire time hasAccess in the past */
     public boolean timeToExpire() {
         return System.currentTimeMillis() > this.splitExpire;
     }

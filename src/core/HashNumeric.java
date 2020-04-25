@@ -23,405 +23,509 @@ package core;
  */
 public abstract class HashNumeric extends TextFormat {
     /* CONFIG */
-    public final static int NAME                        = 2388619;
-    public final static int DOMAIN                      = 2022099140;
-    public final static int NETNAME                     = -1733781112;
-    public final static int CONNNAME                     = 1972574432;
-    public final static int CONNHOST                     = 1972409341;
-    public final static int CONNPASS                     = 1972634214;
-    public final static int CONNPORT                     = 1972647638;
-    public final static int MASTER                      = -2027938206;
-    public final static int SECRETSALT                  = -965467386;
-    public final static int STATS                       = 79219839;
-    public final static int WHITELIST                   = 1132744743;
-    public final static int PORT                        = 2461825;
-    public final static int PASS                        = 2448401;
-    public final static int DB                          = 2174;
-    public final static int ADDRESS                     = -429709356;
-    public final static int GCOS                        = 2182080;
-    public final static int WARN                        = 2656902;
-    public final static int ACTION                      = 1925345846;
-    public final static int WARNIP                      = -1741682131;
-    public final static int WARNRANGE                   = 1055480407;
-    public final static int ACTIONIP                     = -873544227;
-    public final static int ACTIONRANGE                  = -541278041;
-    public final static int TRIGGERWARN                 = 1473044510;
-    public final static int TRIGGERACTION               = 1923596750;
-    public final static int TRIGGERWARNIP               = -1743431227;
-    public final static int TRIGGERWARNRANGE            = 487769023;
-    public final static int TRIGGERACTIONIP             = 1740541813;
-    public final static int TRIGGERACTIONRANGE          = -651071473;
-    
-    public final static int SNOOPROOTSERV               = 2080194861;
-    public final static int SNOOPOPERSERV               = 1746096281;
-    public final static int SNOOPNICKSERV               = -1977995474;
-    public final static int SNOOPCHANSERV               = -616064099;
-    public final static int SNOOPMEMOSERV               = 1609099653;
-    public final static int SNOOPLOG                    = 1467300047;
-    
-    public final static int SERVICEUSER                 = 225567712;
-    public final static int SERVICEHOST                 = 225177021;
-    public final static int SERVICEGCOS                 = 225135573;
+    public static HashString NAME = new HashString ( "NAME" );
+    public static HashString DOMAIN = new HashString ( "DOMAIN" );
+    public static HashString NETNAME = new HashString ( "NETNAME" );
+    public static HashString CONNNAME = new HashString ( "CONNNAME" );
+    public static HashString CONNHOST = new HashString ( "CONNHOST" );
+    public static HashString CONNPASS = new HashString ( "CONNPASS" );
+    public static HashString CONNPORT = new HashString ( "CONNPORT" );
+    public static HashString MASTER = new HashString ( "MASTER" );
+    public static HashString SECRETSALT = new HashString ( "SECRETSALT" );
+    public static HashString STATS = new HashString ( "STATS" );
+    public static HashString WHITELIST = new HashString ( "WHITELIST" );
+    public static HashString PORT = new HashString ( "PORT" );
+    public static HashString PASS = new HashString ( "PASS" );
+    public static HashString DB = new HashString ( "DB" );
+    public static HashString ADDRESS = new HashString ( "ADDRESS" );
+    public static HashString GCOS = new HashString ( "GCOS" );
+    public static HashString WARN = new HashString ( "WARN" );
+    public static HashString ACTION = new HashString ( "ACTION" );
+    public static HashString WARNIP = new HashString ( "WARNIP" );
+    public static HashString WARNRANGE = new HashString ( "WARNRANGE" );
+    public static HashString ACTIONIP = new HashString ( "ACTIONIP" );
+    public static HashString ACTIONRANGE = new HashString ( "ACTIONRANGE" );
+    public static HashString TRIGGERWARN = new HashString ( "TRIGGERWARN" );
+    public static HashString TRIGGERACTION = new HashString ( "TRIGGERACTION" );
+    public static HashString TRIGGERWARNIP = new HashString ( "TRIGGERWARNIP" );
+    public static HashString TRIGGERWARNRANGE = new HashString ( "TRIGGERWARNRANGE" );
+    public static HashString TRIGGERACTIONIP = new HashString ( "TRIGGERACTIONIP" );
+    public static HashString TRIGGERACTIONRANGE = new HashString ( "TRIGGERACTIONRANGE" );
+    public static HashString SNOOPROOTSERV = new HashString ( "SNOOPROOTSERV" );
+    public static HashString SNOOPOPERSERV = new HashString ( "SNOOPOPERSERV" );
+    public static HashString SNOOPNICKSERV = new HashString ( "SNOOPNICKSERV" );
+    public static HashString SNOOPCHANSERV = new HashString ( "SNOOPCHANSERV" );
+    public static HashString SNOOPMEMOSERV = new HashString ( "SNOOPMEMOSERV" );
+    public static HashString SNOOPLOG = new HashString ( "SNOOPLOG" );
+    public static HashString SERVICEUSER = new HashString ( "SERVICEUSER" );
+    public static HashString SERVICEHOST = new HashString ( "SERVICEHOST" );
+    public static HashString SERVICEGCOS = new HashString ( "SERVICEGCOS" );
+    public static HashString MYSQLHOST = new HashString ( "MYSQLHOST" );
+    public static HashString MYSQLUSER = new HashString ( "MYSQLUSER" );
+    public static HashString MYSQLPASS = new HashString ( "MYSQLPASS" );
+    public static HashString MYSQLPORT = new HashString ( "MYSQLPORT" );
+    public static HashString MYSQLDB = new HashString ( "MYSQLDB" );
+    public static HashString LOGFILE = new HashString ( "LOGFILE" );
+    public static HashString EXPIRE = new HashString ( "EXPIRE" );
+    public static HashString FORCEMODES = new HashString ( "FORCEMODES" );
+    public static HashString ERROR = new HashString ( "ERROR" );
+    public static HashString CLOSING = new HashString ( "CLOSING" );
+    public static HashString LINK = new HashString ( "LINK" );
+    public static HashString SERVER = new HashString ( "SERVER" );
+    public static HashString SERVICES = new HashString ( "SERVICES" );
+    public static HashString SJOIN = new HashString ( "SJOIN" );
+    public static HashString SQUIT = new HashString ( "SQUIT" );
+    public static HashString SVINFO = new HashString ( "SVINFO" );
+    public static HashString LUSERSLOCK = new HashString ( "LUSERSLOCK" );
+    public static HashString PING = new HashString ( "PING" );
+    public static HashString NICK = new HashString ( "NICK" );
+    public static HashString PRIVMSG = new HashString ( "PRIVMSG" );
+    public static HashString ROOTSERV = new HashString ( "ROOTSERV" );
+    public static HashString OPERSERV = new HashString ( "OPERSERV" );
+    public static HashString CHANSERV = new HashString ( "CHANSERV" );
+    public static HashString NICKSERV = new HashString ( "NICKSERV" );
+    public static HashString MEMOSERV = new HashString ( "MEMOSERV" );
+    public static HashString GUESTSERV = new HashString ( "GUESTSERV" );
+    public static HashString MODE = new HashString ( "MODE" );
+    public static HashString PART = new HashString ( "PART" );
+    public static HashString KICK = new HashString ( "KICK" );
+    public static HashString QUIT = new HashString ( "QUIT" );
+    public static HashString KILL = new HashString ( "KILL" );
+    public static HashString MOTD = new HashString ( "MOTD" );
+    public static HashString VERSION = new HashString ( "VERSION" );
+    public static HashString INFO = new HashString ( "INFO" );
+    public static HashString OLD = new HashString ( "OLD" );
+    public static HashString SAMODE = new HashString ( "SAMODE" );
+    public static HashString GLOBOPS = new HashString ( "GLOBOPS" );
+    public static HashString SF = new HashString ( "SF" );
+    public static HashString HELP = new HashString ( "HELP" );
+    public static HashString REGISTER = new HashString ( "REGISTER" );
+    public static HashString IDENTIFY = new HashString ( "IDENTIFY" );
+    public static HashString SIDENTIFY = new HashString ( "SIDENTIFY" );
+    public static HashString GHOST = new HashString ( "GHOST" );
+    public static HashString SET = new HashString ( "SET" );
+    public static HashString AUTH = new HashString ( "AUTH" );
+    public static HashString NICKINFO = new HashString ( "NICKINFO" );
+    public static HashString DROP = new HashString ( "DROP" );
+    public static HashString AUTHMAIL = new HashString ( "AUTHMAIL" );
+    public static HashString AUTHPASS = new HashString ( "AUTHPASS" );
+    public static HashString UNSET = new HashString ( "UNSET" );
+    public static HashString EMAIL = new HashString ( "EMAIL" );
+    public static HashString PASSWD = new HashString ( "PASSWD" );
+    public static HashString SETEMAIL = new HashString ( "SETEMAIL" );
+    public static HashString SETPASSWD = new HashString ( "SETPASSWD" );
+    public static HashString ON = new HashString ( "ON" );
+    public static HashString OFF = new HashString ( "OFF" );
+    public static HashString ENFORCE = new HashString ( "ENFORCE" );
+    public static HashString SECURE = new HashString ( "SECURE" );
+    public static HashString PRIVATE = new HashString ( "PRIVATE" );
+    public static HashString NOOP = new HashString ( "NOOP" );
+    public static HashString NEVEROP = new HashString ( "NEVEROP" );
+    public static HashString MAILBLOCK = new HashString ( "MAILBLOCK" );
+    public static HashString SHOWEMAIL = new HashString ( "SHOWEMAIL" );
+    public static HashString SHOWHOST = new HashString ( "SHOWHOST" );
+    public static HashString DELETE = new HashString ( "DELETE" );
+    public static HashString CHANGE = new HashString ( "CHANGE" );
+    public static HashString UINFO = new HashString ( "UINFO" );
+    public static HashString CINFO = new HashString ( "CINFO" );
+    public static HashString NINFO = new HashString ( "NINFO" );
+    public static HashString SINFO = new HashString ( "SINFO" );
+    public static HashString ULIST = new HashString ( "ULIST" );
+    public static HashString CLIST = new HashString ( "CLIST" );
+    public static HashString SLIST = new HashString ( "SLIST" );
+    public static HashString UPTIME = new HashString ( "UPTIME" );
+    public static HashString IGNORE = new HashString ( "IGNORE" );
+    public static HashString ADDMASTER = new HashString ( "ADDMASTER" );
+    public static HashString DELMASTER = new HashString ( "DELMASTER" );
+    public static HashString ADDSRA = new HashString ( "ADDSRA" );
+    public static HashString DELSRA = new HashString ( "DELSRA" );
+    public static HashString ADDCSOP = new HashString ( "ADDCSOP" );
+    public static HashString DELCSOP = new HashString ( "DELCSOP" );
+    public static HashString ADDSA = new HashString ( "ADDSA" );
+    public static HashString DELSA = new HashString ( "DELSA" );
+    public static HashString ADDIRCOP = new HashString ( "ADDIRCOP" );
+    public static HashString DELIRCOP = new HashString ( "DELIRCOP" );
+    public static HashString HUB = new HashString ( "HUB" );
+    public static HashString LEAF = new HashString ( "LEAF" );
+    public static HashString OS = new HashString ( "OS" );
+    public static HashString SFAKILL = new HashString ( "SFAKILL" );
+    public static HashString BAHAMUT = new HashString ( "BAHAMUT" );
+    public static HashString STOP = new HashString ( "STOP" );
+    public static HashString PRIMARY = new HashString ( "PRIMARY" );
+    public static HashString SECONDARY = new HashString ( "SECONDARY" );
+    public static HashString MAKILL = new HashString ( "MAKILL" );
+    public static HashString RESET = new HashString ( "RESET" );
+    public static HashString COMMIT = new HashString ( "COMMIT" );
+    public static HashString REHASH = new HashString ( "REHASH" );
+    public static HashString SVSMODE = new HashString ( "SVSMODE" );
+    public static HashString USER = new HashString ( "USER" );
+    public static HashString REALNAME = new HashString ( "REALNAME" );
+    public static HashString HOST = new HashString ( "HOST" );
+    public static HashString REALHOST = new HashString ( "REALHOST" );
+    public static HashString IP = new HashString ( "IP" );
+    public static HashString SERVICESID = new HashString ( "SERVICESID" );
+    public static HashString OP = new HashString ( "OP" );
+    public static HashString DEOP = new HashString ( "DEOP" );
+    public static HashString OPDEOP = new HashString ( "OPDEOP" );
+    public static HashString VOICE = new HashString ( "VOICE" );
+    public static HashString ALL = new HashString ( "ALL" );
+    public static HashString TOPIC = new HashString ( "TOPIC" );
+    public static HashString AKICK = new HashString ( "AKICK" );
+    public static HashString AOP = new HashString ( "AOP" );
+    public static HashString SOP = new HashString ( "SOP" );
+    public static HashString FOUNDER = new HashString ( "FOUNDER" );
+    public static HashString NONE = new HashString ( "NONE" );
+    public static HashString ADD = new HashString ( "ADD" );
+    public static HashString DEL = new HashString ( "DEL" );
+    public static HashString LIST = new HashString ( "LIST" );
+    public static HashString WIPE = new HashString ( "WIPE" );
+    public static HashString UNBAN = new HashString ( "UNBAN" );
+    public static HashString INVITE = new HashString ( "INVITE" );
+    public static HashString WHY = new HashString ( "WHY" );
+    public static HashString ACCESSLOG = new HashString ( "ACCESSLOG" );
+    public static HashString CHANLIST = new HashString ( "CHANLIST" );
+    public static HashString CHANFLAG = new HashString ( "CHANFLAG" );
+    public static HashString MDEOP = new HashString ( "MDEOP" );
+    public static HashString MKICK = new HashString ( "MKICK" );
+    public static HashString NICK_ACCESS_DENIED = new HashString ( "NICK_ACCESS_DENIED" );
+    public static HashString ADDAOP = new HashString ( "ADDAOP" );
+    public static HashString DELAOP = new HashString ( "DELAOP" );
+    public static HashString ADDSOP = new HashString ( "ADDSOP" );
+    public static HashString DELSOP = new HashString ( "DELSOP" );
+    public static HashString ADDAKICK = new HashString ( "ADDAKICK" );
+    public static HashString DELAKICK = new HashString ( "DELAKICK" );
+    public static HashString KICKBAN = new HashString ( "KICKBAN" );
+    public static HashString LISTACCESS = new HashString ( "LISTACCESS" );
+    public static HashString LISTOPS = new HashString ( "LISTOPS" );
+    public static HashString TYPE = new HashString ( "TYPE" );
+    public static HashString REASON = new HashString ( "REASON" );
+    public static HashString INSTATER = new HashString ( "INSTATER" );
+    public static HashString STAMP = new HashString ( "STAMP" );
+    public static HashString AK = new HashString ( "AK" );
+    public static HashString IG = new HashString ( "IG" );
+    public static HashString SQ = new HashString ( "SQ" );
+    public static HashString SG = new HashString ( "SG" );
+    public static HashString JOIN_CONNECT_TIME = new HashString ( "JOIN_CONNECT_TIME" );
+    public static HashString TALK_CONNECT_TIME = new HashString ( "TALK_CONNECT_TIME" );
+    public static HashString TALK_JOIN_TIME = new HashString ( "TALK_JOIN_TIME" );
+    public static HashString MAX_BANS = new HashString ( "MAX_BANS" );
+    public static HashString NO_NOTICE = new HashString ( "NO_NOTICE" );
+    public static HashString NO_CTCP = new HashString ( "NO_CTCP" );
+    public static HashString NO_PART_MSG = new HashString ( "NO_PART_MSG" );
+    public static HashString NO_QUIT_MSG = new HashString ( "NO_QUIT_MSG" );
+    public static HashString EXEMPT_OPPED = new HashString ( "EXEMPT_OPPED" );
+    public static HashString EXEMPT_VOICED = new HashString ( "EXEMPT_VOICED" );
+    public static HashString EXEMPT_IDENTD = new HashString ( "EXEMPT_IDENTD" );
+    public static HashString EXEMPT_REGISTERED = new HashString ( "EXEMPT_REGISTERED" );
+    public static HashString EXEMPT_INVITES = new HashString ( "EXEMPT_INVITES" );
+    public static HashString GREETMSG = new HashString ( "GREETMSG" );
+    public static HashString ACCSTRING = new HashString ( "ACCSTRING" );
+    public static HashString ACCSTRINGSHORT = new HashString ( "ACCSTRINGSHORT" );
+    public static HashString IRCOP = new HashString ( "IRCOP" );
+    public static HashString SO = new HashString ( "SO" );
+    public static HashString SA = new HashString ( "SA" );
+    public static HashString CSOP = new HashString ( "CSOP" );
+    public static HashString SRA = new HashString ( "SRA" );
+    public static HashString STAFF = new HashString ( "STAFF" );
+    public static HashString AUDITORIUM = new HashString ( "AUDITORIUM" );
+    public static HashString UNAUDITORIUM = new HashString ( "UNAUDITORIUM" );
+    public static HashString MARK = new HashString ( "MARK" );
+    public static HashString UNMARK = new HashString ( "UNMARK" );
+    public static HashString FREEZE = new HashString ( "FREEZE" );
+    public static HashString UNFREEZE = new HashString ( "UNFREEZE" );
+    public static HashString NOGHOST = new HashString ( "NOGHOST" );
+    public static HashString UNNOGHOST = new HashString ( "UNNOGHOST" );
+    public static HashString CLOSE = new HashString ( "CLOSE" );
+    public static HashString REOPEN = new HashString ( "REOPEN" );
+    public static HashString HELD = new HashString ( "HELD" );
+    public static HashString UNHELD = new HashString ( "UNHELD" );
+    public static HashString GETPASS = new HashString ( "GETPASS" );
+    public static HashString GETEMAIL = new HashString ( "GETEMAIL" );
+    public static HashString SENDPASS = new HashString ( "SENDPASS" );
+    public static HashString EXPIREFOUNDER = new HashString ( "EXPIREFOUNDER" );
+    public static HashString EXPIREINACTIVE = new HashString ( "EXPIREINACTIVE" );
+    public static HashString MASSDEOP = new HashString ( "MASSDEOP" );
+    public static HashString MASSKICK = new HashString ( "MASSKICK" );
+    public static HashString SAJOIN = new HashString ( "SAJOIN" );
+    public static HashString TOPICWIPE = new HashString ( "TOPICWIPE" );
+    public static HashString WIPEAOP = new HashString ( "WIPEAOP" );
+    public static HashString WIPESOP = new HashString ( "WIPESOP" );
+    public static HashString WIPEAKICK = new HashString ( "WIPEAKICK" );
+    public static HashString TOPICNICK = new HashString ( "TOPICNICK" );
+    public static HashString TOPICLOG = new HashString ( "TOPICLOG" );
+    public static HashString FORCENICK = new HashString ( "FORCENICK" );
+    public static HashString ENFORCED = new HashString ( "ENFORCED" );
+    public static HashString SECURED = new HashString ( "SECURED" );
+    public static HashString MAILBLOCKED = new HashString ( "MAILBLOCKED" );
+    public static HashString KEEPTOPIC = new HashString ( "KEEPTOPIC" );
+    public static HashString TOPICLOCK = new HashString ( "TOPICLOCK" );
+    public static HashString OPGUARD = new HashString ( "OPGUARD" );
+    public static HashString RESTRICT = new HashString ( "RESTRICT" );
+    public static HashString VERBOSE = new HashString ( "VERBOSE" );
+    public static HashString LEAVEOPS = new HashString ( "LEAVEOPS" );
+    public static HashString AUTOAKICK = new HashString ( "AUTOAKICK" );
+    public static HashString MODELOCK = new HashString ( "MODELOCK" );
+    public static HashString OHELP = new HashString ( "OHELP" );
+    public static HashString AUTHURL = new HashString ( "AUTHURL" );
+    public static HashString AUTHED = new HashString ( "AUTHED" );
+    public static HashString EXPIREAUTH = new HashString ( "EXPIREAUTH" );
+    public static HashString SYNTAX_ERROR = new HashString ( "SYNTAX_ERROR" );
+    public static HashString NICK_NOT_REGGED = new HashString ( "NICK_NOT_REGGED" );
+    public static HashString IDENTIFY_FAIL = new HashString ( "IDENTIFY_FAIL" );
+    public static HashString IDENTIFY_SUCCESS = new HashString ( "IDENTIFY_SUCCESS" );
+    public static HashString NO_SUCH_TARGET = new HashString ( "NO_SUCH_TARGET" );
+    public static HashString IDENTIFY_NICK = new HashString ( "IDENTIFY_NICK" );
+    public static HashString DESCRIPTION = new HashString ( "DESCRIPTION" );
+    public static HashString CLOSED = new HashString ( "CLOSED" );
+    public static HashString MAIL = new HashString ( "MAIL" );
+    public static HashString FULLMASK = new HashString ( "FULLMASK" );
+    public static HashString LASTUSED = new HashString ( "LASTUSED" );
+    public static HashString REGTIME = new HashString ( "REGTIME" );
+    public static HashString SEND = new HashString ( "SEND" );
+    public static HashString CSEND = new HashString ( "CSEND" );
+    public static HashString OSEND = new HashString ( "OSEND" );
+    public static HashString READ = new HashString ( "READ" );
+    public static HashString OINFO = new HashString ( "OINFO" );
+    public static HashString OSET = new HashString ( "OSET" );
+    public static HashString HOLD = new HashString ( "HOLD" );
+    public static HashString UNHOLD = new HashString ( "UNHOLD" );
+    public static HashString FROZEN = new HashString ( "FROZEN" );
+    public static HashString MARKED = new HashString ( "MARKED" );
+    public static HashString IDENT = new HashString ( "IDENT" );
+    public static HashString OPER = new HashString ( "OPER" );
+    public static HashString ADMIN = new HashString ( "ADMIN" );
+    public static HashString SADMIN = new HashString ( "SADMIN" );
+    public static HashString SRAW = new HashString ( "SRAW" );
+    public static HashString PANIC = new HashString ( "PANIC" );
+    public static HashString AKILL = new HashString ( "AKILL" );
+    public static HashString AUTOKILL = new HashString ( "AUTOKILL" );
+    public static HashString TIME = new HashString ( "TIME" );
+    public static HashString SEARCHLOG = new HashString ( "SEARCHLOG" );
+    public static HashString AUDIT = new HashString ( "AUDIT" );
+    public static HashString FULL = new HashString ( "FULL" );
+    public static HashString COMMENT = new HashString ( "COMMENT" );
+    public static HashString GLOBAL = new HashString ( "GLOBAL" );
+    public static HashString BANLOG = new HashString ( "BANLOG" );
+    public static HashString SQLINE = new HashString ( "SQLINE" );
+    public static HashString SGLINE = new HashString ( "SGLINE" );
+    public static HashString SPAMFILTER = new HashString ( "SPAMFILTER" );
+    public static HashString JUPE = new HashString ( "JUPE" );
+    public static HashString MISSING = new HashString ( "MISSING" );
+    public static HashString s = new HashString ( "s" );
+    public static HashString S = new HashString ( "S" );
+    public static HashString r = new HashString ( "r" );
+    public static HashString m = new HashString ( "m" );
+    public static HashString p = new HashString ( "p" );
+    public static HashString n = new HashString ( "n" );
+    public static HashString k = new HashString ( "k" );
+    public static HashString q = new HashString ( "q" );
+    public static HashString t = new HashString ( "t" );
+    public static HashString a = new HashString ( "a" );
+    public static HashString c = new HashString ( "c" );
+    public static HashString P = new HashString ( "P" );
+    public static HashString W = new HashString ( "W" );
+    public static HashString L = new HashString ( "L" );
+    public static HashString R = new HashString ( "R" );
+    public static HashString B = new HashString ( "B" );
+    public static HashString K = new HashString ( "K" );
+    public static HashString A = new HashString ( "A" );
+    public static HashString NUM_1 = new HashString ( "NUM_1" );
+    public static HashString NUM_2 = new HashString ( "NUM_2" );
+    public static HashString NUM_3 = new HashString ( "NUM_3" );
+    public static HashString NUM_4 = new HashString ( "NUM_4" );
 
-    public final static int MYSQLHOST                   = 1795990826;
-    public final static int MYSQLUSER                   = 1796381517;
-    public final static int MYSQLPASS                   = 1796215699;
-    public final static int MYSQLPORT                   = 1796229123;
-    public final static int MYSQLDB                     = -2049525632;
+    public static HashString RAW = new HashString ( "RAW" );
+    public static HashString SYNTAX_REG_ERROR = new HashString ( "SYNTAX_REG_ERROR" );
+    public static HashString INVALID_EMAIL = new HashString ( "INVALID_EMAIL" );
+    public static HashString NICK_ALREADY_REGGED = new HashString ( "NICK_ALREADY_REGGED" );
+    public static HashString INVALID_NICK = new HashString ( "INVALID_NICK" );
+    public static HashString SYNTAX_ID_ERROR = new HashString ( "SYNTAX_ID_ERROR" );
+    public static HashString NICK_NOT_REGISTERED = new HashString ( "NICK_NOT_REGISTERED" );
+    public static HashString PASSWD_ERROR = new HashString ( "PASSWD_ERROR" );
+    public static HashString IS_FROZEN = new HashString ( "IS_FROZEN" );
+    public static HashString IS_THROTTLED = new HashString ( "IS_THROTTLED" );
+    public static HashString IS_MARKED = new HashString ( "IS_MARKED" );
+    public static HashString ACCESS_DENIED_OPER = new HashString ( "ACCESS_DENIED_OPER" );
+    public static HashString ACCESS_DENIED_SA = new HashString ( "ACCESS_DENIED_SA" );
+    public static HashString SYNTAX_GHOST_ERROR = new HashString ( "SYNTAX_GHOST_ERROR" );
+    public static HashString NO_SUCH_NICK = new HashString ( "NO_SUCH_NICK" );
+    public static HashString IS_NOGHOST = new HashString ( "IS_NOGHOST" );
+    public static HashString NO_AUTH_FOUND = new HashString ( "NO_AUTH_FOUND" );
+    public static HashString ACCESS_DENIED = new HashString ( "ACCESS_DENIED" );
+    public static HashString SETTING_NOT_FOUND = new HashString ( "SETTING_NOT_FOUND" );
+    public static HashString CMD_NOT_FOUND_ERROR = new HashString ( "CMD_NOT_FOUND_ERROR" );
+    public static HashString NICK_NEW_MASK = new HashString ( "NICK_NEW_MASK" );
+    public static HashString SHOW_HELP = new HashString ( "SHOW_HELP" );
+    public static HashString REGISTER_SEC = new HashString ( "REGISTER_SEC" );
+    public static HashString REGISTER_DONE = new HashString ( "REGISTER_DONE" );
+    public static HashString PASSWD_ACCEPTED = new HashString ( "PASSWD_ACCEPTED" );
+    public static HashString NICKDROPPED = new HashString ( "NICKDROPPED" );
+    public static HashString NICKDELETED = new HashString ( "NICKDELETED" );
+    public static HashString GLOB_IS_NOGHOST = new HashString ( "GLOB_IS_NOGHOST" );
+    public static HashString NICKFLAG_EXIST = new HashString ( "NICKFLAG_EXIST" );
+    public static HashString NICK_SET_FLAG = new HashString ( "NICK_SET_FLAG" );
+    public static HashString NICK_GETEMAIL = new HashString ( "NICK_GETEMAIL" );
+    public static HashString INVALID_PASS = new HashString ( "INVALID_PASS" );
+    public static HashString NICK_IS_NOW = new HashString ( "NICK_IS_NOW" );
+    public static HashString NICK_AUTHED = new HashString ( "NICK_AUTHED" );
+    public static HashString NICK_IS_NOT = new HashString ( "NICK_IS_NOT" );
+    public static HashString DB_ERROR = new HashString ( "DB_ERROR" );
+    public static HashString IDENT_NICK_DELETED = new HashString ( "IDENT_NICK_DELETED" );
+    public static HashString NICK_DELETED = new HashString ( "NICK_DELETED" );
+    public static HashString ACCESS_DENIED_SRA = new HashString ( "ACCESS_DENIED_SRA" );
+    public static HashString ACCESS_DENIED_DELETE_OPER = new HashString ( "ACCESS_DENIED_DELETE_OPER" );
+    public static HashString NICK_GETPASS = new HashString ( "NICK_GETPASS" );
+    public static HashString NOT_ENOUGH_ACCESS = new HashString ( "NOT_ENOUGH_ACCESS" );
+    public static HashString NICK_NOT_AUTHED = new HashString ( "NICK_NOT_AUTHED" );
+    public static HashString NICK_NOT_IDENTIFIED = new HashString ( "NICK_NOT_IDENTIFIED" );
+    public static HashString CHAN_NOT_REGISTERED = new HashString ( "CHAN_NOT_REGISTERED" );
+    public static HashString CHAN_ALREADY_REGGED = new HashString ( "CHAN_ALREADY_REGGED" );
+    public static HashString CHAN_WHY = new HashString ( "CHAN_WHY" );
+    public static HashString CHAN_NOT_EXIST = new HashString ( "CHAN_NOT_EXIST" );
+    public static HashString NICK_NOT_EXIST = new HashString ( "NICK_NOT_EXIST" );
+    public static HashString USER_NOT_ONLINE = new HashString ( "USER_NOT_ONLINE" );
+    public static HashString USER_NOT_OP = new HashString ( "USER_NOT_OP" );
+    public static HashString NICK_HAS_NOOP = new HashString ( "NICK_HAS_NOOP" );
+    public static HashString WILL_NOW = new HashString ( "WILL_NOW" );
+    public static HashString WILL_NOW_NOT = new HashString ( "WILL_NOW_NOT" );
+    public static HashString IS_NOW = new HashString ( "IS_NOW" );
+    public static HashString IS_NOT = new HashString ( "IS_NOT" );
+    public static HashString INVALID_PASSWORD = new HashString ( "INVALID_PASSWORD" );
+    public static HashString DB_NICK_ERROR = new HashString ( "DB_NICK_ERROR" );
+    public static HashString NICK_IS_FOUNDER = new HashString ( "NICK_IS_FOUNDER" );
+    public static HashString NICK_IS_SOP = new HashString ( "NICK_IS_SOP" );
+    public static HashString NICK_IS_OP = new HashString ( "NICK_IS_OP" );
+    public static HashString NICK_NOT_FOUND = new HashString ( "NICK_NOT_FOUND" );
+    public static HashString NICK_CHANGED = new HashString ( "NICK_CHANGED" );
+    public static HashString NICK_NOT_PRESENT = new HashString ( "NICK_NOT_PRESENT" );
+    public static HashString NICK_NOT_IDENTED_OP = new HashString ( "NICK_NOT_IDENTED_OP" );
+    public static HashString NICK_NEVEROP = new HashString ( "NICK_NEVEROP" );
+    public static HashString NICK_ADDED = new HashString ( "NICK_ADDED" );
+    public static HashString NICK_NOT_ADDED = new HashString ( "NICK_NOT_ADDED" );
+    public static HashString NICK_NOT_DELETED = new HashString ( "NICK_NOT_DELETED" );
+    public static HashString NICK_VERBOSE_ADDED = new HashString ( "NICK_VERBOSE_ADDED" );
+    public static HashString NICK_VERBOSE_DELETED = new HashString ( "NICK_VERBOSE_DELETED" );
+    public static HashString NICK_INVITED = new HashString ( "NICK_INVITED" );
+    public static HashString NICK_OP = new HashString ( "NICK_OP" );
+    public static HashString NICK_DEOP = new HashString ( "NICK_DEOP" );
+    public static HashString NICK_VERBOSE_OP = new HashString ( "NICK_VERBOSE_OP" );
+    public static HashString NICK_VERBOSE_DEOP = new HashString ( "NICK_VERBOSE_DEOP" );
+    public static HashString NICK_MDEOP_CHAN = new HashString ( "NICK_MDEOP_CHAN" );
+    public static HashString NICK_MDEOP = new HashString ( "NICK_MDEOP" );
+    public static HashString NICK_MKICK_CHAN = new HashString ( "NICK_MKICK_CHAN" );
+    public static HashString NICK_MKICK = new HashString ( "NICK_MKICK" );
+    public static HashString LIST_NOT_WIPED = new HashString ( "LIST_NOT_WIPED" );
+    public static HashString LIST_WIPED = new HashString ( "LIST_WIPED" );
+    public static HashString LIST_VERBOSE_WIPED = new HashString ( "LIST_VERBOSE_WIPED" );
+    public static HashString CHAN_IS_FROZEN = new HashString ( "CHAN_IS_FROZEN" );
+    public static HashString CHAN_IS_CLOSED = new HashString ( "CHAN_IS_CLOSED" );
+    public static HashString CHAN_SET_FLAG = new HashString ( "CHAN_SET_FLAG" );
+    public static HashString CHANFLAG_EXIST = new HashString ( "CHANFLAG_EXIST" );
+    public static HashString ALREADY_ON_LIST = new HashString ( "ALREADY_ON_LIST" );
+    public static HashString CHAN_GETPASS = new HashString ( "CHAN_GETPASS" );
+    public static HashString SHOWACCESSLOG = new HashString ( "SHOWACCESSLOG" );
+    public static HashString SHOWACCESSLOGOPER = new HashString ( "SHOWACCESSLOGOPER" );
+    public static HashString SHOWTOPICLOG = new HashString ( "SHOWTOPICLOG" );
+    public static HashString SHOW_LIST = new HashString ( "SHOW_LIST" );
+    public static HashString CHANNELDROPPED = new HashString ( "CHANNELDROPPED" );
+    public static HashString CHANNELDELETED = new HashString ( "CHANNELDELETED" );
+    public static HashString NO_SUCH_CHANFLAG = new HashString ( "NO_SUCH_CHANFLAG" );
+    public static HashString BAD_CHANFLAG_VALUE = new HashString ( "BAD_CHANFLAG_VALUE" );
+    public static HashString XOP_NOT_FOUND = new HashString ( "XOP_NOT_FOUND" );
+    public static HashString XOP_ADD_FAIL = new HashString ( "XOP_ADD_FAIL" );
+    public static HashString XOP_ALREADY_PRESENT = new HashString ( "XOP_ALREADY_PRESENT" );
+    public static HashString CHAN_INFO = new HashString ( "CHAN_INFO" );
+    public static HashString CHAN_UNBAN = new HashString ( "CHAN_UNBAN" );
+    public static HashString ACCESS_LIST = new HashString ( "ACCESS_LIST" );
+    public static HashString ACCESS_ADDED = new HashString ( "ACCESS_ADDED" );
+    public static HashString ACCESS_DELETED = new HashString ( "ACCESS_DELETED" );
+    public static HashString SET_DESCRIPTION = new HashString ( "SET_DESCRIPTION" );
+    public static HashString SET_TOPICLOCK = new HashString ( "SET_TOPICLOCK" );
+    public static HashString SET_MODELOCK = new HashString ( "SET_MODELOCK" );
+    public static HashString SET_KEEPTOPIC = new HashString ( "SET_KEEPTOPIC" );
+    public static HashString SET_IDENT = new HashString ( "SET_IDENT" );
+    public static HashString SET_OPGUARD = new HashString ( "SET_OPGUARD" );
+    public static HashString SET_RESTRICT = new HashString ( "SET_RESTRICT" );
+    public static HashString SET_VERBOSE = new HashString ( "SET_VERBOSE" );
+    public static HashString SET_MAILBLOCK = new HashString ( "SET_MAILBLOCK" );
+    public static HashString SET_LEAVEOPS = new HashString ( "SET_LEAVEOPS" );
+    public static HashString SET_AUTOAKICK = new HashString ( "SET_AUTOAKICK" );
+    public static HashString ADDACCLIST = new HashString ( "ADDACCLIST" );
+    public static HashString REMACCLIST = new HashString ( "REMACCLIST" );
+    public static HashString UPDACCLIST = new HashString ( "UPDACCLIST" );
+    public static HashString PASS_AUTHED = new HashString ( "PASS_AUTHED" );
+    public static HashString PASS_AUTHED_UNIDENT = new HashString ( "PASS_AUTHED_UNIDENT" );
+    
+    
+    public static HashString NICKREG_BODY = new HashString ( "NICKREG_BODY" );
+    public static HashString NICKREG_SUBJECT = new HashString ( "NICKREG_SUBJECT" );
+    public static HashString NEWMEMO_BODY = new HashString ( "NEWMEMO_BODY" );
+    public static HashString NEWMEMO_SUBJECT = new HashString ( "NEWMEMO_SUBJECT" );
+    public static HashString EXPNICK_BODY = new HashString ( "EXPNICK_BODY" );
+    public static HashString EXPNICK_SUBJECT = new HashString ( "EXPNICK_SUBJECT" );
+    
 
-    public final static int LOGFILE                     = 1060233888;
- 
-    public final static int EXPIRE                      = 2059137311;
-    public final static int FORCEMODES                  = 632649509;
-    public final static int YES                         = 87751;
 
-    /* ERROR */
-    public final static int ERROR                       = 66247144;
-    public final static int CLOSING                     = 1584523413;
-    public final static int LINK                        = 2336762;
+    public static HashString BAN_ADD = new HashString ( "BAN_ADD" );
+    public static HashString BAN_ADD_GLOB = new HashString ( "BAN_ADD_GLOB" );
+    public static HashString BAN_EXIST = new HashString ( "BAN_EXIST" );
+    public static HashString BAN_TIME  = new HashString ( "BAN_TIME" );
+    public static HashString BAN_TIME_GLOB = new HashString ( "BAN_TIME_GLOB" );
+    public static HashString BAN_NO_EXIST = new HashString ( "BAN_NO_EXIST" );
+    public static HashString BAN_DEL = new HashString ( "BAN_DEL" );
+    public static HashString BAN_DEL_GLOB = new HashString ( "BAN_DEL_GLOB" );
+    public static HashString BAN_LIST = new HashString ( "BAN_LIST" );
+    public static HashString BAN_LIST_START = new HashString ( "BAN_LIST_START" );
+    public static HashString BAN_LIST_STOP = new HashString ( "BAN_LIST_STOP" );
+    public static HashString BAN_TIME_ERROR = new HashString ( "BAN_TIME_ERROR" );
+    public static HashString BAN_MATCH_OPER = new HashString ( "BAN_MATCH_OPER" );
+    public static HashString AKILL_LIST_NONE = new HashString ( "AKILL_LIST_NONE" );
+    public static HashString WHITELISTED = new HashString ( "WHITELISTED" );
+    public static HashString STAFF_ADD = new HashString ( "STAFF_ADD" );
+    public static HashString STAFF_NOT_ADD = new HashString ( "STAFF_NOT_ADD" );
+    public static HashString STAFF_DEL = new HashString ( "STAFF_DEL" );
+    public static HashString STAFF_NOT_DEL = new HashString ( "STAFF_NOT_DEL" );
+    public static HashString NICK_NOW_STAFF = new HashString ( "NICK_NOW_STAFF" );
+    public static HashString NICK_NO_LONGER_STAFF = new HashString ( "NICK_NO_LONGER_STAFF" );
+    public static HashString GLOB_STAFF_ADD = new HashString ( "GLOB_STAFF_ADD" );
+    public static HashString GLOB_STAFF_DEL = new HashString ( "GLOB_STAFF_DEL" );
+    public static HashString SHOWLOG = new HashString ( "SHOWLOG" );
+    public static HashString SHOWSNOOPLOG = new HashString ( "SHOWSNOOPLOG" );
+    public static HashString SHOWAUDIT = new HashString ( "SHOWAUDIT" );
+    public static HashString SHOWAUDITGLOBAL = new HashString ( "SHOWAUDITGLOBAL" );
+    public static HashString SHOWCOMMENT = new HashString ( "SHOWCOMMENT" );
+    public static HashString ADD_COMMENT = new HashString ( "ADD_COMMENT" );
+    public static HashString SUB_SYNTAX_ERROR = new HashString ( "SUB_SYNTAX_ERROR" );
+    public static HashString SUB2_SYNTAX_ERROR = new HashString ( "SUB2_SYNTAX_ERROR" );
+    public static HashString SHOWLIST = new HashString ( "SHOWLIST" );
+    public static HashString SHOWBANLOG = new HashString ( "SHOWBANLOG" );
+    public static HashString BADFLAGS = new HashString ( "BADFLAGS" );
+    public static HashString FILTER_EXISTS = new HashString ( "FILTER_EXISTS" );
+    public static HashString SPAMFILTER_LIST = new HashString ( "SPAMFILTER_LIST" );
+    public static HashString BADTIME = new HashString ( "BADTIME" );
+    public static HashString BADREASON = new HashString ( "BADREASON" );
+    public static HashString ADDED_MAKILL = new HashString ( "ADDED_MAKILL" );
+    public static HashString RESET_MAKILL = new HashString ( "RESET_MAKILL" );
+    public static HashString MAKILL_ADD_GLOB = new HashString ( "MAKILL_ADD_GLOB" );
+    public static HashString MAKILL_NOBAN_GLOB = new HashString ( "MAKILL_NOBAN_GLOB" );
+    public static HashString MAKILL_DUPLICATE = new HashString ( "MAKILL_DUPLICATE" );
+    public static HashString NICK_ALREADY_PRESENT = new HashString ( "NICK_ALREADY_PRESENT" );
+    public static HashString NICK_IS_OPER = new HashString ( "NICK_IS_OPER" );
+    public static HashString SYNTAX_ERROR_DEL = new HashString ( "SYNTAX_ERROR_DEL" );
+    public static HashString SYNTAX_ERROR_ADD = new HashString ( "SYNTAX_ERROR_ADD" );
+    public static HashString SYNTAX_ERROR_INFO = new HashString ( "SYNTAX_ERROR_INFO" );
+    public static HashString SYNTAX_ERROR_LIST = new HashString ( "SYNTAX_ERROR_LIST" );
+    public static HashString SYNTAX_ERROR_SET = new HashString ( "SYNTAX_ERROR_SET" );
+    public static HashString NO_SUCH_SERVER = new HashString ( "NO_SUCH_SERVER" );
     
-    /* HANDLER */
-    public static final int SERVER                      = -1852497085;
-    public static final int SERVICES                    = -2133131170;
-    public static final int SJOIN                       = 78935037;
-    public static final int SQUIT                       = 79149346;
-    public static final int SVINFO                      = -1837073007;
-    public static final int LUSERSLOCK                  = 1094235207;
-    public static final int PING                        = 2455922;
-    public static final int NICK                        = 2396003;
-    public static final int PRIVMSG                     = 403496530;
-    public static final int ROOTSERV                    = 616693752;
-    public static final int OPERSERV                    = 282595172;
-    public static final int CHANSERV                    = -2079565208;
-    public static final int NICKSERV                    = 853470713;
-    public static final int MEMOSERV                    = 145598544;
-    public static final int GUESTSERV                   = 1899323854;
-    public static final int MODE                        = 2372003;
-    public static final int PART                        = 2448371;
-    public static final int KICK                        = 2306630;
-    public static final int QUIT                        = 2497103;
-    public static final int KILL                        = 2306910; 
-    public static final int MOTD                        = 2372498;
-    public static final int VERSION                     = 1069590712;
-    public static final int INFO                        = 2251950;
-    public static final int OLD                         = 78343;
-    public static final int SAMODE                      = -1856346895;
-    public static final int GLOBOPS                     = 839070234;
-    public static final int SF                          = 2643;
+    public static HashString SRA_ADD          = new HashString ( "SRA_ADD" );
+    public static HashString SRA_NOT_ADD      = new HashString ( "SRA_NOT_ADD" );
+    public static HashString SRA_DEL          = new HashString ( "SRA_DEL" );
+    public static HashString SRA_NOT_DEL      = new HashString ( "SRA_NOT_DEL" );
+    
+    public static HashString GLOB_SRA_ADD     = new HashString ( "GLOB_SRA_ADD" );
+    public static HashString GLOB_SRA_DEL     = new HashString ( "GLOB_SRA_DEL" );
 
-    /* NICKSERV */
-    public final static int HELP                        = 2213697;
-    public final static int REGISTER                    = 92413603;
-    public final static int IDENTIFY                    = 646864652;
-    public final static int SIDENTIFY                   = 951999583;
-    public final static int GHOST                       = 67793519;
-    public final static int SET                         = 81986;
-    public final static int AUTH                        = 2020776;
-    public final static int NICKINFO                    = 853181073;
-    public final static int DROP                        = 2107119;
-    
-    public final static int AUTHMAIL                    = -2079342753;
-    public final static int AUTHPASS                    = -2079253063;
-
-    public final static int UNSET                       = 80904969;
-    public final static int EMAIL                       = 66081660;
-    public final static int PASSWD                      = -1942051170;
-    public final static int SETEMAIL                    = -2091455366;
-    public final static int SETPASSWD                   = -106222240;
-    
-    public static final int ON                          = 2527;
-    public static final int OFF                         = 78159;
-    
-    public static final int ENFORCE                     = -886600766;
-    public static final int SECURE                      = -1852944521;
-    public static final int PRIVATE                     = 403485027;
-    public static final int NOOP                        = 2402146;
-    public static final int NEVEROP                     = -1732185779;
-    public static final int MAILBLOCK                   = -1814116074;
-    public static final int SHOWEMAIL                   = 888592031;
-    public static final int SHOWHOST                    = 444398117;
-    public static final int DELETE                      = 2012838315;
-    public static final int CHANGE                      = 1986660272;
-    
-    /* OPERSERV */
-    public static final int UINFO                       = 80751235;
-    public static final int CINFO                       = 64127857;
-    public static final int NINFO                       = 74286588;
-    public static final int SINFO                       = 78904193;
-    public static final int ULIST                       = 80836211;
-    public static final int CLIST                       = 64212833;
-    public static final int SLIST                       = 78989169;
-    public static final int UPTIME                      = -1785032728;
-    public static final int IGNORE                      = -2137067054;
-
-    public static final int ADDMASTER                   = -780667357;
-    public static final int DELMASTER                   = -1655158259;
-    public static final int ADDSRA                      = 1925802401;
-    public static final int DELSRA                      = 2012851703;
-    public static final int ADDCSOP                     = -430142894;
-    public static final int DELCSOP                     = -2026581828;
-    public static final int ADDSA                       = 62122639;
-    public static final int DELSA                       = 64930681;
-    public static final int ADDIRCOP                    = -444027974;
-    public static final int DELIRCOP                    = 1605972624;
-    public static final int HUB                         = 71893;
-    public static final int LEAF                        = 2332510;
-    public static final int OS                          = 2532;
-    public static final int SFAKILL                     = -1580229460;
-    public static final int BAHAMUT                     = 375102260;
-    public static final int STOP                        = 2555906;
-    public static final int PRIMARY                     = 403216866;
-    public static final int SECONDARY                   = 1968996692;
-    public static final int MAKILL                      = -2028186894;
-    public static final int RESET                       = 77866287;
-    public static final int COMMIT                      = 1993481527;
-    
-    
-    /* ROOTSERV */
-    public static final int REHASH                      = -1881443903;
-
-    /* SERVER */
-    public static final int SVSMODE                     = -1105474573;
-
-    /* USER */
-    public final static int USER                        = 2614219;
-    public final static int REALNAME                    = -76757719;
-    public final static int HOST                        = 2223528;
-    public final static int REALHOST                    = -76922810;
-    public final static int IP                          = 2343;
-    public final static int SERVICESID                  = -1239651847;
-    
-    /* CHAN */
-    public final static int OP                          = 2529;
-    public final static int DEOP                        = 2094626;
-    public final static int OPDEOP                      = -1957288061;
-    public final static int VOICE                       = 81848594;
-    public final static int ALL                         = 64897;
-    public final static int TOPIC                       = 80008463;
-       
-    /* CHANSERV */
-    public final static int AKICK                       = 62335495;
-    public final static int AOP                         = 64994;
-    public final static int SOP                         = 82292;
-    public final static int FOUNDER                     = 43341711;
-    public final static int NONE                        = 2402104;
-    public final static int ADD                         = 64641;
-    public final static int DEL                         = 67563;
-    public final static int LIST                        = 2336926;
-    public final static int WIPE                        = 2664519;
-    public final static int UNBAN                       = 80888502;
-    public final static int INVITE                      = -2130369783;
-    public final static int WHY                         = 85928;
-    public final static int ACCESSLOG                   = 671568704;
-    public final static int CHANLIST                    = -2079769872;
-    public final static int CHANFLAG                    = -2079946306;
-    public final static int MDEOP                       = 73205743;
-    public final static int MKICK                       = 73417747;
-    public final static int NICK_ACCESS_DENIED          = 1319854842;
-    
-    public final static int ADDAOP                      = 1925785025;
-    public final static int DELAOP                      = 2012834327;
-    public final static int ADDSOP                      = 1925802323;
-    public final static int DELSOP                      = 2012851625;
-    public final static int ADDAKICK                    = -451619290;
-    public final static int DELAKICK                    = 1598381308;
-    
-    public final static int KICKBAN                     = -2596887;
-    public final static int LISTACCESS                  = 1234756482;
-    public final static int LISTOPS                     = 899964212;
-     
-    
-    
-    /* FLAG */
-    public final static int TYPE                        = 2590522;
-    public final static int REASON                      = -1881635260;
-    public final static int INSTATER                    = 1337760614;
-    public final static int STAMP                       = 79219619;
-    public final static int AK                          = 2090;
-    public final static int IG                          = 2334;
-    public final static int SQ                          = 2654;
-    public final static int SG                          = 2644;
-    
-    /* CHANFLAG */
-    public final static int JOIN_CONNECT_TIME           = -556190185;
-    public final static int TALK_CONNECT_TIME           = 393912789;
-    public final static int TALK_JOIN_TIME              = -982443793;
-    public final static int MAX_BANS                    = 1219737695;
-    public final static int NO_NOTICE                   = 1717646102;
-    public final static int NO_CTCP                     = -1437640612;
-    public final static int NO_PART_MSG                 = 994710995;
-    public final static int NO_QUIT_MSG                 = -1244903889;
-    public final static int EXEMPT_OPPED               = 711234318;
-    public final static int EXEMPT_VOICED              = 772697554;
-    public final static int EXEMPT_IDENTD              = 390251732;
-    public final static int EXEMPT_REGISTERED          = 1834356450;
-    public final static int EXEMPT_INVITES             = -485255670;
-    public final static int GREETMSG                    = 988053464;
-    
-    /* OPER */
-    public final static int ACCSTRING                   = 1073267634;
-    public final static int ACCSTRINGSHORT              = -260356118;
-    
-    public final static int IRCOP                       = 69926811;
-    public final static int SO                          = 2652;
-    public final static int SA                          = 2638;
-    public final static int CSOP                        = 2078289;
-    public final static int SRA                         = 82370;
-    public final static int STAFF                       = 79219392;
-    
-    public final static int AUDITORIUM                  = -2102649597;
-    public final static int UNAUDITORIUM                = 1851161692;
-    public final static int MARK                        = 2358989;
-    public final static int UNMARK                      = -1787095834;
-    public final static int FREEZE                      = 2081894039;
-    public final static int UNFREEZE                    = 402727536;
-    public final static int NOGHOST                     = -1459660466;
-    public final static int UNNOGHOST                   = -1974214507;
-    public final static int CLOSE                       = 64218584;
-    public final static int REOPEN                      = -1881221379;
-    public final static int HELD                        = 2213685;
-    public final static int UNHELD                      = -1787241138;
-    public final static int GETPASS                     = 643687495;
-    public final static int GETEMAIL                    = -1530342906;
-    public final static int SENDPASS                    = 2030903193;
-    public final static int EXPIREFOUNDER               = -1627605616;
-    public final static int EXPIREINACTIVE              = 547532426;
-    public final static int MASSDEOP                    = 1065573142;
-    public final static int MASSKICK                    = 1065785146;
-    public final static int SAJOIN                      = -1856436104;
-    public final static int TOPICWIPE                   = -1118937642;
-    public final static int WIPEAOP                     = 2069339195;
-    public final static int WIPESOP                     = 2069356493;
-    public final static int WIPEAKICK                   = 64984608;
-    public final static int TOPICNICK                   = -1119206158;
-    public final static int TOPICLOG                    = -174652491;
-    public final static int FORCENICK                   = 20432046;
-
-   
-    /* NICKSETTING */
-    public final static int ENFORCED                    = -1714819902;
-    public final static int SECURED                     = -1606705235;
-    public final static int MAILBLOCKED                 = 391177269;
-   
-    /* CHANSETTING */
-    public final static int KEEPTOPIC                   = 1058282666;
-    public final static int TOPICLOCK                   = -1119259974;
-    public final static int OPGUARD                     = -543153852;
-    public final static int RESTRICT                    = 446081724;
-    public final static int VERBOSE                     = 1069090146;
-    public final static int LEAVEOPS                    = -1934704485;
-    public final static int AUTOAKICK                   = 154503608;
-    public final static int MODELOCK                    = 163603790;
-
-    /* NICKSERV */
-    public static final int OHELP                       = 75171856;
-    public static final int AUTHURL                     = 71479975;    
-    public static final int AUTHED                      = 1941967943;    
-    public static final int EXPIREAUTH                  = -349233337;    
-    
-    /* CMDDATA */
-    public static final int SYNTAX_ERROR                = -1940937076;
-    public static final int NICK_NOT_REGGED             = 771349402;
-    public static final int IDENTIFY_FAIL               = -127225743;
-    public static final int IDENTIFY_SUCCESS            = 1493501360;
-    public static final int NO_SUCH_TARGET              = -482975477;
-    public static final int IDENTIFY_NICK               = -126979914;
-   
-    
-    
-    /* CHANINFO */
-    public static final int DESCRIPTION                 = 428414940;
-        
-    /* CHANFLAGS */
-    public static final int CLOSED                      = 1990776172;
-    
-    /* NICKINFO */
-    public final static int MAIL                        = 2358711;
-    public final static int FULLMASK                    = 2114402811;
-    public final static int LASTUSED                    = -675794093;
-    public final static int REGTIME                     = 1804414273;
-        
-    /* MEMOSERV */
-    public final static int SEND                        = 2541448;
-    public final static int CSEND                       = 64417355;
-    public final static int OSEND                       = 75499607;
-    public final static int READ                        = 2511254;
-     
-    /* EXECUTOR */
-    public static final int OINFO                       = 75210109;
-    public static final int OSET                        = 2435475;
-
-    /* NICKFLAGS */
-    public final static int HOLD                        = 2223295;
-    public final static int UNHOLD                      = -1787231528;
-    public final static int FROZEN                      = 2082211488;
-    public final static int MARKED                      = -2027976660;
-    
-    /* USERMODE */
-    public final static int IDENT                       = 69511632;
-    
-    /* OPERSERV */
-    public final static int OPER                        = 2432590;
-    public final static int ADMIN                       = 62130991;
-    public final static int SADMIN                      = -1856616772;
-    public final static int SRAW                        = 2553557;
-    public final static int PANIC                       = 75895383;
-    public final static int AKILL                       = 62335775;
-    public final static int AUTOKILL                    = -2072929907;
-    public final static int TIME                        = 2575053;
-    public final static int SEARCHLOG                   = 269847676;
-    public final static int AUDIT                       = 62628795;
-    public final static int FULL                        = 2169487;
-    public final static int COMMENT                     = 1668381247;
-    public final static int GLOBAL                      = 2105276323;
-    public final static int BANLOG                      = 1951952085;
-    public final static int SQLINE                      = -1841605806;
-    public final static int SGLINE                      = -1850841016;
-    public final static int SPAMFILTER                  = 1312445441;
-    public final static int JUPE                        = 2288768;
-    public final static int MISSING                     = 1787432262;
-
-    /* SpamFilter flags */
-    public final static int s                     = 115;
-    public final static int S                     = 83;
-    public final static int r                     = 114;
-    public final static int m                     = 109;
-    public final static int p                     = 112;
-    public final static int n                     = 110;
-    public final static int k                     = 107;
-    public final static int q                     = 113;
-    public final static int t                     = 116;
-    public final static int a                     = 97;
-    public final static int c                     = 99;
-    public final static int P                     = 80;
-    public final static int W                     = 87;
-    public final static int L                     = 76;
-    public final static int R                     = 82;
-    public final static int B                     = 66;
-    public final static int K                     = 75;
-    public final static int A                     = 65;
-    public final static int NUM_1                 = 49;
-    public final static int NUM_2                 = 50;
-    public final static int NUM_3                 = 51;
-    public final static int NUM_4                 = 52;
-    
-    /* CHANNEL */
-    public boolean mode_r;         /* mode r */
-    public boolean mode_R;         /* mode R */
-    public boolean mode_t;         /* mode t */
-    public boolean mode_n;         /* mode n */
-    public boolean mode_i;         /* mode i */
-    public boolean mode_k;         /* mode k word */
-    public boolean mode_s;         /* mode s */
-    public boolean mode_p;         /* mode p */
-    public boolean mode_M;         /* mode M */
-    public boolean mode_l;         /* mode l # */
-    public boolean mode_j;         /* mode j #:# */
-    public boolean mode_c;         /* mode c */
-    public boolean mode_O;         /* mode O */
-    public boolean mode_m;         /* mode m */
-
- 
     
     public static final int MODE_PLUS                   = 43;
     public static final int MODE_MINUS                  = 45;
@@ -443,180 +547,35 @@ public abstract class HashNumeric extends TextFormat {
     public static final int MODE_A                      = 65;
     public static final int MODE_o                      = 111;
     public static final int MODE_v                      = 118;
-    
-    
+
+        /* CHANNEL */
+    public boolean mode_r;         /* mode r */
+    public boolean mode_R;         /* mode R */
+    public boolean mode_t;         /* mode t */
+    public boolean mode_n;         /* mode n */
+    public boolean mode_i;         /* mode i */
+    public boolean mode_k;         /* mode k word */
+    public boolean mode_s;         /* mode s */
+    public boolean mode_p;         /* mode p */
+    public boolean mode_M;         /* mode M */
+    public boolean mode_l;         /* mode l # */
+    public boolean mode_j;         /* mode j #:# */
+    public boolean mode_c;         /* mode c */
+    public boolean mode_O;         /* mode O */
+    public boolean mode_m;         /* mode m */
+
+
     /* EXECUTOR */
-           
-    public static final int CHAR_U                      = 85;
-    public static final int CHAR_O                      = 79;
-
-    public static final int CHAR_m                      = 77;
-    public static final int CHAR_h                      = 72;
-    public static final int CHAR_d                      = 68;
-    public static final int CHAR_y                      = 89;
+    public static HashString U  = new HashString ( "U" );
+    public static HashString O  = new HashString ( "O" );
+    public static HashString h  = new HashString ( "h" );
+    public static HashString d  = new HashString ( "d" );
+    public static HashString y  = new HashString ( "y" );
 
     
-    /* SERVICE */
-      /* STATIC INT */
-    public static final int RAW                         = 80904;
     
-    /* SNOOP NICKSERV */
-    public static final int SYNTAX_REG_ERROR            = 228863233;
-    public static final int INVALID_EMAIL               = -1112393964;
-    public static final int NICK_ALREADY_REGGED         = -1169624971;
-    public static final int INVALID_NICK                = -1421092661;
-    
-    public static final int SYNTAX_ID_ERROR             = -107542880;
-    public static final int NICK_NOT_REGISTERED         = 583065578;
-    public static final int PASSWD_ERROR                = 2085745927;
-    public static final int IS_FROZEN                   = 319895381;
-    public static final int IS_THROTTLED                = 2049769861;
-    
-    public static final int IS_MARKED                   = 504674529;
+    public final static HashString YES = new HashString ( "YES" );
 
-    public static final int ACCESS_DENIED_OPER          = -1657667049;
-    public static final int ACCESS_DENIED_SA            = -1655354281;
- 
-    public static final int SYNTAX_GHOST_ERROR          = -1629380164;
-    public static final int NO_SUCH_NICK                = -630840995;
-    public static final int IS_NOGHOST                  = -256884935;
-
-    public static final int NO_AUTH_FOUND               = 716854089;
-    public static final int ACCESS_DENIED               = 1006971606;
-    public static final int SETTING_NOT_FOUND           = 391296903;
-
-    public static final int CMD_NOT_FOUND_ERROR         = -173192678;
-    public static final int NICK_NEW_MASK               = -287949913;
-    public static final int SHOW_HELP                   = 912458563;
-    public static final int REGISTER_SEC                = 610829461;
-    public static final int REGISTER_DONE               = 1755407262;
-    public static final int PASSWD_ACCEPTED             = 1917430824;
-    public static final int NICKDROPPED                 = -518725923;
-    public static final int NICKDELETED                 = -893999306;
-    public static final int GLOB_IS_NOGHOST             = -1048802208;
-    public static final int NICKFLAG_EXIST              = -101876761;
-    public static final int NICK_SET_FLAG               = -249918811;
-    public static final int NICK_GETEMAIL               = 287380322;
-    public static final int INVALID_PASS                = -1421040263;
-    public static final int NICK_IS_NOW                 = 1715513981;
-    public static final int NICK_AUTHED                 = 1487994019;
-    public static final int NICK_IS_NOT                 = 1715513978;
-    public static final int DB_ERROR                    = -516264217;
-    public static final int IDENT_NICK_DELETED          = -2018832084;
-    public static final int NICK_DELETED                = 1080155933;
-    public static final int ACCESS_DENIED_SRA           = 223625433;
-    public static final int ACCESS_DENIED_DELETE_OPER   = 1463855225;
-    public static final int NICK_GETPASS                = -544602261;
-    
-    /* SNOOP CHANSERV */
-    public final static int NOT_ENOUGH_ACCESS          = -1745701241;
-     
-    public final static int NICK_NOT_AUTHED            = 299818415;
-    public final static int NICK_NOT_IDENTIFIED        = 834563587;
-    public final static int CHAN_NOT_REGISTERED        = -1958828005;
-    public final static int CHAN_ALREADY_REGGED        = 583448742;
-    public final static int CHAN_WHY                   = -2079190725;
-    public final static int CHAN_NOT_EXIST             = 1742993822;
-    public final static int NICK_NOT_EXIST             = 1537465455;
-    public final static int USER_NOT_ONLINE            = -2081960365;
-
-    public final static int USER_NOT_OP                = 190590433;
-    
-    public final static int NICK_HAS_NOOP              = -1524398237;
- 
-    public final static int WILL_NOW                   = -382153527;
-    public final static int WILL_NOW_NOT               = -751854019;
-    
-    public final static int IS_NOW                     = -2125479391;
-    public final static int IS_NOT                     = -2125479394;
-     
-    public final static int INVALID_PASSWORD           = 1094975491;
-     
-    public final static int DB_NICK_ERROR              = -1563547539;
-     
-    public final static int NICK_IS_FOUNDER            = 26449878;
-    public final static int NICK_IS_SOP                = 1715518779;
-    public final static int NICK_IS_OP                 = 193886522;
-    public final static int NICK_NOT_FOUND             = 1538132218;
-    public final static int NICK_CHANGED               = 268636600;
-    public final static int NICK_NOT_PRESENT           = 1032677427;
-    
-    public final static int NICK_NOT_IDENTED_OP        = 830831385;
-    public final static int NICK_NEVEROP               = 1374491761;
-
-    public final static int NICK_ADDED                 = 186025220;
-    public final static int NICK_NOT_ADDED             = 1533170296;
-    public final static int NICK_NOT_DELETED           = -1393549423;
-    public final static int NICK_VERBOSE_ADDED         = 1220179943;
-    public final static int NICK_VERBOSE_DELETED       = -1529567936;
-    public final static int NICK_INVITED               = 1489723775;
-
-    public final static int NICK_OP                    = -1635024835;
-    public final static int NICK_DEOP                  = 698828158;
-    public final static int NICK_VERBOSE_OP            = 862466106;
-    public final static int NICK_VERBOSE_DEOP          = -99096005;
-    
-    public final static int NICK_MDEOP_CHAN            = 1949119486;
-    public final static int NICK_MDEOP                 = 197108755;
-    public final static int NICK_MKICK_CHAN            = -1640108454;
-    public final static int NICK_MKICK                 = 197320759;
-    
-    public final static int LIST_NOT_WIPED             = 1342428656;
-    public final static int LIST_WIPED                 = 2112290300;
-    public final static int LIST_VERBOSE_WIPED         = 44287455;
-
-    public final static int CHAN_IS_FROZEN             = 1040268968;
-    public final static int CHAN_IS_CLOSED             = 948833652;
-   
-    public final static int CHAN_SET_FLAG              = 1557826454; 
-    public final static int CHANFLAG_EXIST             = 103651606; 
-    
-    public final static int ALREADY_ON_LIST            = -19278345; 
-    
-    public final static int CHAN_GETPASS               = -901929894;
-     
-    public final static int SHOWACCESSLOG              = -1644065565; 
-    public final static int SHOWACCESSLOGOPER          = 1996456369; 
-    public final static int SHOWTOPICLOG               = 443386290; 
-    public final static int SHOW_LIST                  = 912581792; 
-
-    public final static int CHANNELDROPPED             = 1559147869; 
-    public final static int CHANNELDELETED             = 1183874486; 
-
-    public final static int NO_SUCH_CHANFLAG           = 1591381688; 
-    public final static int BAD_CHANFLAG_VALUE         = 1929103146; 
-
-    public final static int XOP_NOT_FOUND              = -929875376; 
-    public final static int XOP_ADD_FAIL               = -625622686; 
-    public final static int XOP_ALREADY_PRESENT        = 2130003854; 
-
-    public final static int CHAN_INFO                  = -30814853; 
-    public final static int CHAN_UNBAN                 = -944182391; 
-    public final static int ACCESS_LIST                = 1149892249; 
-    public final static int ACCESS_ADDED               = 1276598853; 
-    public final static int ACCESS_DELETED             = 1149397022; 
-
-    public final static int SET_DESCRIPTION            = 979264351; 
-    public final static int SET_TOPICLOCK              = -1494105347; 
-    public final static int SET_MODELOCK               = -679771989; 
-    public final static int SET_KEEPTOPIC              = 683437293; 
-    public final static int SET_IDENT                  = 330142611; 
-    public final static int SET_OPGUARD                = 815113799; 
-    public final static int SET_RESTRICT               = -397294055; 
-    public final static int SET_VERBOSE                = -1867609499; 
-    public final static int SET_MAILBLOCK              = 2106005849; 
-    public final static int SET_LEAVEOPS               = 1516887032; 
-    public final static int SET_AUTOAKICK              = -220341765;
-
-    public final static int ADDACCLIST                 = -448746274;
-    public final static int REMACCLIST                 = 1498428101;
-    public final static int UPDACCLIST                 = -298666154;
-    
-    public final static int PASS_AUTHED                = 1669279797;
-    public final static int PASS_AUTHED_UNIDENT        = -1581635379;
-    
-    
-    
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );
     }

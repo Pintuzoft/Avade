@@ -19,6 +19,7 @@ package channel;
 
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 
 /**
  *
@@ -47,19 +48,14 @@ public class ChanMode extends HashNumeric {
         this.set ( MODE_m, false );
     }
 
-    public void set ( int var, String[] data )  {
-        switch ( var )  {
-            case SERVER : 
-                this.setModeString ( data[4] );
-                break;
-
-            case MODE :
-                this.setModeString ( data[4] ); 
-                break;
-
-            default :
-
+    public void set ( HashString type, String[] data )  {
+        if ( type.is(SERVER) ) {
+            this.setModeString ( data[4] );
+        
+        } else if ( type.is(MODE) ) {
+            this.setModeString ( data[4] ); 
         }
+        
     }
      
     public void setModeString ( String data ) {

@@ -17,8 +17,8 @@
  */
 package chanserv;
 
+import core.HashString;
 import core.LogEvent;
-import java.util.Date;
  
 
 /**
@@ -27,22 +27,32 @@ import java.util.Date;
  */
 public class CSLogEvent extends LogEvent {
     
-    public CSLogEvent ( String name, String flag, String mask, String oper, String stamp ) {
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     * @param stamp
+     */
+    public CSLogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         super ( name, flag, mask, oper, stamp );
     }
      
-    public CSLogEvent ( String name, int flag, String mask, String oper ) {
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     */
+    public CSLogEvent ( HashString name, HashString flag, String mask, String oper ) {
         super ( name, mask, oper );
         this.setFlag ( flag );
     }
-    
-    public CSLogEvent ( String name, String flag, String mask, String oper ) {
-        super ( name, mask, oper );
-        this.setFlag ( flag.toUpperCase().hashCode ( ) );
-    }
-
-    private void setFlag ( int flag ) {
-        this.flag = LogEvent.getChanFlagByHash ( flag );
+     
+    private void setFlag ( HashString flag ) {
+        this.flag = new HashString ( LogEvent.getChanFlagByHash ( flag ) );
     }
     
 }

@@ -18,6 +18,7 @@
 package user;
 
 import core.HashNumeric;
+import core.HashString;
 
 /**
  *
@@ -36,18 +37,12 @@ public class UserMode extends HashNumeric {
         this.ident  = false;
     }
 
-    public void set ( int var, String[] data )  {
-        switch ( var )  {
-            case SERVER :
-                this.setModeString ( data[4] );
-                break;
-                
-            case MODE :
-                this.setModeString ( data[3] );
-                break;
-                
-            default : 
-        } 
+    public void set ( HashString type, String[] data )  {
+        if ( type.is(SERVER) ) {
+            this.setModeString ( data[4] );
+        } else if ( type.is(MODE) ) {
+            this.setModeString ( data[3] ); 
+        }
     }
   
     public void setModeString ( String data )  {
@@ -86,46 +81,35 @@ public class UserMode extends HashNumeric {
         debug ( );
     }
  
-    public void set ( int mode, boolean state )  {
-        switch ( mode )  {
-            case OPER :
-                this.oper = state;
-                break;
-                
-            case SADMIN :
-                this.sadmin = state;
-                break;
-                
-            case ADMIN :
-                this.admin = state;
-                break;
-                
-            case IDENT :
-                this.ident = state;
-                break;
-                
-            default : 
-        } 
+    public void set ( HashString mode, boolean state )  {
+        if ( mode.is(OPER) ) {
+            this.oper = state;
+
+        } else if ( mode.is(SADMIN) ) {
+            this.sadmin = state;
+
+        } else if ( mode.is(ADMIN) ) {
+            this.admin = state;
+
+        } else if ( mode.is(IDENT) ) {
+            this.ident = state;
+        }
     }
       
-    public boolean is ( int mode )  {
-        switch ( mode )  {
-            case OPER :
-                return this.oper;
-                
-            case SADMIN :
-                return this.sadmin;
-                
-            case ADMIN :
-                return this.admin;
-                
-            case IDENT :
-                return this.ident;
-                
-            default: 
-                return false;
-            
-        } 
+    public boolean is ( HashString mode )  {
+        if ( mode.is(OPER) ) {
+            return this.oper;
+        
+        } else if ( mode.is(SADMIN) ) {
+            return this.sadmin;
+        
+        } else if ( mode.is(ADMIN) ) {
+            return this.admin;
+        
+        } else if ( mode.is(IDENT) ) {
+            return this.ident;
+        }
+        return false;
     } 
    
     private void debug ( )  {

@@ -1,17 +1,17 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received b copy of the GNU General Public License
+ * You should have received ban2 copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
@@ -26,6 +26,7 @@ import static core.HashNumeric.ADD;
 import static core.HashNumeric.DEL;
 import static core.HashNumeric.LIST;
 import static core.HashNumeric.NAME;
+import core.HashString;
 import core.Service;
 import guestserv.GuestServ;
 import java.text.DateFormat;
@@ -55,108 +56,86 @@ public class OSExecutor extends Executor {
 
     public void parse ( User user, String[] cmd )  {
         this.found = true; /* Assume that everything will go correctly */
-        int command = cmd[3].toUpperCase().hashCode ( );
-        switch ( command ) {
-            case UINFO :
-                this.doUInfo ( user, cmd );
-                break;
-                
-            case CINFO :
-                this.doCInfo ( user, cmd );
-                break;
-                          
-            case NINFO :
-                this.doNInfo ( user, cmd );
-                break;
-                
-            case SINFO :
-                this.doSInfo ( user, cmd );
-                break;
-                
-            case ULIST :
-                this.doUList ( user ); 
-                break;
-            
-            case CLIST :
-                this.doCList ( user ); 
-                break;
-            
-            case SLIST :
-                this.doSList ( user ); 
-                break;
-                
-            case UPTIME :
-                this.doUpTime ( user );
-                break;
-             
-            case SQLINE :
-            case SGLINE :
-            case IGNORE :
-            case AKILL :
-            case AUTOKILL :
-                if ( command == AUTOKILL ) {
-                    command = AKILL;
-                }
-                this.doServicesBan ( command, user, cmd );
-                break;
-                
-            case STAFF :
-                this.doStaff ( user, cmd );
-                break;
-                           
-            case SEARCHLOG :
-                this.doSearchLog ( user, cmd );
-                break;
-                           
-            case SNOOPLOG :
-                this.doSnoopLog ( user, cmd );
-                break;
-                    
-            case COMMENT :
-                this.comment ( user, cmd );
-                break;
-                            
-            case GLOBAL :
-                this.global ( user, cmd );
-                break;
-                
-            case AUDIT :
-                this.doAudit ( user, cmd );
-                break;
-                     
-            case BANLOG :
-                this.doBanlog ( user, cmd );
-                break;
-                       
-            case JUPE :
-                this.doJupe ( user, cmd );
-                break;
-                       
-            case SERVER :
-                this.doServer ( user, cmd );
-                break;
-                      
-            case SPAMFILTER :
-                this.doSpamFilter ( user, cmd );
-                break;
-                      
-            case FORCENICK :
-                this.forcenick ( user, cmd );
-                break;
-                              
-            case BAHAMUT :
-                this.bahamut ( user, cmd );
-                break;
-                    
-            case MAKILL :
-                this.makill ( user, cmd );
-                break;
-                      
-            default:
-                this.found = false; 
-                this.noMatch ( user, cmd[3] );
-            
+        HashString command = new HashString ( cmd[3] );
+        
+        if ( command.is(UINFO) ) {
+            this.doUInfo ( user, cmd );
+        
+        } else if ( command.is(CINFO) ) {
+            this.doCInfo ( user, cmd );
+        
+        } else if ( command.is(NINFO) ) {
+            this.doNInfo ( user, cmd );
+        
+        } else if ( command.is(SINFO) ) {
+            this.doSInfo ( user, cmd );
+        
+        } else if ( command.is(ULIST) ) {
+            this.doUList ( user );
+        
+        } else if ( command.is(CLIST) ) {
+            this.doCList ( user );
+        
+        } else if ( command.is(SLIST) ) {
+            this.doSList ( user );
+        
+        } else if ( command.is(UPTIME) ) {
+            this.doUpTime ( user );
+        
+        } else if ( command.is(SQLINE) ||
+                    command.is(SGLINE) ||
+                    command.is(IGNORE) ||
+                    command.is(AKILL) ||
+                    command.is(AUTOKILL) ) {
+            if ( command == AUTOKILL ) {
+                command = AKILL;
+            }
+            this.doServicesBan ( command, user, cmd );
+        
+        } else if ( command.is(STAFF) ) {
+            this.doStaff ( user, cmd );
+        
+        } else if ( command.is(SEARCHLOG) ) {
+            this.doSearchLog ( user, cmd );
+        
+        } else if ( command.is(SNOOPLOG) ) {
+            this.doSnoopLog ( user, cmd );
+        
+        } else if ( command.is(COMMENT) ) {
+            this.comment ( user, cmd );
+        
+        } else if ( command.is(GLOBAL) ) {
+            this.global ( user, cmd );
+        
+        } else if ( command.is(AUDIT) ) {
+            this.doAudit ( user, cmd );
+        
+        } else if ( command.is(BANLOG) ) {
+            this.doBanlog ( user, cmd );
+        
+        } else if ( command.is(JUPE) ) {
+            this.doJupe ( user, cmd );
+        
+        } else if ( command.is(SERVER) ) {
+            this.doServer ( user, cmd );
+        
+        } else if ( command.is(SPAMFILTER) ) {
+            this.doSpamFilter ( user, cmd );
+        
+        } else if ( command.is(FORCENICK) ) {
+            this.forcenick ( user, cmd );
+        
+        } else if ( command.is(BAHAMUT) ) {
+            this.bahamut ( user, cmd );
+        
+        } else if ( command.is(MAKILL) ) {
+            this.makill ( user, cmd );
+        
+        } else {
+            this.found = false; 
+            this.noMatch ( user, cmd[3] );
         }
+         
         this.snoop.msg ( this.found, user, cmd ); 
     }
 
@@ -169,7 +148,7 @@ public class OSExecutor extends Executor {
         /* UINFO requested so lets send all we know about that user */
         User u;
  
-        if ( cmd.length < 5 )  { /* size is 5  ( 0-4 )  */
+        if ( cmd.length < 5 )  { /* size hasAccess 5  ( 0-4 )  */
             this.service.sendMsg ( user, "Syntax: /OperServ UINFO Nickname" );
             return;
         }
@@ -203,7 +182,7 @@ public class OSExecutor extends Executor {
         /* UINFO requested so lets send all we know about that user */
         Server s;
         
-        if ( cmd.length < 5 )  { /* size is 5  ( 0-4 )  */
+        if ( cmd.length < 5 )  { /* size hasAccess 5  ( 0-4 )  */
             this.service.sendMsg ( user, "Syntax: /OperServ UINFO server" );
             return;
         }
@@ -228,7 +207,7 @@ public class OSExecutor extends Executor {
         String oped     = new String ( );
         String modes    = new String ( );
         
-        if ( cmd.length < 5 )  {/* size is 5  ( 0-4 )  */
+        if ( cmd.length < 5 )  {/* size hasAccess 5  ( 0-4 )  */
             this.service.sendMsg ( user, "Syntax: /OperServ CINFO #Chan" );
             return;
         }
@@ -357,7 +336,7 @@ public class OSExecutor extends Executor {
         this.service.sendMsg ( user, "Uptime: "+Proc.getUptime ( ) ); 
     }
 
-    private void doServicesBan ( int command, User user, String[] cmd )  {
+    private void doServicesBan ( HashString command, User user, String[] cmd )  {
         // :DreamHealer PRIVMSG OperServ@stats.avade.net   :ban add fredde@172.* testing
         // 0            1       2                          3      4   5            6
         
@@ -375,79 +354,71 @@ public class OSExecutor extends Executor {
             cmd = buf;            
         }
 
-        CmdData cmdData = this.validateCommandData ( user, command, cmd );
+        CMDResult result = this.validateCommandData ( user, command, cmd );
         
         String cmdName = ServicesBan.getCommandByHash ( command );
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" <add|del|list|info> <pattern> [<time>] [<reason>]" ) );
-                return;
-             
-            case SYNTAX_ERROR_DEL :
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_DEL) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" DEL <pattern>" ) );
-                return;
-                                
-            case SYNTAX_ERROR_LIST :
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_LIST) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" LIST <pattern>" ) );
-                return;
-                   
-            case SYNTAX_ERROR_INFO :
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_INFO) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" INFO <Ban ID>" ) );
-                return;
-                    
-            case SYNTAX_ERROR_ADD :
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_ADD) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" ADD <pattern> <time> <reason>" ) );
-                return;
+                return;            
         
-            case BADTIME :
+        } else if ( result.is(BADTIME) ) {
                 this.service.sendMsg ( user, output ( BADTIME, "" ) );
-                return;
-                
-            case BADREASON :
-                this.service.sendMsg ( user, output ( BADREASON, "" ) );
-                return;
-                
-            case BAN_EXIST :
-                this.service.sendMsg ( user, output ( BAN_EXIST, cmdName, cmdData.getString1() ) );
-                return;
-                             
-            case BAN_NO_EXIST :
-                this.service.sendMsg ( user, output ( BAN_NO_EXIST, cmdName, cmdData.getString1() ) );
-                return;
-                                 
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-                return;
-                         
-            case WHITELISTED :
-                this.service.sendMsg ( user, output ( WHITELISTED, cmdData.getString1() ) );
-                return;
-                
-            default :
-
-        }
+                return;            
         
-        String string1 = cmdData.getString1();
+        } else if ( result.is(BADREASON) ) {
+                this.service.sendMsg ( user, output ( BADREASON, "" ) );
+                return;            
+        
+        } else if ( result.is(BAN_EXIST) ) {
+                this.service.sendMsg (user, output (BAN_EXIST, cmdName, result.getString1() ) );
+                return;            
+        
+        } else if ( result.is(BAN_NO_EXIST) ) {
+                this.service.sendMsg (user, output (BAN_NO_EXIST, cmdName, result.getString1() ) );
+                return;            
+        
+        } else if ( result.is(ACCESS_DENIED) ) {
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                return;            
+        
+        } else if ( result.is(WHITELISTED) ) {
+                this.service.sendMsg (user, output (WHITELISTED, result.getString1() ) );
+                return;            
+        }  
+         
+        String string1 = result.getString1();
         NickInfo oper = user.getOper().getNick();
         ServicesBan ban;
         ArrayList<User> uList = new ArrayList<>();
 
-        int subcommand = cmd[4].toUpperCase().hashCode();
+        HashString subcommand = new HashString ( cmd[4] );
      
-        
-        switch ( subcommand ) {
-            case LIST :
+        if ( subcommand.is(LIST) ) {
                 ArrayList<ServicesBan> bList = OperServ.findBansByPattern ( command, string1 );
                 this.service.sendMsg ( user, output ( BAN_LIST_START, cmdName, string1 ) );
                 for ( ServicesBan b : bList ) {
-                    this.service.sendMsg ( user, output ( BAN_LIST, b.getMask(), b.getID(), b.getInstater(), b.getReason() ) );
+                    this.service.sendMsg ( user, output ( BAN_LIST, b.getMask().getString(), b.getID().getString(), b.getInstater(), b.getReason() ) );
                 } 
-                this.service.sendMsg ( user, output ( BAN_LIST_STOP, "" ) );
-                break;
-                
-            case INFO :
-                ban = cmdData.getServicesBan();
+                this.service.sendMsg ( user, output ( BAN_LIST_STOP, "" ) );            
+        } else if ( subcommand.is(INFO) ) {
+                ban = result.getServicesBan();
                 if ( ban != null ) {
                     this.service.sendMsg ( user, "*** "+cmdName+" INFO:" );
                     this.service.sendMsg ( user, "   BanID: "+ban.getID() );
@@ -460,23 +431,19 @@ public class OSExecutor extends Executor {
                     
                 } else {
                     this.service.sendMsg ( user, "Error: BanID "+string1+"" );
-                }
-                break;
-                
-            case DEL :
-                ban = cmdData.getServicesBan();
+                }            
+        } else if ( subcommand.is(DEL) ) {
+                ban = result.getServicesBan();
                 if ( ban != null ) {
                     Handler.getOperServ().remServicesBan ( ban );
                     this.service.sendGlobOp ( cmdName+" for: "+ban.getMask()+" has been removed by: "+oper.getName() );
-                }
-                break;
-                
-            case ADD :
-            case TIME :
+                }            
+        } else if ( subcommand.is(ADD) ||
+                    subcommand.is(TIME) ) {
                 // String1: mask, String2: time, String3: reason
-                String mask = cmdData.getString1();
-                String time = cmdData.getString2();
-                String reason = cmdData.getString3();
+                String mask = result.getString1();
+                String time = result.getString2();
+                String reason = result.getString3();
                 String stamp = dateFormat.format ( new Date ( ) );
                 String percent;
                 boolean foundOperMatch = false;
@@ -490,22 +457,30 @@ public class OSExecutor extends Executor {
                 
                 
                 //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
-                ban = new ServicesBan ( command, ""+System.nanoTime(), false, mask, reason, oper.getString(NAME), null, expire );
-
-                switch ( command ) {
-                    case SQLINE :
-                        uList = Handler.findUsersByNick ( mask );
-                        break;
-                    case SGLINE :
-                        uList = Handler.findUsersByGcos ( mask );
-                        break;
-                    case AKILL : 
-                        uList = Handler.findUsersByBan ( ban );
-                        break;
-                    default :
-                        uList = Handler.findUsersByMask ( mask );
-                        break;
+                ban = new ServicesBan ( 
+                    command, 
+                    new HashString ( ""+System.nanoTime() ),
+                    false, 
+                    new HashString ( mask ), 
+                    reason, 
+                    oper.getString(NAME), 
+                    null, 
+                    expire 
+                );
+                
+                if ( command.is(SQLINE) ) {
+                    uList = Handler.findUsersByNick ( mask );                    
+                
+                } else if ( command.is(SGLINE) ) {
+                    uList = Handler.findUsersByGcos ( mask );                    
+                
+                } else if ( command.is(AKILL) ) {
+                    uList = Handler.findUsersByBan ( ban );                    
+                
+                } else  {
+                    uList = Handler.findUsersByMask ( mask );                    
                 }
+                
                 
                 System.out.println("matching users: "+uList.size());
                 
@@ -524,24 +499,19 @@ public class OSExecutor extends Executor {
                 // -OperServ(stats@dal.net)- *!*@159.65.148.178 has been added to my autokill list for 30 minutes.
                 this.service.sendMsg ( user, mask+" has been added to the akill list for "+time+" min." );
                 
-                // -OperServ(stats@dal.net)- This autokill's id is 1563280267K-k and the authorization id is 1563280267K-16159. Please send your reports@dal.net email as soon as possible.
+                // -OperServ(stats@dal.net)- This autokill's id hasAccess 1563280267K-k and the authorization id hasAccess 1563280267K-16159. Please send your reports@dal.net email as soon as possible.
                 this.service.sendMsg ( user, "The akill id is "+ban.getID()+". Please use the akill id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
                
-                break;
-                
-            default :
-                
-        }
-       
+        }  
+         
     }
 
 
-    private ServicesBan getBan ( int command, String banId )  {
-        int hash = banId.toUpperCase().hashCode();
+    private ServicesBan getBan ( HashString command, HashString banId )  {
         ServicesBan ban = null;
-        for ( ServicesBan b : Handler.getOperServ().getListByCommand ( command ) ) {
-            if ( b.getID().toUpperCase().hashCode() == hash )  {
-                ban = b;
+        for ( ServicesBan ban2 : Handler.getOperServ().getListByCommand ( command ) ) {
+            if ( ban2.getID().is(banId) )  {
+                ban = ban2;
             }
         }
         return ban;
@@ -564,19 +534,20 @@ public class OSExecutor extends Executor {
     private void doSearchLog ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SEARCHLOG <nick|chan> [FULL]
         //            0       1                          2          3           4      5 < 6
-        NickInfo ni;
-        ChanInfo ci;
-        
+        HashString buf;
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SEARCHLOG <nick|chan> [<FULL>]" )  );
             return;
         }
         
-        String target = cmd[4];
+        HashString target = new HashString ( cmd[4] );
         boolean full = false;
         
-        if ( cmd.length > 5 && cmd[5].toUpperCase().hashCode() == FULL ) {
-            full = true;
+        if ( cmd.length > 5 ) {
+            buf = new HashString ( cmd[5] );
+            if ( buf.is(FULL) ) {
+                full = true;
+            }
         }
         
         ArrayList<OSLogEvent> lsList = OSDatabase.getSearchLogList ( target, full );
@@ -584,7 +555,7 @@ public class OSExecutor extends Executor {
         
         this.service.sendMsg ( user, "*** Logs for "+target+( ! full ? " (1year)" : "" )+":" );
         for ( OSLogEvent log : lsList ) {
-            this.service.sendMsg ( user, output ( SHOWLOG, log.getStamp(), log.getFlag(), log.getName(), log.getMask(), log.getOper() )  );
+            this.service.sendMsg ( user, output ( SHOWLOG, log.getStamp(), log.getFlag().getString(), log.getName().getString(), log.getMask(), log.getOper() ) );
         }
         
         this.service.sendMsg ( user, "*** Comments"+( ! full ? " (1year)" : "" )+":" );
@@ -597,19 +568,20 @@ public class OSExecutor extends Executor {
     private void doSnoopLog ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SNOOPLOG <nick|chan> [FULL]
         //            0       1                          2          3           4      5 < 6
-        NickInfo ni;
-        ChanInfo ci;
-        
+        HashString buf;
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SNOOPLOG <nick|chan> [<FULL>]" )  );
             return;
         }
         
-        String target = cmd[4];
+        HashString target = new HashString ( cmd[4] );
         boolean full = false;
         
-        if ( cmd.length > 5 && cmd[5].toUpperCase().hashCode() == FULL ) {
-            full = true;
+        if ( cmd.length > 5 ) {
+            buf = new HashString ( cmd[5] );
+            if ( buf.is(FULL) ) {   
+                full = true;
+            }
         }
         
         ArrayList<OSSnoopLogEvent> lsList = OSDatabase.getSnoopLogList ( target, full );
@@ -632,7 +604,7 @@ public class OSExecutor extends Executor {
         }
         String target = cmd[4];
         String string = Handler.cutArrayIntoString ( cmd, 5 );
-        String instater = user.getOper().getName();
+        String instater = user.getOper().getName().getString();
         Comment comment = new Comment ( target, instater, string, null );
         
         if ( OSDatabase.addComment ( comment ) ) {
@@ -653,7 +625,7 @@ public class OSExecutor extends Executor {
         String string = Handler.cutArrayIntoString ( cmd, 4 );
         Service global = Handler.getGlobal ( );
         
-        OSLogEvent log = new OSLogEvent ( "-", GLOBAL, user, user.getOper().getNick() );
+        OSLogEvent log = new OSLogEvent ( new HashString ( "-" ), GLOBAL, user, user.getOper().getNick() );
         log.setData ( string );
         OSDatabase.logEvent ( log );
         for ( User u : Handler.getUserList ( ) ) {
@@ -677,7 +649,7 @@ public class OSExecutor extends Executor {
         lsList = OSDatabase.getAuditList ( target );
         
         for ( OSLogEvent log : lsList ) {
-            this.service.sendMsg ( user, output ( SHOWAUDIT, log.getStamp(), log.getFlag(), log.getName(), log.getMask(), log.getOper(), log.getData() ) );
+            this.service.sendMsg ( user, output ( SHOWAUDIT, log.getStamp(), log.getFlag().getString(), log.getName().getString(), log.getMask(), log.getOper(), log.getData() ) );
         }
         this.service.sendMsg ( user, "*** End of Audit ***" );
         
@@ -701,7 +673,7 @@ public class OSExecutor extends Executor {
         lsList = OSDatabase.getBanLogList ( target );
         
         for ( OSLogEvent log : lsList ) {
-            this.service.sendMsg ( user, output ( SHOWBANLOG, log.getStamp(), log.getFlag(), log.getName(), log.getMask(), log.getOper(), log.getData() ) );
+            this.service.sendMsg ( user, output ( SHOWBANLOG, log.getStamp(), log.getFlag().getString(), log.getName().getString(), log.getMask(), log.getOper(), log.getData() ) );
         }
         this.service.sendMsg ( user, "*** End of Audit ***" ); 
         
@@ -709,14 +681,18 @@ public class OSExecutor extends Executor {
     
     private void doJupe ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :jupe <SERVERNAME> 
-        //            0       1                          2     3 4           < 6
+        //            0       1                          2     3 4           < 5
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net>" ) );
             return;
-        } else if ( ! cmd[4].contains ( "." ) ) {
+        }
+        
+        HashString serverName = new HashString ( cmd[4] );
+        
+        if ( ! serverName.contains ( "." ) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (all servers need to contain dots in their names)" ) );
             return;
-        } else if ( cmd[4].equalsIgnoreCase ( Proc.getConf().get ( CONNNAME ) ) ) {
+        } else if ( serverName.is ( Proc.getConf().get(CONNNAME) ) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (services hub cannot be juped)" ) );
             return;
         }
@@ -728,34 +704,33 @@ public class OSExecutor extends Executor {
 
     private void doStaff ( User user, String[] cmd ) {
                 
-        CmdData cmdData = this.validateCommandData ( user, STAFF, cmd );
+        CMDResult result = this.validateCommandData ( user, STAFF, cmd );
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "STAFF <LIST|SRA|CSOP|SA|IRCOP> [<ADD|DEL>] [<nick>]" ) );
-                return;
-                
-            case SUB_SYNTAX_ERROR :
+                return;            
+        
+        } else if ( result.is(SUB_SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SUB_SYNTAX_ERROR, "LIST, SRA, CSOP, SA and IRCOP" ) );
-                return;
-                
-            case SUB2_SYNTAX_ERROR :
+                return;            
+        
+        } else if ( result.is(SUB2_SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SUB2_SYNTAX_ERROR, "ADD and DEL" ) );
-                return;
-                
-            case NICK_NOT_REGISTERED :
-                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmdData.getString1 ( ) ) );
-                return;
-
-            case ACCESS_DENIED :
+                return;            
+        
+        } else if ( result.is(NICK_NOT_REGISTERED) ) {
+                this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
+                return;            
+        
+        } else if ( result.is(ACCESS_DENIED) ) {
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-                return;
-                    
-            case NOT_ENOUGH_ACCESS :
-                this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, cmdData.getString1 ( ) ) );
-                return;
-                
-            case SHOWLIST :
+                return;            
+        
+        } else if ( result.is(NOT_ENOUGH_ACCESS) ) {
+                this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1 ( ) ) );
+                return;            
+        
+        } else if ( result.is(STATS) ) {
                 ArrayList<Oper> sraList = OperServ.getRootAdmins();
                 ArrayList<Oper> csopList = OperServ.getCSops();
                 ArrayList<Oper> saList = OperServ.getServicesAdmins();
@@ -782,40 +757,35 @@ public class OSExecutor extends Executor {
                 }
                 
                 this.service.sendMsg(user, "*** End of List ***");
-                return;
-
+                return;            
         }
         
-        NickInfo ni = cmdData.getNick();
-        int access = Oper.hashToAccess ( cmdData.getSub ( ) );
-        String accessStr = Oper.hashToStr ( cmdData.getSub ( ) );
-        int command = cmdData.getSub2();
+        NickInfo ni = result.getNick();
+        int access = Oper.hashToAccess (result.getSub ( ) );
+        String accessStr = Oper.hashToStr (result.getSub ( ) );
+        HashString command = result.getSub2();
         Oper oper;
         OSLogEvent log;
         
-        switch ( command ) {
-            case DEL :
+        if ( command.is(DEL) ) {
                 oper = ni.getOper ( );
-                this.service.sendMsg ( user, output ( STAFF_DEL, accessStr, ni.getName ( ) ) );
-                this.service.sendGlobOp ( output ( GLOB_STAFF_DEL, accessStr, user.getOper().getName(), ni.getName ( ) ) );
-                this.msgUsersByNick ( ni, output ( NICK_NO_LONGER_STAFF, accessStr, ni.getName ( ) ) ); /* Msg all users identified to nick */
-                log = new OSLogEvent ( ni.getName(), "del"+accessStr, user.getFullMask(), user.getOper().getName() );
+                this.service.sendMsg ( user, output ( STAFF_DEL, accessStr, ni.getNameStr() ) );
+                this.service.sendGlobOp ( output ( GLOB_STAFF_DEL, accessStr, user.getOper().getNameStr(), ni.getNameStr() ) );
+                this.msgUsersByNick ( ni, output ( NICK_NO_LONGER_STAFF, accessStr, ni.getNameStr() ) ); /* Msg all users identified to nick */
+                log = new OSLogEvent ( ni.getName(), new HashString ( "del"+accessStr ), user, user.getOper().getNick() );
                 OperServ.addLogEvent ( log );
                 OperServ.delOper ( ni );
-                ni.setOper ( new Oper ( ) );
-                break;
-                
-            case ADD :
-                oper = new Oper ( ni.getName(), access, user.getOper().getName() );
-                this.service.sendMsg ( user, output ( STAFF_ADD, accessStr, ni.getName ( ) ) );
-                this.service.sendGlobOp ( output ( GLOB_STAFF_ADD, accessStr, user.getOper().getName(), ni.getName ( ) ) );
-                this.msgUsersByNick ( ni, output ( NICK_NOW_STAFF, accessStr, ni.getName ( ) ) ); /* Msg all users identified to nick */
-                log = new OSLogEvent ( ni.getName(), "add"+accessStr, user.getFullMask(), user.getOper().getName() );
+                ni.setOper ( new Oper ( ) );            
+        
+        } else if ( command.is(ADD) ) {
+                oper = new Oper ( ni.getNameStr(), access, user.getOper().getNameStr() );
+                this.service.sendMsg ( user, output ( STAFF_ADD, accessStr, ni.getNameStr() ) );
+                this.service.sendGlobOp ( output ( GLOB_STAFF_ADD, accessStr, user.getOper().getNameStr(), ni.getNameStr() ) );
+                this.msgUsersByNick ( ni, output ( NICK_NOW_STAFF, accessStr, ni.getNameStr() ) ); /* Msg all users identified to nick */
+                log = new OSLogEvent ( ni.getName(), new HashString ( "add"+accessStr ), user, user.getOper().getNick() );
                 OperServ.addLogEvent ( log );
                 OperServ.addOper ( oper );
-                ni.setOper ( oper );
-                break;
-                 
+                ni.setOper ( oper );            
         }
         
         for ( User u : Handler.findUsersByNick ( ni ) ) {
@@ -826,108 +796,98 @@ public class OSExecutor extends Executor {
   
     private void doSpamFilter(User user, String[] cmd) {
                
-        CmdData cmdData = this.validateCommandData ( user, SPAMFILTER, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER <add|del|list> [<string>] [<flags>] [<time>] [<reason>]" ) );
-                return;
-             
-            case SYNTAX_ERROR_DEL :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER DEL <string>" ) );
-                return;
-                   
-            case SYNTAX_ERROR_ADD :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER ADD <string> <flags> <time> <reason>" ) );
-                return;
+        CMDResult result = this.validateCommandData ( user, SPAMFILTER, cmd );
         
-            case BADFLAGS :
-                this.service.sendMsg ( user, output ( BADFLAGS, cmdData.getString1 ( ) ) );
-                return;
-                
-            case BADTIME :
-                this.service.sendMsg ( user, output ( BADTIME, cmdData.getString1 ( ) ) );
-                return;
-                
-            case BADREASON :
+        if ( result.is(SYNTAX_ERROR) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER <add|del|list> [<string>] [<flags>] [<time>] [<reason>]" ) );
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_DEL) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER DEL <string>" ) );
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_ADD) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER ADD <string> <flags> <time> <reason>" ) );
+                return;            
+        
+        } else if ( result.is(BADFLAGS) ) {
+                this.service.sendMsg (user, output (BADFLAGS, result.getString1 ( ) ) );
+                return;            
+        
+        } else if ( result.is(BADTIME) ) {
+                this.service.sendMsg (user, output (BADTIME, result.getString1 ( ) ) );
+                return;            
+        
+        } else if ( result.is(BADREASON) ) {
                 this.service.sendMsg ( user, output ( BADREASON, "" ) );
-                return;
-                
-            case FILTER_EXISTS :
-                this.service.sendMsg ( user, output ( FILTER_EXISTS, cmdData.getString1 ( ) ) );
-                return;
-                
-            default :
-                
-        }
+                return;            
+        
+        } else if ( result.is(FILTER_EXISTS) ) {
+                this.service.sendMsg (user, output (FILTER_EXISTS, result.getString1 ( ) ) );
+                return;            
+        }  
+        
         String pattern;
         SpamFilter sFilter;
-        switch ( cmdData.getStatus ( ) ) {
-            case SHOWLIST :
+        
+        if ( result.is(SHOWLIST) ) {
                 this.service.sendMsg ( user, "*** SpamFilter LIST ***" );
                 for ( SpamFilter sf : OperServ.getSpamFilters ( ) ) {
                     this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern(), sf.getFlags(), sf.getInstater(), sf.getExpire(), sf.getReason() ) );
                 }
-                this.service.sendMsg ( user, "*** End of List ***" );
-                break;
-                
-            case DEL :
-                pattern = cmdData.getString1();
+                this.service.sendMsg ( user, "*** End of List ***" );            
+        
+        } else if ( result.is(DEL) ) {
+                pattern = result.getString1();
                 if ( ( sFilter = OperServ.findSpamFilter ( pattern ) ) != null ) {
                     OperServ.remSpamFilter ( sFilter );
                     this.service.sendServ ( "SF "+pattern+" 0" );
                     this.service.sendGlobOp ( user.getOper().getNick().getName()+" removed SpamFilter: "+pattern  );
-                }
-                break;
-                
-            case ADD :
-                pattern = cmdData.getString1();
-                String flags = cmdData.getString2();
-                String time = cmdData.getString3();
-                String reason = cmdData.getString4();
+                }            
+        
+        } else if ( result.is(ADD) ) {
+                pattern = result.getString1();
+                String flags = result.getString2();
+                String time = result.getString3();
+                String reason = result.getString4();
                 String stamp = dateFormat.format ( new Date ( ) );
                 String expire = Handler.expireToDateString ( stamp, time );
-                sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getName(), reason, stamp, expire );
+                sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getNameStr(), reason, stamp, expire );
                 
                 
                 //  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason);
                 OperServ.addSpamFilter ( sFilter );
                 this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );
-                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Expire: "+time+" Reason: "+reason  );
-                break;
-                
-            default :
-            
+                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Expire: "+time+" Reason: "+reason  );            
         }
         
     }
 
     private void forcenick ( User user, String[] cmd ) {
                
-        CmdData cmdData = this.validateCommandData ( user, FORCENICK, cmd );
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "FORCENICK <nick> [<new-nick>]" ) );
-                return;
+        CMDResult result = this.validateCommandData ( user, FORCENICK, cmd );
         
-            case NICK_NOT_FOUND :
-                this.service.sendMsg ( user, output ( NICK_NOT_FOUND, cmdData.getString1 ( ) ) );
-                return;
-                         
-            case NICK_ALREADY_PRESENT :
-                this.service.sendMsg ( user, output ( NICK_ALREADY_PRESENT, cmdData.getString1 ( ) ) );
-                return;
-                
-            case NICK_IS_OPER :
-                this.service.sendMsg ( user, output ( NICK_IS_OPER, cmdData.getString1 ( ) ) );
-                return;
-                
-            default :
-                
+        if ( result.is(SYNTAX_ERROR) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "FORCENICK <nick> [<new-nick>]" ) );
+                return;            
+        
+        } else if ( result.is(NICK_NOT_FOUND) ) {
+                this.service.sendMsg (user, output (NICK_NOT_FOUND, result.getString1 ( ) ) );
+                return;            
+        
+        } else if ( result.is(NICK_ALREADY_PRESENT) ) {
+                this.service.sendMsg (user, output (NICK_ALREADY_PRESENT, result.getString1 ( ) ) );
+                return;            
+        
+        } else if ( result.is(NICK_IS_OPER) ) {
+                this.service.sendMsg (user, output (NICK_IS_OPER, result.getString1 ( ) ) );
+                return;            
         }
+         
         String pattern;
-        NickInfo oper = cmdData.getNick();
-        User u = Handler.findUser ( cmdData.getString1() );
-        String newNick = cmdData.getString2();
+        NickInfo oper = result.getNick();
+        User u = Handler.findUser (result.getString1() );
+        String newNick = result.getString2();
         Random rand = new Random ( );
         int index = 0;
         
@@ -948,7 +908,7 @@ public class OSExecutor extends Executor {
         Handler.getOperServ().sendServ ( "SQLINE "+u.getName()+" :You cannot use this nick." );
         Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
         Timer timer = new Timer ( );
-        timer.schedule( new UnSQlineTask ( u.getName() ), 15000);
+        timer.schedule( new UnSQlineTask ( u.getNameStr() ), 15000);
         
         OperServ.addTimer ( timer );
         
@@ -961,33 +921,28 @@ public class OSExecutor extends Executor {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <DEL> <SERVERNAME> 
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <SET> <SERVERNAME> <PRIMARY> <SERVERNAME> 
         //            0       1                          2       3     4            5         6            7    < 9 
-        CmdData cmdData = this.validateCommandData ( user, SERVER, cmd );
+        CMDResult result = this.validateCommandData ( user, SERVER, cmd );
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SERVER <LIST|MISSING|SET|DEL|> [<servername>] [<PRIMARY|SECONDARY>] [<servername>]" ) );
-                return;           
-            
-            case SYNTAX_ERROR_DEL :
+                return;             
+        
+        } else if ( result.is(SYNTAX_ERROR_DEL) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR_DEL, "SERVER DEL <servername>" ) );
-                return;
-                              
-            case SYNTAX_ERROR_SET :
+                return;            
+        
+        } else if ( result.is(SYNTAX_ERROR_SET) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR_SET, "SERVER SET <servername> <PRIMARY|SECONDARY> <servername>" ) );
-                return;
-                       
-            case NO_SUCH_SERVER :
-                this.service.sendMsg ( user, output ( NO_SUCH_SERVER, cmdData.getString1() ) );
-                return;
+                return;            
+        
+        } else if ( result.is(NO_SUCH_SERVER) ) {
+                this.service.sendMsg (user, output (NO_SUCH_SERVER, result.getString1() ) );
+                return;            
         }
-        
-        
+          
         ArrayList<NetServer> sList;
         
-        int sub = cmdData.getStatus ( );
-        
-        switch ( sub ) {
-            case LIST :
+        if ( result.is(LIST) ) {
                 this.service.sendMsg ( user, "*** Server List:");
                 this.service.sendMsg ( user, "  Hub(s):");
                 for ( NetServer server : OperServ.getServers ( HUB, false ) ) {
@@ -997,19 +952,17 @@ public class OSExecutor extends Executor {
                 for ( NetServer server : OperServ.getServers ( LEAF, false ) ) {
                     this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
                 }
- //               this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
-                this.service.sendMsg ( user, "*** End of List ***");
-                break;
-                
-            case DEL :
-                if ( cmd.length == 6 && OperServ.addDelServer ( cmdData.getString1() ) ) {
+    //               this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
+                this.service.sendMsg ( user, "*** End of List ***");            
+        
+        } else if ( result.is(DEL) ) {
+                if ( cmd.length == 6 && OperServ.addDelServer (result.getString1() ) ) {
                     this.service.sendMsg ( user, "Server "+cmd[5]+" was successfully removed from list.");
                 } else {
                     this.service.sendMsg ( user, "Error: Server "+cmd[5]+" was not removed from list.");
-                }
-                break;
-                
-            case MISSING :
+                }            
+        
+        } else if ( result.is(MISSING) ) {
                 this.service.sendMsg ( user, "*** Missing Servers:");
                 this.service.sendMsg ( user, "  Hub(s):");
                 for ( NetServer server : OperServ.getServers ( HUB, true ) ) {
@@ -1019,31 +972,28 @@ public class OSExecutor extends Executor {
                 for ( NetServer server : OperServ.getServers ( LEAF, true ) ) {
                     this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
                 }
-//                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
-                this.service.sendMsg ( user, "*** End of List ***");
-                break;
-                
-            case SET :
-                NetServer server = cmdData.getServer();
-                String name = cmdData.getString1();
-                int sub2 = cmdData.getSub2();
-                if ( sub2 == PRIMARY ) {
+    //                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
+                this.service.sendMsg ( user, "*** End of List ***");            
+        
+        } else if ( result.is(SET) ) {
+                NetServer server = result.getServer();
+                String name = result.getString1();
+                HashString sub2 = result.getSub2();
+                if ( sub2.is(PRIMARY) ) {
                     server.setPrimary ( name );
                     OperServ.addUpdServer ( server );
                     this.service.sendMsg ( user, "Primary server info for server: "+server.getName()+" has now been set to: "+server.getPrimary() );
 
-                } else if ( sub2 == SECONDARY ) {
+                } else if ( sub2.is(SECONDARY) ) {
                     server.setSecondary ( name );
                     OperServ.addUpdServer ( server );
                     this.service.sendMsg ( user, "Secondary server info for server: "+server.getName()+" has now been set to: "+server.getSecondary() );
-                }
-                break;
-                
-            default :
-                this.service.sendMsg ( user, "Error: unknown command");
-                break;
-
+                }             
+        
+        } else {
+            this.service.sendMsg ( user, "Error: unknown command");            
         }
+ 
     }
 
      
@@ -1061,7 +1011,7 @@ public class OSExecutor extends Executor {
     -OperServ- q = quit message
     -OperServ- t = topic
     -OperServ- a = away message
-    -OperServ- c = channel message/notice
+    -OperServ- ch = channel message/notice
     -OperServ- P = part message
     -OperServ- Action flags:
     -OperServ- W = warn user
@@ -1078,71 +1028,62 @@ public class OSExecutor extends Executor {
     */
     
     private boolean isFlagsGood ( String flags ) {
+        HashString ch;
         for ( int index = 0; index < flags.length(); index++ ) {
-            switch ( String.valueOf(flags.charAt(index)).hashCode() ) {
-                case s :
-                case S :
-                case r :
-                case m :
-                case p :
-                case n :
-                case k :
-                case q :
-                case t :
-                case a :
-                case c :
-                case P :
-                case W :
-                case L :
-                case R :
-                case B :
-                case K :
-                case A :
-                case NUM_1 :
-                case NUM_2 :
-                case NUM_3 :
-                case NUM_4 :
-                    break;
-                    
-                default :
-                    return false;
-            }
+            ch = new HashString ( String.valueOf(flags.charAt(index)) );
+            if ( ch.is(s) ||
+                 ch.is(S) ||
+                 ch.is(r) ||
+                 ch.is(m) ||
+                 ch.is(p) ||
+                 ch.is(n) ||
+                 ch.is(k) ||
+                 ch.is(q) ||
+                 ch.is(t) ||
+                 ch.is(a) ||
+                 ch.is(c) ||
+                 ch.is(P) ||
+                 ch.is(W) ||
+                 ch.is(L) ||
+                 ch.is(R) ||
+                 ch.is(B) ||
+                 ch.is(K) ||
+                 ch.is(A) ||
+                 ch.is(NUM_1) ||
+                 ch.is(NUM_2) ||
+                 ch.is(NUM_3) ||
+                 ch.is(NUM_4) ) {
+                return true;
+           
+            } 
         }
-        return true;        
+        return false;
     }
 
     private void makill(User user, String[] cmd) {
-        CmdData cmdData = this.validateCommandData ( user, MAKILL, cmd );
+        CMDResult result = this.validateCommandData ( user, MAKILL, cmd );
         
-        switch ( cmdData.getStatus ( ) ) {
-            case SYNTAX_ERROR :
+        if ( result.is(STATS) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <add> [<nick!user@host> <nick!user@host> ...]" ) );
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <commit> <length> <reason>" ) );
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );
-                return;
-   
-            case BADTIME :
-                this.service.sendMsg ( user, output ( BADTIME, "" ) );
-                return;
-                
-            case BADREASON :
-                this.service.sendMsg ( user, output ( BADREASON, "" ) );
-                return;
-                               
-            case ACCESS_DENIED :
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-                return;
-                         
-            default :
-                
-        }
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );            
         
+        } else if ( result.is(STATS) ) {
+                this.service.sendMsg ( user, output ( BADTIME, "" ) );            
+        
+        } else if ( result.is(STATS) ) {
+                this.service.sendMsg ( user, output ( BADREASON, "" ) );            
+        
+        } else if ( result.is(STATS) ) {
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );            
+        }
+         
         ServicesBan ban = null;
-        switch ( cmdData.getSub() ) {
-            case COMMIT :
-                String time = cmdData.getString1 ( );
-                String reason = cmdData.getString2 ( );
-                String expire = cmdData.getString3 ( );
+
+        if ( result.getSub().is(COMMIT) ) {
+                String time = result.getString1 ( );
+                String reason = result.getString2 ( );
+                String expire = result.getString3 ( );
                 NickInfo oper = user.getOper().getNick();
                 String stamp = dateFormat.format ( new Date ( ) );
                 
@@ -1151,10 +1092,19 @@ public class OSExecutor extends Executor {
                 int numBans = 0;
                 boolean shouldAdd;
                 
-                for ( String str : cmdData.getMAkill() ) {
+                for ( String str : result.getMAkill() ) {
                     shouldAdd = true;
                     //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
-                    ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, str, reason, oper.getString(NAME), null, expire );
+                    ban = new ServicesBan ( 
+                        AKILL, 
+                        new HashString ( ""+System.nanoTime() ), 
+                        false, 
+                        new HashString ( str ), 
+                        reason, 
+                        oper.getNameStr(), 
+                        null, 
+                        expire
+                    );
                     affectedUsers = Handler.findUsersByBan ( ban );
                     for ( User u : affectedUsers ) {
                         if ( u.isAtleast ( IRCOP ) ) {
@@ -1177,26 +1127,23 @@ public class OSExecutor extends Executor {
                     this.service.sendGlobOp ( output ( MAKILL_ADD_GLOB, ban.getInstater(), ""+numBans, time, ""+uList.size(), percent ) );
                 } else {
                     this.service.sendGlobOp ( output ( MAKILL_NOBAN_GLOB, "", "" ) );
-                }
-                break;
-                
-            default :
-                
+                }            
         }
+         
     }
 
 
     
-    private CmdData validateCommandData ( User user, int command, String[] cmd ) {
-        CmdData cmdData = new CmdData ( );
+    private CMDResult validateCommandData ( User user, HashString command, String[] cmd ) {
+        CMDResult result = new CMDResult ( );
         User u;
         User u2;
         NickInfo oper;
         NickInfo ni;
-        int sub;
-        int sub2 = 0;
-        int sub3;
-        int sub4;
+        HashString sub;
+        HashString sub2 = null;
+        HashString sub3;
+        HashString sub4;
         int flag;
         String time;
         String text;
@@ -1210,37 +1157,34 @@ public class OSExecutor extends Executor {
         String[] buf = new String[6];
         ArrayList<ServicesBan> bans = new ArrayList<>();
         
-        switch ( command )  {
-            
-            case MAKILL :
+        if ( command.is(MAKILL) ) {
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :MAKILL ADD nick!user@host ....
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :MAKILL COMMIT 30 reason here
                 //            0       1                          2      3       4  5      6    7   = 6
-                
-                sub = cmd.length > 4 ? cmd[4].toUpperCase().hashCode() : 0;
-                
+
+                sub = new HashString ( cmd.length > 4 ? cmd[4] : "0" );
+
                 if ( isShorterThanLen ( 6, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );         
+                    result.setStatus ( SYNTAX_ERROR );         
                 } 
 
-                cmdData.setSub ( sub );
-                
-                switch ( sub ) {
-                    case ADD :
+                result.setSub ( sub );
+
+                if ( sub.is(ADD) ) {
                         for ( int i = 5; i < cmd.length; i++ ) {
                             if ( cmd[i].contains("!") && cmd[i].contains("@") ) {
                                 if ( OperServ.findBan ( AKILL, cmd[i] ) != null ) {
                                     /* Ban exist */
                                     this.service.sendMsg ( user, output ( BAN_EXIST, "AKill", cmd[i] ) );
-                                
+
                                 } else if ( user.getOper().makillDuplicate ( cmd[i] ) ) {
                                     /* Ban exist in makill */
                                     this.service.sendMsg ( user, output ( MAKILL_DUPLICATE, "MAKill", cmd[i] ) );
 
                                 } else if ( OperServ.isWhiteListed ( cmd[i] ) ) {
-                                    /* is whitelisted */
+                                    /* hasAccess whitelisted */
                                     this.service.sendMsg ( user, output ( WHITELISTED, cmd[i] ) );
-                    
+
                                 } else {
                                     /* Add as valid ban */
                                     user.getOper().addMAkill ( cmd[i] );
@@ -1248,25 +1192,23 @@ public class OSExecutor extends Executor {
                             }
                         }
                         this.service.sendMsg ( user, output ( ADDED_MAKILL, ""+user.getOper().getMAkill().size() ) );
-                        break;
-                    
-                    case RESET :
+
+                } else if ( sub.is(RESET) ) {
                         user.getOper().clearMakill();
                         this.service.sendMsg ( user, output ( RESET_MAKILL ) );
-                        break;
-                        
-                    case COMMIT :
+
+                } else if ( sub.is(COMMIT) ) {
                         time = cmd.length > 5 ? cmd[5] : "30m";
                         reason = cmd.length > 6 ? Handler.cutArrayIntoString ( cmd, 6 ) : "Banned";
                         stamp = dateFormat.format ( new Date ( ) );
-                         
+
                         if ( isShorterThanLen ( 7, cmd ) ) {
-                            cmdData.setStatus ( SYNTAX_ERROR );
+                            result.setStatus ( SYNTAX_ERROR );
                         } else if ( ( expire = Handler.expireWithCharToDateString ( stamp, time ) ) == null ) {
-                            cmdData.setStatus ( BADTIME );
+                            result.setStatus ( BADTIME );
 
                         } else if ( reason == null ) {
-                            cmdData.setStatus ( BADREASON );
+                            result.setStatus ( BADREASON );
 
                         } else {
                             for ( String str : user.getOper().getMAkill() ) {
@@ -1275,35 +1217,30 @@ public class OSExecutor extends Executor {
                                     this.service.sendMsg ( user, output ( BAN_EXIST, "AKill", str ) );
 
                                 } else if ( OperServ.isWhiteListed ( str ) ) {
-                                    /* is whitelisted */
+                                    /* hasAccess whitelisted */
                                     this.service.sendMsg ( user, output ( WHITELISTED, str ) );
 
                                 } else {
                                     /* Add as valid ban */
-                                    cmdData.addMAKill ( str );
-                                    cmdData.setString1 ( time );
-                                    cmdData.setString2 ( reason );
-                                    cmdData.setString3 ( expire );
+                                    result.addMAKill ( str );
+                                    result.setString1 ( time );
+                                    result.setString2 ( reason );
+                                    result.setString3 ( expire );
                                 }
                             }
                             user.getOper().clearMakill();
                         }
-                        break;
-                        
-                    default :
-                    
-                }                
-                break;
-            
-            case AKILL :
-            case SQLINE :
-            case SGLINE :
-            case IGNORE :
+                } 
+        
+        } else if ( command.is(AKILL) ||
+                    command.is(SQLINE) ||
+                    command.is(SGLINE) ||
+                    command.is(IGNORE) ) {
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL -*!*@1.2.3.4
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL list *!*@1.2.3.4
-                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL time 30 *!*@1.2.3.4 spamming is not allowed
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL time 30 *!*@1.2.3.4 spamming hasAccess not allowed
                 //            0       1                          2      3    4  5           6 7                       = 8+
-                sub = cmd.length > 4 ? cmd[4].toUpperCase().hashCode() : 0;
+                sub = (cmd.length > 4 ? new HashString ( cmd[4] ) : new HashString ( "0" ) );
                 if ( sub == TIME ) {
                     sub = ADD;
                 } 
@@ -1312,84 +1249,82 @@ public class OSExecutor extends Executor {
                 stamp = dateFormat.format ( new Date ( ) );
                                 
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 
                     
                 } else if ( sub == LIST && isShorterThanLen ( 6, cmd ) ) {
-                    cmdData.setStatus( SYNTAX_ERROR_LIST );
+                    result.setStatus( SYNTAX_ERROR_LIST );
                     
                 } else if ( sub == LIST && cmd.length > 5 ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( LIST );
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( LIST );
                             
                     
                     
                     
                 } else if ( sub == INFO && isShorterThanLen ( 6, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_INFO );
+                    result.setStatus ( SYNTAX_ERROR_INFO );
 
                 } else if ( sub == INFO && ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( BAN_NO_EXIST );
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( BAN_NO_EXIST );
                     
                 } else if ( sub == INFO && ban != null ) {
-                    cmdData.setServicesBan ( ban );
-                    cmdData.setStatus ( INFO );
+                    result.setServicesBan ( ban );
+                    result.setStatus ( INFO );
                     
                     
                     
                     
                 } else if ( sub == DEL && isShorterThanLen ( 6, cmd ) ) {
-                    cmdData.setStatus( SYNTAX_ERROR_DEL );
+                    result.setStatus( SYNTAX_ERROR_DEL );
                     
                 } else if ( sub == DEL && 
                             ( ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null &&
                               ( ban = OperServ.findBan ( command, cmd[5] ) ) == null ) ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( BAN_NO_EXIST );
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( BAN_NO_EXIST );
                 
                 } else if ( sub == DEL && ( oper = NickServ.findNick ( ban.getInstater() ) ) != null && 
                             ! ( oper.getAccess() < user.getAccess() || user.isIdented(oper) || user.isAtleast(SRA) ) ) {
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );
                 
                 } else if ( sub == DEL && ban != null ) {
-                    cmdData.setServicesBan ( ban );
-                    cmdData.setStatus ( DEL );
+                    result.setServicesBan ( ban );
+                    result.setStatus ( DEL );
                 
 
 
 
                 } else if ( isShorterThanLen ( 8, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_ADD );
+                    result.setStatus ( SYNTAX_ERROR_ADD );
                     
                 } else if ( ! ( cmd[6].contains("!") && cmd[6].contains("@") ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_ADD );
+                    result.setStatus ( SYNTAX_ERROR_ADD );
                     
                 } else if ( ( expire = Handler.expireToDateString ( stamp, time ) ) == null ) {
-                    cmdData.setStatus ( BADTIME );
+                    result.setStatus ( BADTIME );
                 
                 } else if ( reason == null ) {
-                    cmdData.setStatus ( BADREASON );
+                    result.setStatus ( BADREASON );
                 
                 } else if ( OperServ.findBan ( command, cmd[6] ) != null ) {
-                    cmdData.setString1 ( cmd[6] );
-                    cmdData.setStatus ( BAN_EXIST );
+                    result.setString1 ( cmd[6] );
+                    result.setStatus ( BAN_EXIST );
                 
                 } else if ( OperServ.isWhiteListed ( cmd[6] ) ) {
-                    cmdData.setStatus ( WHITELISTED );
+                    result.setStatus ( WHITELISTED );
                 } else {
-                    cmdData.setString1 ( cmd[6] );
-                    cmdData.setString2 ( cmd[5] );
-                    cmdData.setString3 ( reason );
-                    cmdData.setStatus ( ADD );
+                    result.setString1 ( cmd[6] );
+                    result.setString2 ( cmd[5] );
+                    result.setString3 ( reason );
+                    result.setStatus ( ADD );
                 }     
-                break;
-            
-            
-            case SPAMFILTER :
-                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SPAMFILTER add hello?hello?hello flags 1d spamming is not allowed
+        
+        } else if ( command.is(SPAMFILTER) ) {
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SPAMFILTER add hello?hello?hello flags 1d spamming hasAccess not allowed
                 //            0       1                          2           3   4                 5     6  7       8+              = 9+
-                sub = cmd.length > 4 ? cmd[4].toUpperCase().hashCode() : 0;
+                sub = (cmd.length > 4 ? new HashString ( cmd[4] ) : new HashString ( "0" ));
                 time = cmd.length > 7 ? cmd[7] : "30m";
                 flag = cmd.length > 6 ? cmd[6].toUpperCase().hashCode() : 0;
                 reason = cmd.length > 8 ? Handler.cutArrayIntoString ( cmd, 8 ) : "SpamFiltered"; 
@@ -1397,380 +1332,300 @@ public class OSExecutor extends Executor {
                 expire = Handler.expireToDateString ( stamp, time );
                  
                 if ( isShorterThanLen ( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( sub == LIST ) {
-                    cmdData.setStatus ( SHOWLIST );
+                    result.setStatus ( SHOWLIST );
                 } else if ( sub == DEL && isShorterThanLen ( 6, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_DEL );
+                    result.setStatus ( SYNTAX_ERROR_DEL );
                 } else if ( sub == DEL ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( DEL );
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( DEL );
                 } else if ( isShorterThanLen ( 9, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_ADD );
+                    result.setStatus ( SYNTAX_ERROR_ADD );
                 } else if ( ! this.isFlagsGood ( cmd[6] ) ) {
-                    cmdData.setStatus ( BADFLAGS );
+                    result.setStatus ( BADFLAGS );
                 } else if ( expire == null ) {
-                    cmdData.setStatus ( BADTIME );
+                    result.setStatus ( BADTIME );
                 } else if ( reason == null ) {
-                    cmdData.setStatus ( BADREASON );
+                    result.setStatus ( BADREASON );
                 } else if ( OperServ.findSpamFilter ( cmd[5] ) != null ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( FILTER_EXISTS );
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( FILTER_EXISTS );
                 } else {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setString2 ( cmd[6] );
-                    cmdData.setString3 ( cmd[7] );
-                    cmdData.setString4 ( reason );
-                    cmdData.setStatus ( ADD );
-                }
-                break;
-                
-            case STAFF :
+                    result.setString1 ( cmd[5] );
+                    result.setString2 ( cmd[6] );
+                    result.setString3 ( cmd[7] );
+                    result.setString4 ( reason );
+                    result.setStatus ( ADD );
+                }            
+        
+        } else if ( command.is(STAFF) ) {
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :STAFF LIST
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :STAFF CSOP ADD Pintuz
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :STAFF CSOP DEL Pintuz
                 //  0           1       2                           3     4    5    6       = 7
                 if ( isShorterThanLen( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
-                } else if ( ( sub = cmd[4].toUpperCase().hashCode ( ) ) == LIST ) {
-                    cmdData.setSub ( sub );
-                    cmdData.setStatus ( SHOWLIST );
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( (sub = new HashString(cmd[4])).is(LIST) ) {
+                    result.setSub ( sub );
+                    result.setStatus ( SHOWLIST );
                 } else if ( isShorterThanLen ( 7, cmd) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( sub != SRA && sub != CSOP && sub != SA && sub != IRCOP ) {
-                    cmdData.setSub ( sub );
-                    cmdData.setStatus ( SUB_SYNTAX_ERROR );
-                } else if ( ( sub2 = cmd[5].toUpperCase().hashCode() ) != ADD && sub2 != DEL ) {
-                    cmdData.setStatus ( SUB2_SYNTAX_ERROR );
+                    result.setSub ( sub );
+                    result.setStatus ( SUB_SYNTAX_ERROR );
+                } else if ( (sub2 = new HashString(cmd[5])).is(ADD) && ! sub2.is(DEL) ) {
+                    result.setStatus ( SUB2_SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[6] ) ) == null ) {
-                    cmdData.setString1 ( user.getString ( NAME ) );
-                    cmdData.setStatus ( NICK_NOT_REGISTERED );
+                    result.setString1 ( user.getString ( NAME ) );
+                    result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( user.getAccess() <= ni.getAccess() ) {
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( user.getAccess() <= Oper.hashToAccess ( sub ) ) {
                     String access = Oper.accessToStr ( ( Oper.hashToAccess ( sub ) + 1 ) );
-                    cmdData.setString1 ( access );
-                    cmdData.setStatus ( NOT_ENOUGH_ACCESS );
+                    result.setString1 ( access );
+                    result.setStatus ( NOT_ENOUGH_ACCESS );
                 } else {
-                    cmdData.setNick ( ni );
-                    cmdData.setSub ( sub );
-                    cmdData.setSub2 ( sub2 );
-                } 
-                break;
-                
-            case FORCENICK :
+                    result.setNick ( ni );
+                    result.setSub ( sub );
+                    result.setSub2 ( sub2 );
+                }             
+       
+        } else if ( command.is(FORCENICK) ) {
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :FORCENICK nick
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :FORCENICK nick newnick
                 //  0           1       2                           3         4    5        = 6
                 if ( isShorterThanLen( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = user.getOper().getNick() ) == null ) {
-                    cmdData.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( ( u = Handler.findUser ( cmd[4] ) ) == null ) {
-                    cmdData.setStatus ( NICK_NOT_FOUND );
+                    result.setStatus ( NICK_NOT_FOUND );
                 } else if ( u.isAtleast ( IRCOP ) ) {
-                    cmdData.setString1 ( u.getName() );
-                    cmdData.setStatus ( NICK_IS_OPER );
+                    result.setString1 ( u.getNameStr() );
+                    result.setStatus ( NICK_IS_OPER );
                 } else if ( cmd.length == 6 && ( u2 = Handler.findUser ( cmd[5] ) ) != null ) {
-                    cmdData.setString1 ( u2.getName() );
-                    cmdData.setStatus ( NICK_ALREADY_PRESENT );               
+                    result.setString1 ( u2.getNameStr() );
+                    result.setStatus ( NICK_ALREADY_PRESENT );               
                 } else {
-                    cmdData.setNick ( ni );
-                    cmdData.setString1 ( u.getName() );
+                    result.setNick ( ni );
+                    result.setString1 ( u.getNameStr() );
                     if ( cmd.length == 6 ) {
-                        cmdData.setString2 ( cmd[5] );
+                        result.setString2 ( cmd[5] );
                     }
-                }
-                break;
-                
-            case SERVER :
+                }            
+        
+        } else if ( command.is(SERVER) ) {
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER list                             = 5
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER  del  server                     = 6
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER  set  server  primary  server
                 //  0           1       2                           3         4       5        6       7    = 8
                 if ( isShorterThanLen( 5, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );
-                } else if ( ( sub = cmd[4].toUpperCase().hashCode() ) == 0 || 
-                            ( sub != LIST && sub != DEL && sub != SET && sub != MISSING ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR );                
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( (sub = new HashString(cmd[4])) == null || 
+                            ( ! sub.is(LIST) && ! sub.is(DEL) && ! sub.is(SET) && ! sub.is(MISSING) ) ) {
+                    result.setStatus ( SYNTAX_ERROR );                
                 } else if ( sub == DEL && isShorterThanLen( 6, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_DEL );                    
+                    result.setStatus ( SYNTAX_ERROR_DEL );                    
                 } else if ( sub == DEL && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( NO_SUCH_SERVER );                    
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( NO_SUCH_SERVER );                    
                 } else if ( sub == DEL ) {
-                    cmdData.setServer ( server1 );
-                    cmdData.setStatus ( DEL );
+                    result.setServer ( server1 );
+                    result.setStatus ( DEL );
                 } else if ( sub == SET && isShorterThanLen( 8, cmd ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_SET );                    
+                    result.setStatus ( SYNTAX_ERROR_SET );                    
                 } else if ( sub == SET && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
-                    cmdData.setString1 ( cmd[5] );
-                    cmdData.setStatus ( NO_SUCH_SERVER );                    
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( NO_SUCH_SERVER );                    
                 } else if ( sub == SET && 
-                            ( ( sub2 = cmd[6].toUpperCase().hashCode() ) == 0 || 
-                                sub2 != PRIMARY && sub2 != SECONDARY ) ) {
-                    cmdData.setStatus ( SYNTAX_ERROR_SET );                    
+                            ( (sub2 = new HashString(cmd[6])) == null || 
+                               ! sub2.is(PRIMARY) && ! sub2.is(SECONDARY) ) ) {
+                    result.setStatus ( SYNTAX_ERROR_SET );                    
                 } else {
-                    cmdData.setStatus ( sub );
-                    switch ( sub ) {
-                        case LIST :
-                        case MISSING :
-                            break;
-                        case DEL :
-                            cmdData.setServer ( server1 );
-                            break;
-                        case SET :
-                            cmdData.setServer ( server1 );
-                            cmdData.setSub2 ( sub2 );
-                            cmdData.setString1 ( cmd[7] );
-                            break;
-                        default :
+                    result.setStatus ( sub );
+                    
+                    if ( sub.is(DEL) ) {
+                        result.setServer ( server1 );
+                    
+                    } else if ( sub.is(SET) ) {
+                        result.setServer ( server1 );
+                        result.setSub2 ( sub2 );
+                        result.setString1 ( cmd[7] );
                     }
-                }
-                break;
-                
-            default :
-                
+                     
+                }            
         }
-        
-        return cmdData;
+        return result;
     }
  
     
     
     
-    /* Send b message to all users identified to specific nickname */
+    /* Send ban2 message to all users identified to specific nickname */
     private void msgUsersByNick ( NickInfo ni, String msg )  {
         for ( User user : Handler.findUsersByNick ( ni )  )  {
             this.service.sendMsg ( user, msg );
         }
     }
       
-    public String output ( int code, String... args )  {
-        switch ( code )  {
-            case SYNTAX_ERROR :
-                return "Syntax: /OperServ "+args[0];
-                            
-            case SYNTAX_ERROR_DEL :
-                return "Syntax: /OperServ "+args[0];
-                            
-            case SYNTAX_ERROR_SET :
-                return "Syntax: /OperServ "+args[0];
-                   
-            case NO_SUCH_SERVER :
-                return "Error: server not found: "+args[0];
-                   
-            case SUB_SYNTAX_ERROR :
-                return "Sub-commands available: "+args[0];
-            
-            case SUB2_SYNTAX_ERROR :
-                return "Sub2-commands available: "+args[0];
-                
-            case ACCESS_DENIED :
-                return "Access denied.";
-                  
-            case NOT_ENOUGH_ACCESS :
-                return "Access denied. You need to be atleast "+args[0]+" to perform that action.";
-                
-            case BAN_ADD :
-                return "Permanent "+args[0]+" for "+args[1]+" was successfully placed. Affecting "+args[2]+" users ["+args[3]+"%]";
-                
-            case BAN_ADD_GLOB :
-                return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+" min." ;
-            
-            case BAN_EXIST :
-                return args[0]+" already exists for "+args[1]+".";
-                
-            case BAN_NO_EXIST :
-                return args[0]+" for "+args[1]+" not found.";
-                
-            case BAN_TIME_GLOB :
-                return args[0]+" for "+args[1]+" was successfully placed by "+args[2]+". Affecting "+args[3]+" users ["+args[4]+"%]";
-
-            case BAN_DEL :
-                return args[0]+" for "+args[1]+" was successfully removed.";
-                
-            case BAN_DEL_GLOB :
-                return args[0]+" for "+args[1]+" was successfully removed by "+args[2]+".";
-                
-            case BAN_LIST : 
-                return "  "+args[0]+"  ID:"+args[1]+"  Instater:"+args[2]+"  Reason: "+args[3]; 
-                
-            case BAN_LIST_START :
-                return args[0]+" List "+ (  ( ! args[1].isEmpty ( ) ) ?"matching: "+args[1]:"" );
-                
-            case BAN_LIST_STOP :
-                return "*** End of List ***";
-                         
-            case AKILL_LIST_NONE :
-                return "Error: No matching akill(s) found.";
-                
-            case BAN_TIME_ERROR :
-                return "Error: "+args[0]+" time "+args[1]+" is not a valid command use num followed by m, h or d.  ( ex. 10d ) ";
-                
-            case BAN_MATCH_OPER :
-                return "Error: "+args[0]+" for "+args[1]+" matches oper "+args[2]+"";
-                
-            case NICK_NOT_REGGED :
-                return "Nick "+args[0]+" is not registered";
-                
-            case STAFF_ADD :
-                return "Nick "+args[1]+" was added to the "+args[0]+" list";
-                
-            case STAFF_NOT_ADD :
-                return "Nick "+args[1]+" was NOT added to the "+args[0]+" list";
-                
-            case STAFF_DEL :
-                return "Nick "+args[1]+" was deleted from the "+args[0]+" list";
-                
-            case STAFF_NOT_DEL :
-                return "Nick "+args[1]+" was NOT deleted from the "+args[0]+" list";
-                
-            case NICK_NOW_STAFF :
-                return "Nick "+args[1]+" to which you have identified has been added to the "+args[0]+" list";
-                
-            case NICK_NO_LONGER_STAFF :
-                return "Nick "+args[1]+" to which you have identified has been removed from the "+args[0]+" list";
-                
-            case GLOB_STAFF_ADD :
-                return args[1]+" has added "+args[2]+" to the "+args[0]+" list";
-                
-            case GLOB_STAFF_DEL :
-                return args[1]+" has removed "+args[2]+" from "+args[0]+" list";
- 
-            case SHOWLOG :
-                return "["+args[0]+"] "+args[1]+" "+(args[1].length()==2?"":" ")+args[1]+" "+(args[1].length()==2?"":" ")+args[3]+" "+( args[4] != null && args[4].length() > 0 ? "["+args[4]+"]" : "" );
-            
-            case SHOWSNOOPLOG :
-                return "["+args[0]+"] "+args[1]+" : "+args[2];
-            
-            case SHOWAUDIT :
-                return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+" "+args[3]+" "+( args[4] != null ? "["+args[4]+"]" : "" )+(args[5] != null ? ": "+args[5] : "");
-                             
-            case SHOWBANLOG :
-                return "["+args[0]+"] "+args[1]+" "+args[1]+" [Ticket:"+args[2]+"] "+args[3]+" ["+args[4]+"] "+(args[5] != null ? ": "+args[5] : "");
-                     
-            case SHOWCOMMENT :
-                return "["+args[0]+"] "+args[1]+": "+args[2]+"";
-                       
-            case ADD_COMMENT :
-                return "Comment has "+args[0];
-                     
-            case BADFLAGS :
-                return "Error: Bad flags, consult the help text for syntax.";
-                   
-            case BADTIME :
-                return "Error: Bad expire time string, consult the help text for valid syntax.";
-
-            case BADREASON :
-                return "Error: Bad reason string, consult the help text for syntax.";
-            
-            case ADDED_MAKILL :
-                return "MAKILL now contains "+args[0]+" masks.";
-            
-            case RESET_MAKILL :
-                return "MAKILL has been reset";
-
-            case MAKILL_ADD_GLOB :
-                return args[0]+" akilled "+args[1]+" hosts for "+args[2]+" min affecting "+args[3]+" users ["+args[4]+"%]." ;
-
-            case MAKILL_NOBAN_GLOB :
-                return "MAKILL has no bans present";
-            
-            case MAKILL_DUPLICATE :
-                return "MAKILL for "+args[1]+" is a duplicate.";
-
-            case FILTER_EXISTS :
-                return "Error: There is already a spamfilter matching: "+args[0]+".";
-             
-            case SPAMFILTER_LIST :
-                return "  "+args[0]+": "+args[1]+" "+args[2]+" ["+args[3]+"]: "+args[4]; 
-               
-            case NICK_NOT_FOUND :
-                return "Error: Nick "+args[0]+" was not found."; 
-             
-            case NICK_ALREADY_PRESENT :
-                return "Error: Nick "+args[0]+" already exists on the network."; 
-             
-            case NICK_IS_OPER :
-                return "Error: Nick "+args[0]+" is an IRCop"; 
-               
-            case WHITELISTED :
-                return "Error: pattern "+args[0]+" is matching a whitelisted mask and cannot be banned."; 
-               
-            default:
-                return "";
-                
+    public String output ( HashString code, String... args )  {
+        if ( code.is(SYNTAX_ERROR) ) {
+            return "Syntax: /OperServ "+args[0];            
+        
+        } else if ( code.is(SYNTAX_ERROR_DEL) ) {
+            return "Syntax: /OperServ "+args[0];            
+        
+        } else if ( code.is(SYNTAX_ERROR_SET) ) {
+            return "Syntax: /OperServ "+args[0];            
+        
+        } else if ( code.is(NO_SUCH_SERVER) ) {
+            return "Error: server not found: "+args[0];            
+        
+        } else if ( code.is(SUB_SYNTAX_ERROR) ) {
+            return "Sub-commands available: "+args[0];            
+        
+        } else if ( code.is(SUB2_SYNTAX_ERROR) ) {
+            return "Sub2-commands available: "+args[0];            
+        
+        } else if ( code.is(ACCESS_DENIED) ) {
+            return "Access denied.";            
+        
+        } else if ( code.is(NOT_ENOUGH_ACCESS) ) {
+            return "Access denied. You need to be atleast "+args[0]+" to perform that action.";            
+        
+        } else if ( code.is(BAN_ADD) ) {
+            return "Permanent "+args[0]+" for "+args[1]+" was successfully placed. Affecting "+args[2]+" users ["+args[3]+"%]";            
+        
+        } else if ( code.is(BAN_ADD_GLOB) ) {
+            return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+" min." ;            
+        
+        } else if ( code.is(BAN_EXIST) ) {
+            return args[0]+" already exists for "+args[1]+".";            
+        
+        } else if ( code.is(BAN_NO_EXIST) ) {
+            return args[0]+" for "+args[1]+" not found.";            
+        
+        } else if ( code.is(BAN_TIME_GLOB) ) {
+            return args[0]+" for "+args[1]+" was successfully placed by "+args[2]+". Affecting "+args[3]+" users ["+args[4]+"%]";            
+        
+        } else if ( code.is(BAN_DEL) ) {
+            return args[0]+" for "+args[1]+" was successfully removed.";            
+        
+        } else if ( code.is(BAN_DEL_GLOB) ) {
+            return args[0]+" for "+args[1]+" was successfully removed by "+args[2]+".";             
+        
+        } else if ( code.is(BAN_LIST) ) {
+            return "  "+args[0]+"  ID:"+args[1]+"  Instater:"+args[2]+"  Reason: "+args[3];             
+        
+        } else if ( code.is(BAN_LIST_START) ) {
+            return args[0]+" List "+ (  ( ! args[1].isEmpty ( ) ) ?"matching: "+args[1]:"" );             
+        
+        } else if ( code.is(BAN_LIST_STOP) ) {
+            return "*** End of List ***";             
+        
+        } else if ( code.is(AKILL_LIST_NONE) ) {
+            return "Error: No matching akill(s) found.";             
+        
+        } else if ( code.is(BAN_TIME_ERROR) ) {
+            return "Error: "+args[0]+" time "+args[1]+" is not a valid command use num followed by m, h or d.  ( ex. 10d ) ";             
+        
+        } else if ( code.is(BAN_MATCH_OPER) ) {
+            return "Error: "+args[0]+" for "+args[1]+" matches oper "+args[2]+"";             
+        
+        } else if ( code.is(NICK_NOT_REGGED) ) {
+            return "Nick "+args[0]+" is not registered";             
+        
+        } else if ( code.is(STAFF_ADD) ) {
+            return "Nick "+args[1]+" was added to the "+args[0]+" list";             
+        
+        } else if ( code.is(STAFF_NOT_ADD) ) {
+            return "Nick "+args[1]+" was NOT added to the "+args[0]+" list";             
+        
+        } else if ( code.is(STAFF_DEL) ) {
+            return "Nick "+args[1]+" was deleted from the "+args[0]+" list";             
+        
+        } else if ( code.is(STAFF_NOT_DEL) ) {
+            return "Nick "+args[1]+" was NOT deleted from the "+args[0]+" list";             
+        
+        } else if ( code.is(NICK_NOW_STAFF) ) {
+            return "Nick "+args[1]+" to which you have identified has been added to the "+args[0]+" list";             
+        
+        } else if ( code.is(NICK_NO_LONGER_STAFF) ) {
+            return "Nick "+args[1]+" to which you have identified has been removed from the "+args[0]+" list";             
+        
+        } else if ( code.is(GLOB_STAFF_ADD) ) {
+            return args[1]+" has added "+args[2]+" to the "+args[0]+" list";             
+        
+        } else if ( code.is(GLOB_STAFF_DEL) ) {
+            return args[1]+" has removed "+args[2]+" from "+args[0]+" list";             
+        
+        } else if ( code.is(SHOWLOG) ) {
+            return "["+args[0]+"] "+args[1]+" "+(args[1].length()==2?"":" ")+args[1]+" "+(args[1].length()==2?"":" ")+args[3]+" "+( args[4] != null && args[4].length() > 0 ? "["+args[4]+"]" : "" );             
+        
+        } else if ( code.is(SHOWSNOOPLOG) ) {
+            return "["+args[0]+"] "+args[1]+" : "+args[2];             
+        
+        } else if ( code.is(SHOWAUDIT) ) {
+            return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+" "+args[3]+" "+( args[4] != null ? "["+args[4]+"]" : "" )+(args[5] != null ? ": "+args[5] : "");             
+        
+        } else if ( code.is(SHOWBANLOG) ) {
+            return "["+args[0]+"] "+args[1]+" "+args[1]+" [Ticket:"+args[2]+"] "+args[3]+" ["+args[4]+"] "+(args[5] != null ? ": "+args[5] : "");             
+        
+        } else if ( code.is(SHOWCOMMENT) ) {
+            return "["+args[0]+"] "+args[1]+": "+args[2]+"";             
+        
+        } else if ( code.is(ADD_COMMENT) ) {
+            return "Comment has "+args[0];             
+        
+        } else if ( code.is(BADFLAGS) ) {
+            return "Error: Bad flags, consult the help text for syntax.";             
+        
+        } else if ( code.is(BADTIME) ) {
+            return "Error: Bad expire time string, consult the help text for valid syntax.";             
+        
+        } else if ( code.is(BADREASON) ) {
+            return "Error: Bad reason string, consult the help text for syntax.";             
+        
+        } else if ( code.is(ADDED_MAKILL) ) {
+            return "MAKILL now contains "+args[0]+" masks.";             
+        
+        } else if ( code.is(RESET_MAKILL) ) {
+            return "MAKILL has been reset";             
+        
+        } else if ( code.is(MAKILL_ADD_GLOB) ) {
+            return args[0]+" akilled "+args[1]+" hosts for "+args[2]+" min affecting "+args[3]+" users ["+args[4]+"%].";             
+        
+        } else if ( code.is(MAKILL_NOBAN_GLOB) ) {
+            return "MAKILL has no bans present";             
+        
+        } else if ( code.is(MAKILL_DUPLICATE) ) {
+            return "MAKILL for "+args[1]+" is a duplicate.";             
+        
+        } else if ( code.is(FILTER_EXISTS) ) {
+            return "Error: There is already a spamfilter matching: "+args[0]+".";             
+        
+        } else if ( code.is(SPAMFILTER_LIST) ) {
+            return "  "+args[0]+": "+args[1]+" "+args[2]+" ["+args[3]+"]: "+args[4];
+        
+        } else if ( code.is(NICK_NOT_FOUND) ) {
+            return "Error: Nick "+args[0]+" was not found.";             
+        
+        } else if ( code.is(NICK_ALREADY_PRESENT) ) {
+            return "Error: Nick "+args[0]+" already exists on the network.";
+        
+        } else if ( code.is(NICK_IS_OPER) ) {
+            return "Error: Nick "+args[0]+" is an IRCop";             
+        
+        } else if ( code.is(WHITELISTED) ) {
+            return "Error: pattern "+args[0]+" is matching a whitelisted mask and cannot be banned.";             
+        
+        } else {
+            return "";
         }
+         
     }
 
-    private static final int SYNTAX_ERROR           = 1001;
-    private static final int ACCESS_DENIED          = 1003;
-    private static final int NOT_ENOUGH_ACCESS      = 1004;
-    private static final int BAN_ADD                = 1011;
-    private static final int BAN_ADD_GLOB           = 1012;
-    private static final int BAN_EXIST              = 1013;
-    private static final int BAN_TIME               = 1014;
-    private static final int BAN_TIME_GLOB          = 1015;
-    private static final int BAN_NO_EXIST           = 1016;
-    private static final int BAN_DEL                = 1017;
-    private static final int BAN_DEL_GLOB           = 1018;
-    private static final int BAN_LIST               = 1019;
-    private static final int BAN_LIST_START         = 1020;
-    private static final int BAN_LIST_STOP          = 1021;
-    private static final int BAN_TIME_ERROR         = 1022;
-    private static final int BAN_MATCH_OPER         = 1023;
-    private static final int AKILL_LIST_NONE        = 1024;
-    private static final int WHITELISTED            = 1025;
-
-
-    private static final int STAFF_ADD              = 1101;
-    private static final int STAFF_NOT_ADD          = 1102;
-    private static final int STAFF_DEL              = 1103;
-    private static final int STAFF_NOT_DEL          = 1104;
-    private static final int NICK_NOT_REGGED        = 1105;
-    private static final int NICK_NOW_STAFF         = 1106;
-    private static final int NICK_NO_LONGER_STAFF   = 1107;
-
-    private static final int GLOB_STAFF_ADD         = 1201;
-    private static final int GLOB_STAFF_DEL         = 1202;
-
-    private static final int SHOWLOG                = 2001;
-    private static final int SHOWSNOOPLOG           = 2002;
-    private static final int SHOWAUDIT              = 2003;
-    private static final int SHOWAUDITGLOBAL        = 2004;
-    
-    private static final int SHOWCOMMENT            = 2011;
-    private static final int ADD_COMMENT            = 2012;
-
-    private static final int SUB_SYNTAX_ERROR       = 3001;
-    private static final int SUB2_SYNTAX_ERROR      = 3002;
-
-    private final static int NICK_NOT_REGISTERED    = 3011;
-    private final static int SHOWLIST               = 3051;
-    private final static int SHOWBANLOG             = 3052;
-
-    private final static int BADFLAGS               = 3101;
-    private final static int FILTER_EXISTS          = 3102;
-    private final static int SPAMFILTER_LIST        = 3103;
-    private final static int BADTIME                = 3104;
-    private final static int BADREASON              = 3105;
-    private final static int ADDED_MAKILL           = 3111;
-    private final static int RESET_MAKILL           = 3112;
-    private final static int MAKILL_ADD_GLOB        = 3113;
-    private final static int MAKILL_NOBAN_GLOB      = 3114;
-    private final static int MAKILL_DUPLICATE       = 3115;
-
-    private final static int NICK_NOT_FOUND         = 3201;
-    private final static int NICK_ALREADY_PRESENT   = 3202;
-    private final static int NICK_IS_OPER           = 3203;
-
-    private static final int SYNTAX_ERROR_DEL       = 3301;
-    private static final int SYNTAX_ERROR_ADD       = 3302;
-    private static final int SYNTAX_ERROR_INFO      = 3303;
-    private static final int SYNTAX_ERROR_LIST      = 3304;
-    private static final int SYNTAX_ERROR_SET       = 3305;
-
-    private static final int NO_SUCH_SERVER         = 3321;
+ 
 
 }

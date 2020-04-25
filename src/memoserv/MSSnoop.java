@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -17,6 +17,7 @@
  */
 package memoserv;
 
+import core.HashString;
 import core.Proc;
 import monitor.Snoop;
 import user.User;
@@ -29,7 +30,7 @@ class MSSnoop extends Snoop {
       
     public MSSnoop ( MemoServ service )  {
         super ( );
-        String channel          = Proc.getConf().get ( SNOOPMEMOSERV );
+        HashString channel          = Proc.getConf().get ( SNOOPMEMOSERV );
         this.service            = service;
         this.chan               = channel;
     }
@@ -53,7 +54,7 @@ class MSSnoop extends Snoop {
         return str;
     }
     
-    public void msg ( boolean ok, String target, User user, String[] cmd )  { 
+    public void msg ( boolean ok, HashString target, User user, String[] cmd )  { 
         this.log ( ok, target, user, cmd ); 
         this.sendTo ( ok, user, cmd ); 
     }

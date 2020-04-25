@@ -11,7 +11,7 @@ package core;
  */
 public class Trigger extends HashNumeric {
     private static boolean warn;
-    private static int action;
+    private static HashString action;
     private static int warnIP;
     private static int warnRange;
     private static int actionIP;
@@ -19,7 +19,7 @@ public class Trigger extends HashNumeric {
     
     public Trigger ( ) {
         warn = Proc.getConf().getBoolean ( TRIGGERWARN );
-        action = Proc.getConf().getInt ( TRIGGERACTION );
+        action = Proc.getConf().get ( TRIGGERACTION );
         warnIP = Proc.getConf().getInt ( TRIGGERWARNIP );
         warnRange = Proc.getConf().getInt ( TRIGGERWARNRANGE );
         actionIP = Proc.getConf().getInt ( TRIGGERACTIONIP );
@@ -30,7 +30,7 @@ public class Trigger extends HashNumeric {
         return warn;
     }
 
-    public static int getAction() {
+    public static HashString getAction() {
         return action;
     }
 

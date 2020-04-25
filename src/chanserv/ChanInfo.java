@@ -23,6 +23,7 @@ import core.Handler;
 import core.ServicesID;
 import core.HashNumeric;
 import static core.HashNumeric.SOP;
+import core.HashString;
 import core.Throttle;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -37,10 +38,9 @@ import java.util.Date;
  * @author DreamHealer
  */
 public class ChanInfo extends HashNumeric {
-    private String          name;
+    private HashString      name;
     private NickInfo        founder;
     private String          desc; 
-    private int             hashName;       /* Integer representation of nickname */ 
     private String          pass;
     private Topic           topic; 
     private ChanSetting     settings;
@@ -61,10 +61,20 @@ public class ChanInfo extends HashNumeric {
     private CSChanges        changes = new CSChanges ( );
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     *
+     * @param name
+     * @param founder
+     * @param pass
+     * @param desc
+     * @param topic
+     * @param regStamp
+     * @param lastUsed
+     * @param settings
+     */
     public ChanInfo ( String name, String founder, String pass, String desc, Topic topic, String regStamp, String lastUsed, ChanSetting settings )  {
         /* Load chan */
-        this.name       = name;
-        this.hashName   = this.name.toUpperCase().hashCode ( );
+        this.name       = new HashString ( name );
         this.pass       = pass;
         this.desc       = desc;
         this.topic      = topic;
@@ -82,10 +92,17 @@ public class ChanInfo extends HashNumeric {
         this.newLogList = new ArrayList<>();
     }
     
+    /**
+     *
+     * @param name
+     * @param founder
+     * @param pass
+     * @param desc
+     * @param topic
+     */
     public ChanInfo ( String name, NickInfo founder, String pass, String desc, Topic topic )  {
         /* Register nickname */
-        this.name       = name;
-        this.hashName   = this.name.toUpperCase().hashCode ( );
+        this.name       = new HashString ( name );
         this.founder    = founder;
         this.pass       = pass;
         this.desc       = desc;
@@ -105,6 +122,9 @@ public class ChanInfo extends HashNumeric {
         this.settings.set ( OPGUARD, true );
     }
 
+    /**
+     *
+     */
     public void maintenence ( ) {
         this.printStats ( );
         this.updateAccessChanges ( );
@@ -175,44 +195,50 @@ public class ChanInfo extends HashNumeric {
 
     }
     
-    public String getName ( ) {
+    /**
+     *
+     * @return
+     */
+    public HashString getName ( ) {
         return this.name;
     }
+
+    /**
+     *
+     * @return
+     */
+    public String getNameStr ( ) {
+        return this.name.getString();
+    }
     
-    public String getString ( int var )  {
-       
-        switch ( var )  {
-            case NAME :
-                return this.name;
-
-            case DESCRIPTION :
-                return this.desc;
-
-            case TOPIC :
-                if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
-                    return this.topic.getTopic ( );
-                }
-                return "";
-                
-            case TOPICNICK :
-                if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
-                    return this.topic.getSetter();
-                }
-                return "";
-                
-            case LASTUSED :
-                return this.lastUsed;
-
-            case REGTIME :
-                return this.regTime;
-
-            default :
-                return "";
-
+    /**
+     *
+     * @param it
+     * @return
+     */
+    public String getString ( HashString it )  {
+        if ( it.is(TOPICNICK) ) { 
+            if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
+                return this.topic.getSetter();
+            } 
+        } else if ( it.is(TOPIC) ) {
+            if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
+                return this.topic.getTopic ( );
+            } 
         } 
-      
+        else if ( it.is(NAME) )             { return this.name.getString();     }
+        else if ( it.is(DESCRIPTION) )      { return this.desc;                 }
+        else if ( it.is(LASTUSED) )         { return this.name.getString();     }
+        else if ( it.is(REGTIME) )          { return this.name.getString();     }
+        return "";
     }
  
+    /**
+     *
+     * @param user
+     * @param pass
+     * @return
+     */
     public boolean identify ( User user, String pass )  {
         if ( this.pass.compareTo ( pass )  == 0 )  {
             /* matches passwords */
@@ -221,12 +247,23 @@ public class ChanInfo extends HashNumeric {
         return false;
     }
 
+    /**
+     *
+     * @param desc
+     * @return
+     */
     public boolean setDescription ( String desc )  {
         this.desc = desc;
         this.changed();
         return true;
     }
 
+    /**
+     *
+     * @param oldPass
+     * @param newPass
+     * @return
+     */
     public boolean setPass ( String oldPass, String newPass )  {
         if ( this.pass.compareTo ( oldPass )  == 0 )  {
             this.pass = newPass;
@@ -236,46 +273,72 @@ public class ChanInfo extends HashNumeric {
         return false;
     }
 
+    /**
+     *
+     */
     public void setLastUsed ( ) {
         Date dateBuf    = new Date ( );
         this.lastUsed   = dateFormat.format ( dateBuf );
         this.changes.change ( LASTUSED );
     }
      
-    
+    /**
+     *
+     * @return
+     */
     public String getPass ( )  {
         return this.pass;
     }
 
- 
+    /**
+     *
+     * @return
+     */
     public ChanSetting getSettings ( )  {
         return this.settings;
     }
     
+    /**
+     *
+     * @param settings
+     */
     public void setSettings ( ChanSetting settings )  {
         this.settings = settings;
         this.changed();
-    }
-  
-    public int getHashName ( ) { 
-        return this.hashName;
     }
 
     private void attachFounder ( String founder )  {
         this.founder = NickServ.findNick ( founder );
     }
 
+    /**
+     *
+     * @return
+     */
     public NickInfo getFounder ( )  {
         return this.founder;
     }
 
+    /**
+     *
+     * @return
+     */
     public Topic getTopic ( )  { return topic; }
 
+    /**
+     *
+     * @param topic
+     */
     public void setTopic ( Topic topic )  {
         this.topic = topic; 
         this.changed();
     }
 
+    /**
+     *
+     * @param user
+     * @return
+     */
     public NickInfo getNickByUser ( User user )  {
         if ( user == null || user.getSID ( )  == null )  {
             return null;
@@ -302,10 +365,16 @@ public class ChanInfo extends HashNumeric {
         return null;
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public int getAccessByNick ( NickInfo ni )  {
         if ( ni == null ) {
-            return NONE; 
+            return 0; 
         }
+        
         if ( ni.hashCode ( ) == this.founder.hashCode ( ) ) {
             return 3;
         } else if ( this.isAccess ( SOP, ni ) ) {
@@ -319,6 +388,11 @@ public class ChanInfo extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param user
+     * @return
+     */
     public NickInfo getTopNickByUser ( User user )  {
         ServicesID sid = user.getSID ( );
         NickInfo ni = null;
@@ -334,13 +408,19 @@ public class ChanInfo extends HashNumeric {
         return ni;
     }
 
+    /**
+     *
+     * @param log
+     */
     public void addAccessLog ( CSAccessLogEvent log ) {
         this.newLogList.add ( log );
     }
 
     
     
-    /*** AKICK *******************************/
+    /*** AKICK
+     * @param mask
+     * @return  *******************************/
  
     public boolean delAkick ( String mask )  {
         CSAcc del = null;
@@ -359,6 +439,11 @@ public class ChanInfo extends HashNumeric {
         return false;
     }    
    
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isAkick ( User user )  {
         for ( CSAcc acc : this.klist )  {
             if ( acc.matchUser ( user ) )  {
@@ -368,16 +453,25 @@ public class ChanInfo extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean isAkick ( NickInfo ni )  {
-        int hash = ni.getHashName();
         for ( CSAcc acc : this.klist )  {
-            if ( acc.getNick() != null && acc.getNick().getHashName() == hash )  {
+            if ( acc.getNick() != null && acc.getNick().getName().is(ni) )  {
                 return true;
             }
         }    
         return false;
     }
    
+    /**
+     *
+     * @param user
+     * @return
+     */
     public CSAcc getAkickAccess ( User user )  {
         for ( CSAcc acc : this.klist )  {
             if ( acc.matchUser ( user ) ) {
@@ -387,7 +481,9 @@ public class ChanInfo extends HashNumeric {
         return null;
     }
     
-    /*** FOUNDER *******************************/  
+    /*** FOUNDER
+     * @param ni  
+     * @return  *******************************/  
     
     public boolean isFounder ( NickInfo ni )  {
         if ( ni == null ) {
@@ -396,6 +492,11 @@ public class ChanInfo extends HashNumeric {
         return this.founder.hashCode ( ) == ni.hashCode ( );
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isFounder ( User user )  {
         ServicesID sid = user.getSID ( );
         for  ( NickInfo ni : sid.getNiList ( )  )  {
@@ -407,10 +508,17 @@ public class ChanInfo extends HashNumeric {
     }
     
     /* Return founder nick if user has identified to the founder nick */
+
+    /**
+     *
+     * @param user
+     * @return
+     */
+
     public String getIsFounder ( User user ) {
         for ( NickInfo ni : user.getSID().getNiList ( ) ) {
-            if ( this.founder.hashCode ( ) == ni.hashCode ( ) ) {
-                return ni.getName ( );
+            if ( this.founder.is(ni) ) {
+                return ni.getName().getString();
             }
         }
         return null;
@@ -419,53 +527,46 @@ public class ChanInfo extends HashNumeric {
     
     
     
-    /*** GENERIC LIST ********************/
+    /*** GENERIC LIST
+     * @param access
+     * @return  ********************/
     
-    public ArrayList<CSAcc> getAccessList ( int access ) {
-        switch ( access ) {
-            case SOP :
-                return this.slist;
-            
-            case AOP :
-                return this.alist;
-                
-            case AKICK :
-                return this.klist;
-                
-            default :
-                return new ArrayList<>();
+    public ArrayList<CSAcc> getAccessList ( HashString access ) {
+        if      ( access.is(SOP) )          { return this.slist;                }
+        else if ( access.is(AOP) )          { return this.alist;                }
+        else if ( access.is(AKICK) )        { return this.klist;                }
+        else {
+            return new ArrayList<>();
         }
-
     }
 
-    public void addAccess ( int access, CSAcc acc ) {
+    /**
+     *
+     * @param access
+     * @param acc
+     */
+    public void addAccess ( HashString access, CSAcc acc ) {
         if ( acc == null ) {
             return;
         }
         this.removeFromAll ( acc );
-        switch ( access ) {
-            case SOP :
-                this.slist.add ( acc );
-                break;
-                
-            case AOP :
-                this.alist.add ( acc );
-                break;
-                
-            case AKICK :
-                this.klist.add ( acc );
-                break;
-                
-            default :
-                
-        }
+        if      ( access.is(SOP) )          { this.slist.add ( acc );           }
+        else if ( access.is(AOP) )          { this.alist.add ( acc );           }
+        else if ( access.is(AKICK) )        { this.klist.add ( acc );           }
+        
         this.addAccList.add ( acc );
         if ( acc.getNick() != null ) {
             acc.getNick().addToAccessList ( access, this );
         }
     }
     
-    public CSAcc getAccessByNick ( int access, NickInfo ni ) {
+    /**
+     *
+     * @param access
+     * @param ni
+     * @return
+     */
+    public CSAcc getAccessByNick ( HashString access, NickInfo ni ) {
         for ( CSAcc acc : getAccessList ( access ) ) {
             if ( acc.getNick().hashCode ( ) == ni.hashCode ( ) ) {
                 return acc;
@@ -474,7 +575,13 @@ public class ChanInfo extends HashNumeric {
         return null;
     }
 
-    public boolean isAccess ( int access, User user )  {
+    /**
+     *
+     * @param access
+     * @param user
+     * @return
+     */
+    public boolean isAccess ( HashString access, User user )  {
         for ( CSAcc acc : getAccessList ( access ) ) {
             if ( acc.matchUser ( user ) ) {
                 return true;
@@ -482,9 +589,15 @@ public class ChanInfo extends HashNumeric {
         }
         return false;
     }
+
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isAtleastAop ( User user )  {
-        int[] types = { AOP, SOP };
-        for ( int type : types ) {
+        HashString[] types = { AOP, SOP };
+        for ( HashString type : types ) {
             for ( CSAcc acc : getAccessList ( type ) ) {
                 if ( acc.matchUser ( user ) ) {
                     return true;
@@ -493,9 +606,14 @@ public class ChanInfo extends HashNumeric {
         }
         return isFounder ( user );
     }
+
+    /**
+     *
+     * @param user
+     */
     public void updateLastOped ( User user ) {
-        int[] types = { AOP, SOP };
-        for ( int type : types ) {
+        HashString[] types = { AOP, SOP };
+        for ( HashString type : types ) {
             for ( CSAcc acc : getAccessList ( type ) ) {
                 if ( acc.matchUser ( user ) ) {
                     acc.updateLastOped ( );
@@ -505,25 +623,24 @@ public class ChanInfo extends HashNumeric {
             }
         }
     }
-    private ArrayList<CSAcc> getAccList ( int name ) {
-        switch ( name ) {
-            case ADDACCLIST :
-                return addAccList;
-                
-            case UPDACCLIST :
-                return updAccList;
-                
-            case REMACCLIST :
-                return remAccList;
-                
-            default :
-                return new ArrayList<>();
+    private ArrayList<CSAcc> getAccList ( HashString it ) {
+        if      ( it.is(ADDACCLIST) )           { return addAccList;            }
+        else if ( it.is(UPDACCLIST) )           { return updAccList;            }
+        else if ( it.is(REMACCLIST) )           { return remAccList;            }
+        else {
+            return new ArrayList<>();
         }
     }
-    public void addToAccList ( int list, CSAcc acc ) {
+
+    /**
+     *
+     * @param list
+     * @param acc
+     */
+    public void addToAccList ( HashString list, CSAcc acc ) {
         for ( CSAcc a : getAccList ( list ) ) {
             if ( acc.getHashMask ( ) == 0 && a.getHashMask() == 0 ) {
-                if ( acc.getNick().getHashName() == a.getNick().getHashName() ) {
+                if ( acc.getNick().is(a.getNick() ) ) {
                     return;
                 }
             } else if ( acc.getHashMask() != 0 && a.getHashMask() != 0 ) {
@@ -535,7 +652,13 @@ public class ChanInfo extends HashNumeric {
         getAccList(list).add ( acc );
     }
     
-    public boolean isAccess ( int access, NickInfo ni )  {
+    /**
+     *
+     * @param access
+     * @param ni
+     * @return
+     */
+    public boolean isAccess ( HashString access, NickInfo ni )  {
         ArrayList<CSAcc> aList = getAccessList ( access );
         for ( CSAcc acc : aList )  {
             if (  ni != null && acc.getNick() != null )  {
@@ -547,7 +670,12 @@ public class ChanInfo extends HashNumeric {
         return false;
     }
 
-    public String getAccessString ( int access ) {
+    /**
+     *
+     * @param access
+     * @return
+     */
+    public String getAccessString ( HashString access ) {
         String buf = new String ( );
         ArrayList<CSAcc> list = this.getAccessList ( access );
         for ( CSAcc acc : list ) {
@@ -588,7 +716,14 @@ public class ChanInfo extends HashNumeric {
 
     }
   */  
-    public void delAccess ( int access, CSAcc acc )  {
+
+    /**
+     *
+     * @param access
+     * @param acc
+     */
+  
+    public void delAccess ( HashString access, CSAcc acc )  {
         ArrayList<CSAcc> list = this.getAccessList ( access );
         list.remove ( acc );
         this.remAccList.add ( acc );
@@ -597,7 +732,13 @@ public class ChanInfo extends HashNumeric {
         }
     }
     
-    public CSAcc getAccess ( int subcommand, NickInfo ni2 ) {
+    /**
+     *
+     * @param subcommand
+     * @param ni2
+     * @return
+     */
+    public CSAcc getAccess ( HashString subcommand, NickInfo ni2 ) {
         CSAcc acc = null;
         //System.out.println("---- getAccess(ni)");
         if ( ni2 == null ) {
@@ -613,7 +754,13 @@ public class ChanInfo extends HashNumeric {
         return acc;
     }
     
-    public CSAcc getAccess ( int subcommand, String mask ) {
+    /**
+     *
+     * @param subcommand
+     * @param mask
+     * @return
+     */
+    public CSAcc getAccess ( HashString subcommand, String mask ) {
         CSAcc acc = null;
         //System.out.println("---- getAccess(mask)");
         if ( mask == null ) {
@@ -629,16 +776,25 @@ public class ChanInfo extends HashNumeric {
         return acc;
     }
     
-    public void addAccess ( int access, String mask )  {
+    /**
+     *
+     * @param access
+     * @param mask
+     */
+    public void addAccess ( HashString access, String mask )  {
         CSAcc acc = new CSAcc ( mask, access, null );
         ArrayList<CSAcc> list = this.getAccessList ( access );
         list.add ( acc );
         this.addAccList.add ( acc );
     }
  
+    /**
+     *
+     * @param acc
+     */
     public void removeFromAll ( CSAcc acc ) {
-        int[] accessList = { SOP, AOP, AKICK };
-        for ( int access : accessList ) {
+        HashString[] accessList = { SOP, AOP, AKICK };
+        for ( HashString access : accessList ) {
             CSAcc rem = null;
             for ( CSAcc entry : getAccessList ( access ) ) {
                 if ( entry.getNick() != null && 
@@ -658,9 +814,13 @@ public class ChanInfo extends HashNumeric {
         }
     }
      
+    /**
+     *
+     * @param ni
+     */
     public void removeFromAll ( NickInfo ni ) {
-        int[] accessList = { SOP, AOP, AKICK };
-        for ( int access : accessList ) {
+        HashString[] accessList = { SOP, AOP, AKICK };
+        for ( HashString access : accessList ) {
             System.out.println("debug: access("+access+")");
             CSAcc rem = null;
             for ( CSAcc entry : getAccessList ( access ) ) {
@@ -674,12 +834,20 @@ public class ChanInfo extends HashNumeric {
     }
     
     /* return a string of the nick user has identified to or the mask */
-    public String getIsAccess ( int access, User user )  {
+
+    /**
+     *
+     * @param access
+     * @param user
+     * @return
+     */
+
+    public String getIsAccess ( HashString access, User user )  {
         NickInfo ni = this.getNickByUser ( user );
         for ( CSAcc acc : getAccessList ( access ) )  {
             if ( acc.matchUser ( user ) ) {
                 if ( acc.getNick() != null ) {
-                    return acc.getNick().getName ( );
+                    return acc.getNick().getName().getString();
                 } else {
                     return acc.getMask();
                 }
@@ -688,7 +856,12 @@ public class ChanInfo extends HashNumeric {
         return null;
     }
      
-    public void setAccessList ( int access, ArrayList<CSAcc> chanAccess ) {
+    /**
+     *
+     * @param access
+     * @param chanAccess
+     */
+    public void setAccessList ( HashString access, ArrayList<CSAcc> chanAccess ) {
         getAccessList(access).addAll ( chanAccess );
         for ( CSAcc csa : chanAccess ) {
             if ( csa.getNick() != null ) {
@@ -697,32 +870,39 @@ public class ChanInfo extends HashNumeric {
         }
     }
      
-    public void wipeAccessList ( int access )  {
-        switch ( access )  {
-            case SOP :
-                this.slist.clear ( ); 
-                this.slist.clear ( );
-                break;
-                
-            case AOP :
-                this.alist.clear ( ); 
-                this.alist.clear ( );
-                break;
-                
-            case AKICK :
-                this.klist.clear ( ); 
-                this.klist.clear ( );
-                break;
-                
-            default :
-                
+    /**
+     *
+     * @param access
+     */
+    public void wipeAccessList ( HashString access )  {
+        if ( access.is(SOP) ) {
+            this.slist.clear ( ); 
+            this.slist.clear ( );
+        
+        } else if ( access.is(AOP) ) {
+            this.alist.clear ( ); 
+            this.alist.clear ( );
+        
+        } else if ( access.is(AKICK) ) {
+            this.klist.clear ( ); 
+            this.klist.clear ( );
         }
     }
     
+    /**
+     *
+     * @param string
+     * @return
+     */
     public boolean validMask ( String string )  { 
         return string.matches ( "^(.*)([!])(.*)([@])(.*)$" );  
     } 
  
+    /**
+     *
+     * @param user
+     * @return
+     */
     public String getAccessByUser ( User user ) {
         String access;
         if ( this.isFounder ( user ) ) {
@@ -739,6 +919,11 @@ public class ChanInfo extends HashNumeric {
         return access;
     }
  
+    /**
+     *
+     * @param user
+     * @return
+     */
     public String getAccessHolderByUser ( User user ) { 
         String holder = null;
         if ( ( holder = this.getIsFounder ( user ) ) != null ) {
@@ -749,6 +934,10 @@ public class ChanInfo extends HashNumeric {
         return holder;
     }
     
+    /**
+     *
+     * @param reason
+     */
     public void kickAll ( String reason )  {
         // :Pintuz MODE #avade 0 -o Pintuz
         if ( reason == null ) {
@@ -760,25 +949,102 @@ public class ChanInfo extends HashNumeric {
         Handler.getChanServ().sendCmd ( "CHANKILL "+c.getString ( NAME ) +" :"+reason );
     }
 
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean isAtleastSop ( NickInfo ni ) {
         return ( this.isFounder ( ni ) || this.isAccess ( SOP, ni ) );
     }
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean isAtleastAop ( NickInfo ni ) {
         return ( this.isFounder ( ni ) || this.isAccess ( SOP, ni ) || this.isAccess ( AOP, ni ) );
     } 
 
     /* For Transparancy */
-    public boolean is ( int setting ) {
+
+    /**
+     *
+     * @param setting
+     * @return
+     */
+
+    public boolean isSet ( HashString setting ) {
         return this.settings.is ( setting );
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
+    public boolean is ( HashString name ) {
+        return this.name.is(name);
+    }
+    
+    /**
+     *
+     * @param ci
+     * @return
+     */
+    public boolean is ( ChanInfo ci ) {
+        return this.name.is(ci.getName());
+    }
+    
+    /**
+     *
+     * @param setting
+     * @param state
+     */
+    public void set ( HashString setting, boolean state ) {
+        this.settings.set(setting, state);
+        this.changes.change(setting);
+    }
+
+    /**
+     *
+     * @param setting
+     * @param state
+     */
+    public void set ( HashString setting, HashString state ) {
+        this.settings.set(setting, state);
+        this.changes.change(setting);
+    }
+
+    /**
+     *
+     * @param state
+     */
+    public void setModeLock ( String state ) {
+        this.settings.setModeLock(state);
+        this.changes.change(MODELOCK);
+    }
+    
+    /**
+     *
+     */
     public void changed ( ) {
         ChanServ.addToWorkList ( CHANGE, this );
     }
+
+    /**
+     *
+     * @return
+     */
     public CSChanges getChanges ( ) {
         return this.changes;
     }
 
+    /**
+     *
+     * @return
+     */
     public CSFlag getChanFlag ( ) {
         return this.chanFlag;
     }
@@ -786,6 +1052,11 @@ public class ChanInfo extends HashNumeric {
     void setChanFlag ( CSFlag chanFlag ) {
         this.chanFlag = chanFlag;
     }
+
+    /**
+     *
+     * @return
+     */
     public Throttle getThrottle ( ) {
         return this.throttle;
     }

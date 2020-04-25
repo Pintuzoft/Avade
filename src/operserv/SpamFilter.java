@@ -7,6 +7,7 @@ package operserv;
 
 import core.Handler;
 import core.HashNumeric;
+import core.HashString;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -116,101 +117,100 @@ public class SpamFilter extends HashNumeric {
     }
     
     private void flagsToBits ( ) {
+        HashString ch;
         this.bits = 0;
         for ( int index = 0; index < flags.length(); index++ ) {
-            switch ( String.valueOf(flags.charAt(index)).hashCode() ) {
-                case s :
-                    this.bits |= SF_FLAG_STRIPCTRL;
-                    break;
-                case S :
-                    this.bits |= SF_FLAG_STRIPALL;
-                    break;
-                case r :
-                    this.bits |= SF_FLAG_REGEXP;
-                    break;
-                case m :
-                    this.bits |= SF_FLAG_MATCHREG;
-                    break;
-                case p :
-                    this.bits |= SF_CMD_PRIVMSG;
-                    break;
-                case n :
-                    this.bits |= SF_CMD_NOTICE;
-                    break;
-                case k :
-                    this.bits |= SF_CMD_KICK;
-                    break;
-                case q :
-                    this.bits |= SF_CMD_QUIT;
-                    break;
-                case t :
-                    this.bits |= SF_CMD_TOPIC;
-                    break;
-                case a :
-                    this.bits |= SF_CMD_AWAY;
-                    break;
-                case c :
-                    this.bits |= SF_CMD_CHANNEL;
-                    break;
-                case P :
-                    this.bits |= SF_CMD_PART;
-                    break;
-                case W :
-                    this.bits |= SF_ACT_WARN;
-                    break;
-                case L :
-                    this.bits |= SF_ACT_LAG;
-                    break;
-                case R :
-                    this.bits |= SF_ACT_REPORT;
-                    break;
-                case B :
-                    this.bits |= SF_ACT_BLOCK;
-                    break;
-                case K :
-                    this.bits |= SF_ACT_KILL;
-                    break;
-                case A :
-                    this.bits |= SF_ACT_AKILL;
-                    break;
-                case NUM_1 :
-                    /* Shortcut for: spnWR */
-                    this.bits |= SF_FLAG_STRIPCTRL;
-                    this.bits |= SF_CMD_PRIVMSG;
-                    this.bits |= SF_CMD_NOTICE;
-                    this.bits |= SF_ACT_WARN;
-                    this.bits |= SF_ACT_REPORT;
-                    break;
-                case NUM_2 :
-                    /* Shortcut for: spnWRBA */
-                    this.bits |= SF_FLAG_STRIPCTRL;
-                    this.bits |= SF_CMD_PRIVMSG;
-                    this.bits |= SF_CMD_NOTICE;
-                    this.bits |= SF_ACT_WARN;
-                    this.bits |= SF_ACT_REPORT;
-                    this.bits |= SF_ACT_BLOCK;
-                    this.bits |= SF_ACT_AKILL;
-                    break;
-                case NUM_3 :
-                    /* Shortcut for: scWR */
-                    this.bits |= SF_FLAG_STRIPCTRL;
-                    this.bits |= SF_CMD_CHANNEL;
-                    this.bits |= SF_ACT_WARN;
-                    this.bits |= SF_ACT_REPORT;
-                    break;
-                case NUM_4 :
-                    /* Shortcut for: scWRBA */
-                    this.bits |= SF_FLAG_STRIPCTRL;
-                    this.bits |= SF_CMD_CHANNEL;
-                    this.bits |= SF_ACT_WARN;
-                    this.bits |= SF_ACT_REPORT;
-                    this.bits |= SF_ACT_BLOCK;
-                    this.bits |= SF_ACT_AKILL;
-                    break;
-
-                default :
-                    /* Unknown flag */
+            ch = new HashString ( String.valueOf(flags.charAt(index)) );
+            
+            if ( ch.is(s) ) {
+                this.bits |= SF_FLAG_STRIPCTRL;
+            
+            } else if ( ch.is(S) ) {
+                this.bits |= SF_FLAG_STRIPALL;
+            
+            } else if ( ch.is(r) ) {
+                this.bits |= SF_FLAG_REGEXP;
+            
+            } else if ( ch.is(m) ) {
+                this.bits |= SF_FLAG_MATCHREG;
+            
+            } else if ( ch.is(p) ) {
+                this.bits |= SF_CMD_PRIVMSG;
+            
+            } else if ( ch.is(n) ) {
+                this.bits |= SF_CMD_NOTICE;
+            
+            } else if ( ch.is(k) ) {
+                this.bits |= SF_CMD_KICK;
+            
+            } else if ( ch.is(q) ) {
+                this.bits |= SF_CMD_QUIT;
+            
+            } else if ( ch.is(t) ) {
+                this.bits |= SF_CMD_TOPIC;
+            
+            } else if ( ch.is(a) ) {
+                this.bits |= SF_CMD_AWAY;
+            
+            } else if ( ch.is(c) ) {
+                this.bits |= SF_CMD_CHANNEL;
+            
+            } else if ( ch.is(P) ) {
+                this.bits |= SF_CMD_PART;
+            
+            } else if ( ch.is(W) ) {
+                this.bits |= SF_ACT_WARN;
+            
+            } else if ( ch.is(L) ) {
+                this.bits |= SF_ACT_LAG;
+            
+            } else if ( ch.is(R) ) {
+                this.bits |= SF_ACT_REPORT;
+            
+            } else if ( ch.is(B) ) {
+                this.bits |= SF_ACT_BLOCK;
+            
+            } else if ( ch.is(K) ) {
+                this.bits |= SF_ACT_KILL;
+            
+            } else if ( ch.is(A) ) {
+                this.bits |= SF_ACT_AKILL;
+            
+            } else if ( ch.is(NUM_1) ) {
+                /* Shortcut for: spnWR */
+                this.bits |= SF_FLAG_STRIPCTRL;
+                this.bits |= SF_CMD_PRIVMSG;
+                this.bits |= SF_CMD_NOTICE;
+                this.bits |= SF_ACT_WARN;
+                this.bits |= SF_ACT_REPORT;
+            
+            } else if ( ch.is(NUM_2) ) {
+                /* Shortcut for: spnWRBA */
+                this.bits |= SF_FLAG_STRIPCTRL;
+                this.bits |= SF_CMD_PRIVMSG;
+                this.bits |= SF_CMD_NOTICE;
+                this.bits |= SF_ACT_WARN;
+                this.bits |= SF_ACT_REPORT;
+                this.bits |= SF_ACT_BLOCK;
+                this.bits |= SF_ACT_AKILL; 
+            
+            } else if ( ch.is(NUM_3) ) {
+                /* Shortcut for: scWR */
+                this.bits |= SF_FLAG_STRIPCTRL;
+                this.bits |= SF_CMD_CHANNEL;
+                this.bits |= SF_ACT_WARN;
+                this.bits |= SF_ACT_REPORT;
+            
+            } else if ( ch.is(NUM_4) ) {
+                /* Shortcut for: scWRBA */
+                this.bits |= SF_FLAG_STRIPCTRL;
+                this.bits |= SF_CMD_CHANNEL;
+                this.bits |= SF_ACT_WARN;
+                this.bits |= SF_ACT_REPORT;
+                this.bits |= SF_ACT_BLOCK;
+                this.bits |= SF_ACT_AKILL;
             }
+             
         }
     }
 

@@ -20,6 +20,7 @@ package memoserv;
 import nickserv.NSDatabase;
 import nickserv.NickInfo;
 import core.Database;
+import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -79,7 +80,7 @@ public class MSDatabase extends Database {
     }
      
 
-    public static ArrayList<MemoInfo> getMemosByNick ( String nick )  {
+    public static ArrayList<MemoInfo> getMemosByNick ( HashString nick )  {
         ArrayList<MemoInfo> mList = new ArrayList<> ( );
         if ( ! activateConnection ( )  )  {
             return mList;
@@ -89,7 +90,7 @@ public class MSDatabase extends Database {
                          + "FROM memo "
                          + "WHERE name = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, nick );
+            ps.setString  ( 1, nick.getString() );
             res = ps.executeQuery ( );
 
             while ( res.next ( )  )  { 

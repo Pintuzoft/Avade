@@ -17,6 +17,7 @@
  */
 package memoserv;
 
+import core.HashString;
 import core.Helper;
 import core.TextFormat;
 import user.User;
@@ -37,6 +38,7 @@ public class MSHelper extends Helper {
     }
 
     public void parse ( User user, String[] cmd )  {
+        HashString command;
         try {
             if ( cmd[4].isEmpty ( )  )  { 
                 this.help ( user ); 
@@ -47,35 +49,30 @@ public class MSHelper extends Helper {
             return;
         }
 
-        switch ( cmd[4].toUpperCase ( ) .hashCode ( )  )  {
-            case HELP :
-                this.help ( user );
-                break;
-                
-            case SEND :
-                this.send ( user );
-                break;
-                
-            case CSEND :
-                this.csend ( user );
-                break;
-                
-            case LIST :
-                this.list ( user );
-                break;
-                
-            case READ :
-                this.read ( user, cmd );
-                break;
-                
-            case DEL :
-                this.del ( user );
-                break;
-                
-            default: 
-                this.noMatch ( user, cmd[4] );
-           
+        command = new HashString ( cmd[4] );
+        
+        if ( command.is(HELP) ) {
+            this.help ( user );
+        
+        } else if ( command.is(SEND) ) {
+            this.send ( user );
+        
+        } else if ( command.is(CSEND) ) {
+            this.csend ( user );
+        
+        } else if ( command.is(LIST) ) {
+            this.list ( user );
+        
+        } else if ( command.is(READ) ) {
+            this.read ( user, cmd );
+        
+        } else if ( command.is(DEL) ) {
+            this.del ( user );
+        
+        } else {
+            this.noMatch ( user, cmd[4] );
         }
+         
     }
 
     public void help ( User user )  {

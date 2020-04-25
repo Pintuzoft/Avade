@@ -22,6 +22,9 @@ package core;
  * @author DreamHealer
  */
 public class StringMatch { 
+    public static boolean maskWild ( HashString fullmask, String wild ) {
+        return maskWild ( fullmask.getString(), wild);
+    }
     public static boolean maskWild ( String fullmask, String wild )  { 
         return fullmask.matches ( wild.replace("?","(.)").replace("!","([!])").replace("@","([@])").replace("*","(.*)")) ||
                wild.matches ( fullmask.replace("?","(.)").replace("!","([!])").replace("@","([@])").replace("*","(.*)") );

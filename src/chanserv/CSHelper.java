@@ -22,6 +22,7 @@ import core.Handler;
 import static core.HashNumeric.CSOP;
 import static core.HashNumeric.IRCOP;
 import static core.HashNumeric.SA;
+import core.HashString;
 import core.Helper;
 import core.TextFormat;
 import user.User;
@@ -35,6 +36,11 @@ public class CSHelper extends Helper {
    // private boolean found;
     private TextFormat f;
   
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public CSHelper ( ChanServ service, CSSnoop snoop )  {
         super ( service );
 //        this.service = service;
@@ -42,6 +48,11 @@ public class CSHelper extends Helper {
         this.f = new TextFormat ( );
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
  
         try {
@@ -53,123 +64,48 @@ public class CSHelper extends Helper {
             this.help ( user );
             return;
         }
-            
-        switch ( cmd[4].toUpperCase ( ) .hashCode ( )  )  {
-            case REGISTER :
-                this.register ( user );
-                break;
-                
-            case IDENTIFY :
-                this.identify ( user );
-                break;
-                
-            case DROP :
-                this.drop ( user );
-                break;
-                
-            case SET :
-                this.set ( user, cmd );
-                break;
-                
-            case INFO :
-                this.info ( user );
-                break; 
-                
-            case SOP :
-                this.sop ( user );
-                break;
-                
-            case AOP :
-                this.aop ( user );
-                break;
-                
-            case AKICK :
-                this.akick ( user );
-                break;
-                
-            case OP :
-                this.op ( user );
-                break;
-                
-            case DEOP :
-                this.deOp ( user );
-                break;
-                
-            case UNBAN :
-                this.unBan ( user );
-                break;
-                
-            case INVITE :
-                this.invite ( user );
-                break;
-                
-            case WHY :
-                this.why ( user );
-                break;
-                
-            case CHANLIST :
-                this.chanList ( user );
-                break;
-                      
-            case LISTOPS :
-                this.listOps ( user );
-                break;
-            
-            case CHANFLAG :
-                this.chanFlag ( user );
-                break;
-                
-            case MDEOP :
-                this.mDeOp ( user );
-                break;
-                
-            case MKICK :
-                this.mKick ( user );
-                break;
-                       
-            case ACCESSLOG :
-                this.accesslog ( user );
-                break;
-                
-            case TOPICLOG :
-                this.topiclog ( user );
-                break;
-                
-            case FREEZE :
-                this.freeze ( user );
-                break;
-                
-            case CLOSE :
-                this.close ( user );
-                break;
-                
-            case HOLD :
-                this.hold ( user );
-                break;
-                
-            case MARK :
-                this.mark ( user );
-                break;
-                
-            case AUDITORIUM :
-                this.auditorium ( user );
-                break;
-            
-            case DELETE :
-                this.delete ( user );
-                break;
-                
-            default :
-                this.noMatch ( user, cmd[4] );
-        
-        } 
+          
+        HashString command = new HashString ( cmd[4] );
+        if      ( command.is(REGISTER) )        { this.register ( user );   }
+        else if ( command.is(IDENTIFY) )        { this.identify ( user );   }
+        else if ( command.is(DROP) )            { this.drop ( user );       }
+        else if ( command.is(SET) )             { this.set ( user, cmd );   }
+        else if ( command.is(INFO) )            { this.info ( user );       }
+        else if ( command.is(SOP) )             { this.sop ( user );        }
+        else if ( command.is(AOP) )             { this.aop ( user );        }
+        else if ( command.is(AKICK) )           { this.akick ( user );      }
+        else if ( command.is(OP) )              { this.op ( user );         }
+        else if ( command.is(DEOP) )            { this.deOp ( user );       }
+        else if ( command.is(UNBAN) )           { this.unBan ( user );      }
+        else if ( command.is(INVITE) )          { this.invite ( user );     }
+        else if ( command.is(WHY) )             { this.why ( user );        }
+        else if ( command.is(CHANLIST) )        { this.chanList ( user );   }
+        else if ( command.is(LISTOPS) )         { this.listOps ( user );    }
+        else if ( command.is(CHANFLAG) )        { this.chanFlag ( user );   }
+        else if ( command.is(MDEOP) )           { this.mDeOp ( user );      }
+        else if ( command.is(MKICK) )           { this.mKick ( user );      }
+        else if ( command.is(ACCESSLOG) )       { this.accesslog ( user );  }
+        else if ( command.is(TOPICLOG) )        { this.topiclog ( user );   }
+        else if ( command.is(FREEZE) )          { this.freeze ( user );     }
+        else if ( command.is(CLOSE) )           { this.close ( user );      }
+        else if ( command.is(HOLD) )            { this.hold ( user );       }
+        else if ( command.is(MARK) )            { this.mark ( user );       }
+        else if ( command.is(AUDITORIUM) )      { this.auditorium ( user ); }
+        else if ( command.is(DELETE) )          { this.delete ( user );     }
+        else {
+            this.noMatch ( user, cmd[4] );
+        }
+         
     }
     
     private void unknownCommand ( User user ) {
         this.service.sendMsg ( user, "Error: No such command found." );
     }
 
-    
+    /**
+     *
+     * @param user
+     */
     public void help ( User user )  {
         /* NickServ HELP */
         int access = user.getAccess ( );
@@ -245,7 +181,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
 
-    
+    /**
+     *
+     * @param user
+     */
     public void register ( User user )  {
         this.showStart ( user, "Register" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -268,7 +207,11 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
 
-     public void identify ( User user )  {
+    /**
+     *
+     * @param user
+     */
+    public void identify ( User user )  {
         this.showStart ( user, "Identify" );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ IDENTIFY <#chan> <password>"+f.b ( ) +""                   );
@@ -302,6 +245,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
          
+    /**
+     *
+     * @param user
+     */
     public void info ( User user )  {
         this.showStart ( user, "Info" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -315,6 +262,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void sop ( User user )  {
         this.showStart ( user, "Sop" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -328,6 +279,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void aop ( User user )  {
         this.showStart ( user, "Aop" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -341,6 +296,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
     
+    /**
+     *
+     * @param user
+     */
     public void akick ( User user )  {
         this.showStart ( user, "Akick" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -354,6 +313,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void op ( User user )  {
         this.showStart ( user, "Op" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -366,6 +329,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void deOp ( User user )  {
         this.showStart ( user, "DeOp" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -378,6 +345,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void unBan ( User user )  {
         this.showStart ( user, "UnBan" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -390,6 +361,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void invite ( User user )  {
         this.showStart ( user, "Invite" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -402,6 +377,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
   
+    /**
+     *
+     * @param user
+     */
     public void why ( User user )  {
         this.showStart ( user, "Why" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -414,6 +393,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
   
+    /**
+     *
+     * @param user
+     */
     public void chanList ( User user )  { 
         this.showStart ( user, "ChanList" ); 
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -438,6 +421,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
     
+    /**
+     *
+     * @param user
+     */
     public void mKick ( User user )  { 
         this.showStart ( user, "MKick" ); 
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -454,6 +441,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
        
+    /**
+     *
+     * @param user
+     */
     public void mDeOp ( User user )  { 
         this.showStart ( user, "MDeOp" ); 
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -469,6 +460,11 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void set ( User user, String[] cmd )  {
         /* NickServ HELP REGISTER */ 
         
@@ -482,56 +478,26 @@ public class CSHelper extends Helper {
             return;
         }
          
-        switch ( cmd[5].toUpperCase().hashCode ( ) ) {
-            case DESCRIPTION :
-                this.setDescription ( user );
-                break;
-                         
-            case KEEPTOPIC :
-                this.setKeepTopic ( user );
-                break;
-                
-            case TOPICLOCK :
-                this.setTopicLock ( user );
-                break;
-                
-            case IDENT :
-                this.setIdent ( user );
-                break;
-                
-            case OPGUARD :
-                this.setOpGuard ( user );
-                break;
-
-            case RESTRICT :
-                this.setRestrict ( user );
-                break;
-                
-            case VERBOSE :
-                this.setVerbose ( user );
-                break;
-                
-            case MAILBLOCK :
-                this.setMailBlock ( user );
-                break;
-                
-            case LEAVEOPS :
-                this.setLeaveOps ( user );
-                break;
-                
-            case AUTOAKICK :
-                this.setAutoAKick ( user );
-                break;
-                
-            case PRIVATE :
-                this.setPrivate ( user );
-                break;
-                
-            default :
-        }
-    
+        HashString command = new HashString ( cmd[5] );
+        
+        if      ( command.is(DESCRIPTION) )     { this.setDescription ( user ); }
+        else if ( command.is(KEEPTOPIC) )       { this.setKeepTopic ( user );   }
+        else if ( command.is(TOPICLOCK) )       { this.setTopicLock ( user );   }
+        else if ( command.is(IDENT) )           { this.setIdent ( user );       }
+        else if ( command.is(OPGUARD) )         { this.setOpGuard ( user );     }
+        else if ( command.is(RESTRICT) )        { this.setRestrict ( user );    }
+        else if ( command.is(VERBOSE) )         { this.setVerbose ( user );     }
+        else if ( command.is(MAILBLOCK) )       { this.setMailBlock ( user );   }
+        else if ( command.is(LEAVEOPS) )        { this.setLeaveOps ( user );    }
+        else if ( command.is(AUTOAKICK) )       { this.setAutoAKick ( user );   }
+        else if ( command.is(PRIVATE) )         { this.setPrivate ( user );     }
+         
     } 
           
+    /**
+     *
+     * @param user
+     */
     public void setMain ( User user )  {
         /* NickServ HELP REGISTER */
         this.showStart ( user, "Set" );
@@ -557,7 +523,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
       
-    
+    /**
+     *
+     * @param user
+     */
     public void setDescription ( User user )  {
         this.showStart ( user, "Set Description" );
         this.service.sendMsg ( user, "   "                                                                                                              );
@@ -573,6 +542,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );    
     }
     
+    /**
+     *
+     * @param user
+     */
     public void setKeepTopic ( User user )  {
         this.showStart ( user, "Set KeepTopic" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -587,6 +560,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setTopicLock ( User user )  {
         this.showStart ( user, "Set TopicLock" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -603,8 +580,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
 
-  
-
+    /**
+     *
+     * @param user
+     */
     public void setIdent ( User user )  {
         this.showStart ( user, "Set Ident" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -620,6 +599,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setOpGuard ( User user )  {
         this.showStart ( user, "Set OpGuard" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -635,6 +618,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setRestrict ( User user )  {
         this.showStart ( user, "Set Restrict" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -650,6 +637,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setVerbose ( User user )  {
         this.showStart ( user, "Set Verbose" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -664,6 +655,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setMailBlock ( User user )  {
         this.showStart ( user, "Set MailBlock" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -677,6 +672,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setLeaveOps ( User user )  {
         this.showStart ( user, "Set LeaveOps" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -691,6 +690,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
     
+    /**
+     *
+     * @param user
+     */
     public void setAutoAKick ( User user )  {
         this.showStart ( user, "Set AutoAKick" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -709,6 +712,10 @@ public class CSHelper extends Helper {
         this.showEnd ( user );  
     }
     
+    /**
+     *
+     * @param user
+     */
     public void setPrivate ( User user )  {
         this.showStart ( user, "Set Private" );
         this.service.sendMsg ( user, "   "                                                                                          );

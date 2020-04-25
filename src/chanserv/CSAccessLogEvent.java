@@ -27,14 +27,47 @@ import user.User;
  * @author fredde
  */
 public class CSAccessLogEvent extends HashNumeric {
-    protected String name;
-    protected String flag;
+
+    /**
+     *
+     */
+    protected HashString name;
+
+    /**
+     *
+     */
+    protected HashString flag;
+
+    /**
+     *
+     */
     protected String target;
+
+    /**
+     *
+     */
     protected String instater;
+
+    /**
+     *
+     */
     protected String usermask;
+
+    /**
+     *
+     */
     protected String stamp;
 
-    public CSAccessLogEvent ( String name, String flag, String target, String instater, String usermask, String stamp ) {
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param target
+     * @param instater
+     * @param usermask
+     * @param stamp
+     */
+    public CSAccessLogEvent ( HashString name, HashString flag, String target, String instater, String usermask, String stamp ) {
         this.name = name;
         this.flag = flag;
         this.target = target;
@@ -43,9 +76,16 @@ public class CSAccessLogEvent extends HashNumeric {
         this.stamp = stamp.substring ( 0, 19 );
     }
 
-    public CSAccessLogEvent ( String name, int flag, String target, String fullmask ) {
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param target
+     * @param fullmask
+     */
+    public CSAccessLogEvent ( HashString name, HashString flag, String target, String fullmask ) {
         this.name = name;
-        this.flag = CSAccessLogEvent.getFlagByHash ( flag );
+        this.flag = flag;
         this.target = target;
         if ( fullmask == null || fullmask.length() == 0 ) {
             this.instater = target;
@@ -56,9 +96,16 @@ public class CSAccessLogEvent extends HashNumeric {
         }
     }
      
-    public CSAccessLogEvent ( String name, int flag, String target, User user ) {
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param target
+     * @param user
+     */
+    public CSAccessLogEvent ( HashString name, HashString flag, String target, User user ) {
         this.name = name;
-        this.flag = CSAccessLogEvent.getFlagByHash ( flag );
+        this.flag = flag;
         this.target = target;
         if ( user == null ) {
             this.instater = target;
@@ -69,69 +116,120 @@ public class CSAccessLogEvent extends HashNumeric {
         }
     }
      
-    public CSAccessLogEvent ( String name, int flag, String target ) {
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param target
+     */
+    public CSAccessLogEvent ( HashString name, HashString flag, String target ) {
         this.name = name;
-        this.flag = CSAccessLogEvent.getFlagByHash ( flag );
+        this.flag = flag;
         this.target = target;
         this.instater = target;
         this.usermask = target+"!*@*.*";
     }
  
+    /**
+     *
+     * @param stamp
+     */
     public void setStamp ( String stamp ) {
         this.stamp = stamp;
     }
     
-    public static String getFlagByHash ( int hash ) {
-        switch ( hash ) {
-            case ADDAOP :
-                return "AOP+";
-     
-            case DELAOP :
-                return "AOP-";
-     
-            case ADDSOP :
-                return "SOP+";
-     
-            case DELSOP :
-                return "SOP-";
-     
-            case ADDAKICK :
-                return "AKICK+";
-     
-            case DELAKICK :
-                return "AKICK-";
-           
-            case FOUNDER :
-                return "Founder";
-      
-            default :
-                return null;
-                
+    /**
+     *
+     * @return
+     */
+    public HashString getFlag ( ) {
+        return this.flag;
+    }
+ 
+    /**
+     *
+     * @return
+     */
+    public String getFlagStr ( ) {
+        return getFlagByHash ( this.flag );
+    }
+    
+    /**
+     *
+     * @param hash
+     * @return
+     */
+    public static String getFlagByHash ( HashString hash ) {
+        if ( hash.is(ADDAOP) ) {
+            return "AOP+";
+        
+        } else if ( hash.is(DELAOP) ) {
+            return "AOP-";
+        
+        } else if ( hash.is(ADDSOP) ) {
+            return "SOP+";
+        
+        } else if ( hash.is(DELSOP) ) {
+            return "SOP-";
+        
+        } else if ( hash.is(ADDAKICK) ) {
+            return "AKICK+";
+        
+        } else if ( hash.is(DELAKICK) ) {
+            return "AKICK-";
+        
+        } else if ( hash.is(FOUNDER) ) {
+            return "Founder";
         }
+        return null;
     }
     
-    public String getName ( ) {
-        return name;
+    /**
+     *
+     * @return
+     */
+    public HashString getName ( ) {
+        return this.name;
+    }
+    
+    /**
+     *
+     * @return
+     */
+    public String getNameStr ( ) {
+        return this.name.getString();
     }
 
-    public String getFlag ( ) {
-        return flag;
-    }
-
+    /**
+     *
+     * @return
+     */
     public String getTarget ( ) {
-        return target;
+        return this.target;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getInstater ( ) {
-        return instater;
+        return this.instater;
     }
        
+    /**
+     *
+     * @return
+     */
     public String getUsermask ( ) {
-        return usermask;
+        return this.usermask;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getStamp ( ) {
-        return stamp;
+        return this.stamp;
     }
      
 }

@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -21,6 +21,7 @@ import chanserv.ChanInfo;
 import core.Expire;
 import core.Handler;
 import core.HashNumeric;
+import core.HashString;
 import core.Throttle;
 import memoserv.MSDatabase;
 import memoserv.MemoInfo;
@@ -39,13 +40,12 @@ import java.util.Random;
  * @author DreamHealer
  */
 public class NickInfo extends HashNumeric {
-    private String                  name;
-    private String                  user;
-    private String                  host;
-    private String                  ip;
+    private HashString              name;
+    private HashString              user;
+    private HashString              host;
+    private HashString              ip;
     private InetAddress             iNet; 
-    private int                     hashName;       /* Integer representation of nickname */
-    private int                     hashMask;       /* Integer representation of user@mask */ 
+    private HashString              hashMask;       /* Integer representation of user@mask */ 
     private String                  pass;
     private String                  mail; 
     private NickSetting             settings;
@@ -66,11 +66,10 @@ public class NickInfo extends HashNumeric {
     /* DATABASE */
     public NickInfo ( String name, int hash, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
         // System.out.println ( "Debug: NickInfo ( "+name+" )" );
-        this.name       = name;
-        this.hashName   = hash;
-        this.hashMask   =  ( user+"@"+host ).toUpperCase().hashCode ( );
-        this.user       = user;
-        this.host       = host;
+        this.name       = new HashString ( name );
+        this.hashMask   = new HashString ( user+"@"+host );
+        this.user       = new HashString ( user );
+        this.host       = new HashString ( host );
         //this.ip         = ip;
         this.date       = new Date ( );
         this.oper       = null; 
@@ -88,12 +87,11 @@ public class NickInfo extends HashNumeric {
     /* REGISTER */
     public NickInfo ( User user, String pass )  {
         /* Register nickname */ 
-        this.name       = user.getString ( NAME );
-        this.user       = user.getString ( USER );
-        this.host       = user.getString ( HOST );
-        this.ip         = user.getString ( IP );
-        this.hashName   = this.name.toUpperCase().hashCode ( );
-        this.hashMask   = ( user.getString(USER)+"@"+user.getString(IP) ).toUpperCase().hashCode ( ); 
+        this.name       = new HashString ( user.getString ( NAME ) );
+        this.user       = new HashString ( user.getString ( USER ) );
+        this.host       = new HashString ( user.getString ( HOST ) );
+        this.ip         = new HashString ( user.getString ( IP ) );
+        this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(IP) ); 
         this.pass       = pass;
         this.mail       = new String(); 
         this.settings   = new NickSetting ( );
@@ -114,13 +112,12 @@ public class NickInfo extends HashNumeric {
         Random random   = new Random ( );
         if ( u != null ) {
             String passwd   = "Master" + random.nextInt ( 9800 ) + 100;
-            this.name       = name;
+            this.name       = new HashString ( name );
             this.pass       = passwd;
-            this.ip         = u.getString ( IP );
-            this.hashName   = this.name.toUpperCase().hashCode ( );
-            this.user       = u.getString ( USER );
-            this.host       = u.getString ( HOST );
-            this.hashMask   = ( this.user +"@"+this.ip ).toUpperCase().hashCode ( ); 
+            this.ip         = new HashString ( u.getString ( IP ) );
+            this.user       = new HashString ( u.getString ( USER ) );
+            this.host       = new HashString ( u.getString ( HOST ) );
+            this.hashMask   = new HashString ( this.user+"@"+this.ip ); 
             this.mail       = "master@localhost";
             String date = this.dateFormat.format ( new Date ( ) );
             this.regTime    = date;
@@ -144,10 +141,10 @@ public class NickInfo extends HashNumeric {
     }
     
     public void setUserMask ( User user )  {
-        this.user       = user.getString ( USER );
-        this.host       = user.getString ( HOST );
-        this.ip         = user.getString ( IP );
-        this.hashMask   =  ( user.getString(USER)+"@"+user.getString(HOST) ).toUpperCase().hashCode ( );
+        this.user       = new HashString ( user.getString ( USER ) );
+        this.host       = new HashString ( user.getString ( HOST ) );
+        this.ip         = new HashString ( user.getString ( IP ) );
+        this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(HOST) );
         this.changes.change ( USER );
         this.changes.change ( HOST );
         this.changes.change ( IP );
@@ -160,49 +157,29 @@ public class NickInfo extends HashNumeric {
         user.getSID().add ( this ); 
     }
     
-    public String getName ( )  { return this.name;}
+    public HashString getName ( )       { return this.name;                                 }
+    public String getNameStr ( )        { return this.name.getString();                     }
     
-    public String getString ( int var )  {
-        switch ( var )  {
-            case NAME :
-                return this.name;
-        
-            case USER :
-                return this.user;
-                
-            case HOST :
-                return this.host;
-                
-            case IP :
-                return this.ip;
-                
-            case MAIL :
-                return this.mail;
-            
-            case FULLMASK :
-                return this.name+"!"+this.user+"@"+this.host;
-                
-            case LASTUSED :
-                return this.lastUsed;
-                
-            case REGTIME :
-                return this.regTime;
-                
-            default :
-                return "";
-           
+    public String getString ( HashString it )  {
+        if      ( it.is(NAME) )         { return this.name.getString();                     }
+        else if ( it.is(USER) )         { return this.user.getString();                     }
+        else if ( it.is(HOST) )         { return this.host.getString();                     }
+        else if ( it.is(IP) )           { return this.ip.getString();                       }
+        else if ( it.is(MAIL) )         { return this.mail;                                 }
+        else if ( it.is(FULLMASK) )     { return this.name+"!"+this.user+"@"+this.host;     }
+        else if ( it.is(LASTUSED) )     { return this.lastUsed;                             }
+        else if ( it.is(REGTIME) )      { return this.regTime;                              }
+        else {
+            return "";
         }
     }
  
-    public boolean isState ( int var )  {
-        switch  ( var )  {
-            case AUTHED :
-                return this.settings.is ( AUTH );
-                
-            case OLD :
-                return this.olderThanExpireTime ( );
-                
-            default : 
+    public boolean isState ( HashString it )  {
+        if ( it.is(AUTHED) ) {
+            return this.settings.is ( AUTH );
+        
+        } else if ( it.is(OLD) ) {
+            return this.olderThanExpireTime ( );
         }
         return false;
     }
@@ -213,7 +190,7 @@ public class NickInfo extends HashNumeric {
         return this.exp.shouldExpire ( );
     }
     
-    /* Returns true if nick is older than expiretime */
+    /* Returns true if nick hasAccess older than expiretime */
     public boolean olderThanExpireTime ( )  {
         return false;
    //     return  ( ( System.currentTimeMillis ( ) /1000 - this.lastUsed )  > Handler.expireToTime ( Proc.getConf ( ) .get ( EXPIRE ) ) );
@@ -236,7 +213,20 @@ public class NickInfo extends HashNumeric {
         }
         return false;
     }
- 
+    
+    /* hasAccess commands */
+    public boolean is ( HashString name ) {
+        return this.name.is ( name );
+    }
+    
+    public boolean is ( NickInfo ni ) {
+        return this.name.is ( ni.getName() );
+    }
+    
+    public boolean isSet ( HashString setting ) {
+        return this.settings.is ( setting );
+    }
+    
     public void setPass ( String newPass ) {
         this.pass = newPass;
     }
@@ -270,14 +260,6 @@ public class NickInfo extends HashNumeric {
         return  ( this.oper != null ) ? this.oper.getString ( NAME ) : null;
     }
 
-    public int getHashName ( ) {
-        return this.hashName;
-    }
- 
-    public int getHashMask ( ) {
-        return this.hashMask;
-    }
-
     public ArrayList<MemoInfo> getMemos ( ) {
         return this.mList; 
     }
@@ -296,40 +278,18 @@ public class NickInfo extends HashNumeric {
         this.mList.remove ( memo );
     } 
     
-    @Override
-    public int hashCode ( )  {
-       return this.hashName;
-    }
-   
-    public boolean isAtleast ( int access ) {
+    public boolean isAtleast ( HashString access ) {
         if ( this.oper == null ) {
             return false;
         }
         int acc;
-        switch ( access ) {
-            case IRCOP : 
-                acc = 1;
-                break;
-            
-            case SA :
-                acc = 2;
-                break;
-                
-            case CSOP :
-                acc = 3;
-                break;
-                
-            case SRA : 
-                acc = 4;
-                break;
-                
-            case MASTER :
-                acc = 5;
-                break;
-                
-            default :
-                acc = 0;
-                break;
+        if      ( access.is(IRCOP) )            { acc = 1; }
+        else if ( access.is(SA) )               { acc = 2; }
+        else if ( access.is(CSOP) )             { acc = 3; }
+        else if ( access.is(SRA) )              { acc = 4; }
+        else if ( access.is(MASTER) )           { acc = 5; }
+        else {
+            acc = 0;
         }
         return ( this.oper.getAccess ( ) >= acc );       
     }
@@ -339,7 +299,7 @@ public class NickInfo extends HashNumeric {
         this.oper = oper;
     }
     
-    public boolean is ( int setting ) {
+    public boolean isSetting ( HashString setting ) {
         return this.settings.is ( setting );
     }
 
@@ -354,34 +314,24 @@ public class NickInfo extends HashNumeric {
     
     /*** AOP/SOP/FOUNDER LISTS ***/
     
-    public ArrayList<ChanInfo> getChanAccess ( int list ) {
-        switch ( list ) {
-            case FOUNDER :
-                return founderList;
-            
-            case SOP :
-                return sopList;
-            
-            case AOP :
-                return aopList;
-                
-            case AKICK :
-                return akickList;
-                
-            default :
-                return new ArrayList<>();
-                        
+    public ArrayList<ChanInfo> getChanAccess ( HashString it ) {
+        if      ( it.is(FOUNDER) )          { return founderList;               }
+        else if ( it.is(SOP) )              { return sopList;                   }
+        else if ( it.is(AOP) )              { return aopList;                   }
+        else if ( it.is(AKICK) )            { return akickList;                 }
+        else {
+            return new ArrayList<>();
         }
     }
     
-    public void addToAccessList ( int list, ChanInfo ci ) {
+    public void addToAccessList ( HashString list, ChanInfo ci ) {
         this.getChanAccess(list).add ( ci );
     }
     
-    public void remFromAccessList ( int list, ChanInfo ci ) {
+    public void remFromAccessList ( HashString list, ChanInfo ci ) {
         ArrayList<ChanInfo> chans = new ArrayList<>();
         for ( ChanInfo ci2 : getChanAccess ( list ) ) {
-            if ( ci2.getHashName() == ci.getHashName() ) {
+            if ( ci2.is(ci) ) {
                 chans.add ( ci2 );
             }
         }
@@ -401,6 +351,19 @@ public class NickInfo extends HashNumeric {
     public NSChanges getChanges ( ) {
         return this.changes;
     }
+    
+    public boolean hasChanged ( HashString it ) {
+        return this.changes.hasChanged(it);
+    }
+    
+    public boolean is ( User user ) {
+        return this.name.is(user.getName());
+    }
+    
+    public boolean isMask ( User user ) {
+        return this.host.is ( user.getMask() );
+    }
+    
     public boolean isAuth ( ) {
         if ( this.mail == null ) {
             return false;

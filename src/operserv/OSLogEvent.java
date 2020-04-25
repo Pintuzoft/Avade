@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import core.HashString;
 import core.LogEvent;
 import nickserv.NickInfo;
 import user.User;
@@ -30,23 +31,23 @@ public class OSLogEvent extends LogEvent {
     private int id;
     private String data;
     
-    public OSLogEvent ( String name, String flag, String mask, String oper, String stamp ) {
+    public OSLogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         super ( name, flag, mask, oper, stamp );
     }
     
-    public OSLogEvent ( String name, int flag, User user, NickInfo oper ) {
-        super ( name, user.getFullMask(), oper.getName() );
+    public OSLogEvent ( HashString name, HashString flag, User user, NickInfo oper ) {
+        super ( name, user.getFullMask(), oper.getName().getString() );
         this.setFlag ( flag );
     }
      
-    public OSLogEvent ( String name, String flag, String mask, String oper ) {
+    public OSLogEvent ( HashString name, HashString flag, String mask, String oper ) {
         super ( name, mask, oper );
-        this.setFlag ( flag.toUpperCase().hashCode ( ) );
+        this.setFlag ( flag );
     }
-
-    private void setFlag ( int flag ) {
-        this.flag = LogEvent.getOperFlagByHash ( flag );
-        this.flagInt = flag;
+ 
+    private void setFlag ( HashString flag ) {
+        this.flag = new HashString ( getOperFlagByHash ( flag ) );
+        //this.flagInt = flag;
     }
     
     public void setID ( int id ) {

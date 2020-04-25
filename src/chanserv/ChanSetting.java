@@ -19,6 +19,7 @@ package chanserv;
 
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 
 /**
  * @author DreamHealer
@@ -41,7 +42,7 @@ import core.HashNumeric;
 
 public class ChanSetting extends HashNumeric {
     private boolean     keepTopic;
-    private int         topicLock;
+    private HashString  topicLock;
     private boolean     ident;
     private boolean     opGuard;
     private boolean     restrict;
@@ -57,239 +58,167 @@ public class ChanSetting extends HashNumeric {
     private String      hold;
     private String      auditorium;
  
+    /**
+     *
+     */
     public ChanSetting ( )  {
         /* Channel Registration */
         this.allFalse ( );
     }
    
-    public boolean is ( int setting )  {
-      //  System.out.println( "debug: is:"+setting );
-        switch ( setting )  {
-            case KEEPTOPIC :
-                return this.keepTopic;
-
-            case TOPICLOCK :
-                return  (  this.topicLock == AOP || 
-                           this.topicLock == SOP || 
-                           this.topicLock == FOUNDER );
-
-            case IDENT :
-                return this.ident;
-
-            case OPGUARD :
-                return this.opGuard;
-
-            case RESTRICT :
-                return this.restrict;
-
-            case VERBOSE :
-                return this.verbose;
-
-            case MAILBLOCKED :
-                return this.mailBlock;
-
-            case LEAVEOPS :
-                return this.leaveOps;
-            
-            case AUTOAKICK :
-                return this.autoAkick;
-
-            case MARKED :
-            case MARK :
-                return this.mark.length() > 0;
-
-            case FROZEN :
-            case FREEZE :
-                return this.freeze.length() > 0;
-
-            case CLOSED :
-            case CLOSE :
-                return this.close.length() > 0;
-
-            case HELD :
-            case HOLD :
-                return this.hold.length() > 0;
-
-            case AUDITORIUM :
-                return this.auditorium.length() > 0;
-
-            default :
-                return false;
-                 
-         } 
+    /**
+     *
+     * @param it
+     * @return
+     */
+    public boolean is ( HashString it )  {
+        if ( it.is(TOPICLOCK) ) { 
+            return  ( this.topicLock.is(AOP) || 
+                      this.topicLock.is(SOP) || 
+                      this.topicLock.is(FOUNDER) );
+        }
+        if      ( it.is(KEEPTOPIC) )    { return this.keepTopic;                }
+        else if ( it.is(IDENT) )        { return this.ident;                    }
+        else if ( it.is(OPGUARD) )      { return this.opGuard;                  }
+        else if ( it.is(RESTRICT) )     { return this.restrict;                 }
+        else if ( it.is(VERBOSE) )      { return this.verbose;                  }
+        else if ( it.is(MAILBLOCKED) )  { return this.mailBlock;                }
+        else if ( it.is(LEAVEOPS) )     { return this.leaveOps;                 }
+        else if ( it.is(AUTOAKICK) )    { return this.autoAkick;                }
+        else if ( it.is(MARKED) )       { return this.mark.length() > 0;        }
+        else if ( it.is(MARK) )         { return this.mark.length() > 0;        }
+        else if ( it.is(FROZEN) )       { return this.freeze.length() > 0;      }
+        else if ( it.is(FREEZE) )       { return this.freeze.length() > 0;      }
+        else if ( it.is(CLOSED) )       { return this.close.length() > 0;       }
+        else if ( it.is(CLOSE) )        { return this.close.length() > 0;       }
+        else if ( it.is(HELD) )         { return this.hold.length() > 0;        }
+        else if ( it.is(HOLD) )         { return this.hold.length() > 0;        }
+        else if ( it.is(AUDITORIUM) )   { return this.auditorium.length() > 0;  }
+        else {
+            return false;
+        }
     } 
     
-    public int getTopicLock ( )  {
+    /**
+     *
+     * @return
+     */
+    public HashString getTopicLock ( ) {
         return this.topicLock;
     }
     
-    public void set ( int mode, boolean state )  {
-        switch ( mode )  {
-            case KEEPTOPIC :
-                this.keepTopic = state; 
-                break;
-
-            case IDENT :
-                this.ident = state;
-                break;
-
-            case OPGUARD :
-                this.opGuard = state;
-                break;
-
-            case RESTRICT :
-                this.restrict = state;
-                break;
-
-            case VERBOSE :
-                this.verbose = state;
-                break;
-
-            case MAILBLOCKED :
-                this.mailBlock = state;
-                break;
-
-            case LEAVEOPS :
-                this.leaveOps = state;
-                break;
-
-            case AUTOAKICK :
-                this.autoAkick = state;
-                break;
-
-            default :
-         } 
+    /**
+     *
+     * @param it
+     * @param state
+     */
+    public void set ( HashString it, boolean state ) {
+        if      ( it.is(KEEPTOPIC) )    { this.keepTopic    = state;            }
+        else if ( it.is(IDENT) )        { this.ident        = state;            }
+        else if ( it.is(OPGUARD) )      { this.opGuard      = state;            }
+        else if ( it.is(RESTRICT) )     { this.restrict     = state;            }
+        else if ( it.is(VERBOSE) )      { this.verbose      = state;            }
+        else if ( it.is(MAILBLOCKED) )  { this.mailBlock    = state;            }
+        else if ( it.is(LEAVEOPS) )     { this.leaveOps     = state;            }
+        else if ( it.is(AUTOAKICK) )    { this.autoAkick    = state;            }
     }  
     
-    public void set ( int mode, String instater )  {
+    /**
+     *
+     * @param it
+     * @param instater
+     */
+    public void set ( HashString it, String instater ) {
         if ( instater == null ) {
             instater = new String ( );
         }
-        switch ( mode )  {
-            case MARKED :
-            case MARK :
-                this.mark = instater;
-                break;
-             
-            case FROZEN :
-            case FREEZE :
-                this.freeze = instater;
-                break;
-             
-            case CLOSED :
-            case CLOSE :
-                this.close = instater;
-                break;
-             
-            case HELD :
-            case HOLD :
-                this.hold = instater;
-                break;
-                 
-            case AUDITORIUM :
-                this.auditorium = instater;
-                break;
-                
-            default :
-                
+        if      ( it.is(MARKED) )       { this.mark         = instater;         }
+        else if ( it.is(MARK) )         { this.mark         = instater;         }
+        else if ( it.is(FROZEN) )       { this.freeze       = instater;         }
+        else if ( it.is(FREEZE) )       { this.freeze       = instater;         }
+        else if ( it.is(CLOSED) )       { this.close        = instater;         }
+        else if ( it.is(CLOSE) )        { this.close        = instater;         }
+        else if ( it.is(HELD) )         { this.hold         = instater;         }
+        else if ( it.is(HOLD) )         { this.hold         = instater;         }
+        else if ( it.is(AUDITORIUM) )   { this.auditorium   = instater;         }
+    }
+    
+    /**
+     *
+     * @param it
+     * @return
+     */
+    public String getInstater ( HashString it ) {
+        if      ( it.is(MARKED) )       { return this.mark;                     }
+        else if ( it.is(MARK) )         { return this.mark;                     }
+        else if ( it.is(FROZEN) )       { return this.freeze;                   }
+        else if ( it.is(FREEZE) )       { return this.freeze;                   }
+        else if ( it.is(CLOSED) )       { return this.close;                    }
+        else if ( it.is(CLOSE) )        { return this.close;                    }
+        else if ( it.is(HELD) )         { return this.hold;                     }
+        else if ( it.is(HOLD) )         { return this.hold;                     }
+        else if ( it.is(AUDITORIUM) )   { return this.auditorium;               }
+        else {
+            return "Unknown";
         }
     }
     
-    public String getInstater ( int mode ) {
-        switch ( mode ) {
-            case MARKED :
-            case MARK :
-                return this.mark;
-            
-            case HELD :
-            case HOLD :
-                return this.hold;
-            
-            case FROZEN :
-            case FREEZE :
-                return this.freeze;
-            
-            case CLOSED :
-            case CLOSE :
-                return this.close;
-            
-            case AUDITORIUM :
-                return this.auditorium;
-                
-            default :
-                return "Unknown";
+    /**
+     *
+     * @param it
+     * @param state
+     */
+    public void set ( HashString it, HashString state ) {
+        if ( it.is(TOPICLOCK) ) {
+           this.topicLock = state;
         }
-    }
-    
-    public void set ( int mode, int state )  {
-         switch ( mode )  {
-             case TOPICLOCK :
-                 this.topicLock = state;
-                 break;
-                 
-             default :
-         }
     }  
     
-    public String modeString ( int mode )  {
-        switch ( mode )  {
-            case KEEPTOPIC :
-                return "Keeptopic";
-                 
-            case TOPICLOCK :
-                return "Topiclock";
-                 
-            case IDENT :
-                return "Ident";
-                 
-            case OPGUARD :
-                return "OpGuard";
-                 
-            case RESTRICT :
-                return "Restrict";
-                 
-            case VERBOSE :
-                return "Verbose"; 
-                 
-            case MAILBLOCKED :
-                return "MailBlock";
-                 
-            case LEAVEOPS :
-                return "LeaveOps";
-                        
-            case AUTOAKICK :
-                return "AutoAKick";
-                 
-            /* Oper Only */
-            case MARK :
-            case MARKED :
-                return "Marked";
-                 
-            case FREEZE :
-            case FROZEN :
-                return "Frozen";
-                 
-            case CLOSE :
-            case CLOSED :
-                return "Closed";
-                 
-            case HOLD :
-            case HELD :
-                return "Held";
-                 
-            case AUDITORIUM :
-                return "Auditorium";
-                 
-            default :
-                return "";
-                 
-         } 
+    /**
+     *
+     * @param it
+     * @return
+     */
+    public String modeString ( HashString it ) {
+        if ( it.is(TOPICLOCK) ) {
+            if ( this.topicLock.is(AOP))        { return "TopicLock (AOP)";     }
+            if ( this.topicLock.is(SOP))        { return "TopicLock (SOP)";     }
+            if ( this.topicLock.is(FOUNDER))    { return "TopicLock (Founder)"; }
+        }
+        if      ( it.is(KEEPTOPIC) )    { return "KeepTopic";                   }
+        else if ( it.is(IDENT) )        { return "Ident";                       }
+        else if ( it.is(OPGUARD) )      { return "OpGuard";                     }
+        else if ( it.is(RESTRICT) )     { return "Restrict";                    }
+        else if ( it.is(VERBOSE) )      { return "Verbose";                     }
+        else if ( it.is(MAILBLOCKED) )  { return "MailBlock";                   }
+        else if ( it.is(LEAVEOPS) )     { return "LeaveOps";                    }
+        else if ( it.is(AUTOAKICK) )    { return "AutoAkick";                   }
+        else if ( it.is(MARKED) )       { return "Marked";                      }
+        else if ( it.is(MARK) )         { return "Marked";                      }
+        else if ( it.is(FROZEN) )       { return "Frozen";                      }
+        else if ( it.is(FREEZE) )       { return "Frozen";                      }
+        else if ( it.is(CLOSED) )       { return "Closed";                      }
+        else if ( it.is(CLOSE) )        { return "Closed";                      }
+        else if ( it.is(HELD) )         { return "Held";                        }
+        else if ( it.is(HOLD) )         { return "Held";                        }
+        else if ( it.is(AUDITORIUM) )   { return "Auditorium";                  }
+        else {
+            return "";     
+        } 
     } 
     
+    /**
+     *
+     * @param modes
+     */
     public void setModeLock ( String modes )  {
         this.modeLock = new ModeLock ( modes );
     }
     
+    /**
+     *
+     * @return
+     */
     public ModeLock getModeLock ( )  {
         return this.modeLock;
     }
@@ -298,39 +227,36 @@ public class ChanSetting extends HashNumeric {
         return ! first ? ", " : ""; 
     }
     
+    /**
+     *
+     * @return
+     */
     public String getInfoStr ( )  {
         String buf = new String ( );
         boolean first = true;
-        int[] sList = { KEEPTOPIC, IDENT, OPGUARD, 
-                        RESTRICT, MAILBLOCKED, VERBOSE,
-                        LEAVEOPS, AUTOAKICK, MARKED,
-                        FROZEN, CLOSED, HELD, 
-                        AUDITORIUM };
+        HashString[] sList = { KEEPTOPIC, IDENT, OPGUARD, 
+                               RESTRICT, MAILBLOCKED, VERBOSE,
+                               LEAVEOPS, AUTOAKICK, MARKED,
+                               FROZEN, CLOSED, HELD, 
+                               AUDITORIUM };
         try { 
-            for ( int setting : sList ) {
+            for ( HashString setting : sList ) {
                 if ( is ( setting ) ) {
                     buf += this.isFirst ( first );
                     buf += this.modeString ( setting );
                 }
             }
             
-            if ( is ( TOPICLOCK )  && this.topicLock != OFF )  {
+            if ( is(TOPICLOCK) && ! this.topicLock.is(OFF) )  {
                 String acc = new String ( );
-                switch ( this.topicLock )  {
-                    case AOP :
-                        acc = "AOP";
-                        break;
-                        
-                    case SOP :
-                        acc = "SOP";
-                        break; 
-                        
-                    case FOUNDER :
-                        acc = "FOUNDER";
-                        break;
-                        
-                    default :
+                if ( this.topicLock.is(AOP) ) {
+                    acc = "AOP";
+                } else if ( this.topicLock.is(SOP) ) {
+                    acc = "SOP";
+                } else if ( this.topicLock.is(FOUNDER) ) {
+                    acc = "FOUNDER";
                 }
+                 
                 buf += this.isFirst ( first );
                 buf += this.modeString ( TOPICLOCK ) +" ( "+acc+" ) ";
                 first = false;
@@ -343,6 +269,9 @@ public class ChanSetting extends HashNumeric {
         return "";
     }  
 
+    /**
+     *
+     */
     public void allFalse ( )  {
         this.keepTopic          = false;
         this.topicLock          = OFF;
@@ -362,28 +291,23 @@ public class ChanSetting extends HashNumeric {
         this.auditorium         = new String ( );
     } 
 
-    boolean isTopicLock ( int state ) { 
-        return this.topicLock == state;
+    boolean isTopicLock ( HashString state ) { 
+        return this.topicLock.is(state);
     }
 
-    public static String hashToStr ( int hash ) {
-        switch ( hash ) {
-            case FROZEN :
-            case FREEZE :
-                return "FREEZE";
-
-            case CLOSED :
-            case CLOSE :
-                return "CLOSE";
-
-            case HELD :
-            case HOLD :
-                return "HOLD";
-
-            case AUDITORIUM :
-                return "AUDITORIUM";
-
-        }
+    /**
+     *
+     * @param hash
+     * @return
+     */
+    public static String hashToStr ( HashString hash ) {
+        if ( hash.is(FROZEN) )          { return "FREEZE";                      }
+        if ( hash.is(FREEZE) )          { return "FREEZE";                      }
+        if ( hash.is(CLOSED) )          { return "CLOSE";                       }
+        if ( hash.is(CLOSE) )           { return "CLOSE";                       }
+        if ( hash.is(HELD) )            { return "HOLD";                        }
+        if ( hash.is(HOLD) )            { return "HOLD";                        }
+        if ( hash.is(AUDITORIUM) )      { return "AUDITORIUM";                  }
         return "";
     }
     

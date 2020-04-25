@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -21,6 +21,8 @@ import chanserv.ChanServ;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
+import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -30,10 +32,8 @@ import java.util.regex.Pattern;
  * @author DreamHealer
  */
 public class Chan extends HashNumeric {
-    private String              name;
+    private HashString          name;
     private Topic               topic;
-    
-    private int                 hashName;
     
    // private String modes;
     private long                createdOn;
@@ -49,8 +49,7 @@ public class Chan extends HashNumeric {
 
 
     public Chan ( String[] data ) {
-        this.name           = data[3];
-        this.hashName       = this.name.toUpperCase().hashCode ( );
+        this.name           = new HashString ( data[3] );
         this.createdOn      = Long.parseLong ( data[2] );
         this.modes          = new ChanMode ( );
         this.oList          = new ArrayList<>( );    /* oplist */
@@ -64,8 +63,8 @@ public class Chan extends HashNumeric {
     }
     
    
-    public Chan ( int code )  {
-        this.hashName = code;
+    public Chan ( HashString code )  {
+        this.name = code;
     }
     
     public void addUserList ( String[] data )  {
@@ -161,7 +160,7 @@ public class Chan extends HashNumeric {
            } 
         }
     }
-    public void chModeUser ( User user, int mode, int acc, boolean isIRCop )  { 
+    public void chModeUser ( User user, HashString mode, HashString access, boolean isIRCop )  { 
         try {            
             if ( user == null )  {
                  return;
@@ -171,8 +170,8 @@ public class Chan extends HashNumeric {
             boolean isuser      = this.isUser ( user );
             
             /* if we want to change OP */
-            if ( mode == OP )  {
-                if ( acc == OP )  {
+            if ( mode.is(OP) )  {
+                if ( access.is(OP) ) {
                     if ( ! isop )  {
                         this.uList.remove ( user );
                         this.oList.add ( user );
@@ -186,8 +185,8 @@ public class Chan extends HashNumeric {
                     }
                 }
 
-            } else if ( mode == VOICE )  {
-                if ( acc == VOICE )  {
+            } else if ( mode.is(VOICE) ) {
+                if ( access.is(VOICE) ) {
                     if ( ! isvoice )  {
                         this.uList.remove ( user );
                         this.vList.add ( user );
@@ -209,20 +208,19 @@ public class Chan extends HashNumeric {
         }
     }
     public void remUser ( User user )  {
-        int hash = user.getHash();
         ArrayList<User> rList = new ArrayList<>();
         for ( User o : oList ) {
-            if ( o.getHash() == hash ) {
+            if ( o.is(user) ) {
                 rList.add ( o );
             }
         }
         for ( User v : vList ) {
-            if ( v.getHash() == hash ) {
+            if ( v.is(user) ) {
                 rList.add ( v );
             }
         } 
         for ( User u : uList ) {
-            if ( u.getHash() == hash ) {
+            if ( u.is(user) ) {
                 rList.add ( u );
             }
         } 
@@ -234,62 +232,52 @@ public class Chan extends HashNumeric {
         }
     }
 
-    public void addUser ( int acc, User u )  {
+    public void addUser ( HashString acc, User u )  {
         if ( u == null )  {
              return;
         } 
         
-        switch ( acc )  {
-            case OP :
-                this.oList.add ( u );
-                break;
-
-            case VOICE :
-                this.vList.add ( u );
-                break;
-
-            case USER :
-                this.uList.add ( u );
-                break;
-
-            default :
-        } 
+        if ( acc.is(OP) ) {
+            this.oList.add ( u );
+            
+        } else if ( acc.is(VOICE) ) {
+            this.vList.add ( u );
+        
+        } else if ( acc.is(USER) ) {
+            this.uList.add ( u );
+        }
+         
     }
     
    
     
-    public String getString ( int type )  {
-        switch ( type )  {
-            case NAME :
-                return this.name;
-                
-            default :
-                return null;
+    public HashString getString ( HashString type )  {
+        if ( type.is(NAME) ) {
+            return this.name;
+            
+        } else {
+            return null;
         }
     }
   
-    public ArrayList<User> getList ( int type )  { 
-        switch ( type )  {
-            case OP :
-                return this.oList;
-                
-            case VOICE :
-                return this.vList;
-                
-            case USER :
-                return this.uList;
-                
-            case ALL : 
-                ArrayList<User> all = new ArrayList<> ( );
-                all.addAll ( this.oList );
-                all.addAll ( this.vList );
-                all.addAll ( this.uList );
-                return all;
-                
-            default :
-                return new ArrayList<>( );
-                
+    public ArrayList<User> getList ( HashString type )  { 
+        if ( type.is(OP) ) {
+            return this.oList;
+        
+        } else if ( type.is(VOICE) ) {
+            return this.vList;
+        
+        } else if ( type.is(USER) ) {
+            return this.uList;
+        
+        } else if ( type.is(ALL) ) {
+            ArrayList<User> all = new ArrayList<> ( );
+            all.addAll ( this.oList );
+            all.addAll ( this.vList );
+            all.addAll ( this.uList );
+            return all;
         }
+        return new ArrayList<>( );
     }
       
     public boolean isOp ( User user )  {
@@ -319,10 +307,13 @@ public class Chan extends HashNumeric {
         return false;
     }
     
-    public boolean nickIsPresent ( String nick )  {
-        int hashCode = nick.toUpperCase ( ) .hashCode ( );
-        for ( User u : this.getList ( ALL )  )  {
-            if ( u.getHash ( )  == hashCode )  {
+    public boolean nickIsPresent ( String nick ) {
+        return this.nickIsPresent ( new HashString(nick) );
+    }
+    
+    public boolean nickIsPresent ( HashString nick )  {
+        for ( User user : this.getList ( ALL )  )  {
+            if ( user.hasAccess(nick) ) {
                 return true;
             }
         } 
@@ -352,22 +343,17 @@ public class Chan extends HashNumeric {
             return false; 
         }  
     }
- 
-    public int getHashName ( ) { 
-        return this.hashName;
-    } 
-    
-    public int getHash ( ) { 
-        return this.hashName;
-    } 
-    
-    @Override
-    public int hashCode ( ) { 
-        return this.hashName;
-    } 
-    
+  
     public Topic getTopic ( ) { 
         return topic;
+    }
+    
+    public HashString getName () {
+        return this.name;
+    }
+    
+    public String getNameStr () {
+        return this.name.getString();
     }
     
     public void setTopic ( Topic topic ) { 
@@ -380,5 +366,13 @@ public class Chan extends HashNumeric {
     
     public boolean isSaJoin ( ) {
         return this.sajoin;
+    }
+    
+    public boolean is ( HashString name ) {
+        return this.name.is(name);
+    }
+    
+    public boolean is ( Chan chan ) {
+        return this.name.is ( chan );
     }
 }

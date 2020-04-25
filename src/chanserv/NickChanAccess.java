@@ -26,20 +26,38 @@ public class NickChanAccess {
     private String chan;
     private String access;
     
+    /**
+     *
+     * @param nick
+     * @param chan
+     * @param access
+     */
     public NickChanAccess  ( String nick, String chan, String access )  {
         this.nick       = nick;
         this.chan       = chan;
         this.access     = access;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getNick() {
         return nick;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getChan() {
         return chan;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getAccess() {
         return access;
     }

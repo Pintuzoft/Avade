@@ -18,6 +18,7 @@
 package operserv;
 
 import core.Database;
+import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -93,8 +94,8 @@ public class OSDatabase extends Database {
                           +" ( ?, ?, ?, ?, ?, ? ) ";
             System.out.println(query);
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, ban.getID ( ) );
-            ps.setString ( 2, ban.getMask ( ) );
+            ps.setString ( 1, ban.getID().getString() );
+            ps.setString ( 2, ban.getMask().getString() );
             ps.setString ( 3, ban.getReason ( ) );
             ps.setString ( 4, ban.getInstater ( ) );
             ps.setString ( 5, ban.getTime ( ) );
@@ -110,45 +111,40 @@ public class OSDatabase extends Database {
         return true;
     }
 
-    public static void logServicesBan ( int command, ServicesBan ban ) {
+    public static void logServicesBan ( HashString command, ServicesBan ban ) {
         String id;
         String flag;
         if ( ! activateConnection ( ) )  {
             return;
         }
         
-        switch ( ban.getType() ) {
-            case AKILL :
+        if ( ban.getType().is(AKILL) ) {
                 id = "AK"+ban.getID ( );
-                flag = ( command == DEL ? "AK-" : "AK+" );
-                break;
-                
-            case IGNORE :
+                flag = ( command == DEL ? "AK-" : "AK+" );            
+        
+        } else if ( ban.getType().is(IGNORE) ) {
                 id = "IG"+ban.getID ( );
-                flag = ( command == DEL ? "IG-" : "IG+" );
-                break;
-                
-            case SQLINE :
+                flag = ( command == DEL ? "IG-" : "IG+" );            
+        
+        } else if ( ban.getType().is(SQLINE) ) {
                 id = "SQ"+ban.getID ( );
-                flag = ( command == DEL ? "SQ-" : "SQ+" );
-                break;
-                      
-            case SGLINE :
+                flag = ( command == DEL ? "SQ-" : "SQ+" );            
+        
+        } else if ( ban.getType().is(SGLINE) ) {
                 id = "SQ"+ban.getID ( );
-                flag = ( command == DEL ? "SG-" : "SG+" );
-                break;
-                
-            default :
-                return;
+                flag = ( command == DEL ? "SG-" : "SG+" );            
+        
+        } else {
+            return;
         }
-         
+        
         try {
             String query = "insert into banlog ( ticket,flag,usermask,oper,stamp,data ) VALUES "
                           +" ( ?, ?, ?, ?, now(), ?) ";
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, id );
             ps.setString   ( 2, flag );
-            ps.setString   ( 3, ban.getMask() );
+            ps.setString   ( 3, ban.getMask().getString() );
             ps.setString   ( 4, ban.getInstater() );
             ps.setString   ( 5, ban.getReason() );
             ps.execute ( );
@@ -172,7 +168,7 @@ public class OSDatabase extends Database {
             String query = "DELETE FROM "+list+" "+
                            "WHERE id = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ban.getID ( )  );
+            ps.setString  ( 1, ban.getID().getString()  );
             ps.execute ( );
             ps.close ( );
 
@@ -186,7 +182,7 @@ public class OSDatabase extends Database {
         return false;
     }
    
-    public static ArrayList<ServicesBan> getServicesBans ( int hash )  {
+    public static ArrayList<ServicesBan> getServicesBans ( HashString hash )  {
         String list = getListByHash ( hash );
         ArrayList<ServicesBan> banList = new ArrayList<> ( );
         if ( ! activateConnection ( ) || list.length() == 0 )  {
@@ -200,9 +196,17 @@ public class OSDatabase extends Database {
             res2 = ps.executeQuery ( );
  
             while ( res2.next ( )  )  {
-                banList.add ( new ServicesBan ( hash, res2.getString ( "id" ), true, res2.getString ( "mask" ), 
-                                                res2.getString ( "reason" ), res2.getString ( "instater" ), 
-                                                res2.getString ( "stamp" ), res2.getString ( "expire" ) ) );
+                banList.add ( new ServicesBan ( 
+                        hash, 
+                        new HashString ( res2.getString ( "id" ) ),
+                        true,
+                        new HashString ( res2.getString ( "mask" ) ),
+                        res2.getString ( "reason" ),
+                        res2.getString ( "instater" ),
+                        res2.getString ( "stamp" ),
+                        res2.getString ( "expire" ) 
+                    )
+                );
             }
             res2.close ( );
             ps.close ( );
@@ -251,8 +255,8 @@ public class OSDatabase extends Database {
 
     static ServicesBan getServicesBanByTicket ( String ticket ) {
         ServicesBan ban = null;
-        String tType = ticket.toUpperCase().substring ( 0, 2 );
-        int banType;
+        HashString type = new HashString ( ticket.toUpperCase().substring ( 0, 2 ) );
+        HashString banType;
         int tID;
         try {
             tID = Integer.parseInt ( ticket.substring ( 2 ) );
@@ -261,24 +265,16 @@ public class OSDatabase extends Database {
             return null;
         }
 
-        switch ( tType.hashCode() ) {
-            case AK :
-                banType = AKILL;
-                break;
-                
-            case IG :
-                banType = IGNORE;
-                break;
-                  
-            case SQ :
-                banType = SQLINE;
-                break;
-                
-            default :
-                return null;
-                
+        if ( type.is(AK) ) {
+            banType = AKILL;
+        } else if ( type.is(IG) ) {
+            banType = IGNORE;
+        } else if ( type.is(SQ) ) {
+            banType = SQLINE;
+        } else {
+            return null;
         }
-        
+         
         String list = getListByHash ( banType );
 
         try { 
@@ -290,9 +286,16 @@ public class OSDatabase extends Database {
             ps.setInt ( 1, tID );
             res2 = ps.executeQuery ( );
             if ( res2.next ( ) ) {
-                ban = new ServicesBan ( banType, res2.getString ( "id" ), true, res2.getString ( "mask" ), 
-                                                 res2.getString ( "reason" ), res2.getString ( "instater" ), 
-                                                 res2.getString ( "stamp" ), res2.getString ( "expire" ) );
+                ban = new ServicesBan ( 
+                    banType, 
+                    new HashString ( res2.getString ( "id" ) ), 
+                    true, 
+                    new HashString ( res2.getString ( "mask" ) ), 
+                    res2.getString ( "reason" ), 
+                    res2.getString ( "instater" ), 
+                    res2.getString ( "stamp" ), 
+                    res2.getString ( "expire" ) 
+                );
             }
             res2.close ( );
             ps.close ( );
@@ -303,7 +306,7 @@ public class OSDatabase extends Database {
         return ban;
     }
 
-    public static ArrayList<ServicesBan> getExpiredBans ( int hash ) {
+    public static ArrayList<ServicesBan> getExpiredBans ( HashString hash ) {
         String list = getListByHash ( hash );
         ArrayList<ServicesBan> banList = new ArrayList<> ( ); 
         if ( ! activateConnection ( ) || list.length() == 0 )  {
@@ -318,9 +321,18 @@ public class OSDatabase extends Database {
             res2 = ps.executeQuery ( );
 
             while ( res2.next ( )  )  {
-                banList.add ( new ServicesBan ( hash, res2.getString ( "id" ), true, res2.getString ( "mask" ),
-                                                res2.getString ( "reason" ), res2.getString ( "instater" ),
-                                                res2.getString ( "stamp" ) , res2.getString ( "expire" )  )  );
+                banList.add ( 
+                    new ServicesBan ( 
+                        hash, 
+                        new HashString ( res2.getString ( "id" ) ), 
+                        true, 
+                        new HashString ( res2.getString ( "mask" ) ),
+                        res2.getString ( "reason" ), 
+                        res2.getString ( "instater" ),
+                        res2.getString ( "stamp" ),
+                        res2.getString ( "expire" )  
+                    ) 
+                );
             }
             res2.close ( );
             ps.close ( );
@@ -333,27 +345,18 @@ public class OSDatabase extends Database {
     }
     
     
-    public static String getListByHash ( int hash ) {
-        switch ( hash ) {
-            case AKILL :
-                return "akill";
-            
-            case IGNORE :
-                return "ignorelist";
-                
-            case SQLINE :
-                return "sqline";
-                      
-            case SGLINE :
-                return "sgline";
-                
-            default :
-                return "";
-        }
+    public static String getListByHash ( HashString hash ) {
+        if ( hash.is(AKILL) )               { return "akill";       } 
+        else if ( hash.is(IGNORE) )         { return "ignorelist";  }
+        else if ( hash.is(SQLINE) )         { return "sqline";      }
+        else if ( hash.is(SGLINE) )         { return "sgline";      } 
+        else {
+            return "";
+        } 
     }
     
     
-    static ArrayList<OSLogEvent> getSearchLogList ( String target, boolean full ) {
+    static ArrayList<OSLogEvent> getSearchLogList ( HashString target, boolean full ) {
         ArrayList<OSLogEvent> lsList = new ArrayList<>();
         String table;
         
@@ -361,7 +364,7 @@ public class OSDatabase extends Database {
             return lsList;
         }
         
-        if ( target.charAt (0) == '#' ) {
+        if ( target.getString().charAt (0) == '#' ) {
             table = "chanlog";
         } else {
             table = "nicklog";
@@ -374,16 +377,18 @@ public class OSDatabase extends Database {
                            ( ! full ? "and stamp > now() - interval 1 year " : "" )+
                            "order by stamp asc;";
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, target );
+            ps.setString ( 1, target.getString() );
             res = ps.executeQuery ( );
 
             while ( res.next ( )  )  {
-                lsList.add ( new OSLogEvent ( 
-                        res.getString(1),
-                        res.getString(2),
+                lsList.add ( 
+                    new OSLogEvent ( 
+                        new HashString ( res.getString(1) ),
+                        new HashString ( res.getString(2) ),
                         res.getString(3),
                         res.getString(4),
-                        (res.getString(5)!=null?res.getString(5):null) )
+                        (res.getString(5)!=null?res.getString(5):null) 
+                    )
                 );
             }
             res2.close ( );
@@ -395,7 +400,7 @@ public class OSDatabase extends Database {
         } 
         return lsList;
     }
-    static ArrayList<OSSnoopLogEvent> getSnoopLogList ( String target, boolean full ) {
+    static ArrayList<OSSnoopLogEvent> getSnoopLogList ( HashString target, boolean full ) {
         ArrayList<OSSnoopLogEvent> lsList = new ArrayList<>();
         String table;
         
@@ -410,7 +415,7 @@ public class OSDatabase extends Database {
                            ( ! full ? "and stamp > now() - interval 1 year " : "" )+
                            "order by stamp asc;";
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, target );
+            ps.setString ( 1, target.getString() );
             res = ps.executeQuery ( );
 
             while ( res.next ( )  )  {
@@ -469,7 +474,7 @@ public class OSDatabase extends Database {
                        "where name = ?";
         try {
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, server.getName() );
+            ps.setString ( 1, server.getNameStr() );
             ps.execute ( );
             res2.close ( );
             ps.close ( );
@@ -493,8 +498,8 @@ public class OSDatabase extends Database {
                        "on duplicate key update name = ?";
         try {
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, server.getName() );
-            ps.setString ( 2, server.getName() );
+            ps.setString ( 1, server.getNameStr() );
+            ps.setString ( 2, server.getNameStr() );
             ps.execute();
 
             res2.close ( );
@@ -517,9 +522,9 @@ public class OSDatabase extends Database {
     
         try {
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, server.getPrimary() );
-            ps.setString ( 2, server.getSecondary() );
-            ps.setString ( 3, server.getName() );
+            ps.setString ( 1, server.getPrimaryStr() );
+            ps.setString ( 2, server.getSecondaryStr() );
+            ps.setString ( 3, server.getNameStr() );
             ps.execute();
 
             res2.close ( );
@@ -534,7 +539,7 @@ public class OSDatabase extends Database {
  
     
     
-    static boolean serverExistInList ( String name ) {
+    static boolean serverExistInList ( HashString name ) {
         boolean found;
         if ( ! activateConnection ( ) ) {
             return false;
@@ -546,7 +551,7 @@ public class OSDatabase extends Database {
         
         try {   
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, name );
+            ps.setString ( 1, name.getString() );
             res = ps.executeQuery ( );
             found = res.next();
             res2.close ( );
@@ -559,7 +564,7 @@ public class OSDatabase extends Database {
         return found;
     }
  
-    static ArrayList<Comment> getCommentList ( String target, boolean full ) {
+    static ArrayList<Comment> getCommentList ( HashString target, boolean full ) {
         ArrayList<Comment> cList = new ArrayList<>();
         Comment comment;
         String query;
@@ -576,7 +581,7 @@ public class OSDatabase extends Database {
          
         try {
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, target );
+            ps.setString ( 1, target.getString() );
             res = ps.executeQuery ( );
          
             while ( res.next ( )  )  {
@@ -636,9 +641,13 @@ public class OSDatabase extends Database {
             }
             res = ps.executeQuery ( );
             while ( res.next ( )  )  {
-                log = new OSLogEvent ( res.getString(1), res.getString(2),
-                                       res.getString(3), res.getString(4),
-                                       res.getString(5) );
+                log = new OSLogEvent ( 
+                    new HashString ( res.getString(1) ), 
+                    new HashString ( res.getString(2) ),
+                    res.getString(3), 
+                    res.getString(4),
+                    res.getString(5) 
+                );
                 log.setData ( res.getString ( 6 ) ); 
                 lsList.add ( log );
             }
@@ -686,9 +695,13 @@ public class OSDatabase extends Database {
             }
             res = ps.executeQuery ( );
             while ( res.next ( ) ) {
-                log = new OSLogEvent ( res.getString(1), res.getString(2),
-                                       res.getString(3), res.getString(4),
-                                       res.getString(5) );
+                log = new OSLogEvent ( 
+                    new HashString ( res.getString(1) ), 
+                    new HashString ( res.getString(2) ),
+                    res.getString(3), 
+                    res.getString(4),
+                    res.getString(5) 
+                );
                 log.setData ( res.getString ( 6 ) ); 
                 lsList.add ( log );
             }
@@ -708,7 +721,7 @@ public class OSDatabase extends Database {
             String query = "INSERT INTO oper ( name,access,instater ) VALUES ( ?, ?, ? ) "
                           +"ON DUPLICATE KEY UPDATE access = ?,instater = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, oper.getName ( ) );
+            ps.setString   ( 1, oper.getNameStr( ) );
             ps.setInt      ( 2, oper.getAccess ( ) );
             ps.setString   ( 3, oper.getString ( INSTATER ) );
             ps.setInt      ( 4, oper.getAccess ( ) );
@@ -731,7 +744,7 @@ public class OSDatabase extends Database {
         try {
             String query = "DELETE FROM oper WHERE name = ? AND access = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, oper.getName ( ) );
+            ps.setString   ( 1, oper.getNameStr ( ) );
             ps.setInt      ( 2, oper.getAccess ( ) );
             ps.execute ( );
             ps.close ( );

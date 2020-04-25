@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -19,6 +19,7 @@ package rootserv;
 
 import core.CommandInfo;
 import core.Handler;
+import core.HashString;
 import core.Proc;
 import core.Service;
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ import user.User;
  */
 public class RootServ extends Service {
     private static boolean                  is = false;
-    private static int                      panic;
+    private static HashString               panic;
     private RSExecutor                      executor;       /* Object that parse and execute commands */
     private RSHelper                        helper;         /* Object that parse and respond to help queries */
     private RSSnoop                         snoop;          /* Object for monitoring and reporting */
@@ -74,17 +75,17 @@ public class RootServ extends Service {
     
     
     /* Returns the list of added commands with its access and info */
-    public static ArrayList<CommandInfo> getCMDList ( int access ) {
+    public static ArrayList<CommandInfo> getCMDList ( HashString access ) {
         return Handler.getRootServ().getCommandList ( access );
     }
      
-    public static boolean enoughAccess ( User user, int hashName ) {
-        return Handler.getRootServ().checkAccess ( user, hashName );
+    public static boolean enoughAccess ( User user, HashString name ) {
+        return Handler.getRootServ().checkAccess ( user, name );
     }
     
-    public boolean checkAccess ( User user, int hashName )  {
+    public boolean checkAccess ( User user, HashString name )  {
         int access              = user.getAccess ( );
-        CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
+        CommandInfo cmdInfo     = this.findCommandInfo (name );
         if ( access < cmdInfo.getAccess ( )  )  {
             Handler.getRootServ().sendMsg ( user, "   Command "+cmdInfo.getName ( ) +" are for "+cmdInfo.getAccessStr ( ) +" only .. *sigh*" );
             return false;
@@ -94,7 +95,7 @@ public class RootServ extends Service {
     
     
     public void parse ( User user, String[] cmd )  { 
-        cmd[3] = cmd[3].substring ( 1 );
+        HashString command = new HashString ( cmd[3].substring(1) );
         
         if ( ! user.isAtleast ( SRA ) ) {
             return;
@@ -102,15 +103,13 @@ public class RootServ extends Service {
 
         /* :DreamHealer PRIVMSG OperServ@stats.sshd.biz :help */
          
-        switch ( cmd[3].toUpperCase().hashCode ( ) ) {
-            case HELP :
-                this.helper.parse ( user, cmd );
-                break;
-                
-            default: 
-                this.executor.parse ( user, cmd );
-            
-        } 
+        if ( command.is(HELP) ) {
+            this.helper.parse ( user, cmd );
+        
+        } else {
+            this.executor.parse ( user, cmd );
+        }
+         
     }
  
     public static void adPanic ( ) {
@@ -125,77 +124,72 @@ public class RootServ extends Service {
         );
     }
     
-    public static void setPanic ( int state ) {
+    public static void setPanic ( HashString state ) {
         panic = state;
         Handler.getRootServ().sendPanic();
-        switch ( state ) {
-            case OPER :
-            case IDENT :
-                RootServ.adPanic ( );
-                break;
-            
-            case USER : 
-                panicTimer.cancel();
-                panicTimer = null;
-                
-            default :
-                
+        
+        if ( state.is(OPER) ||
+             state.is(IDENT) ) {
+            RootServ.adPanic ( );
+        
+        } else if ( state.is(USER) ) {
+            panicTimer.cancel();
+            panicTimer = null;
         }
+        
     }
     
-    public static int getPanic ( ) {
+    public static HashString getPanic ( ) {
         return panic;
     }
     
-    public static String getPanicStr ( int hash ) {
-        switch ( hash ) {
-            case OPER : 
-                return "OPER [only IRCops can access services]";
-                
-            case IDENT :
-                return "IDENT [only identified users (+r) can access services]";
-                
-            case USER :
-                return "USER [everyone can access services]";
-                
-            default :
-                return getPanicStr ( panic );
-                
+    public static String getPanicStr ( HashString panic ) {
+        if ( panic.is(OPER) ) {
+            return "OPER [only IRCops can access services]";
+        
+        } else if ( panic.is(IDENT) ) {
+            return "IDENT [only identified users (+r) can access services]";
+        
+        } else if ( panic.is(USER) ) {
+            return "USER [everyone can access services]";
+        
+        } else {
+            return getPanicStr ( panic );
         }
+        
     }
     
     public void sendPanic ( ) {
-        int state = 0;
-        switch ( panic ) {
-            case OPER :
-                state = 2;
-                break;
-                
-            case IDENT :
-                state = 1;
-                break;
-                 
-            default:
-                
+        int state;
+        
+        if ( panic.is(OPER) ) {
+            state = 2;
+        
+        } else if ( panic.is(IDENT) ) {
+            state = 1;
+        
+        } else {
+            state = 0;
         }
+         
         this.sendServ ( "SVSPANIC "+state );
     }
 
     
     public void fixMaster ( ) {
-        String master = Proc.getConf().get ( MASTER );
+        HashString master = Proc.getConf().get(MASTER);
         NickInfo ni = NickServ.findNick ( master );
         User user;
         boolean newNick = false;
         
-        if ( master.isEmpty() ) {
+        if ( master == null ) {
             System.out.println ( "Couldnt find Master nickname in configuration file." );
             System.exit ( 1 );
         }
         user = Handler.findUser ( master );
         
         if ( ni == null ) {
-            ni = new NickInfo ( master );
+            ni = new NickInfo ( master.getString() );
             NSDatabase.createNick ( ni );
             NickServ.addNick ( ni );
             user.getSID().add ( ni );
@@ -208,12 +202,12 @@ public class RootServ extends Service {
             OSLogEvent log;
             ArrayList<NickInfo> nList = RSDatabase.setMaster ( master );
             for ( NickInfo old : nList ) {
-                log = new OSLogEvent ( old.getName(), "DELMASTER", "new!master@services", "Services config" );
+                log = new OSLogEvent ( old.getName(), new HashString ( "DELMASTER" ), "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
-                log = new OSLogEvent ( old.getName(), "ADDSRA", "new!master@services", "Services config" );
+                log = new OSLogEvent ( old.getName(), new HashString ( "ADDSRA" ), "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
             }
-            log = new OSLogEvent ( ni.getName(), "ADDMASTER", "new!master@services", "Services config" );
+            log = new OSLogEvent ( ni.getName(), new HashString ( "ADDMASTER" ), "new!master@services", "Services config" );
             OSDatabase.logEvent ( log );
             if ( user != null ) {
                 ni.setOper ( OperServ.getOper ( master ) );

@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -18,6 +18,7 @@
 package memoserv;
 
 import core.Handler;
+import core.HashString;
 import core.Proc;
 import core.Service;
 import core.TextFormat;
@@ -50,6 +51,7 @@ public class MemoServ extends Service {
     
     public void parse ( User user, String[] cmd )  {
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
+        HashString command;
         try {
             if ( cmd[3].isEmpty ( )  )  { 
                 return; 
@@ -64,20 +66,17 @@ public class MemoServ extends Service {
         }
         
         user.getUserFlood().incCounter ( this );
+         
+        command = new HashString ( cmd[3].substring ( 1 ) );
         
-        cmd[3] = cmd[3].substring ( 1 );
-        switch ( cmd[3].toUpperCase ( ) .hashCode ( )  )  {
-            case OHELP :
-                this.doOHelp ( user, cmd );
-                break; 
-                
-            case HELP :
-                this.helper.parse ( user, cmd );
-                break;
-                
-            default: 
-                this.doDefault ( user, cmd );
-           
+        if ( command.is(OHELP) ) {
+            this.doOHelp ( user, cmd );
+        
+        } else if ( command.is(HELP) ) {
+            this.helper.parse ( user, cmd );
+        
+        } else {
+            this.doDefault ( user, cmd );
         } 
     }
      
@@ -104,7 +103,7 @@ public class MemoServ extends Service {
     
     public void doOHelp ( User user, String[] cmd )  {
         if ( ! user.isOper ( )  )  {
-            this.snoop.msg ( false, "NickServ",user, cmd ); 
+            this.snoop.msg ( false, new HashString ( "NickServ" ),user, cmd ); 
             return;
         }
     }

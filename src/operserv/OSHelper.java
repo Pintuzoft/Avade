@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -19,6 +19,7 @@ package operserv;
 
 import core.CommandInfo;
 import core.Handler;
+import core.HashString;
 import core.Helper;
 import core.TextFormat;
 import user.User;
@@ -45,80 +46,63 @@ class OSHelper extends Helper {
             return;
         }
         
-        switch ( cmd[4].toUpperCase().hashCode ( ) ) {
-            case HELP :
-                this.help ( user );
-                break;
-                
-            case AKILL :
-                this.akill ( user );
-                break;
-                         
-            case MAKILL :
-                this.makill ( user );
-                break;
-                
-            case SEARCHLOG :
-                this.searchLog ( user );
-                break;
-                               
-            case SNOOPLOG :
-                this.snoopLog ( user );
-                break;
-                       
-            case COMMENT :
-                this.comment ( user );
-                break;
-                
-            case AUDIT :
-                this.audit ( user );
-                break;
-                   
-            case STAFF :
-                this.staff ( user );
-                break;
-                       
-            case GLOBAL :
-                this.global ( user );
-                break;
-                    
-            case BANLOG :
-                this.banlog ( user );
-                break;
-                
-            case SQLINE :
-                this.sqline ( user );
-                break;
-                
-            case SGLINE :
-                this.sgline ( user );
-                break;
-                       
-            case JUPE :
-                this.jupe ( user );
-                break;
-                         
-            case SERVER :
-                this.server ( user );
-                break;
-                       
-            case SPAMFILTER :
-                this.spamfilter ( user );
-                break;
-                       
-            case FORCENICK :
-                this.forcenick ( user );
-                break;
-                            
-            case BAHAMUT :
-                this.bahamut ( user );
-                break;
-                
-            default :
-                this.found = false; this.noMatch ( user, cmd[4] ); 
-           
-        }
+        HashString command = new HashString ( cmd[4] );
         
+        if ( command.is(HELP) ) {
+            this.help ( user ); 
+        
+        } else if ( command.is(AKILL) ) {
+            this.akill ( user );
+        
+        } else if ( command.is(MAKILL) ) {
+            this.makill ( user );
+        
+        } else if ( command.is(SEARCHLOG) ) {
+            this.searchLog ( user );
+        
+        } else if ( command.is(SNOOPLOG) ) {
+            this.snoopLog ( user );
+        
+        } else if ( command.is(COMMENT) ) {
+            this.comment ( user );
+        
+        } else if ( command.is(AUDIT) ) {
+            this.audit ( user );
+        
+        } else if ( command.is(STAFF) ) {
+            this.staff ( user );
+        
+        } else if ( command.is(GLOBAL) ) {
+            this.global ( user );
+        
+        } else if ( command.is(BANLOG) ) {
+            this.banlog ( user );
+        
+        } else if ( command.is(SQLINE) ) {
+            this.sqline ( user );
+        
+        } else if ( command.is(SGLINE) ) {
+            this.sgline ( user );
+        
+        } else if ( command.is(JUPE) ) {
+            this.jupe ( user );
+        
+        } else if ( command.is(SERVER) ) {
+            this.server ( user );
+        
+        } else if ( command.is(SPAMFILTER) ) {
+           this.spamfilter ( user ); 
+        
+        } else if ( command.is(FORCENICK) ) {
+            this.forcenick ( user );
+        
+        } else if ( command.is(BAHAMUT) ) {
+            this.bahamut ( user );
+        
+        } else {
+            this.found = false; this.noMatch ( user, cmd[4] );
+        }
+         
         this.snoop.msg ( this.found, user, cmd );
     }
     

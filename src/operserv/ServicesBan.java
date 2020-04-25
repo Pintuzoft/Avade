@@ -20,6 +20,7 @@ package operserv;
 import core.CIDRUtils;
 import core.Handler;
 import core.HashNumeric;
+import core.HashString;
 import core.StringMatch;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
@@ -34,13 +35,12 @@ import java.util.logging.Logger;
  * @author DreamHealer
  */
 public class ServicesBan extends HashNumeric {
-    private int             type;
-    private String          id;
-    private int             hash;
-    private String          nick;
-    private String          user;
-    private String          host;
-    private String          mask;
+    private HashString      type;
+    private HashString      id;
+    private HashString      nick;
+    private HashString      user;
+    private HashString      host;
+    private HashString      mask;
     private String          instater;
     private String          reason;
     private Date            time;
@@ -48,23 +48,20 @@ public class ServicesBan extends HashNumeric {
     private long            expireSec;
     private Date            expire;
     private long            expireStamp;
-    private int             maskHash;
     private CIDRUtils       cidr;
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
     
     
-    public ServicesBan ( int type, String id, boolean readyID, String mask, String reason, String instater, String timeStr, String expireStr ) {
+    public ServicesBan ( HashString type, HashString id, boolean readyID, HashString mask, String reason, String instater, String timeStr, String expireStr ) {
         this.type = type;
         if ( ! readyID ) {
-            this.id = getTypeStr(type)+id;
+            this.id = new HashString ( type.getString()+id );
         } else {
             this.id = id;
         }
-        this.hash     = this.id.toUpperCase().hashCode();
         this.mask     = mask;        
         this.instater = instater;
         this.reason   = reason;
-        this.maskHash = mask.toUpperCase().hashCode ( );
         
         /* Add proper time and expire if time is null */
         if ( timeStr == null || ! timeStr.contains("-") ) {
@@ -85,25 +82,25 @@ public class ServicesBan extends HashNumeric {
         
         this.expireSec = ( this.expire.getTime() - this.time.getTime() ) / 1000;
         
-        if ( mask.contains("!") ) {
-            String[] buf1 = mask.split ( "!" );
-            this.nick = buf1[0];
+        if ( mask.getString().contains("!") ) {
+            String[] buf1 = mask.getString().split ( "!" );
+            this.nick = new HashString ( buf1[0] );
             if ( mask.contains("@") ) {
                 String[] buf = buf1[1].split ( "@" );
-                this.host = buf[1];
-                this.user = buf[0];
+                this.host = new HashString ( buf[1] );
+                this.user = new HashString ( buf[0] );
             } else {
-                this.user = "*";
+                this.user = new HashString ( "*" );
                 this.host = mask;
             }
         } else {
-            this.nick = "*";
-            if ( mask.contains("@") ) {
-                String[] buf = mask.split ( "@" );
-                this.host = buf[1];
-                this.user = buf[0];
+            this.nick = new HashString ( "*" );
+            if ( mask.getString().contains("@") ) {
+                String[] buf = mask.getString().split ( "@" );
+                this.host = new HashString ( buf[1] );
+                this.user = new HashString ( buf[0] );
             } else {
-                this.user = "*";
+                this.user = new HashString ( "*" );
                 this.host = mask;
             }
         }
@@ -111,7 +108,7 @@ public class ServicesBan extends HashNumeric {
         // CIDR
         if ( this.host.contains("/") ) {
             try {
-                this.cidr = new CIDRUtils ( this.host );
+                this.cidr = new CIDRUtils ( this.host.getString() );
             } catch (UnknownHostException ex) {
                 Logger.getLogger(ServicesBan.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -150,61 +147,44 @@ public class ServicesBan extends HashNumeric {
     
     
     public boolean match ( String fullmask )  {
-        return StringMatch.maskWild ( fullmask, this.mask );
+        return StringMatch.maskWild ( fullmask, this.mask.getString() );
     }
     
     public boolean matchNoWild ( String fullmask )  {
-        return  ( fullmask.toUpperCase().hashCode ( ) == this.mask.toUpperCase().hashCode ( ) );
+        HashString it = new HashString ( fullmask );
+        return it.is(this.mask);
     }
     
     public String getListName ( ) {
-        switch ( this.type ) {
-            case AKILL :
-                return "akill";
-            
-            case IGNORE :
-                return "ignorelist";
-                
-            case SQLINE :
-                return "sqline";
-                         
-            case SGLINE :
-                return "sgline";
-                         
-            default :
-                return "";
-        }
+        if      ( type.is(AKILL) )      { return "akill";           }
+        else if ( type.is(IGNORE) )     { return "ignorelist";      }
+        else if ( type.is(SQLINE) )     { return "sqline";          }
+        else if ( type.is(SGLINE) )     { return "sgline";          }
+        else if ( type.is(AKILL) )      { return "akill";           }
+        else {
+            return "";
+        } 
     }
      
-    public static String getCommandByHash ( int hash ) {
-        switch ( hash ) {
-            case AKILL:
-                return "AKILL";
-                
-            case IGNORE :
-                return "IGNORE";
-        
-            case SQLINE :
-                return "SQLINE";
-                   
-            case SGLINE :
-                return "SGLINE";
-                   
-            default :
-                return "";
-        }
+    public static String getCommandByHash ( HashString hash ) {
+        if ( hash.is(AKILL) )           { return "AKILL";           }
+        else if ( hash.is(IGNORE) )     { return "IGNORE";          }
+        else if ( hash.is(SQLINE) )     { return "SQLINE";          }
+        else if ( hash.is(SGLINE) )     { return "SGLINE";          }
+        else {
+            return "";
+        } 
     }
     
-    public int getType ( ) { 
+    public HashString getType ( ) { 
         return this.type;
     }
       
-    public String getID ( ) { 
-        System.out.println("debug: id:"+this.id);
+    public HashString getID ( ) { 
         return this.id;
     }
     
-    public String getMask ( ) { 
+    public HashString getMask ( ) { 
         return this.mask;
     }
     
@@ -228,23 +208,15 @@ public class ServicesBan extends HashNumeric {
         return dateFormat.format ( this.expire );
     }
 
-    public String getHost ( ) { 
+    public HashString getHost ( ) { 
         return this.host;
     }
     
-    public String getUser ( ) { 
+    public HashString getUser ( ) { 
         return this.user;
     }
-
-    public int getMaskHash ( ) { 
-        return this.maskHash;
-    }
-    
-    public int getHash ( ) {
-        return this.hash;
-    }
-    
-    public void setId ( String id ) { 
+ 
+    public void setId ( HashString id ) { 
         this.id = id;
     }
     
@@ -277,19 +249,13 @@ public class ServicesBan extends HashNumeric {
         this.expireStamp = ( long ) this.expire.getTime ( ) / 1000;
     }
 
-    private static String getTypeStr ( int type ) {
-        switch ( type ) {
-            case AKILL :
-                return "AK";
-            case SQLINE :
-                return "SQ";
-            case SGLINE :
-                return "SG";
-            case IGNORE :
-                return "IG";
-                
-            default :
-                return "AK";
+    private static String getTypeStr ( HashString type ) {
+        if      ( type.is(AKILL) )          { return "AK"; }
+        else if ( type.is(SQLINE) )         { return "SQ"; }
+        else if ( type.is(SGLINE) )         { return "SG"; }
+        else if ( type.is(IGNORE) )         { return "IG"; }
+        else {
+            return "AK";
         }
     }
     public boolean hasExpired ( ) {
@@ -297,15 +263,20 @@ public class ServicesBan extends HashNumeric {
         return this.expireStamp < System.currentTimeMillis();
     }
     public String getBanTypeStr ( ) {
-        switch ( this.type ) {
-            case AKILL :
-                return "AutoKill";
-            case SQLINE :
-                return "SQLine";
-            case SGLINE :
-                return "SGLine";
-            default :
-                return "Unknown";
+        if      ( type.is(AKILL) )          { return "AutoKill"; }
+        else if ( type.is(SQLINE) )         { return "AutoKill"; }
+        else if ( type.is(SGLINE) )         { return "AutoKill"; }
+        else {
+            return "Unknown";
         }
+    }
+    public boolean is ( HashString type ) {
+        return this.type.is(type);
+    }
+    public boolean is ( ServicesBan ban ) {
+        return this.getID().is(ban.getID());
+    }
+    public boolean isMask ( HashString mask ) {
+        return this.mask.is(mask);
     }
 }

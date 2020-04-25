@@ -187,7 +187,7 @@ public class DBChanges extends HashNumeric {
     }
     private ArrayList<String> db118011 ( ) {
         ArrayList<String> qList = new ArrayList<>();
-        String salt = Proc.getConf().get ( SECRETSALT );
+        HashString salt = Proc.getConf().get ( SECRETSALT );
         // Add constraints on channels
         qList.add ( "alter table chansetting add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );
         qList.add ( "alter table chanaccess add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );

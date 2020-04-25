@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -20,6 +20,7 @@ package server;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 import user.User;
 import java.util.ArrayList;
 import operserv.OperServ;
@@ -29,8 +30,7 @@ import operserv.OperServ;
  * @author DreamHealer
  */
 public class Server extends HashNumeric {
-    private String                      name;
-    private int                         hashName; 
+    private HashString                  name;
     private int                         distance;
     private Server                      link;           /* Servers uplink server */ 
     private ArrayList<User>             uList;
@@ -45,28 +45,25 @@ public class Server extends HashNumeric {
     }
     
     private void init ( String[] data )  {
-        switch ( data[0].hashCode ( ) ) {
-            case SERVER :
-                /* We got a new services hub */
-                if ( data.length > 3 )  {
-                    this.name       = data[1];
-                    this.distance   = Integer.parseInt ( data[2] );
-                    this.link       = null; /* center of the network */
-                }
-                break;
-                
-            default :
-                /* We got a new server */
-                if ( data.length > 4 )  {
-                    this.name       = data[2];
-                    this.distance   = Integer.parseInt ( data[3] );
-
-                    this.link       = Handler.findServer ( data[0].substring ( 1 )  );
-                    this.link.addServer ( this );
-                }
-        } 
+        HashString command = new HashString ( data[0] );
+        
+        if ( command.is(SERVER) ) {
+            /* We got a new services hub */
+            if ( data.length > 3 )  {
+                this.name       = new HashString ( data[1] );
+                this.distance   = Integer.parseInt ( data[2] );
+                this.link       = null; /* center of the network */
+            }
+        } else {
+            /* We got a new server */
+            if ( data.length > 4 )  {
+                this.name       = new HashString ( data[2] );
+                this.distance   = Integer.parseInt ( data[3] );
+                this.link       = Handler.findServer ( data[0].substring ( 1 )  );
+                this.link.addServer ( this );
+            }
+        }
         OperServ.addServer ( this.name );
-        this.hashName = this.name.toUpperCase ( ) .hashCode ( );
     }
     
     public void addUser ( User user ) { 
@@ -89,8 +86,12 @@ public class Server extends HashNumeric {
         return this.uList.size ( );
     }
 
-    public String getName ( ) {
+    public HashString getName ( ) {
         return this.name;
+    }
+    
+    public boolean is ( HashString name ) {
+        return this.name.is(name);
     }
     
     public Server getLink ( ) {
@@ -114,7 +115,7 @@ public class Server extends HashNumeric {
     }
 
     private void sendServ ( String cmd )  {
-        ServSock.sendCmd ( ":"+Proc.getConf ( ) .get ( STATS ) +" "+cmd );
+        ServSock.sendCmd ( ":"+Proc.getConf().get ( STATS ) +" "+cmd );
     }
     
     public void recursiveUserList ( User user, String prepend )  {
@@ -128,11 +129,7 @@ public class Server extends HashNumeric {
             s.recursiveUserList ( user, prepend );
         }
     }
-    
-    public int getHashName ( ) {
-        return this.hashName;
-    }
-    
+
     public ArrayList<User> getUserList ( ) {
         return uList;
     }

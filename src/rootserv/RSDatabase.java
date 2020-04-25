@@ -19,6 +19,7 @@ package rootserv;
 
 import operserv.*;
 import core.Database;
+import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import nickserv.NickInfo;
@@ -57,11 +58,11 @@ public class RSDatabase extends Database {
             String query = "INSERT INTO oper  ( name, access, instater )  VALUES  ( ?, ?, ? )  "
                           +"ON DUPLICATE KEY UPDATE access = ?, instater = ?;"; 
             PreparedStatement preparedStmt = sql.prepareStatement ( query );
-            preparedStmt.setString   ( 1, target.getName ( )       );
+            preparedStmt.setString   ( 1, target.getNameStr()       );
             preparedStmt.setInt      ( 2, 4                         );
-            preparedStmt.setString   ( 3, sra.getName ( )          );                
+            preparedStmt.setString   ( 3, sra.getNameStr()          );                
             preparedStmt.setInt      ( 4, 4                         );
-            preparedStmt.setString   ( 5, sra.getName ( )          );
+            preparedStmt.setString   ( 5, sra.getNameStr()          );
             preparedStmt.execute ( );
             preparedStmt.close ( );
 
@@ -83,7 +84,7 @@ public class RSDatabase extends Database {
             
             String query = "DELETE FROM oper WHERE name = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ni.getName ( )  );
+            ps.setString  ( 1, ni.getNameStr()  );
             ps.execute ( );
             ps.close ( );
             
@@ -98,7 +99,7 @@ public class RSDatabase extends Database {
         return false;
     }
 
-    static boolean isMaster(String master) {
+    static boolean isMaster ( HashString master ) {
         if ( ! activateConnection ( ) ) {
             return false;
         }
@@ -106,7 +107,7 @@ public class RSDatabase extends Database {
         try {            
             String query = "SELECT name FROM oper WHERE name = ? AND access = ?";
             PreparedStatement preparedStmt = sql.prepareStatement ( query );
-            preparedStmt.setString  ( 1, master  );
+            preparedStmt.setString  ( 1, master.getString() );
             preparedStmt.setInt     ( 2, 5  );
             res = preparedStmt.executeQuery ( );
 
@@ -126,7 +127,7 @@ public class RSDatabase extends Database {
     }
     
     /* Set new master and return all old masters */
-    static ArrayList<NickInfo> setMaster ( String master ) {
+    static ArrayList<NickInfo> setMaster ( HashString master ) {
         ArrayList<NickInfo> nList = new ArrayList<>();
         
         if ( ! activateConnection ( ) ) {
@@ -155,7 +156,7 @@ public class RSDatabase extends Database {
             query = "INSERT INTO oper ( name, access ) VALUES ( ?, ? ) "+
                     "ON DUPLICATE KEY UPDATE access = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, master );
+            ps.setString  ( 1, master.getString() );
             ps.setInt     ( 2, 5 );
             ps.setInt     ( 3, 5 );
             ps.execute ( );

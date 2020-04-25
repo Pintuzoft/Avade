@@ -17,6 +17,7 @@
  */
 package nickserv;
 
+import core.HashString;
 import security.Hash;
 
 /**
@@ -24,22 +25,29 @@ import security.Hash;
  * @author Fredrik Karlsson aka DreamHealer & avade.net
  */
 public class NSAuth {
-    private int type;
+    private HashString type;
     private String value;
-    private String nick;
+    private HashString nick;
     private String auth;
     private String stamp;
     
-    public NSAuth ( int type, String nick, String value ) {
+    public NSAuth ( HashString type, HashString nick, String value ) {
         this.type = type;
         this.nick = nick;
         this.value = value;
         this.hash();
     }
     
-    public NSAuth ( int type, String nick, String value, String auth, String stamp ) {
+    public NSAuth ( HashString type, HashString nick, String value, String auth, String stamp ) {
         this.type = type;
         this.nick = nick;
+        this.value = value;
+        this.auth = auth;
+        this.stamp = stamp;
+    }
+    public NSAuth ( HashString type, String nick, String value, String auth, String stamp ) {
+        this.type = type;
+        this.nick = new HashString ( nick );
         this.value = value;
         this.auth = auth;
         this.stamp = stamp;
@@ -50,15 +58,18 @@ public class NSAuth {
         this.auth = Hash.md5 ( buf );
     }
 
-    public int getType ( ) {
+    public HashString getType ( ) {
         return this.type;
     }
     public String getValue ( ) {
         return this.value;
     }
 
-    public String getNick ( ) {
+    public HashString getNick ( ) {
         return this.nick;
+    }
+    public String getNickStr ( ) {
+        return this.nick.getString();
     }
 
     public String getAuth ( ) {
@@ -69,4 +80,7 @@ public class NSAuth {
         return this.stamp;
     }
     
+    public boolean is ( HashString it ) {
+        return it.is(type);
+    }
 }

@@ -20,6 +20,7 @@ package rootserv;
 import core.Proc;
 import core.Service;
 import core.HashNumeric;
+import core.HashString;
 import monitor.Snoop;
 import user.User;
 
@@ -31,7 +32,7 @@ public class RSSnoop extends Snoop {
 
     public RSSnoop ( Service service )  {
         super ( );
-        String channel      = Proc.getConf ( ) .get (HashNumeric.SNOOPROOTSERV );
+        HashString channel  = Proc.getConf().get(SNOOPROOTSERV);
         this.service        = service;
         this.chan           = channel;
     }

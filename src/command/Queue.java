@@ -20,6 +20,7 @@ package command;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 import nickserv.NickInfo;
 import java.util.LinkedList;
 import nickserv.NickServ;
@@ -85,15 +86,15 @@ public class Queue extends HashNumeric {
         if ( command.getTargetType ( ) == NICKINFO )  {
             /* Target is a nickname */ 
             NickInfo ni =  ( NickInfo )  command.getTarget ( );
-            switch ( command.getCommand ( ) ) {
-                case AUTH :  
-                    res = Handler.getNickServ().authorizeMail ( ni, command );
-                    break;
-                    
-                case PASS :
-                    res = Handler.getNickServ().authorizePass ( ni, command );
-                    break;
-            } 
+            HashString cmd = command.getCommand();
+            
+            if ( cmd.is(AUTH) ) {
+                res = Handler.getNickServ().authorizeMail ( ni, command );
+            
+            } else if ( cmd.is(PASS) ) {
+                res = Handler.getNickServ().authorizePass ( ni, command );
+            }
+             
         }
         if ( !res )  {
             /* bad result? lets readd it to queue */

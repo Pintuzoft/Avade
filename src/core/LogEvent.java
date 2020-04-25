@@ -28,26 +28,22 @@ import java.util.Date;
  * @author fredde
  */
 public abstract class LogEvent extends HashNumeric {
-    protected String name;
-    protected String flag;
-    protected int    flagInt;
+    protected HashString name;
+    protected HashString flag;
     protected String mask;
     protected String oper;
     protected String stamp;
     protected DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public LogEvent ( String name, String flag, String mask, String oper, String stamp ) {
+    public LogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         this.name = name;
         this.flag = flag;
-        if ( flag != null ) {
-            this.flagInt = flag.toUpperCase().hashCode();
-        }
         this.mask = mask;
         this.oper = oper;
         this.stamp = stamp.substring ( 0, 19 );
     }
 
-    public LogEvent (  String name, String mask, String oper ) {
+    public LogEvent ( HashString name, String mask, String oper ) {
         this.name = name;
         this.mask = mask;
         this.oper = oper;
@@ -58,202 +54,86 @@ public abstract class LogEvent extends HashNumeric {
         this.stamp = stamp;
     }
     
-    static public String getNickFlagByHash ( int hash ) {
-        switch ( hash ) {
-            case AUTHMAIL :
-                return "Am";
-                
-            case AUTHPASS :
-                return "Ap";
-                
-            case DROP :
-                return "D";
-                
-            case DELETE :
-                return "D!";
-            
-            case EXPIRE :
-                return "E";
-              
-            case EXPIREAUTH :
-                return "Ea";
-              
-            case MAIL :
-                return "m";
-            
-            case PASS :
-                return "p";
-            
-            case MARK :
-                return "M+";
-            
-            case UNMARK :
-                return "M-";
-                      
-            case FREEZE :
-                return "F+";
-            
-            case UNFREEZE :
-                return "F-";
-            
-            case HOLD :
-                return "H+";
-            
-            case UNHOLD :
-                return "H-";
-            
-            case GETEMAIL :
-                return "GE";
-            
-            case GETPASS :
-                return "GP";
-            
-            case REGISTER :
-                return "R";
- 
-            case SENDPASS :
-                return "SP";
-            
-            case WIPE :
-                return "W";
- 
-             default :
-                return null;
+    static public String getNickFlagByHash ( HashString hash ) {
+        if      ( hash.is(AUTHMAIL) )       { return "Am";  }
+        else if ( hash.is(AUTHPASS) )       { return "Ap";  }
+        else if ( hash.is(DROP) )           { return "D";   }
+        else if ( hash.is(DELETE) )         { return "D!";  }
+        else if ( hash.is(EXPIRE) )         { return "E";   }
+        else if ( hash.is(EXPIREAUTH) )     { return "Ea";  }
+        else if ( hash.is(MAIL) )           { return "m";   }
+        else if ( hash.is(PASS) )           { return "p";   }
+        else if ( hash.is(MARK) )           { return "M+";  }
+        else if ( hash.is(UNMARK) )         { return "M-";  }
+        else if ( hash.is(FREEZE) )         { return "F+";  }
+        else if ( hash.is(UNFREEZE) )       { return "F-";  }
+        else if ( hash.is(HOLD) )           { return "H+";  }
+        else if ( hash.is(UNHOLD) )         { return "H-";  }
+        else if ( hash.is(GETEMAIL) )       { return "GE";  }
+        else if ( hash.is(GETPASS) )        { return "GP";  }
+        else if ( hash.is(REGISTER) )       { return "R";   }
+        else if ( hash.is(SENDPASS) )       { return "SP";  }
+        else if ( hash.is(WIPE) )           { return "W";   }
+        else {
+            return null;
         }
     }
-    static public String getChanFlagByHash ( int hash ) {
-        switch ( hash ) {
-            case AUDITORIUM :
-                return "A+";
-                
-            case UNAUDITORIUM :
-                return "A-";
-                
-            case CLOSE :
-                return "C+";
-                
-            case REOPEN :
-                return "C-";
-            
-            case DROP :
-                return "D";
-
-            case DELETE :
-                return "D!";
-            
-            case EXPIRE :
-                return "E";
-              
-            case EXPIREFOUNDER :
-                return "Ef";
-              
-            case EXPIREINACTIVE :
-                return "Ei";
-              
-            case MARK :
-                return "M+";
-            
-            case UNMARK :
-                return "M-";
-            
-            case FREEZE :
-                return "F+";
-            
-            case UNFREEZE :
-                return "F-";
-            
-            case HOLD :
-                return "H+";
-            
-            case UNHOLD :
-                return "H-";
-            
-            case GETPASS :
-                return "GP";
-            
-            case MDEOP :
-                return "Md";
-            
-            case MKICK :
-                return "Mk";
-            
-            case REGISTER :
-                return "R";
- 
-            case SAJOIN :
-                return "SJ";
-            
-            case SAMODE :
-                return "SM";
-            
-            case SENDPASS :
-                return "SP";
-            
-            case TOPICWIPE :
-                return "T";
- 
-            case WIPE :
-                return "W";
- 
-            case WIPEAOP :
-                return "Wa";
- 
-            case WIPESOP :
-                return "Ws";
- 
-            case WIPEAKICK :
-                return "Wk";
- 
-             default :
-                return null;
+    
+    static public String getChanFlagByHash ( HashString hash ) {
+        if      ( hash.is(AUDITORIUM) )     { return "A+";  }
+        else if ( hash.is(UNAUDITORIUM) )   { return "A-";  }
+        else if ( hash.is(CLOSE) )          { return "C+";  }
+        else if ( hash.is(REOPEN) )         { return "C-";  }
+        else if ( hash.is(DROP) )           { return "D";   }
+        else if ( hash.is(DELETE) )         { return "D!";  }
+        else if ( hash.is(EXPIRE) )         { return "E";   }
+        else if ( hash.is(EXPIREFOUNDER) )  { return "Ef";  }
+        else if ( hash.is(EXPIREINACTIVE) ) { return "Ei";  }
+        else if ( hash.is(MARK) )           { return "M+";  }
+        else if ( hash.is(UNMARK) )         { return "M-";  }
+        else if ( hash.is(FREEZE) )         { return "F+";  }
+        else if ( hash.is(UNFREEZE) )       { return "F-";  }
+        else if ( hash.is(HOLD) )           { return "H+";  }
+        else if ( hash.is(UNHOLD) )         { return "H-";  }
+        else if ( hash.is(GETPASS) )        { return "GP";  }
+        else if ( hash.is(MDEOP) )          { return "Md";  }
+        else if ( hash.is(MKICK) )          { return "Mk";  }
+        else if ( hash.is(REGISTER) )       { return "R";   }
+        else if ( hash.is(SAJOIN) )         { return "SJ";  }
+        else if ( hash.is(SAMODE) )         { return "SM";  }
+        else if ( hash.is(SENDPASS) )       { return "SP";  }
+        else if ( hash.is(TOPICWIPE) )      { return "Wt";  }
+        else if ( hash.is(WIPE) )           { return "W";   }
+        else if ( hash.is(WIPEAOP) )        { return "Wa";  }
+        else if ( hash.is(WIPESOP) )        { return "Ws";  }
+        else if ( hash.is(WIPEAKICK) )      { return "Wk";  }
+        else {
+            return null;
         }
     }
-    static public String getOperFlagByHash ( int hash ) {
-        switch ( hash ) {
-            case ADDMASTER :
-                return "Master+";
-     
-            case DELMASTER :
-                return "Master-";
-     
-            case ADDSRA :
-                return "SRA+";
-     
-            case DELSRA :
-                return "SRA-";
-     
-            case ADDCSOP :
-                return "CSop+";
-     
-            case DELCSOP :
-                return "CSop-";
-     
-            case ADDSA :
-                return "SA+";
-     
-            case DELSA :
-                return "SA-";
-     
-            case ADDIRCOP :
-                return "IRCop+";
-     
-            case DELIRCOP :
-                return "IRCop-";
-     
-            case GLOBAL :
-                return "Global";
-     
-            default :
-                return null;
-                
+    
+    static public String getOperFlagByHash ( HashString hash ) {
+        if      ( hash.is(ADDMASTER) )      { return "Master+";     }
+        else if ( hash.is(DELMASTER) )      { return "Master-";     }
+        else if ( hash.is(ADDSRA) )         { return "SRA+";        }
+        else if ( hash.is(DELSRA) )         { return "SRA-";        }
+        else if ( hash.is(ADDCSOP) )        { return "CSop+";       }
+        else if ( hash.is(DELCSOP) )        { return "CSop-";       }
+        else if ( hash.is(ADDSA) )          { return "SA+";         }
+        else if ( hash.is(DELSA) )          { return "SA-";         }
+        else if ( hash.is(ADDIRCOP) )       { return "IRCop+";      }
+        else if ( hash.is(DELIRCOP) )       { return "IRCop-";      }
+        else if ( hash.is(GLOBAL) )         { return "Global";      }
+        else {
+            return null;
         }
     }
       
-    public String getName ( ) {
+    public HashString getName ( ) {
         return name;
     }
 
-    public String getFlag ( ) {
+    public HashString getFlag ( ) {
         return flag;
     }
 
@@ -272,10 +152,5 @@ public abstract class LogEvent extends HashNumeric {
     public boolean isOper ( ) {
         return ( oper != null );
     }
-     
-    public int getFlagInt ( ) {
-        return this.flagInt;
-    }
-    
-    
+      
 }

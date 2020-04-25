@@ -45,7 +45,7 @@ public class Log extends HashNumeric {
     
     private void connect ( )  {
         try { 
-            this.fStream    = new FileWriter ( Proc.getConf ( ) .get ( LOGFILE ) , true );
+            this.fStream    = new FileWriter ( Proc.getConf().get(LOGFILE).getString(), true );
             this.out        = new BufferedWriter ( this.fStream );
         } catch  ( IOException ex )  {
             Logger.getLogger ( Log.class.getName ( )  ) .log ( Level.SEVERE, null, ex );
@@ -55,7 +55,7 @@ public class Log extends HashNumeric {
         try {
             this.out.close ( );
             this.fStream.close ( );
-            this.fStream    = new FileWriter ( Proc.getConf ( ) .get ( LOGFILE ) , true );
+            this.fStream    = new FileWriter ( Proc.getConf().get(LOGFILE).getString(), true );
             this.out        = new BufferedWriter ( this.fStream );
         } catch  ( IOException ex )  {
             Logger.getLogger ( Log.class.getName ( )  ) .log ( Level.SEVERE, null, ex );

@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -18,6 +18,7 @@
 package rootserv;
 
 import core.CommandInfo;
+import core.HashString;
 import core.Helper;
 import core.TextFormat;
 import operserv.Oper;
@@ -38,42 +39,37 @@ class RSHelper extends Helper {
     }
 
     public void parse ( User user, String[] cmd )  { 
+        HashString command;
         this.found = true;
         if ( cmd.length <= 4 ) { 
             this.help ( user ); 
             return;
         } 
-        Oper oper = user.getSID ( ) .getOper ( ); 
+        Oper oper = user.getSID().getOper ( ); 
         System.out.println("debug RootServ:parse()");
         if ( ! oper.isAtleast ( SRA )  )  {
             this.service.sendMsg ( user, "   RootServ is for Root Admins  ( SRA )  only .. *sigh*" );
             
-        } else { 
-            switch ( cmd[4].toUpperCase().hashCode ( ) ) {
-                case HELP :
-                    this.help ( user );
-                    break;
-                    
-                case SRA :
-                    this.sra ( user );
-                    break;
-                    
-                case SRAW :
-                    this.sraw ( user );
-                    break;
-                    
-                case REHASH :
-                    this.rehash ( user );
-                    break;
-                        
-                case PANIC :
-                    this.panic ( user );
-                    break;
-                    
-                default :
-                    this.found = false; 
-                    this.noMatch ( user, cmd[4] ); 
-                
+        } else {
+            command = new HashString ( cmd[4] );
+            if ( command.is(HELP) ) {
+                this.help ( user );
+            
+            } else if ( command.is(SRA) ) {
+                this.sra ( user );
+            
+            } else if ( command.is(SRAW) ) {
+                this.sraw ( user );
+            
+            } else if ( command.is(REHASH) ) {
+                this.rehash ( user );
+            
+            } else if ( command.is(PANIC) ) {
+                this.panic ( user );
+            
+            } else {
+                this.found = false; 
+                this.noMatch ( user, cmd[4] );
             } 
             
         } 

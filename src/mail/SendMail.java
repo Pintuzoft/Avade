@@ -19,6 +19,7 @@ package mail;
 
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 import memoserv.MemoInfo;
 import nickserv.NSAuth;
 import nickserv.NickInfo;
@@ -39,8 +40,8 @@ public class SendMail extends HashNumeric {
             auth.getAuth(),
             mailStr ( 
                 NICKREG_BODY, 
-                ni.getName ( ), 
-                Proc.getConf().get ( AUTHURL ),
+                ni.getNameStr(), 
+                Proc.getConf().get(AUTHURL).getString(),
                 auth.getAuth()
             )
         );
@@ -56,8 +57,8 @@ public class SendMail extends HashNumeric {
             mailStr ( 
                 NEWMEMO_BODY,
                 null,
-                ni.getName ( ), 
-                mi.getSender ( )
+                ni.getName().getString(), 
+                mi.getSender()
             )  
         );
         MXDatabase.sendMail ( mail );
@@ -69,58 +70,48 @@ public class SendMail extends HashNumeric {
             ni.getString ( MAIL ), 
             null,
             mailStr ( EXPNICK_SUBJECT, "" ), 
-            mailStr ( EXPNICK_BODY, ni.getName ( ) )  
+            mailStr ( EXPNICK_BODY, ni.getName().getString() )  
         );
         MXDatabase.sendMail ( mail );
     }
     
     /* MAIL STRINGS */
-    private static String mailStr ( int code, String... args )  {
-        switch ( code )  {
-            case NICKREG_BODY :
-                return "Hello "+args[0]+"\n\nYou recently registered the "+
-                       "nickname: "+args[0]+" using this email address. \n"+
-                       "To fully register your nickname please follow this "+
-                       "link: "+args[1]+args[2]+"\n\nRegards\n\n"+
-                       "/"+Proc.getConf().get ( NETNAME ); 
-           
-            case NICKREG_SUBJECT :
-                return "Nick registration mail"; 
-           
-            case NEWMEMO_BODY : 
-                return "Hello "+args[0]+"\n\nYou have recieved a new memo "+
-                       "from "+args[0]+".\nTo read the memo please connect, "+
-                       "identify to your nickname and type:\n\n"+
-                       "/MemoServ LIST and /MemoServ READ <#num>\n\n"+
-                       "Regards\n\n"+
-                       "/"+Proc.getConf().get ( NETNAME );
-          
-            case NEWMEMO_SUBJECT :
-                return "New memo"; 
-            
-            case EXPNICK_BODY :
-                return "Hello "+args[0]+"\n\nYour nickname "+args[0]+" "+
-                       "is about to expire.\nTo avoid getting your nick "+
-                       "expired please reconnect to The Avade IRC Network "+
-                       "and identify to your nickname.\n\nRegards\n\n"+
-                       "/"+Proc.getConf().get ( NETNAME ); 
-           
-            case EXPNICK_SUBJECT : 
-                return "Nick expiration mail"; 
-                
-            default :
-                return "";
-                
+    private static String mailStr ( HashString it, String... args )  {
+        if ( it.is(NICKREG_BODY) ) {
+            return  "Hello "+args[0]+"\n\nYou recently registered the "+
+                    "nickname: "+args[0]+" using this email address. \n"+
+                    "To fully register your nickname please follow this "+
+                    "link: "+args[1]+args[2]+"\n\nRegards\n\n"+
+                    "/"+Proc.getConf().get ( NETNAME ); 
+        
+        } else if ( it.is(NICKREG_SUBJECT) ) {
+            return  "Nick registration mail"; 
+        
+        } else if ( it.is(NEWMEMO_BODY) ) {
+            return  "Hello "+args[0]+"\n\nYou have recieved a new memo "+
+                    "from "+args[0]+".\nTo read the memo please connect, "+
+                    "identify to your nickname and type:\n\n"+
+                    "/MemoServ LIST and /MemoServ READ <#num>\n\n"+
+                    "Regards\n\n"+
+                    "/"+Proc.getConf().get ( NETNAME );
+        
+        } else if ( it.is(NEWMEMO_SUBJECT) ) {
+            return  "New memo";
+        
+        } else if ( it.is(EXPNICK_BODY) ) {
+            return  "Hello "+args[0]+"\n\nYour nickname "+args[0]+" "+
+                    "is about to expire.\nTo avoid getting your nick "+
+                    "expired please reconnect to The Avade IRC Network "+
+                    "and identify to your nickname.\n\nRegards\n\n"+
+                    "/"+Proc.getConf().get ( NETNAME );
+        
+        } else if ( it.is(EXPNICK_SUBJECT) ) {
+            return  "Nick expiration mail";
+
+        } else {
+            return "";
         }
-    }
-    
-    private static final int NICKREG_BODY           = 50;
-    private static final int NICKREG_SUBJECT        = 51;
-    
-    private static final int NEWMEMO_BODY           = 52;
-    private static final int NEWMEMO_SUBJECT        = 53;
-       
-    private static final int EXPNICK_BODY           = 54;
-    private static final int EXPNICK_SUBJECT        = 55;
+         
+    } 
     
 }

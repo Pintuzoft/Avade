@@ -20,7 +20,7 @@ package chanserv;
 import channel.Topic;
 import core.Config;
 import core.Database;
-import core.LogEvent;
+import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import nickserv.NickInfo;
@@ -84,9 +84,7 @@ import user.User;
 +----------+--------------+------+-----+---------+-------+
 6 rows in set  ( 0.00 sec ) 
 */
-
-
-
+ 
 
 public class CSDatabase extends Database {
     private static Statement s;
@@ -96,6 +94,13 @@ public class CSDatabase extends Database {
     private static PreparedStatement ps;
 
       /* NickServ Methods */
+
+    /**
+     *
+     * @param ci
+     * @return
+     */
+
     public static int createChan ( ChanInfo ci )  {
         Config config = Proc.getConf ( );
         if ( ! activateConnection ( )  )  {
@@ -107,14 +112,14 @@ public class CSDatabase extends Database {
         } else {
             
             try {
-                String salt = config.get ( SECRETSALT );
+                HashString salt = config.get ( SECRETSALT );
                 String query = "insert into chan ( name, founder, pass, description, regstamp, stamp )  "
                              + "values ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
-                ps.setString  ( 2, ci.getFounder().getName ( )  );
+                ps.setString  ( 2, ci.getFounder().getName().getString()  );
                 ps.setString  ( 3, ci.getPass ( ) );
-                ps.setString  ( 4, salt );             
+                ps.setString  ( 4, salt.getString() );             
                 ps.setString  ( 5, ci.getString ( DESCRIPTION )  );
                 ps.setString  ( 6, ci.getString ( REGTIME ) );
                 ps.setString  ( 7, ci.getString ( LASTUSED ) );
@@ -183,7 +188,7 @@ public class CSDatabase extends Database {
                 idleUpdate ( "createChan ( ) " );
             } catch  ( SQLException ex )  {
                 /* Nick already exists? return -1 */
-                Proc.log ( CSDatabase.class.getName ( ) , ex );
+                Proc.log ( CSDatabase.class.getName ( ), ex );
                 return -1;
             }
         }
@@ -192,6 +197,13 @@ public class CSDatabase extends Database {
     }
      
     /* NickServ Methods */
+
+    /**
+     *
+     * @param ci
+     * @return
+     */
+
     public static int updateChan ( ChanInfo ci )  { 
         Config config = Proc.getConf ( );
         if ( ! activateConnection ( )  )  {
@@ -208,14 +220,14 @@ public class CSDatabase extends Database {
                 if ( ci.getChanges().hasChanged ( FOUNDER ) ||
                      ci.getChanges().hasChanged ( DESCRIPTION ) ||
                      ci.getChanges().hasChanged ( LASTUSED ) ) {
-                    String salt = config.get ( SECRETSALT );
+                    HashString salt = config.get ( SECRETSALT );
                     query = "UPDATE chan SET "+
                             "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = ? "+
                             "WHERE name = ?";
                     ps = sql.prepareStatement ( query );
-                    ps.setString  ( 1, ci.getFounder ( ) .getName ( ) );
+                    ps.setString  ( 1, ci.getFounder().getName().getString() );
                     ps.setString  ( 2, ci.getPass ( ) );
-                    ps.setString  ( 3, salt );
+                    ps.setString  ( 3, salt.getString() );
                     ps.setString  ( 4, ci.getString ( DESCRIPTION ) );
                     ps.setString  ( 5, ci.getString ( LASTUSED ) );
                     ps.setString  ( 6, ci.getString ( NAME )  ); 
@@ -225,36 +237,51 @@ public class CSDatabase extends Database {
                 
                 String changes = new String ( );
             
-                if ( ci.getChanges().hasChanged ( KEEPTOPIC ) )
+                if ( ci.getChanges().hasChanged ( KEEPTOPIC ) ) {
                     changes = addToQuery ( changes, "keeptopic" );
-                if ( ci.getChanges().hasChanged ( IDENT ) )
+                }
+                if ( ci.getChanges().hasChanged ( IDENT ) ) {
                     changes = addToQuery ( changes, "ident" );
-                if ( ci.getChanges().hasChanged ( OPGUARD ) )
+                }
+                if ( ci.getChanges().hasChanged ( OPGUARD ) ) {
                     changes = addToQuery ( changes, "opguard" );
-                if ( ci.getChanges().hasChanged ( RESTRICT ) )
+                }
+                if ( ci.getChanges().hasChanged ( RESTRICT ) ) {
                     changes = addToQuery ( changes, "restricted" );
-                if ( ci.getChanges().hasChanged ( VERBOSE ) )
+                }
+                if ( ci.getChanges().hasChanged ( VERBOSE ) ) {
                     changes = addToQuery ( changes, "verbose" );
-                if ( ci.getChanges().hasChanged ( MAILBLOCK ) )
+                }
+                if ( ci.getChanges().hasChanged ( MAILBLOCK ) ) {
                     changes = addToQuery ( changes, "mailblock" );
-                if ( ci.getChanges().hasChanged ( LEAVEOPS ) )
+                }
+                if ( ci.getChanges().hasChanged ( LEAVEOPS ) ) {
                     changes = addToQuery ( changes, "leaveops" );
-                if ( ci.getChanges().hasChanged ( AUTOAKICK ) )
+                }
+                if ( ci.getChanges().hasChanged ( AUTOAKICK ) ) {
                     changes = addToQuery ( changes, "autoakick" );
-                if ( ci.getChanges().hasChanged ( MODELOCK ) )
+                }
+                if ( ci.getChanges().hasChanged ( MODELOCK ) ) {
                     changes = addToQuery ( changes, "modelock" );
-                if ( ci.getChanges().hasChanged ( TOPICLOCK ) )
+                }
+                if ( ci.getChanges().hasChanged ( TOPICLOCK ) ) {
                     changes = addToQuery ( changes, "topiclock" );
-                if ( ci.getChanges().hasChanged ( MARK ) )
+                }
+                if ( ci.getChanges().hasChanged ( MARK ) ) {
                     changes = addToQuery ( changes, "mark" );
-                if ( ci.getChanges().hasChanged ( FREEZE ) )
+                }
+                if ( ci.getChanges().hasChanged ( FREEZE ) ) {
                     changes = addToQuery ( changes, "freeze" );
-                if ( ci.getChanges().hasChanged ( CLOSE ) )
+                }
+                if ( ci.getChanges().hasChanged ( CLOSE ) ) {
                     changes = addToQuery ( changes, "close" );
-                if ( ci.getChanges().hasChanged ( HOLD ) )
+                }
+                if ( ci.getChanges().hasChanged ( HOLD ) ) {
                     changes = addToQuery ( changes, "hold" );
-                if ( ci.getChanges().hasChanged ( AUDITORIUM ) )
+                }
+                if ( ci.getChanges().hasChanged ( AUDITORIUM ) ) {
                     changes = addToQuery ( changes, "auditorium" );
+                }
                 
                 
                 if ( changes.length() > 0 ) {
@@ -266,26 +293,36 @@ public class CSDatabase extends Database {
                     ps = sql.prepareStatement ( query );
                     int index = 1;
                     ci.getChanges().printChanges();
-                    if ( ci.getChanges().hasChanged ( KEEPTOPIC ) )
+                    if ( ci.getChanges().hasChanged ( KEEPTOPIC ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( KEEPTOPIC ) );
-                    if ( ci.getChanges().hasChanged ( IDENT ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( IDENT ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( IDENT ) );
-                    if ( ci.getChanges().hasChanged ( OPGUARD ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( OPGUARD ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( OPGUARD ) );
-                    if ( ci.getChanges().hasChanged ( RESTRICT ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( RESTRICT ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( RESTRICT ) );
-                    if ( ci.getChanges().hasChanged ( VERBOSE ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( VERBOSE ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( VERBOSE ) );
-                    if ( ci.getChanges().hasChanged ( MAILBLOCK ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( MAILBLOCK ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( MAILBLOCK ) );
-                    if ( ci.getChanges().hasChanged ( LEAVEOPS ) )
-                        ps.setBoolean ( index++, ci.getSettings().is ( LEAVEOPS ) ); 
-                    if ( ci.getChanges().hasChanged ( AUTOAKICK ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( LEAVEOPS ) ) {
+                        ps.setBoolean ( index++, ci.getSettings().is ( LEAVEOPS ) );
+                    } 
+                    if ( ci.getChanges().hasChanged ( AUTOAKICK ) ) {
                         ps.setBoolean ( index++, ci.getSettings().is ( AUTOAKICK ) );
-                    if ( ci.getChanges().hasChanged ( MODELOCK ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( MODELOCK ) ) {
                         ps.setString ( index++, ci.getSettings().getModeLock().getModes ( ) );
-                    if ( ci.getChanges().hasChanged ( TOPICLOCK ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( TOPICLOCK ) ) {
                         ps.setString ( index++, hashToTopiclockString ( ci.getSettings().getTopicLock ( ) ) );
+                    }
                      
                     if ( ci.getChanges().hasChanged ( MARK ) ) { 
                         if ( ! ci.getSettings().is ( MARKED ) ) {
@@ -334,7 +371,7 @@ public class CSDatabase extends Database {
                         query = "insert into topiclog ( name,setter,stamp,topic ) "+
                                 "values ( ?, ?, ?, ? )";
                         ps = sql.prepareStatement ( query );
-                        ps.setString ( 1, ci.getName ( ) );
+                        ps.setString ( 1, ci.getName().getString() );
                         ps.setString ( 2, ci.getTopic().getSetter ( ) );
                         ps.setString ( 3, ci.getTopic().getTimeStr ( ) );
                         ps.setString ( 4, ci.getTopic().getTopic ( ) );
@@ -345,32 +382,45 @@ public class CSDatabase extends Database {
                 
                 changes = new String ( );
             
-                if ( ci.getChanges().hasChanged ( JOIN_CONNECT_TIME ) )
+                if ( ci.getChanges().hasChanged ( JOIN_CONNECT_TIME ) ) {
                     changes = addToQuery ( changes, "join_connect_time" );
-                if ( ci.getChanges().hasChanged ( TALK_CONNECT_TIME ) )
+                }
+                if ( ci.getChanges().hasChanged ( TALK_CONNECT_TIME ) ) {
                     changes = addToQuery ( changes, "talk_connect_time" );
-                if ( ci.getChanges().hasChanged ( TALK_JOIN_TIME ) )
+                }
+                if ( ci.getChanges().hasChanged ( TALK_JOIN_TIME ) ) {
                     changes = addToQuery ( changes, "talk_join_time" );
-                if ( ci.getChanges().hasChanged ( MAX_BANS ) )
+                }
+                if ( ci.getChanges().hasChanged ( MAX_BANS ) ) {
                     changes = addToQuery ( changes, "max_bans" );
-                if ( ci.getChanges().hasChanged ( NO_NOTICE ) )
+                }
+                if ( ci.getChanges().hasChanged ( NO_NOTICE ) ) {
                     changes = addToQuery ( changes, "no_notice" );
-                if ( ci.getChanges().hasChanged ( NO_CTCP ) )
+                }
+                if ( ci.getChanges().hasChanged ( NO_CTCP ) ) {
                     changes = addToQuery ( changes, "no_ctcp" );
-                if ( ci.getChanges().hasChanged ( NO_PART_MSG ) )
+                }
+                if ( ci.getChanges().hasChanged ( NO_PART_MSG ) ) {
                     changes = addToQuery ( changes, "no_part_msg" );
-                if ( ci.getChanges().hasChanged ( EXEMPT_OPPED ) )
+                }
+                if ( ci.getChanges().hasChanged ( EXEMPT_OPPED ) ) {
                     changes = addToQuery ( changes, "exempt_opped" );
-                if ( ci.getChanges().hasChanged ( EXEMPT_VOICED ) )
+                }
+                if ( ci.getChanges().hasChanged ( EXEMPT_VOICED ) ) {
                     changes = addToQuery ( changes, "exempt_voiced" );
-                if ( ci.getChanges().hasChanged ( EXEMPT_IDENTD ) )
+                }
+                if ( ci.getChanges().hasChanged ( EXEMPT_IDENTD ) ) {
                     changes = addToQuery ( changes, "exempt_identd" );
-                if ( ci.getChanges().hasChanged ( EXEMPT_REGISTERED ) )
+                }
+                if ( ci.getChanges().hasChanged ( EXEMPT_REGISTERED ) ) {
                     changes = addToQuery ( changes, "exempt_registered" );
-                if ( ci.getChanges().hasChanged ( EXEMPT_INVITES ) )
+                }
+                if ( ci.getChanges().hasChanged ( EXEMPT_INVITES ) ) {
                     changes = addToQuery ( changes, "exempt_invites" );
-                if ( ci.getChanges().hasChanged ( GREETMSG ) )
+                }
+                if ( ci.getChanges().hasChanged ( GREETMSG ) ) {
                     changes = addToQuery ( changes, "greetmsg" );
+                }
   
                 if ( changes.length() > 0 ) {
                      
@@ -383,30 +433,42 @@ public class CSDatabase extends Database {
                     int index = 1;
                     ci.getChanges().printChanges ( );
                     CSFlag cf = ci.getChanFlag ( );
-                    if ( ci.getChanges().hasChanged ( JOIN_CONNECT_TIME ) )
+                    if ( ci.getChanges().hasChanged ( JOIN_CONNECT_TIME ) ) {
                         ps.setShort ( index++, cf.getJoin_connect_time ( ) );
-                    if ( ci.getChanges().hasChanged ( TALK_CONNECT_TIME ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( TALK_CONNECT_TIME ) ) {
                         ps.setShort ( index++, cf.getTalk_connect_time ( ) );
-                    if ( ci.getChanges().hasChanged ( TALK_JOIN_TIME ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( TALK_JOIN_TIME ) ) {
                         ps.setShort ( index++, cf.getTalk_join_time ( ) );
-                    if ( ci.getChanges().hasChanged ( MAX_BANS ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( MAX_BANS ) ) {
                         ps.setShort ( index++, cf.getMax_bans ( ) );
-                    if ( ci.getChanges().hasChanged ( NO_NOTICE ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( NO_NOTICE ) ) {
                         ps.setBoolean ( index++, cf.isNo_notice ( ) );
-                    if ( ci.getChanges().hasChanged ( NO_CTCP ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( NO_CTCP ) ) {
                         ps.setBoolean ( index++, cf.isNo_ctcp ( ) );
-                    if ( ci.getChanges().hasChanged ( NO_PART_MSG ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( NO_PART_MSG ) ) {
                         ps.setBoolean ( index++, cf.isNo_part_msg ( ) );
-                    if ( ci.getChanges().hasChanged ( EXEMPT_OPPED ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( EXEMPT_OPPED ) ) {
                         ps.setBoolean ( index++, cf.isExempt_opped ( ) );
-                    if ( ci.getChanges().hasChanged ( EXEMPT_VOICED ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( EXEMPT_VOICED ) ) {
                         ps.setBoolean ( index++, cf.isExempt_voiced ( ) );
-                    if ( ci.getChanges().hasChanged ( EXEMPT_IDENTD ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( EXEMPT_IDENTD ) ) {
                         ps.setBoolean ( index++, cf.isExempt_identd ( ) );
-                    if ( ci.getChanges().hasChanged ( EXEMPT_REGISTERED ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( EXEMPT_REGISTERED ) ) {
                         ps.setBoolean ( index++, cf.isExempt_registered ( ) );
-                    if ( ci.getChanges().hasChanged ( EXEMPT_INVITES ) )
+                    }
+                    if ( ci.getChanges().hasChanged ( EXEMPT_INVITES ) ) {
                         ps.setBoolean ( index++, cf.isExempt_invites ( ) );
+                    }
                     
                     if ( ci.getChanges().hasChanged ( GREETMSG ) ) {
                         if ( ! cf.isGreetmsg ( ) ) {
@@ -442,23 +504,20 @@ public class CSDatabase extends Database {
             return data+key+" = ?";
         }
     }
-    private static String hashToTopiclockString ( int hash ) {
-        switch ( hash ) {
-            case FOUNDER :
-                return "founder";
-                 
-            case SOP :
-                return "sop";
-                 
-            case AOP :
-                return "aop";
-                 
-            default :
-                return "off";
-
+    private static String hashToTopiclockString ( HashString it ) {
+        if      ( it.is(FOUNDER) )          { return "founder";                 }
+        else if ( it.is(SOP) )              { return "sop";                     }
+        else if ( it.is(AOP) )              { return "aop";                     }
+        else {
+            return "off";
         }
     }
       
+    /**
+     *
+     * @param log
+     * @return
+     */
     public static boolean accesslogEvent ( CSAccessLogEvent log ) {
         
         if ( ! activateConnection ( )  )  {
@@ -469,9 +528,9 @@ public class CSDatabase extends Database {
             String query = "insert into chanacclog ( name, target, access, instater, usermask, stamp ) "+
                            "values ( ?, ?, ?, ?, ?, now() ) ";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, log.getName() );
+            ps.setString   ( 1, log.getNameStr() );
             ps.setString   ( 2, log.getTarget() );
-            ps.setString   ( 3, log.getFlag() );
+            ps.setString   ( 3, log.getFlagStr() );
             ps.setString   ( 4, log.getInstater() );
             ps.setString   ( 5, log.getUsermask() );
             ps.execute ( );
@@ -484,6 +543,12 @@ public class CSDatabase extends Database {
         return false;
     }
      
+    /**
+     *
+     * @param ci
+     * @param acc
+     * @return
+     */
     public static int updateChanAccessLastOped ( ChanInfo ci, CSAcc acc ) {
         if ( ! activateConnection ( ) ) {
             /* No SQL connection */
@@ -498,8 +563,8 @@ public class CSDatabase extends Database {
                              + "where name = ? and nick = ?";
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, acc.getLastOped() );
-                ps.setString   ( 2, ci.getName() );
-                ps.setString   ( 3, acc.getNick().getName() );
+                ps.setString   ( 2, ci.getName().getString() );
+                ps.setString   ( 3, acc.getNick().getName().getString() );
                 ps.execute ( );
                 ps.close ( );
                  
@@ -514,7 +579,14 @@ public class CSDatabase extends Database {
         return 1;
     }
 
-    public static int addChanAccess ( ChanInfo ci, CSAcc op, int access )  {
+    /**
+     *
+     * @param ci
+     * @param op
+     * @param access
+     * @return
+     */
+    public static int addChanAccess ( ChanInfo ci, CSAcc op, HashString access )  {
 
         if ( ! activateConnection ( )  )  {
             /* No SQL connection */
@@ -528,30 +600,22 @@ public class CSDatabase extends Database {
             try {                     
           
                 String acc = new String ( );
-                switch ( access )  {
-                    case AKICK :
-                        acc = "akick";
-                        break; 
-                        
-                    case SOP :
-                        acc = "sop";
-                        break;
-                        
-                    case AOP :
-                        acc = "aop";
-                        break;
-                        
-                    default :
-                        
+                if ( access.is(AKICK) ) {
+                    acc = "akick";
+                } else if ( access.is(SOP) ) {
+                    acc = "sop";
+                } else if ( access.is(AOP) ) {
+                    acc = "aop";
                 }
+                 
                 String query = "insert into chanaccess ( name,access,nick )  "
                              + "values ( ?, ?, ? ) "
                              + "on duplicate key "
                              + "update access = ?";
                 ps = sql.prepareStatement ( query );
-                ps.setString   ( 1, ci.getName ( )  );
+                ps.setString   ( 1, ci.getName().getString() );
                 ps.setString   ( 2, acc );
-                ps.setString   ( 3, op.getNick ( ) !=null ? op.getNick().getName ( ) : op.getMask ( ) );
+                ps.setString   ( 3, op.getNick ( ) !=null ? op.getNick().getNameStr( ) : op.getMask ( ) );
                 ps.setString   ( 4, acc );
                 ps.execute ( );
                 ps.close ( );
@@ -568,7 +632,12 @@ public class CSDatabase extends Database {
         return 1;
     }
   
-       
+    /**
+     *
+     * @param ci
+     * @param access
+     * @return
+     */
     public static int removeChanAccess ( ChanInfo ci, CSAcc access )  {
 
         if ( ! activateConnection ( )  )  {
@@ -584,8 +653,8 @@ public class CSDatabase extends Database {
                              + "where name = ? "
                              + "and nick = ?";
                 ps = sql.prepareStatement ( query );
-                ps.setString   ( 1, ci.getName ( )  );
-                ps.setString   ( 2, access.getNick ( ) !=null ? access.getNick().getName ( ) : access.getMask ( ) );
+                ps.setString   ( 1, ci.getName().getString() );
+                ps.setString   ( 2, access.getNick ( ) !=null ? access.getNick().getNameStr() : access.getMask ( ) );
                 ps.execute ( );
                 ps.close ( );
                  
@@ -600,6 +669,12 @@ public class CSDatabase extends Database {
         return 1;
     }
     
+    /**
+     *
+     * @param ni
+     * @param access
+     * @return
+     */
     public static ArrayList<NickChanAccess> getNickChanAccessByNick ( NickInfo ni, String access )  {
         ArrayList<NickChanAccess> ncaList = new ArrayList<> ( );
         if ( ! activateConnection ( )  )  {
@@ -612,7 +687,7 @@ public class CSDatabase extends Database {
                            "where n.name = ? "+
                            "and ca.access = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ni.getName ( )  );
+            ps.setString  ( 1, ni.getName().getString() );
             ps.setString  ( 2, access );
             res = ps.executeQuery ( );
             while  ( res.next ( )  )  {
@@ -627,6 +702,11 @@ public class CSDatabase extends Database {
         return ncaList;
     }
  
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static Topic getChanTopic ( String name )  {
         Topic topic = null;
         String[] buf;
@@ -680,7 +760,7 @@ public class CSDatabase extends Database {
                     "order by stamp asc "+
                     "limit 100";
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, ci.getName() );
+            ps.setString ( 1, ci.getName().getString() );
             res3 = ps.executeQuery ( );
             while ( res3.next( ) ) {
                 tList.add(
@@ -702,9 +782,13 @@ public class CSDatabase extends Database {
         return tList;
     }
 
-
-    
-    public static ArrayList<CSAcc> getChanAccess ( ChanInfo ci, int access )  {
+    /**
+     *
+     * @param ci
+     * @param access
+     * @return
+     */
+    public static ArrayList<CSAcc> getChanAccess ( ChanInfo ci, HashString access )  {
         String[] buf;
         NickInfo ni;
         String stamp;
@@ -715,28 +799,21 @@ public class CSDatabase extends Database {
         try {
             CSAcc chanOp;
             String acc = new String ( );
-            switch ( access )  {
-                case AKICK :
-                    acc = "akick";
-                    break;
-
-                case SOP :
-                    acc = "sop";
-                    break;
-
-                case AOP :
-                    acc = "aop";
-                    break;
-
-                default :
-            } 
+            
+            if ( access.is(AKICK) ) {
+                acc = "akick";
+            } else if ( access.is(SOP) ) {
+                acc = "sop";
+            } else if ( access.is(AOP) ) {
+                acc = "aop";
+            }
 
             String query = "select nick,lastoped "
                          + "from chanaccess "
                          + "where name = ? "
                          + "and access = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 1, ci.getName().getString() );
             ps.setString  ( 2, acc );
             res3 = ps.executeQuery ( );
 
@@ -769,6 +846,13 @@ public class CSDatabase extends Database {
     
    
     /* Delete a channel */
+
+    /**
+     *
+     * @param ci
+     * @return
+     */
+
     public static boolean deleteChan ( ChanInfo ci )  {
         if ( ! activateConnection ( )  )  {
             return false;
@@ -777,19 +861,19 @@ public class CSDatabase extends Database {
         try {
             String query = "delete from chan where name = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 1, ci.getName().getString()  );
             ps.execute ( );
             ps.close ( );
 
             query = "delete from chanaccess where name = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 1, ci.getName().getString() );
             ps.execute ( );
             ps.close ( );
 
             query = "delete from chansetting where name = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 1, ci.getName().getString() );
             ps.execute ( );
             ps.close ( );
              
@@ -821,18 +905,16 @@ public class CSDatabase extends Database {
 
             if ( res2.next ( )  )  {
                 if ( res2.getBoolean ( "keeptopic" )  == true )     { settings.set ( KEEPTOPIC, true ); }
-                switch ( res2.getString ( "topiclock" ) .toUpperCase ( ) .hashCode ( )  )  {
-                    case FOUNDER :
-                    case SOP :
-                    case AOP :
-                        settings.set( TOPICLOCK, res2.getString ( "topiclock" ) .toUpperCase ( ) .hashCode ( ) );
-                        break;
-
-                    default :
-                        settings.set ( TOPICLOCK, OFF );
-
+                
+                HashString topiclock = new HashString ( res2.getString ( "topiclock" ) );
+                if ( topiclock.is(FOUNDER) ||
+                     topiclock.is(SOP) ||
+                     topiclock.is(AOP) ) {
+                    settings.set ( TOPICLOCK, topiclock );
+                } else {
+                    settings.set ( TOPICLOCK, OFF );
                 }
-
+                  
                 settings.set ( IDENT,       res2.getBoolean ( "ident" )         );
                 settings.set ( OPGUARD,     res2.getBoolean ( "opguard" )       );
                 settings.set ( RESTRICT,    res2.getBoolean ( "restricted" )    );
@@ -859,30 +941,23 @@ public class CSDatabase extends Database {
         return settings;
     }
   
-    static boolean wipeAccessList ( ChanInfo ci, int access )  {
+    static boolean wipeAccessList ( ChanInfo ci, HashString access )  {
         if ( ! activateConnection ( )  )  {
             return false;
         }
         try {
             String acc = new String ( );
-            switch ( access )  {
-                case SOP :
-                    acc = "sop";
-                    break;
-
-                case AOP :
-                    acc = "aop";
-                    break;
-
-                default :
-
+            if ( access.is(SOP) ) { 
+                acc = "sop";
+            } else if ( access.is(AOP) ) {
+                acc = "aop";
             }
-
+ 
             String query = "delete from chanaccess "
                          + "where name = ? "
                          + "and access = ?";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName ( )  );
+            ps.setString  ( 1, ci.getName().getString() );
             ps.setString  ( 2, acc );
             ps.execute ( );
             ps.close ( );
@@ -911,19 +986,19 @@ public class CSDatabase extends Database {
         }
         try { 
             now = System.currentTimeMillis();
-            String salt = config.get ( SECRETSALT );
+            HashString salt = config.get ( SECRETSALT );
             String query = "select name,founder,AES_DECRYPT(pass,?) as pass,description,regstamp,stamp "
                          + "from chan " 
                          + "order by name";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, salt ); 
+            ps.setString  ( 1, salt.getString() ); 
             res = ps.executeQuery ( );
 
             System.out.print("Loading Chans: ");
             int $count = 0;
             while ( res.next ( ) )  { 
                 settings = getSettings ( res.getString ( 1 ) ); 
-                chanFlag = getChanFlag ( res.getString ( 1 ) );
+                chanFlag = getChanFlag ( new HashString ( res.getString ( 1 ) ) );
                 ci = new ChanInfo ( res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ),
                                     res.getString ( 4 ), getChanTopic ( res.getString ( 1 ) ),
                                     res.getString ( 5 ), res.getString ( 6 ), settings );
@@ -952,6 +1027,11 @@ public class CSDatabase extends Database {
     
     }
     
+    /**
+     *
+     * @param pattern
+     * @return
+     */
     public static ArrayList<ChanInfo> getChanList ( String pattern )  {
         ArrayList<ChanInfo> cList = new ArrayList<> ( );
         ChanInfo ci; 
@@ -972,21 +1052,21 @@ public class CSDatabase extends Database {
             return cList;
         }
         try { 
-            String salt = config.get ( SECRETSALT );
+            HashString salt = config.get ( SECRETSALT );
             String query = "select c.name,c.founder,AES_DECRYPT(c.pass,?),c.description,c.regstamp,c.stamp "
                          + "from chan as c "
                          + "where c.name rlike ? "
                          + "or c.description rlike ? "
                          + "order by c.name asc";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, salt );
+            ps.setString  ( 1, salt.getString() );
             ps.setString  ( 2, "^"+pattern+"$" );
             ps.setString  ( 3, "^"+pattern+"$" );
             res = ps.executeQuery ( );
 
             while ( res.next ( )  )  { 
                 settings = getSettings ( res.getString ( 1 ) );
-                chanFlag = getChanFlag ( res.getString ( 1 ) );
+                chanFlag = getChanFlag ( new HashString ( res.getString ( 1 ) ) );
                 ci = new ChanInfo ( res.getString ( 1 ) , res.getString ( 2 ) , res.getString ( 3 ), 
                                     res.getString ( 4 ) , getChanTopic ( res.getString ( 1 ) ), res.getString ( 5 ), 
                                     res.getString ( 6 ), settings );
@@ -1010,7 +1090,7 @@ public class CSDatabase extends Database {
         return cList;
     }
    
-    private static CSFlag getChanFlag ( String name ) {
+    private static CSFlag getChanFlag ( HashString name ) {
         CSFlag cf = null;
         String query;
         try {
@@ -1022,7 +1102,7 @@ public class CSDatabase extends Database {
                     "where name = ?";
             System.out.println(query);
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, name );
+            ps.setString  ( 1, name.getString() );
             res2 = ps.executeQuery ( );
             if ( res2.next ( ) ) {
                 cf = new CSFlag ( name, res2.getShort(1),res2.getShort(2),res2.getShort(3),res2.getShort(4),
@@ -1036,7 +1116,12 @@ public class CSDatabase extends Database {
         return cf;
     }
     
-    
+    /**
+     *
+     * @param user
+     * @param ci
+     * @return
+     */
     public static ArrayList<CSAccessLogEvent> getChanAccLogList ( User user, ChanInfo ci ) {
         ArrayList<CSAccessLogEvent> csaList = new ArrayList<>();
         String query;
@@ -1063,11 +1148,20 @@ public class CSDatabase extends Database {
                            "and ca.stamp >= c.regstamp";
             }
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ci.getName() );
+            ps.setString  ( 1, ci.getName().getString() );
             res = ps.executeQuery ( );
             
             while ( res.next ( ) ) {
-                csaList.add( new CSAccessLogEvent(res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ), res.getString ( 4 ), res.getString ( 5 ), res.getString ( 6 ) ) );
+                csaList.add( 
+                    new CSAccessLogEvent( 
+                        new HashString ( res.getString ( 1 ) ), 
+                        new HashString ( res.getString ( 2 ) ), 
+                        res.getString ( 3 ), 
+                        res.getString ( 4 ), 
+                        res.getString ( 5 ), 
+                        res.getString ( 6 ) 
+                    )
+                );
             }
             res.close ( );
             ps.close ( );
@@ -1079,11 +1173,19 @@ public class CSDatabase extends Database {
         return csaList;
     }
     
-    
+    /**
+     *
+     * @param log
+     * @return
+     */
     public static int logEvent ( CSLogEvent log ) {
-        return Database.logEvent ( "chanlog", ( LogEvent ) log );
+        return Database.logEvent ("chanlog", log );
     }
     
+    /**
+     *
+     * @param id
+     */
     public static void delLogEvent ( int id ) {
         Database.delLogEvent ( "chanlog", id );
     }

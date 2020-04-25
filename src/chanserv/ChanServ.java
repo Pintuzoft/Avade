@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program isSet distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -21,6 +21,7 @@ import nickserv.NickInfo;
 import channel.Chan;
 import core.CommandInfo;
 import core.Handler;
+import core.HashString;
 import core.Proc;
 import core.Service;
 import core.StringMatch;
@@ -51,6 +52,9 @@ public class ChanServ extends Service {
     
     private TextFormat          f;
     
+    /**
+     * ChanServ
+     */
     public ChanServ ( )  {
         super ( "ChanServ" );
         initChanServ ( );
@@ -67,6 +71,9 @@ public class ChanServ extends Service {
         ChanServ.service = this;
     }
     
+    /**
+     * setCommands
+     */
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
         cmdList.add ( new CommandInfo ( "HELP",         0,                          "Show help information" )               );
@@ -101,17 +108,34 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "DELETE",       CMDAccess ( DELETE ),       "Force DROP a channel" )                );
     }
     
-    public static ArrayList<CommandInfo> getCMDList ( int command ) {
+    /**
+     *
+     * @param command
+     * @return
+     */
+    public static ArrayList<CommandInfo> getCMDList ( HashString command ) {
         return Handler.getChanServ().getCommandList ( command );
     }
     
-    public static boolean enoughAccess ( User user, int hashName ) {
-        return Handler.getChanServ().checkAccess ( user, hashName );
+    /**
+     *
+     * @param user
+     * @param hash
+     * @return
+     */
+    public static boolean enoughAccess ( User user, HashString hash ) {
+        return Handler.getChanServ().checkAccess ( user, hash );
     }
     
-    public boolean checkAccess ( User user, int hashName )  {
+    /**
+     *
+     * @param user
+     * @param hash
+     * @return
+     */
+    public boolean checkAccess ( User user, HashString hash )  {
         int access              = user.getAccess ( );
-        CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
+        CommandInfo cmdInfo     = this.findCommandInfo ( hash );
         if ( access < cmdInfo.getAccess ( )  )  {
             Handler.getChanServ().sendMsg ( user, "Error: no such command!." );
             return false;
@@ -123,30 +147,41 @@ public class ChanServ extends Service {
         ciList = CSDatabase.getAllChans ( );
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         try {
-            if ( cmd[3].isEmpty ( )  )  { 
+            if ( cmd[3].isEmpty ( ) ) { 
                 return; 
             }
-        } catch ( Exception e )  {
-            Proc.log ( ChanServ.class.getName ( ) , e );
+        } catch ( Exception e ) {
+            Proc.log ( ChanServ.class.getName ( ), e );
         }
         
         user.getUserFlood().incCounter ( this );
-        
+         
         cmd[3] = cmd[3].substring ( 1 );
-        switch ( cmd[3].toUpperCase ( ).hashCode ( )  )  {
-            case HELP :         { this.helper.parse ( user, cmd );     break; }
-            default: {
-                this.executor.parse ( user, cmd );
-            }
-        } 
+        HashString command = new HashString ( cmd[3] );
+        if ( command.is(HELP) ) {
+            this.helper.parse ( user, cmd );
+        } else {
+            this.executor.parse ( user, cmd );
+        }
     }
       
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void snoopAndLog ( User user, String[] cmd )  {
         try { 
-            snoop.msg ( false, "NickServ", user, cmd );
+            HashString serv = new HashString ( "NickServ" );
+            snoop.msg ( false, serv, user, cmd );
             this.accessDenied ( user );
         } catch ( Exception e )  {
             Proc.log ( ChanServ.class.getName ( ) , e );
@@ -154,13 +189,22 @@ public class ChanServ extends Service {
     }
 
     /* Send advertisement for this unregged nick */
+
+    /**
+     *
+     * @param u
+     */
+
     public void adChan ( User u )  {
         this.sendMsg ( u, "The Chan "+f.b ( ) +u.getString ( NAME ) +f.b ( ) +" is currently not registered"      );
         this.sendMsg ( u, "To register the channel please type:"                                                    );
         this.sendMsg ( u, "    /ChanServ REGISTER <#channel> <Password> <description>"                              );
     }
     
-    
+    /**
+     *
+     * @param ci
+     */
     public void checkAllUsers ( ChanInfo ci )  {
         Chan c;
         if (  ( c = Handler.findChan ( ci.getName ( )  )  )  != null )  {
@@ -170,6 +214,11 @@ public class ChanServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param c
+     * @param user
+     */
     public void checkUser ( Chan c, User user )  {
         ChanInfo ci;
         NickInfo ni;
@@ -180,9 +229,9 @@ public class ChanServ extends Service {
                 return;
             }
                  
-            if ( ci.is ( FROZEN ) || ci.is ( CLOSED ) ) {
+            if ( ci.isSet ( FROZEN ) || ci.isSet ( CLOSED ) ) {
                 return;
-            }  else if ( ci.is ( RESTRICT ) ) {
+            }  else if ( ci.isSet ( RESTRICT ) ) {
                 banUser ( c, user, null );
                 kickUser ( c, user );
             }
@@ -199,36 +248,46 @@ public class ChanServ extends Service {
                 banUser ( c, user, ( acc.getRawMask() != null ? acc.getRawMask() : null ) );
                 kickUser ( c, user );
                 
-            } else if ( c.isOp ( user ) && ci.is ( OPGUARD ) ) {
+            } else if ( c.isOp ( user ) && ci.isSet ( OPGUARD ) ) {
                 this.deOpUser ( c, user );
             }
             
         }
     }
      
+    /**
+     *
+     * @param c
+     */
     public void checkSettings ( Chan c )  {
         ChanInfo ci;
         if ( c == null ) {
             return;
         }
         if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {
-            if ( ci.is ( CLOSED ) ) {
+            if ( ci.isSet ( CLOSED ) ) {
                 ci.kickAll ( "Channel is CLOSED" );
             } else {
                 ci.getChanFlag().syncChangedValuesWithNetwork();
-                if ( ci.is ( TOPICLOCK )  || ci.is ( KEEPTOPIC ) ) {
+                if ( ci.isSet ( TOPICLOCK )  || ci.isSet ( KEEPTOPIC ) ) {
                     if ( ci.getTopic ( ) != null ) {
                         c.setTopic ( ci.getTopic ( )  );
                         this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
                     }
                 }
-                if ( ci.is ( AUDITORIUM ) ) {
+                if ( ci.isSet ( AUDITORIUM ) ) {
                     this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :+A" );
                 }
                 this.checkModes ( c, ci );
             }
         }
     }
+
+    /**
+     *
+     * @param c
+     * @param ci
+     */
     public void checkModes ( Chan c, ChanInfo ci )  {
         if ( ci == null || c == null || ci.getSettings() == null || ci.getSettings().getModeLock() == null ) {
             return;
@@ -240,6 +299,12 @@ public class ChanServ extends Service {
         }
     }
 
+    /**
+     *
+     * @param u
+     * @param c
+     * @return
+     */
     public boolean checkTopic ( User u, Chan c )  {
         ChanInfo ci;
         NickInfo ni;
@@ -248,8 +313,8 @@ public class ChanServ extends Service {
             return false;
         }
 
-        if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {   /* If chan is regged */
-            if ( ci.is ( TOPICLOCK )  )  {                    /* If topiclock is set */
+        if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {   /* If chan isSet regged */
+            if ( ci.isSet ( TOPICLOCK )  )  {                    /* If topiclock isSet set */
                 if (  ( ni = ci.getNickByUser ( u )  )  != null ) {            /* Nick has some access to the chan */
                     if ( ci.getSettings().isTopicLock ( FOUNDER ) ) {
                         if ( ci.isFounder ( ni )  )  {
@@ -289,6 +354,12 @@ public class ChanServ extends Service {
         return false;
     }
   
+    /**
+     *
+     * @param c
+     * @param user
+     * @param mask
+     */
     public void banUser ( Chan c, User user, String mask )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( mask == null )  {
@@ -298,14 +369,24 @@ public class ChanServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param c
+     * @param user
+     */
     public void kickUser ( Chan c, User user )  {
         // :Pintuz MODE #avade 0 +o Pintuz
-        if ( c.nickIsPresent ( user.getString ( NAME )  )  )  {
+        if ( c.nickIsPresent ( user.getName() ) ) {
             c.remUser ( user );
             this.sendCmd ( "KICK "+c.getString ( NAME ) +" :"+user.getString ( NAME )  );
         }
     }
     
+    /**
+     *
+     * @param c
+     * @param user
+     */
     public void opUser ( Chan c, User user )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         ChanInfo ci;
@@ -320,6 +401,11 @@ public class ChanServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param c
+     * @param user
+     */
     public void deOpUser ( Chan c, User user )  {
         // :Pintuz MODE #avade 0 -o Pintuz
         if ( c.isOp ( user )  )  {
@@ -328,42 +414,83 @@ public class ChanServ extends Service {
         }
     }
   
+    /**
+     *
+     * @param c
+     * @param user
+     */
     public void unBanUser ( Chan c, User user )  {
         this.sendCmd ( "SVSMODE "+c.getString ( NAME ) +" -b "+user.getString ( NAME )  );
     }
     
+    /**
+     *
+     * @param c
+     * @param user
+     */
     public void invite ( Chan c, User user )  {
         this.sendCmd ( "INVITE "+user.getString ( NAME ) +" :"+c.getString ( NAME )  ); 
     }
      
     /* STATIC */
+
+    /**
+     *
+     * @param state
+     */
+
     public static void is ( boolean state ) {
         is = state;
     }
+
+    /**
+     *
+     * @param state
+     */
     public void setState ( boolean state ) {
         ChanServ.is = state;
     }
 
+    /**
+     *
+     * @return
+     */
     public static boolean isUp ( ) {
         return is;
     }
     
     /* Registered entities */
-    public static ChanInfo findChan ( String source )  {
-        int hash = source.toUpperCase().hashCode ( );
+
+    /**
+     *
+     * @param name
+     * @return
+     */
+
+    public static ChanInfo findChan ( HashString name )  {
         for ( ChanInfo ci : ciList )  {
-            if ( hash == ci.getHashName ( ) ) {
+            if ( ci.getName().is(name) ) {
                 return ci;
             }
         } 
         return null; 
     }
 
+    /**
+     *
+     * @param in
+     * @return
+     */
+    public static ChanInfo findChan ( String in )  {
+        HashString name = new HashString ( in );
+        return findChan ( name );
+    }
+
     
     static ArrayList<ChanInfo> searchChans ( String string ) {
         ArrayList<ChanInfo> chans = new ArrayList<>();
         for ( ChanInfo ci : ciList ) {
-            if ( StringMatch.wild ( ci.getName().toUpperCase(), string.toUpperCase() ) ||
+            if ( StringMatch.wild ( ci.getName().getString().toUpperCase(), string.toUpperCase() ) ||
                  StringMatch.wild ( ci.getString (TOPIC).toUpperCase(), string.toUpperCase() ) ) {
                 chans.add ( ci );
             }
@@ -371,6 +498,10 @@ public class ChanServ extends Service {
         return chans;
     }
     
+    /**
+     *
+     * @param ci
+     */
     public static void addChan ( ChanInfo ci ) {
         if ( ! is ) {
             return;
@@ -378,11 +509,16 @@ public class ChanServ extends Service {
         ciList.add ( ci );
         ci.getFounder().addToAccessList ( FOUNDER, ci );
     }
+
+    /**
+     *
+     * @param ci
+     */
     public static void delChan ( ChanInfo ci ) { 
         if ( ! is )  {return;} 
         ChanInfo target = null;
         for ( ChanInfo cBuf : ciList )  {
-            if ( cBuf.getHashName ( )  == ci.getHashName ( )  )  {
+            if ( cBuf.is(ci) ) {
                 target = cBuf;
             }
         }
@@ -392,7 +528,11 @@ public class ChanServ extends Service {
         }
     }
 
-     
+    /**
+     *
+     * @param ni
+     * @param cListAccess
+     */
     public static void removeNickFromChanListAccess ( NickInfo ni, ArrayList<ChanInfo> cListAccess )  {
         ChanInfo ci; 
         for ( ChanInfo cBuf : cListAccess )  {
@@ -402,6 +542,11 @@ public class ChanServ extends Service {
         } 
     }
     
+    /**
+     *
+     * @param ni
+     * @param cListFounder
+     */
     public static void expireFounderNicks ( NickInfo ni, ArrayList<ChanInfo> cListFounder )  {
         ChanInfo ci;
         for ( ChanInfo cBuf : cListFounder )  {
@@ -413,6 +558,11 @@ public class ChanServ extends Service {
             }
         } 
     }
+
+    /**
+     *
+     * @param ci
+     */
     public static void deopAll ( ChanInfo ci )  {
         Chan c;
         if  ( ci != null &&  ( c = Handler.findChan ( ci.getName ( )  )  )  != null )  {
@@ -421,17 +571,29 @@ public class ChanServ extends Service {
             });
         } 
     }
+
+    /**
+     *
+     * @param c
+     */
     public static void deopAll ( Chan c )  { 
         c.getList ( ALL ).forEach ( ( u ) -> {
             ChanServ.service.deOpUser ( c, u );
         }); 
     }
     
+    /**
+     *
+     * @param c
+     */
     public static void kickAll ( Chan c )  { 
         ChanServ.kickAll ( c );
     }
     
-    
+    /**
+     *
+     * @return
+     */
     public static int maintenance ( )  {
         int todoAmount = 0;
         todoAmount += snoop.maintenance();
@@ -455,23 +617,36 @@ public class ChanServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param chan
+     * @param user
+     */
     public static void addCheckUser ( Chan chan, User user ) {
         if ( chan == null || user == null ) {
             return;
         }
         for ( UserCheck uc : chUserCheckList ) {
-            if ( uc.getChan().getHashName() == chan.getHashName() &&
-                 uc.getUser().getHash() == user.getHash() ) {
+            if ( uc.getChan().is(chan) &&
+                 uc.getUser().is(user) ) {
                 return;
             }
         }
         chUserCheckList.add ( new UserCheck ( chan, user ) );
     }
     
+    /**
+     *
+     * @param log
+     */
     public static void addLog ( CSLogEvent log ) {
         logs.add ( log );
     }
        
+    /**
+     *
+     * @param log
+     */
     public static void addAccessLog ( CSAccessLogEvent log ) {
         accessLogs.add ( log );
     }
@@ -552,25 +727,23 @@ public class ChanServ extends Service {
         return deleteList.size();
     }
     
-    private static ArrayList<ChanInfo> getWorkList ( int name ) {
-        switch ( name ) {
-            case REGISTER :
-                return regList;
-                
-            case CHANGE :
-                return changeList;
-                
-            case DELETE :
-                return deleteList;
-                
-            default :
-                return new ArrayList<>();
+    private static ArrayList<ChanInfo> getWorkList ( HashString it ) {
+        if      ( it.is(REGISTER) )             { return regList;               }
+        else if ( it.is(CHANGE) )               { return changeList;            }
+        else if ( it.is(DELETE) )               { return deleteList;            }
+        else {
+            return new ArrayList<>();
         }
     }
     
-    public static void addToWorkList ( int list, ChanInfo ci ) {
+    /**
+     *
+     * @param list
+     * @param ci
+     */
+    public static void addToWorkList ( HashString list, ChanInfo ci ) {
         for ( ChanInfo ci2 : getWorkList ( list ) ) {
-            if ( ci.getHashName() == ci2.getHashName() ) {
+            if ( ci.is(ci2) ) {
                 return;
             }
         }
@@ -579,6 +752,12 @@ public class ChanServ extends Service {
     }
     
     /* Message all currently idented users then unident them */
+
+    /**
+     *
+     * @param ci
+     */
+
     public void dropChan ( ChanInfo ci ) {
         ArrayList<User> uList = Handler.findIdentifiedUsersByChan ( ci );
         for ( User user : uList ) {
@@ -596,10 +775,18 @@ public class ChanServ extends Service {
         ci.getFounder().remFromAccessList ( FOUNDER, ci );
     }
 
+    /**
+     *
+     * @return
+     */
     public int getChanRegStats() {
         return regList.size();
     }
 
+    /**
+     *
+     * @return
+     */
     public int getChangesStats() {
         return changeList.size();
     }

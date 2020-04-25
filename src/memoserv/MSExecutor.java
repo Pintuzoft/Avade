@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program isSet distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -24,6 +24,7 @@ import nickserv.NickInfo;
 import nickserv.NickServ;
 import core.Executor;
 import core.Handler;
+import core.HashString;
 import core.TextFormat;
 import mail.SendMail;
 import user.User;
@@ -45,7 +46,7 @@ import user.User;
     }
 
     public void parse ( User user, String[] cmd )  {
-
+        HashString command;
         try {
             if ( cmd[3].isEmpty ( )  )  {
                 this.help ( user );
@@ -55,37 +56,32 @@ import user.User;
             this.help ( user );
             return;
         }
+        command = new HashString ( cmd[3] );
         
-        switch ( cmd[3].toUpperCase ( ) .hashCode ( )  )  {
-            case SEND :
-                this.doSend ( user, cmd );
-                break;
-                
-            case CSEND :
-                this.doCSend ( user, cmd );
-                break;
-                
-            case LIST :
-                this.doList ( user, cmd );
-                break;
-                
-            case READ :
-                this.doRead ( user, cmd );
-                break;
-                
-            case DEL :
-                this.doDelete ( user, cmd );
-                break;
-                
-            default: 
-                this.noMatch ( user, cmd[3] ); 
-           
-        }  
+        if ( command.is(SEND) ) {
+            this.doSend ( user, cmd );
+        
+        } else if ( command.is(CSEND) ) {
+            this.doCSend ( user, cmd );
+        
+        } else if ( command.is(LIST) ) {
+            this.doList ( user, cmd );
+        
+        } else if ( command.is(READ) ) {
+            this.doRead ( user, cmd );
+        
+        } else if ( command.is(DEL) ) {
+            this.doDelete ( user, cmd );
+        
+        } else {
+            this.noMatch ( user, cmd[3] );
+        }
+         
     }
  
     public void help ( User user )  {
         this.service.sendMsg ( user, output ( CMD_NOT_FOUND_ERROR, "" )  );
-        this.service.sendMsg ( user, output ( SHOW_HELP, new String[] {this.service.getName ( ) } )  );
+        this.service.sendMsg ( user, output ( SHOW_HELP, new String[] { this.service.getNameStr() } ) );
     }
    
     public void doSend ( User user, String[] cmd )  {
@@ -125,9 +121,9 @@ import user.User;
     
     private void sendToNick ( User user, NickInfo from, NickInfo to, String[] cmd )  {
         String message = Handler.cutArrayIntoString ( cmd, 5 );
-        MemoInfo memo = new MemoInfo ( to.getName ( ), from.getName ( ), message );
+        MemoInfo memo = new MemoInfo ( to.getNameStr(), from.getNameStr(), message );
         memo = MSDatabase.storeMemo ( memo );
-        this.service.sendMsg ( user, output ( MEMO_SENT, to.getName ( )  )  );
+        this.service.sendMsg ( user, output ( MEMO_SENT, to.getNameStr() ) );
         to.addMemo ( memo );
         SendMail.sendNewMemo ( to, memo );
     }
@@ -163,7 +159,7 @@ import user.User;
             );
          
         } else {
-            /* User is idented and channel found */
+            /* User isSet idented and channel found */
             if ( ci.isAccess ( AOP, ni ) || ci.isAccess ( SOP, ni ) || ci.isFounder ( ni ) )  {
                 /* Allow memo through */
                 this.sendToNick ( user, ni, ci.getFounder ( ), cmd );

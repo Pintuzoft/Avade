@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program isSet distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -28,21 +28,20 @@ import java.util.Date;
  * @author DreamHealer
  */
  public abstract class Service extends HashNumeric {
-    protected String            name;
-    protected String            user;
-    protected String            host;
-    protected String            server;
-    protected String            realName;
-    protected Date              date;
-    protected int               hashCode;
+    protected HashString name;
+    protected HashString user;
+    protected HashString host;
+    protected HashString server;
+    protected HashString realName;
+    protected Date       date;
+    protected int        hashCode;
     protected ArrayList<CommandInfo> cmdList;
     
     
   //  protected static Log log;
 
     public Service ( String name )  {
-        this.name       = name; 
-        this.hashCode   = name.toUpperCase().hashCode ( );
+        this.name = new HashString ( name ); 
         this.init ( );
     }
     
@@ -50,36 +49,30 @@ import java.util.Date;
         this.date       = new Date ( );
         this.user       = Proc.getConf().get ( SERVICEUSER );
         this.host       = Proc.getConf().get ( SERVICEHOST );
-        this.realName   = this.name+" "+Proc.getConf().get ( SERVICEGCOS );
+        this.realName   = new HashString ( this.name+" "+Proc.getConf().get ( SERVICEGCOS ) );
         this.server     = this.getServer ( );
-        
         this.cmdList    = new ArrayList<>();
-        this.send ( NICK, this.name );
+        this.send ( NICK, this.name.getString() );
     }
     
-    public void send ( int type, String data )  {
+    public void send ( HashString it, String data )  {
         try {
-            switch ( type )  {
-                case RAW :
-                    ServSock.sendCmd ( data );
-                    break;
-                    
-                case NICK :
-                    ServSock.sendCmd ( 
-                            "NICK "+this.name+
-                            " 1 "+
-                            Math.round ( this.date.getTime ( ) /1000 ) +
-                            " + "+
-                            this.user+" "+
-                            this.host+" "+
-                            this.server+
-                            " 0 "+
-                            Math.round ( this.date.getTime ( ) /1000 ) +
-                            " :"+this.realName ); 
-                    break; 
-               
-                default :
-                    
+            if ( it.is(RAW) ) {
+                ServSock.sendCmd ( data );
+            
+            } else if ( it.is(NICK) ) {
+                ServSock.sendCmd ( 
+                    "NICK "+this.name+
+                    " 1 "+
+                    Math.round ( this.date.getTime ( ) /1000 ) +
+                    " + "+
+                    this.user+" "+
+                    this.host+" "+
+                    this.server+
+                    " 0 "+
+                    Math.round ( this.date.getTime ( ) /1000 ) +
+                    " :"+this.realName 
+                ); 
             }
         } catch ( Exception e )  {
             Proc.log ( Service.class.getName ( ) , e );
@@ -112,11 +105,11 @@ import java.util.Date;
     }
 
     public void sendMsg ( User u, String msg ) { 
-        this.send ( RAW, ":"+this.name+" NOTICE "+u.getString ( NAME ) +" :"+msg );
+        this.send ( RAW, ":"+this.name+" NOTICE "+u.getNameStr()+" :"+msg );
     }
     
     public void sendOpMsg ( ChanInfo ci, String msg ) { 
-        this.send ( RAW, ":"+this.name+" NOTICE @"+ci.getString ( NAME ) +" :"+msg );
+        this.send ( RAW, ":"+this.name+" NOTICE @"+ci.getNameStr()+" :"+msg );
     }
        
     public void sendGlobOp ( String msg ) { 
@@ -131,8 +124,12 @@ import java.util.Date;
         this.sendMsg ( u, "Access Denied.!" ); 
     }
  
-    public String getName ( ) { 
+    public HashString getName ( ) { 
         return this.name; 
+    }
+    
+    public String getNameStr ( ) { 
+        return this.name.getString(); 
     }
     
     protected static int getIndexFromSize ( int size ) {
@@ -140,26 +137,19 @@ import java.util.Date;
     }
     
     public void sendServ ( String cmd )  {
-        switch ( this.hashCode )  {
-            case OPERSERV :
-                ServSock.sendCmd ( ":"+Proc.getConf().get ( STATS ) +" "+cmd );
-                break;
-
-            default :
-                ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" "+cmd ); 
-
+        if ( this.name.is(OPERSERV) ) {
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( STATS ) +" "+cmd );
+        
+        } else {
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" "+cmd );
         }
     }
 
-    private String getServer ( )  {
-        switch ( this.hashCode )  {
-            case OPERSERV :
-                return Proc.getConf().get ( STATS );
-
-            default :
-                return Proc.getConf().get ( NAME ); 
-
-        }
+    private HashString getServer ( )  {
+        if ( name.is(OPERSERV) ) {
+            return Proc.getConf().get(STATS);        
+        } 
+        return Proc.getConf().get ( NAME ); 
     }
 
     public void sendRaw ( String command )  {
@@ -169,13 +159,13 @@ import java.util.Date;
     
     
     /* COMMANDS */
-    public int CMDAccess ( int var ) { 
-        System.out.println ( "Debug CMDAccess ( "+Proc.getConf().getInt ( var )+" )" );
-        return Proc.getConf().getInt ( var ); 
+    public int CMDAccess ( HashString command ) { 
+        System.out.println ( "Debug CMDAccess ( "+Proc.getConf().getInt ( command )+" )" );
+        return Proc.getConf().getInt ( command ); 
     }
     
     /* Returns the list of added commands with its access and info */
-    public ArrayList<CommandInfo> getCommandList ( int access )    { 
+    public ArrayList<CommandInfo> getCommandList ( HashString access )    { 
         ArrayList<CommandInfo> list = new ArrayList<> ( );
         for ( CommandInfo ci : cmdList )  {
             if ( ci.isAcc ( access )  )  {
@@ -186,9 +176,9 @@ import java.util.Date;
     }
      
     /* find and return the correct commandInfo */
-    public CommandInfo findCommandInfo ( int hash )  {
+    public CommandInfo findCommandInfo ( HashString hash )  {
         for ( CommandInfo ci : this.cmdList )  {
-             if ( hash == ci.hashCode ( )  )  {
+             if ( ci.is(hash) ) {
                  return ci;
             }
         }

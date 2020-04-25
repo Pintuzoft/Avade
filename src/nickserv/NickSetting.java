@@ -18,6 +18,7 @@
 package nickserv;
 
 import core.HashNumeric;
+import core.HashString;
 
 /**
  * create table nicksetting  ( name varchar ( 32 ) , enforce bool not null, secure bool not null, private bool not null, noop bool not null, neverop bool not null, mailblock bool not null, showemail bool not null, showhost bool not null, primary key  ( name ) , constraint foreign key  ( name )  references nick  ( name )  on delete cascade on update cascade )  ENGINE=InnoDB;
@@ -57,164 +58,81 @@ public class NickSetting extends HashNumeric {
         this.allFalse ( );
     }
    
-    public boolean is ( int mode )  {
-         switch ( mode )  { 
-            case NOOP :
-                return this.noOp;
-
-            case NEVEROP :
-                return this.neverOp;
-
-            case MAILBLOCKED :
-                return this.mailBlock;
-
-            case SHOWEMAIL :
-                return this.showEmail;
-
-            case SHOWHOST :
-                return this.showHost;
-
-            case AUTH :
-                return this.auth;
-                
-            /* Oper */
-            case MARKED :
-            case MARK :
-                return this.mark.length() > 0;
-            
-            case FROZEN :
-            case FREEZE :
-                return this.freeze.length() > 0;
-
-            case HELD :
-            case HOLD :
-                return this.hold.length() > 0;
-
-            case NOGHOST :
-                return this.noghost.length() > 0;
-            
-            default: 
-                return false;
-
-         } 
+    public boolean is ( HashString it )  {
+        if      ( it.is(NOOP) )             { return this.noOp;                 }
+        else if ( it.is(NEVEROP) )          { return this.neverOp;              }
+        else if ( it.is(MAILBLOCKED) )      { return this.mailBlock;            }
+        else if ( it.is(SHOWEMAIL) )        { return this.showEmail;            }
+        else if ( it.is(SHOWHOST) )         { return this.showHost;             }
+        else if ( it.is(AUTH) )             { return this.auth;                 }
+        else if ( it.is(MARKED) )           { return this.mark.length() > 0;    }
+        else if ( it.is(MARK) )             { return this.mark.length() > 0;    }
+        else if ( it.is(FROZEN) )           { return this.freeze.length() > 0;  }
+        else if ( it.is(FREEZE) )           { return this.freeze.length() > 0;  }
+        else if ( it.is(HELD) )             { return this.hold.length() > 0;    }
+        else if ( it.is(HOLD) )             { return this.hold.length() > 0;    }
+        else if ( it.is(NOGHOST) )          { return this.noghost.length() > 0; }
+        else {
+            return false;
+        }
     }   
 
-    public void set ( int mode, boolean state )  {
-        switch ( mode )  { 
-            case NOOP :
-               this.noOp = state; 
-               break; 
-
-            case NEVEROP :
-               this.neverOp = state;
-               break; 
-
-            case MAILBLOCKED :
-               this.mailBlock = state;
-               break;
-
-            case SHOWEMAIL :
-               this.showEmail = state;
-               break;
-
-            case SHOWHOST :
-               this.showHost = state;
-               break;
-
-            case AUTH :
-               this.auth = state;
-               break;
-
-            default :
-
-         }
+    public void set ( HashString it, boolean state )  {
+        if      ( it.is(NOOP) )             { this.noOp         = state;        }
+        else if ( it.is(NEVEROP) )          { this.neverOp      = state;        }
+        else if ( it.is(MAILBLOCKED) )      { this.mailBlock    = state;        }
+        else if ( it.is(SHOWEMAIL) )        { this.showEmail    = state;        }
+        else if ( it.is(SHOWHOST) )         { this.showHost     = state;        }
+        else if ( it.is(AUTH) )             { this.auth         = state;        }
     }
     
-    public void set ( int mode, String instater )  {
+    public void set ( HashString it, String instater )  {
+        this.set(it, new HashString ( instater ) );
+    }
+     
+    public void set ( HashString it, HashString instater ) {
         if ( instater == null ) {
-            instater = new String ( );
-        } 
-        switch ( mode ) { 
-            case MARKED :
-            case MARK :
-               this.mark = instater;
-               break;
-            
-            case FROZEN :
-            case FREEZE :
-               this.freeze = instater;
-               break;
-
-            case HELD :
-            case HOLD :
-               this.hold = instater;
-               break;
-               
-            case NOGHOST :
-               this.noghost = instater;
-               break;
-               
-            default :
-                
+            instater = new HashString ( "" );
+        }
+        
+        if ( it.is(MARKED) )                { this.mark = instater.getString();     }
+        else if ( it.is(MARK) )             { this.mark = instater.getString();     }
+        else if ( it.is(FROZEN) )           { this.freeze = instater.getString();   }
+        else if ( it.is(FREEZE) )           { this.freeze = instater.getString();   }
+        else if ( it.is(HELD) )             { this.hold = instater.getString();     }
+        else if ( it.is(HOLD) )             { this.hold = instater.getString();     }
+        else if ( it.is(NOGHOST) )          { this.noghost = instater.getString();  }
+    }
+    
+    public String getInstater ( HashString it ) {
+        if      ( it.is(MARKED) )           { return this.mark;                 }
+        else if ( it.is(MARK) )             { return this.mark;                 }
+        else if ( it.is(FROZEN) )           { return this.freeze;               }
+        else if ( it.is(FREEZE) )           { return this.freeze;               }
+        else if ( it.is(HELD) )             { return this.hold;                 }
+        else if ( it.is(HOLD) )             { return this.hold;                 }
+        else if ( it.is(NOGHOST) )          { return this.noghost;              }
+        else {
+            return "Unknown";
         }
     }
-    public String getInstater ( int mode ) {
-        switch ( mode ) {
-            case MARKED :
-            case MARK :
-                return this.mark;
-            
-            case FREEZE :
-            case FROZEN :
-                return this.freeze;
-                
-            case HOLD :
-            case HELD :
-                return this.hold;
-                
-            case NOGHOST :
-                return this.noghost;
-            
-            default :
-                return "Unknown";
+    
+    public String modeString ( HashString it )  {
+        if      ( it.is(NOOP) )             { return "NoOp";                    }
+        else if ( it.is(NEVEROP) )          { return "NeverOp";                 }
+        else if ( it.is(MAILBLOCKED) )      { return "MailBlock";               }
+        else if ( it.is(SHOWEMAIL) )        { return "ShowEmail";               }
+        else if ( it.is(SHOWHOST) )         { return "ShowHost";                }
+        else if ( it.is(MARKED) )           { return "Marked";                  }
+        else if ( it.is(MARK) )             { return "Marked";                  }
+        else if ( it.is(FROZEN) )           { return "Frozen";                  }
+        else if ( it.is(FREEZE) )           { return "Frozen";                  }
+        else if ( it.is(HELD) )             { return "Held";                    }
+        else if ( it.is(HOLD) )             { return "Held";                    }
+        else if ( it.is(NOGHOST) )          { return "NoGhost";                 }
+        else {
+            return "";
         }
-    }
-    public String modeString ( int mode )  {
-        switch ( mode )  { 
-            case NOOP :
-                return "NoOp";
-
-            case NEVEROP :
-                return "NeverOp";
-
-            case MAILBLOCKED :
-                return "MailBlock";
-
-            case SHOWEMAIL :
-                return "ShowEmail";
-
-            case SHOWHOST :
-                return "ShowHost";
-
-            case MARKED :
-            case MARK :
-                return "Marked";
-
-            case FROZEN :
-            case FREEZE :
-                return "Frozen";
-
-            case HELD :
-            case HOLD :
-                return "Held";
-
-            case NOGHOST :
-                return "NoGhost";
-
-            default:
-                return "";
-
-        } 
     } 
      
     private String isFirst ( boolean first ) {
@@ -224,11 +142,13 @@ public class NickSetting extends HashNumeric {
     public String getInfoStr ( )  {
         String buf      = new String ( );
         boolean first   = true;         
-        int[] sList = { NOOP, NEVEROP, MAILBLOCKED, 
-                        SHOWEMAIL, SHOWHOST, MARK, 
-                        FREEZE, HOLD, NOGHOST };
+        HashString[] sList = { 
+            NOOP, NEVEROP, MAILBLOCKED, 
+            SHOWEMAIL, SHOWHOST, MARK, 
+            FREEZE, HOLD, NOGHOST 
+        };
         
-        for ( int setting : sList ) {
+        for ( HashString setting : sList ) {
             if ( is ( setting ) ) {
                 buf += this.isFirst ( first ); 
                 buf += this.modeString ( setting );
@@ -255,14 +175,12 @@ public class NickSetting extends HashNumeric {
         return this.auth;
     }
    
-    public static String hashToStr ( int hash ) {
-        switch ( hash ) {
-            case FREEZE :
-                return "FREEZE";
-            case HOLD :
-                return "HOLD";
-        }
-        return "";
+    public static String hashToStr ( HashString it ) {
+        if      ( it.is(FREEZE) )           { return "FREEZE";                  }
+        else if ( it.is(HOLD) )             { return "HOLD";                    }
+        else {
+            return "";
+        }    
     }
     
     public void printSettings ( ) {

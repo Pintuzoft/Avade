@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import core.HashString;
 import java.util.ArrayList;
 import nickserv.*;
 
@@ -24,24 +25,24 @@ import nickserv.*;
  *
  * @author fredde
  */
-public class CmdData {
+public class CMDResult {
     private NickInfo        nick;
-    private int             status;
+    private HashString      status;
     private String          str1;
     private String          str2;
     private String          str3;
     private String          str4;
-    private int             command;
-    private int             sub;
-    private int             sub2;
+    private HashString      command;
+    private HashString      sub;
+    private HashString      sub2;
     private ServicesBan     ban;
     private NetServer       server1;
     private String[]        cmd;
     private ArrayList<String> makill = new ArrayList<>();
     
-    public CmdData ( )  {
+    public CMDResult ( )  {
         this.nick       = null;
-        this.status     = -1;
+        this.status     = new HashString ( "" );
     }
     
     public void setNick ( NickInfo nick ) { 
@@ -64,7 +65,7 @@ public class CmdData {
         this.str4 = str;
     }
     
-    public void setStatus ( int status ) { 
+    public void setStatus ( HashString status ) { 
         this.status = status;
     }    
     
@@ -72,7 +73,7 @@ public class CmdData {
         return this.nick;
     }
     
-    public int getStatus ( ) { 
+    public HashString getStatus ( ) { 
         return this.status;
     }
     
@@ -90,27 +91,31 @@ public class CmdData {
         return this.str4;
     }
 
-    int getCommand ( ) {
+    public HashString getCommand ( ) {
         return this.command;
     }
 
-    void setCommand ( int command ) {
+    public void setCommand ( HashString command ) {
         this.command = command;
     }
 
-    public int getSub ( ) {
+    public HashString getSub ( ) {
         return sub;
     }
 
-    public void setSub ( int sub ) {
+    public void setSub ( HashString sub ) {
         this.sub = sub;
     }
 
-    public int getSub2 ( ) {
+    public HashString getSub2 ( ) {
         return sub2;
     }
 
-    public void setSub2 ( int sub2 ) {
+    public void setSub2 ( String sub2 ) {
+        setSub2 ( new HashString ( sub2) );
+    }
+    
+    public void setSub2 ( HashString sub2 ) {
         this.sub2 = sub2;
     }
        
@@ -145,5 +150,9 @@ public class CmdData {
     
     public ArrayList<String> getMAkill ( ) {
         return this.makill;
+    }
+    
+    public boolean is ( HashString status ) {
+        return this.status.is(status);
     }
 }

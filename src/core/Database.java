@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program isSet distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -71,7 +71,11 @@ public class Database extends HashNumeric {
             if ( sql == null || ! sql.isValid ( 1 )  )  {
                 if ( System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
                     Config conf = Proc.getConf ( );
-                    sql = DriverManager.getConnection ( "jdbc:mysql://"+conf.get ( MYSQLHOST ) +":"+Integer.parseInt ( conf.get ( MYSQLPORT )  ) +"/"+conf.get (MYSQLDB ) , conf.get ( MYSQLUSER ) , conf.get ( MYSQLPASS )  );           
+                    sql = DriverManager.getConnection ( 
+                            "jdbc:mysql://"+conf.get(MYSQLHOST)+":"+Integer.parseInt( conf.get(MYSQLPORT).getString() )+"/"+conf.get(MYSQLDB).getString(), 
+                            conf.get(MYSQLUSER).getString(), 
+                            conf.get(MYSQLPASS).getString()
+                    );           
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
                         Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
@@ -208,7 +212,7 @@ public class Database extends HashNumeric {
                 String query = "INSERT INTO log ( target, body, stamp ) "
                              + "VALUES ( ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
-                ps.setString  ( 1, log.getTarget() );
+                ps.setString  ( 1, log.getTarget().getString() );
                 ps.setString  ( 2, log.getMessage() );
                 ps.setString  ( 3, log.getStamp() );
                 ps.execute ( );
@@ -243,8 +247,8 @@ public class Database extends HashNumeric {
                         "(name,flag,usermask,oper,stamp) "+
                         "values (?,?,?,?,?)";
                 ps = sql.prepareStatement ( query, PreparedStatement.RETURN_GENERATED_KEYS );
-                ps.setString ( 1, log.getName() );
-                ps.setString ( 2, log.getFlag() );
+                ps.setString ( 1, log.getName().getString() );
+                ps.setString ( 2, log.getFlag().getString() );
                 ps.setString ( 3, log.getMask() );
                 ps.setString ( 4, log.getOper() );
                 ps.setString ( 5, log.getStamp() );
@@ -253,8 +257,8 @@ public class Database extends HashNumeric {
                         "(name,flag,usermask,stamp) "+
                         "values (?,?,?,?)";
                 ps = sql.prepareStatement ( query, PreparedStatement.RETURN_GENERATED_KEYS );
-                ps.setString ( 1, log.getName() );
-                ps.setString ( 2, log.getFlag() );
+                ps.setString ( 1, log.getName().getString() );
+                ps.setString ( 2, log.getFlag().getString() );
                 ps.setString ( 3, log.getMask() );
                 ps.setString ( 4, log.getStamp() );
             }
@@ -408,7 +412,7 @@ public class Database extends HashNumeric {
                 if ( buf.length() > 0 ) {
                     buf += ","+ni.getName();
                 } else {
-                    buf = ni.getName();
+                    buf = ni.getNameStr();
                 }
             }
         }
@@ -421,7 +425,7 @@ public class Database extends HashNumeric {
                 if ( buf.length() > 0 ) {
                     buf += ","+ci.getName();
                 } else {
-                    buf = ci.getName();
+                    buf = ci.getNameStr();
                 }
             }
         }

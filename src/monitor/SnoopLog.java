@@ -18,6 +18,7 @@
 package monitor;
  
 import core.HashNumeric;
+import core.HashString;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,19 +30,19 @@ import java.util.Date;
  * @author fredde
  */
 public class SnoopLog extends HashNumeric {
-    protected String target;
+    protected HashString target;
     protected String message;
     protected String stamp;
     protected DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public SnoopLog ( String target, String message ) {
+    public SnoopLog ( HashString target, String message ) {
         this.target = target;
         this.message = message;
         Date dateBuf = new Date ( );
         this.stamp = dateFormat.format ( dateBuf );
     }
 
-    public String getTarget() {
+    public HashString getTarget() {
         return this.target;
     }
 

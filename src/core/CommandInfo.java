@@ -23,30 +23,23 @@ package core;
  * @author DreamHealer
  */
 public class CommandInfo extends HashNumeric {
-    private String name;
-    private int hashCode;
+    private HashString name;
     private int access;
     private String description;
     private String patch;
     private static String basePatch = "            ";
     
     public CommandInfo ( String name, int access, String description )  {
-        this.name           = name;
-        this.hashCode       = name.hashCode ( );
+        this.name           = new HashString ( name );
         this.description    = description;
         this.access         = access;
         this.patch          = createPatch ( this.name );
     }
     
-    public String getName ( ) {
+    public HashString getName ( ) {
         return this.name;
     }
-    
-    @Override
-    public int hashCode ( ) {
-        return this.hashCode;
-    }
-    
+
     public int getAccess ( ) {
         return this.access;
     }
@@ -60,33 +53,19 @@ public class CommandInfo extends HashNumeric {
     }
     
     /* Return a suitable patch based on namn length */
-    public static String createPatch ( String str )  {
+    public static String createPatch ( HashString str ) {
         return basePatch.substring ( 0, basePatch.length ( ) - str.length ( ) );
     }
 
-    public boolean isAcc ( int access )  {
-        switch ( access )  {
-            case USER :
-                return this.access == 0;
-            
-            case IRCOP :
-                return this.access == 1;
-                    
-            case SA :
-                return this.access == 2;
-                
-            case CSOP :
-                return this.access == 3;
-                
-            case SRA :
-                return this.access == 4;
-                
-            case MASTER :
-                return this.access == 5;
-                
-            default : 
-                return false;
-           
+    public boolean isAcc ( HashString it )  {
+        if      ( it.is(USER) )             { return this.access == 0;          } 
+        else if ( it.is(IRCOP) )            { return this.access == 1;          }
+        else if ( it.is(SA) )               { return this.access == 2;          }
+        else if ( it.is(CSOP) )             { return this.access == 3;          }
+        else if ( it.is(SRA) )              { return this.access == 4;          }
+        else if ( it.is(MASTER) )           { return this.access == 5;          }
+        else {
+            return false;
         }
     }
      
@@ -112,4 +91,9 @@ public class CommandInfo extends HashNumeric {
                 
         }
     }
+    
+    public boolean is ( HashString ci ) {
+        return this.name.is(ci);
+    }
+    
 }

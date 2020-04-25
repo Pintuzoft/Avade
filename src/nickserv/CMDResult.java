@@ -17,22 +17,23 @@
  */
 package nickserv;
 
+import core.HashString;
 import user.User;
 
 /**
  *
  * @author fredde
  */
-public class CmdData {
+public class CMDResult {
     private NickInfo        nick;
-    private int             status;
+    private HashString      status;
     private String          str1;
     private NSAuth          auth;
-    private int command;
+    private HashString      command;
 
-    public CmdData ( )  {
+    public CMDResult ( )  {
         this.nick       = null;
-        this.status     = -1;
+        this.status     = new HashString ("");
     }
     
     public void setNick ( NickInfo nick ) { 
@@ -43,7 +44,7 @@ public class CmdData {
         this.str1 = str;
     }
     
-    public void setStatus ( int status ) { 
+    public void setStatus ( HashString status ) { 
         this.status = status;
     }    
     
@@ -55,8 +56,12 @@ public class CmdData {
         return this.nick;
     }
     
-    public int getStatus ( ) { 
+    public HashString getStatus ( ) { 
         return this.status;
+    }
+    
+    public boolean is ( HashString hash ) {
+        return status.is(hash);
     }
     
     public String getString1 ( ) { 
@@ -67,11 +72,11 @@ public class CmdData {
         return this.auth;
     }
 
-    int getCommand ( ) {
+    public HashString getCommand ( ) {
         return this.command;
     }
 
-    void setCommand ( int command ) {
+    void setCommand ( HashString command ) {
         this.command = command;
     }
 }

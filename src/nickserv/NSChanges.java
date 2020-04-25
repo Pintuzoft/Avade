@@ -18,6 +18,7 @@
 package nickserv;
 
 import core.Changes;
+import core.HashString;
 
 /**
  *
@@ -60,122 +61,79 @@ public class NSChanges extends Changes {
         this.changed = false;
     }
     
-    public boolean hasChanged ( int what ) {
-        switch ( what ) {
-            case FREEZE :
-                return this.freeze;
-
-            case MARK :
-                return this.mark;
-
-            case HOLD :
-                return this.hold;
-
-            case NOGHOST :
-                return this.noghost;
-
-            case PASS :
-                return this.pass;
-
-            case FULLMASK :
-                return this.fullmask;
-
-            case MAIL :
-                return this.mail;
-
-            case LASTUSED :
-                return this.lastseen;
-
-            case NOOP :
-                return this.noop;
-
-            case NEVEROP :
-                return this.neverop;
-
-            case MAILBLOCK :
-                return this.mailblock;
-
-            case SHOWEMAIL :
-                return this.showemail;
-
-            case SHOWHOST :
-                return this.showhost;
-
-            default :
-                return false;
+    public boolean hasChanged ( HashString it ) {
+        if      ( it.is(FREEZE) )       { return this.freeze;                   }
+        else if ( it.is(MARK) )         { return this.mark;                     }
+        else if ( it.is(HOLD) )         { return this.hold;                     }
+        else if ( it.is(NOGHOST) )      { return this.noghost;                  }
+        else if ( it.is(PASS) )         { return this.pass;                     }
+        else if ( it.is(FULLMASK) )     { return this.fullmask;                 }
+        else if ( it.is(MAIL) )         { return this.mail;                     }
+        else if ( it.is(LASTUSED) )     { return this.lastseen;                 }
+        else if ( it.is(NOOP) )         { return this.noop;                     }
+        else if ( it.is(NEVEROP) )      { return this.neverop;                  }
+        else if ( it.is(MAILBLOCK) )    { return this.mailblock;                }
+        else if ( it.is(SHOWEMAIL) )    { return this.showemail;                }
+        else if ( it.is(SHOWHOST) )     { return this.showhost;                 }
+        else {
+            return false;
         }
     }
     
-    public void change ( int what ) {
-        switch ( what ) {
-            case FREEZE :
-                this.freeze = true;
-                this.changed = true;
-                break;
-                
-            case MARK :
-                this.mark = true;
-                this.changed = true;
-                break;
-
-            case HOLD :
-                this.hold = true;
-                this.changed = true;
-                break;
-                
-            case NOGHOST :
-                this.noghost = true;
-                this.changed = true;
-                break;
-                
-            case PASS :
-                this.pass = true;
-                this.changed = true;
-                break;
-
-            case FULLMASK :
-                this.fullmask = true;
-                this.changed = true;
-                break;
-
-            case MAIL :
-                this.mail = true;
-                this.changed = true;
-                break;
-
-            case LASTUSED :
-                this.lastseen = true;
-                this.changed = true;
-                break;
-
-            case NOOP :
-                this.noop = true;
-                this.changed = true;
-                break;
-
-            case NEVEROP :
-                this.neverop = true;
-                this.changed = true;
-                break;
-
-            case MAILBLOCK :
-                this.mailblock = true;
-                this.changed = true;
-                break;
-
-            case SHOWEMAIL :
-                this.showemail = true;
-                this.changed = true;
-                break;
-
-            case SHOWHOST :
-                this.showhost = true;
-                this.changed = true;
-                break;
-
-            default :
-
+    public void change ( HashString it ) {
+        if ( it.is(FREEZE) ) {
+            this.freeze = true;
+            this.changed = true;
+        
+        } else if ( it.is(MARK) ) {
+            this.mark = true;
+            this.changed = true;
+        
+        } else if ( it.is(HOLD) ) {
+            this.hold = true;
+            this.changed = true;
+        
+        } else if ( it.is(NOGHOST) ) {
+            this.noghost = true;
+            this.changed = true;
+        
+        } else if ( it.is(PASS) ) {
+            this.pass = true;
+            this.changed = true;
+        
+        } else if ( it.is(FULLMASK) ) {
+            this.fullmask = true;
+            this.changed = true;  
+        
+        } else if ( it.is(MAIL) ) {
+            this.mail = true;
+            this.changed = true;
+        
+        } else if ( it.is(LASTUSED) ) {
+            this.lastseen = true;
+            this.changed = true;
+        
+        } else if ( it.is(NOOP) ) {
+            this.noop = true;
+            this.changed = true;
+        
+        } else if ( it.is(NEVEROP) ) {
+            this.neverop = true;
+            this.changed = true;
+        
+        } else if ( it.is(MAILBLOCK) ) {
+            this.mailblock = true;
+            this.changed = true;
+        
+        } else if ( it.is(SHOWEMAIL) ) {
+            this.showemail = true;
+            this.changed = true;
+        
+        } else if ( it.is(SHOWHOST) ) {
+            this.showhost = true;
+            this.changed = true;
         }
+         
     }
     
     public void printChanges ( ) {

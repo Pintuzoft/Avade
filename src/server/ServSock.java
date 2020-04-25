@@ -19,6 +19,7 @@ package server;
 
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -45,7 +46,7 @@ public class ServSock extends HashNumeric {
         last = System.currentTimeMillis();
         lastPing = this.last;
         try {
-            this.sock = new Socket ( Proc.getConf().get ( CONNHOST ), Integer.parseInt ( Proc.getConf().get (CONNPORT ) ) );
+            this.sock = new Socket ( Proc.getConf().get(CONNHOST).getString(), Integer.parseInt ( Proc.getConf().get(CONNPORT).getString() ) );
             this.sock.setKeepAlive ( true );
             this.sock.setSoTimeout ( 200 );
             out = new PrintWriter ( this.sock.getOutputStream ( ) , true );

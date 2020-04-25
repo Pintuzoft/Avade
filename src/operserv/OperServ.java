@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -19,6 +19,7 @@ package operserv;
 
 import core.CommandInfo;
 import core.Handler;
+import core.HashString;
 import core.Proc;
 import core.StringMatch;
 import core.Service;
@@ -128,15 +129,15 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }
    
-    public static ArrayList<CommandInfo> getCMDList ( int command ) {
+    public static ArrayList<CommandInfo> getCMDList ( HashString command ) {
         return Handler.getOperServ().getCommandList ( command );
     }
     
-    public static boolean enoughAccess ( User user, int hashName ) {
+    public static boolean enoughAccess ( User user, HashString hashName ) {
         return Handler.getOperServ().checkAccess ( user, hashName );
     }
     
-    public boolean checkAccess ( User user, int hashName ) {
+    public boolean checkAccess ( User user, HashString hashName ) {
         int access = user.getAccess ( );
         if ( hashName == AUTOKILL ) {
             hashName = AKILL;
@@ -359,44 +360,42 @@ public class OperServ extends Service {
             return;
         }
         
-        int[] commands = new int[] { AKILL, SGLINE, SQLINE };
+        HashString[] commands = { AKILL, SGLINE, SQLINE };
         Random rand = new Random ( );
         
         /* this looks unnecessary? */
         for ( User u : this.chList ) {
             ban = null;
-            for ( int command : commands ) {
+            for ( HashString command : commands ) {
                 if ( ban == null ) {
-                    switch ( command ) {
-                        case AKILL :
-                            ban = findBan ( command, u.getFullMask() );
-                            if ( ban != null ) {
-                                this.ban ( u, ban );
-                                Handler.deleteUser ( u );
-                            }                            
-                            break;
-
-                        case SQLINE :
-                            ban = findBan ( command, u.getString ( NAME ) );
-                            if ( ban != null ) {
-                                newName = "SQLined"+rand.nextInt(99999);
-                                this.ban ( u, ban );
-                                this.sendServ ( "SVSNICK "+u.getString ( NAME )+" "+newName+" :0" );
-                                u.setName ( newName );
-                            }
-                            break;
-
-                        case SGLINE :
-                            ban = findBan ( command, u.getString ( REALNAME ) );
-                            if ( ban != null ) {
-                                this.ban ( u, ban );
-                                Handler.deleteUser ( u );
-                            }                            
-                            break;
                             
-                        default : 
-                            ban = null;
+                    if ( command.is(AKILL) ) {
+                        ban = findBan ( command, u.getFullMask() );
+                        if ( ban != null ) {
+                            this.ban ( u, ban );
+                            Handler.deleteUser ( u );
+                        }   
+                    
+                    } else if ( command.is(SQLINE) ) {
+                        ban = findBan ( command, u.getString ( NAME ) );
+                        if ( ban != null ) {
+                            newName = "SQLined"+rand.nextInt(99999);
+                            this.ban ( u, ban );
+                            this.sendServ ( "SVSNICK "+u.getString ( NAME )+" "+newName+" :0" );
+                            u.setName ( newName );
+                        }
+                    
+                    } else if ( command.is(SGLINE) ) {
+                        ban = findBan ( command, u.getString ( REALNAME ) );
+                        if ( ban != null ) {
+                            this.ban ( u, ban );
+                            Handler.deleteUser ( u );
+                        }   
+                    
+                    } else {
+                        ban = null;
                     }
+                     
                 }
                 checked.add ( u );
             }
@@ -410,10 +409,10 @@ public class OperServ extends Service {
     }
     
     private void expireBans ( ) {
-        int[] commands = new int[] { AKILL, SGLINE, SQLINE };
+        HashString[] commands = { AKILL, SGLINE, SQLINE };
         ArrayList<ServicesBan> delList = new ArrayList<>( );
         ArrayList<ServicesBan> list = null;
-        for ( int command : commands ) {
+        for ( HashString command : commands ) {
             list = getBanList ( command );
             if ( list != null ) {
                 for ( ServicesBan a : list ) {
@@ -434,45 +433,37 @@ public class OperServ extends Service {
         
     }
     
-    private ArrayList<ServicesBan> getBanList ( int hash ) {
-        switch ( hash ) {
-            case AKILL :
-                return akills;
-            case SQLINE :
-                return sqlines;
-            case SGLINE :
-                return sglines;
-            default :
-                return null;
+    private ArrayList<ServicesBan> getBanList ( HashString name ) {
+        if      ( name.is(AKILL) )          { return akills;        }
+        else if ( name.is(SQLINE) )         { return sqlines;       }
+        else if ( name.is(SGLINE) )         { return sglines;       }
+        else {
+            return null;
         }
     }
     private void expireBansOLD ( )  {
         if ( ! OSDatabase.checkConn ( )  )  {
             return;
         }
-        int[] commands = new int[] { AKILL, SGLINE, SQLINE };
+        HashString[] commands = { AKILL, SGLINE, SQLINE };
         
         ArrayList<ServicesBan> banList = new ArrayList<>( );
         ArrayList<ServicesBan> list = null;
-        for ( int command : commands ) {
-            switch ( command ) {
-                case AKILL :
-                    list = akills;
-                    break;
-                case SQLINE :
-                    list = sqlines;
-                    break;
-                case SGLINE :
-                    list = sglines;
-                    break;
-                default :
-                    list = null;
+        for ( HashString command : commands ) {
+            if ( command.is(AKILL) ) {
+                list = akills;
+            } else if ( command.is(SQLINE) ) {
+                list = sqlines;
+            } else if ( command.is(SGLINE) ) {
+                list = sglines;
+            } else {
+                list = null;
             }
-            
+              
             if ( list != null ) {
                 for ( ServicesBan a : OSDatabase.getExpiredBans ( command )  )  {
                     for ( ServicesBan ak : list )  {
-                        if ( a.getMaskHash ( )  == ak.getMaskHash ( )  )  {
+                        if ( a.isMask(ak.getMask() ) ) {
                             banList.add ( ak );
                         }
                     }
@@ -492,28 +483,26 @@ public class OperServ extends Service {
     
     public void parse ( User user, String[] cmd )  {
         user.getUserFlood().incCounter ( this );
-
-        cmd[3] = cmd[3].substring ( 1 );
+ 
+        HashString command = new HashString ( cmd[3].substring ( 1 ) );
+        
         if ( user == null ) {
             System.out.println("DEBUG: parse() -> no user");
             return;
         } else if ( ! user.isOper ( ) )  {
             this.sendMsg ( user, "IRC Operator Services are for IRC Operators only .. *sigh*" );
             return;
-        } else if ( ! OperServ.enoughAccess ( user, cmd[3].toUpperCase().hashCode() ) ) {
+        } else if ( ! OperServ.enoughAccess ( user, command ) ) {
             this.sendMsg ( user, "Access denied!." );
             return;
         }
         
-        switch ( cmd[3].toUpperCase().hashCode ( ) ) {
-            case HELP :
-                this.helper.parse ( user, cmd );
-                break;
-               
-            default:
-                this.executor.parse ( user, cmd ); 
-           
+        if ( command.is(HELP) ) {
+            this.helper.parse ( user, cmd );
+        } else {
+            this.executor.parse ( user, cmd );
         }
+        
     }
      // public void sendSnoop ( String msg )  { this.snoop.msg ( msg ); }
  
@@ -550,78 +539,59 @@ public class OperServ extends Service {
     }
  */   
     public void ban ( User user, ServicesBan ban )  {
-        switch ( ban.getType() ) {
-            case AKILL :
-                this.unBan ( ban );
-                this.sendServ ("AKILL "+
-                    ban.getHost ( ) +" "+
-                    ban.getUser ( ) +" "+ 
-                    ban.getExpireSec ( ) +" "+
-                    ban.getInstater ( ) +" "+
-                    ( System.currentTimeMillis ( ) / 1000 ) +
-                    " :"+ban.getReason ( ) +" [Ticket: "+ban.getID ( ) +"]" 
-                );
-                break;
-                     
-            case SQLINE :
-                this.unBan ( ban );
-                this.sendServ ( "SQLINE "+ban.getMask()+" :"+ban.getReason() );
-                break;
-                
-            case SGLINE :
-                this.unBan ( ban );
-                this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
-                this.sendServ ( "KILL "+user.getString ( NAME )+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
-                break;
-            
+        if ( ban.is(AKILL) ) {
+            this.unBan ( ban );
+            this.sendServ ("AKILL "+
+                ban.getHost ( ) +" "+
+                ban.getUser ( ) +" "+ 
+                ban.getExpireSec ( ) +" "+
+                ban.getInstater ( ) +" "+
+                ( System.currentTimeMillis ( ) / 1000 ) +
+                " :"+ban.getReason ( ) +" [Ticket: "+ban.getID ( ) +"]" 
+            );            
+        
+        } else if ( ban.is(SQLINE) ) {
+            this.unBan ( ban );
+            this.sendServ ( "SQLINE "+ban.getMask()+" :"+ban.getReason() );            
+        
+        } else if ( ban.is(SGLINE) ) {
+            this.unBan ( ban );
+            this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
+            this.sendServ ( "KILL "+user.getString ( NAME )+" :gcos violation [Ticket: SG"+ban.getID()+"]" );            
         }
+         
     }
     private void unBan ( ServicesBan ban )  {
-        switch ( ban.getType() ) {
-            case AKILL :
-                this.sendServ ( "RAKILL " + ban.getHost ( ) + " " + ban.getUser ( ) );
-                break;
-                
-            case SQLINE :
-                this.sendServ ( "UNSQLINE :"+ban.getMask() );
-                break;
-                         
-            case SGLINE :
-                this.sendServ ( "UNSGLINE :"+ban.getMask() );
-                break;
-                
+        if ( ban.is(AKILL) ) {
+            this.sendServ ( "RAKILL " + ban.getHost ( ) + " " + ban.getUser ( ) );            
+        
+        } else if ( ban.is(SQLINE) ) {
+            this.sendServ ( "UNSQLINE :"+ban.getMask() );            
+        
+        } else if ( ban.is(SGLINE) ) {
+            this.sendServ ( "UNSGLINE :"+ban.getMask() );            
         }
+         
     }
     
    
-    public static ArrayList<ServicesBan> getListByCommand ( int command ) {
-        switch ( command ) {
-            case AKILL :
-                return akills;
-                
-            case IGNORE :
-                return ignores;
-                           
-            case SQLINE :
-                return sqlines;
-                         
-            case SGLINE :
-                return sglines;
-                
-            default :
-                return new ArrayList<>();
-                
+    public static ArrayList<ServicesBan> getListByCommand ( HashString command ) {
+        if ( command.is(AKILL) )                { return akills;    }
+        else if ( command.is(IGNORE) )          { return ignores;   }
+        else if ( command.is(SQLINE) )          { return sqlines;   }
+        else if ( command.is(SGLINE) )          { return sglines;   }
+        else {
+            return new ArrayList<>();
         }
     }
     
     private int delServicesBan ( ServicesBan ban )  {
         if ( OSDatabase.delServicesBan ( ban ) ) {
             OSDatabase.logServicesBan ( DEL, ban );
-            switch ( ban.getType() ) {
-                case SQLINE :
-                case SGLINE :
-                case AKILL :
-                    this.unBan ( ban );
+            if ( ban.is(SQLINE) ||
+                 ban.is(SGLINE) ||
+                 ban.is(AKILL) ) {
+                this.unBan ( ban );
             }
             return 1;
         }
@@ -636,49 +606,44 @@ public class OperServ extends Service {
             
 //            OSDatabase.logServicesBan ( ADD, ban );
             //:services.avade.net AKILL 172.16.4.* fredde 1378430849 DreamHealer 1374430849 :Test akill
-            switch ( ban.getType() ) {
-                case AKILL :
-                    this.sendServ ( 
-                        "AKILL "+
-                        ban.getHost ( ) +" "+
-                        ban.getUser ( ) +" "+
-                        ban.getExpireSec ( ) +" "+
-                        ban.getInstater ( ) +" "+
-                        ( System.currentTimeMillis ( ) / 1000 ) +
-                        " :"+ban.getReason ( )+" [Ticket: "+ban.getID ( ) +"] "
-                    );
-                    break;
-                    
-                case SQLINE :
-                    this.unBan ( ban );
-                    this.sendServ ( "SQLINE "+ban.getMask()+" :"+ban.getReason() );
-                    int index = 1;
-                    String nick;
-                    User buf;
-                    String prefix = "SQLined";
-                    for ( User u : Handler.getUserList() ) {
-                        nick = u.getString ( NAME );
-                        if ( StringMatch.nickWild ( nick, ban.getMask() ) ) {
-                            while ( ( buf = Handler.findUser ( prefix+index ) ) != null ) {
-                                index++;
-                            }
-                            this.sendServ ( "SVSNICK "+u.getString(NAME)+" "+prefix+index+" :0" );
+            
+            if ( ban.is(AKILL) ) {
+                this.sendServ ( 
+                    "AKILL "+
+                    ban.getHost ( ) +" "+
+                    ban.getUser ( ) +" "+
+                    ban.getExpireSec ( ) +" "+
+                    ban.getInstater ( ) +" "+
+                    ( System.currentTimeMillis ( ) / 1000 ) +
+                    " :"+ban.getReason ( )+" [Ticket: "+ban.getID ( ) +"] "
+                );
+            
+            } else if ( ban.is(SQLINE) ) {
+                this.unBan ( ban );
+                this.sendServ ( "SQLINE "+ban.getMask()+" :"+ban.getReason() );
+                int index = 1;
+                String nick;
+                User buf;
+                String prefix = "SQLined";
+                for ( User u : Handler.getUserList() ) {
+                    nick = u.getString ( NAME );
+                    if ( StringMatch.nickWild ( nick, ban.getMask().getString() ) ) {
+                        while ( ( buf = Handler.findUser ( prefix+index ) ) != null ) {
                             index++;
                         }
+                        this.sendServ ( "SVSNICK "+u.getString(NAME)+" "+prefix+index+" :0" );
+                        index++;
                     }
-                    break;
-                 
-                case SGLINE :
-                    this.unBan ( ban );
-                    this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
-                    for ( User u : Handler.getUserList() ) {
-                        if ( StringMatch.wild ( u.getString ( REALNAME ), ban.getMask ( ) ) ) {
-                            this.sendServ ( "KILL "+u.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
-                        }
+                }                
+            
+            } else if ( ban.is(SGLINE) ) {
+                this.unBan ( ban );
+                this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
+                for ( User u : Handler.getUserList() ) {
+                    if ( StringMatch.wild ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
+                        this.sendServ ( "KILL "+u.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
                     }
-
-                    break;
-                    
+                }                
             }
         }
     }
@@ -708,13 +673,15 @@ public class OperServ extends Service {
         this.chList.add ( user );
     }
     
-    public static ServicesBan findBanByID ( int command, String banId ) {
+    public static ServicesBan findBanByID ( HashString command, String banId ) {
+        return findBanByID ( command, new HashString ( banId ) );
+    }
+    public static ServicesBan findBanByID ( HashString command, HashString banId ) {
         if ( banId == null ) {
             return null;
         }
-        int hash = banId.toUpperCase().hashCode();
         for ( ServicesBan ban : getListByCommand ( command ) ) {
-            if ( ban.getHash() == hash ) {
+            if ( ban.is(banId) ) {
                 return ban;
             }
         }
@@ -722,83 +689,65 @@ public class OperServ extends Service {
     }
     
     
-    public static ArrayList<ServicesBan> findBansByPattern ( int command, String pattern )  {
+    public static ArrayList<ServicesBan> findBansByPattern ( HashString command, String pattern )  {
         ArrayList<ServicesBan> bList = new ArrayList<>();
-        switch ( command ) {
-            case AKILL :
-                for ( ServicesBan ban : akills )  {
-                    if ( StringMatch.maskWild ( ban.getMask ( ), pattern )  )  {
-                        bList.add ( ban );
-                    }
+        
+        if ( command.is(AKILL) ) {
+            for ( ServicesBan ban : akills )  {
+                if ( StringMatch.maskWild ( ban.getMask ( ), pattern )  )  {
+                    bList.add ( ban );
                 }
-                break;
-            
-            case IGNORE :
-                for ( ServicesBan ban : ignores ) {
-                    if ( StringMatch.maskWild ( ban.getMask(), pattern) ) {
-                        bList.add ( ban );
-                    }   
-                }
-                break;
-                
-            case SQLINE :
-                for ( ServicesBan ban : sqlines ) {
-                    if ( StringMatch.nickWild ( ban.getMask(), pattern) ) {
-                        bList.add ( ban );
-                    }   
-                }
-                break;
-                
-            case SGLINE :
-                for ( ServicesBan ban : sglines ) {
-                    if ( StringMatch.wild ( ban.getMask(), pattern) ) {
-                        bList.add ( ban );
-                    }   
-                }
-                break;
-                
-            default :
-                
+            }  
+        
+        } else if ( command.is(IGNORE) ) {
+            for ( ServicesBan ban : ignores ) {
+                if ( StringMatch.maskWild ( ban.getMask(), pattern) ) {
+                    bList.add ( ban );
+                }   
+            }            
+        
+        } else if ( command.is(SQLINE) ) {
+            for ( ServicesBan ban : sqlines ) {
+                if ( StringMatch.nickWild ( ban.getMask().getString(), pattern) ) {
+                    bList.add ( ban );
+                }   
+            }            
+        
+        } else if ( command.is(SQLINE) ) {
+            for ( ServicesBan ban : sglines ) {
+                if ( StringMatch.wild ( ban.getMask().getString(), pattern) ) {
+                    bList.add ( ban );
+                }   
+            }            
         }
         return bList;
     }
     
-    public static ServicesBan findBan ( int command, String usermask )  {
-        switch ( command ) {
-            case AKILL :
-                for ( ServicesBan a : akills )  {
-                    if ( StringMatch.maskWild ( a.getMask ( ), usermask )  )  {
-                        return a;
-                    }
+    public static ServicesBan findBan ( HashString command, String usermask )  {
+        if ( command.is(AKILL) ) {
+            for ( ServicesBan a : akills )  {
+                if ( StringMatch.maskWild ( a.getMask( ), usermask )  )  {
+                    return a;
                 }
-                break;
-            
-            case IGNORE :
-                for ( ServicesBan b : ignores ) {
-                    if ( StringMatch.maskWild ( b.getMask(), usermask) ) {
-                        return b;
-                    }   
-                }
-                break;
-                
-            case SQLINE :
-                for ( ServicesBan b : sqlines ) {
-                    if ( StringMatch.nickWild ( b.getMask(), usermask) ) {
-                        return b;
-                    }   
-                }
-                break;
-                
-            case SGLINE :
-                for ( ServicesBan b : sglines ) {
-                    if ( StringMatch.wild ( b.getMask(), usermask) ) {
-                        return b;
-                    }   
-                }
-                break;
-                
-            default :
-                
+            }
+        } else if ( command.is(IGNORE) ) {
+            for ( ServicesBan b : ignores ) {
+                if ( StringMatch.maskWild ( b.getMask(), usermask) ) {
+                    return b;
+                }   
+            }
+        } else if ( command.is(SQLINE) ) {
+            for ( ServicesBan b : sqlines ) {
+                if ( StringMatch.nickWild ( b.getMask().getString(), usermask) ) {
+                    return b;
+                }   
+            }
+        } else if ( command.is(SGLINE) ) {
+            for ( ServicesBan b : sglines ) {
+                if ( StringMatch.wild ( b.getMask().getString(), usermask) ) {
+                    return b;
+                }   
+            }
         }
         return null;
     }
@@ -840,59 +789,48 @@ public class OperServ extends Service {
     }
 
     public static NetServer getServer ( String name ) {
-        int hash = name.toUpperCase().hashCode();
+        return getServer ( new HashString ( name ) );
+    }
+    public static NetServer getServer ( HashString name ) {
         for ( NetServer server : servers ) {
-            if ( server.getHashCode() == hash ) {
+            if ( server.is(name) ) {
                 return server;
             }
         }
         return null;
     }
     
-    public static ArrayList<NetServer> getServers ( int type, boolean missing ) {
+    public static ArrayList<NetServer> getServers ( HashString type, boolean missing ) {
         ArrayList<NetServer> sList = new ArrayList<>();
-        int pHash;
-        int sHash;
-        int hash;
-        switch ( type ) {
-            case HUB :
-                for ( NetServer server : servers ) {
-                    hash = server.getName().toUpperCase().hashCode();
-                    for ( NetServer server2 : servers ) {
-                        pHash = server2.getPrimary().toUpperCase().hashCode();
-                        sHash = server2.getSecondary().toUpperCase().hashCode();
-                        if ( hash == pHash || hash == sHash ) {
-                            sList.add ( server );
-                        }
+        
+        if ( type.is(HUB) ) {
+            for ( NetServer server : servers ) {
+                for ( NetServer server2 : servers ) {
+                    if ( server.is(server2.getPrimary()) || server.is(server2.getSecondary() ) ) {
+                        sList.add ( server );
                     }
                 }
-                break;
-                
-            case LEAF :
-                sList.addAll ( servers );
-                ArrayList<NetServer> remList = new ArrayList<>();
-                for ( NetServer server : servers ) {
-                    hash = server.getName().toUpperCase().hashCode();
-                    for ( NetServer server2 : servers ) {
-                        pHash = server2.getPrimary().toUpperCase().hashCode();
-                        sHash = server2.getSecondary().toUpperCase().hashCode();
-                        if ( hash == pHash || hash == sHash ) {
-                            sList.remove ( server );
-                        }
+            }            
+        
+        } else if ( type.is(LEAF) ) {
+            sList.addAll ( servers );
+            ArrayList<NetServer> remList = new ArrayList<>();
+            for ( NetServer server : servers ) {
+                for ( NetServer server2 : servers ) {
+                    if ( server.is(server2.getPrimary()) || server.is(server2.getSecondary() ) ) {
+                        sList.remove ( server );
                     }
                 }
-                break;
-                
-            default :
-                
+            }            
         }
+         
         if ( missing ) {
             ArrayList<Server> online = Handler.getServerList ( );
             ArrayList<NetServer> rem = new ArrayList<>();
 
             for ( Server server : online ) {
                 for ( NetServer server2 : sList ) {
-                    if ( server2.getHashCode ( ) == server.getHashName ( ) ) {
+                    if ( server2.is(server.getName()) ) {
                         rem.add ( server2 );
                     }
                 }
@@ -905,10 +843,10 @@ public class OperServ extends Service {
     }
     
     public static boolean addDelServer ( String name ) {
-        int hash = name.toUpperCase().hashCode();
+        HashString hash = new HashString ( name );
         NetServer rem = null;
         for ( NetServer server : servers ) {
-            if ( server.getHashCode() == hash ) {
+            if ( server.is(hash) ) {
                 rem = server;
             }
         }
@@ -919,21 +857,20 @@ public class OperServ extends Service {
         }
         return false;
     }
-    public static void addServer ( String name ) {
-        int hash = name.toUpperCase().hashCode();
-        for ( NetServer s : servers ) {
-            if ( s.getHashCode() == hash ) {
+    public static void addServer ( HashString name ) {
+        for ( NetServer server : servers ) {
+            if ( server.is(name) ) {
                 return;
             }
         }
-        NetServer server = new NetServer ( name, null, null );
+        NetServer server = new NetServer ( name.getString(), null, null );
         addServers.add ( server );
     }
     public static void addUpdServer ( NetServer server ) {
         updServers.add ( server );
     }
     
-    public static ArrayList<Oper> getStaffPlus ( int hash ) {
+    public static ArrayList<Oper> getStaffPlus ( HashString hash ) {
         ArrayList<Oper> oList = new ArrayList<> ( );
         int access = hashToAccess ( hash );
         for ( Oper o : staff ) {
@@ -944,25 +881,19 @@ public class OperServ extends Service {
         return oList;
     }
     
-    public static int hashToAccess ( int hash ) {
-        switch ( hash ) {
-            case IRCOP :
-                return 1;
-
-            case SA :
-                return 2;
-
-            case CSOP :
-                return 3;
-
-            case SRA :
-                return 4;
-
-            case MASTER :
-                return 5;
-
-            default :
-                return 0;
+    public static int hashToAccess ( HashString hash ) {
+        if ( hash.is(IRCOP) ) {
+            return 1;
+        } else if ( hash.is(SA) ) {
+            return 2;
+        } else if ( hash.is(CSOP) ) {
+            return 3;
+        } else if ( hash.is(SRA) ) {
+            return 4;
+        } else if ( hash.is(MASTER) ) {
+            return 5;
+        } else {
+            return 0;
         }
     }
     
@@ -991,10 +922,9 @@ public class OperServ extends Service {
         return getStaffByAccess ( 1 );
     }
     
-    public static Oper getOper ( String name ) {
-        int hash = name.toUpperCase().hashCode();
+    public static Oper getOper ( HashString name ) {
         for ( Oper oper : staff ) {
-            if ( oper.getHashCode() == hash ) {
+            if ( oper.is(name) ) {
                 return oper;
             }
         }
@@ -1009,9 +939,9 @@ public class OperServ extends Service {
     public static void remServicesBan ( ServicesBan ban ) {
         ServicesBan rem = null;
         remServicesBans.add ( ban );
-        for ( ServicesBan b : getListByCommand ( ban.getType() ) ) {
-            if ( ban.getMaskHash() == b.getMaskHash() ) {
-                rem = b;
+        for ( ServicesBan ban2 : getListByCommand ( ban.getType() ) ) {
+            if ( ban.is(ban2) ) {
+                rem = ban2;
             }
         }
         if ( rem != null ) {
@@ -1072,12 +1002,27 @@ public class OperServ extends Service {
             return;
         }
         String expire = Handler.expireToTime ( "30d" );
-        this.addServicesBan ( new ServicesBan ( AKILL, ""+System.nanoTime(), false,"*!*@"+user.getString(IP), reason, "OperServ", null, expire ) );
+        this.addServicesBan ( 
+            new ServicesBan ( 
+                AKILL, 
+                new HashString ( ""+System.nanoTime() ), 
+                false,
+                new HashString ( "*!*@"+user.getString(IP) ), 
+                reason, 
+                "OperServ", 
+                null,
+                expire
+            ) 
+        );
     }
 
     public static boolean isWhiteListed ( String usermask ) {
-        for ( String white : Proc.getConf().getWhiteList() ) {
-            if ( StringMatch.maskWild ( usermask, "*"+white ) ) {
+        return isWhiteListed ( new HashString ( usermask ) );
+    }
+    
+    public static boolean isWhiteListed ( HashString usermask ) {
+        for ( HashString white : Proc.getConf().getWhiteList ( ) ) {
+            if ( StringMatch.maskWild ( usermask.getString(), "*"+white ) ) {
                 return true;
             }
         }
@@ -1101,15 +1046,15 @@ public class OperServ extends Service {
     }
     
     public static void delOper ( NickInfo ni ) {
-        Oper oper = null;
-        for ( Oper o : staff ) {
-            if ( o.getHashCode() == ni.hashCode() ) {
-                oper = o;
+        Oper remove = null;
+        for ( Oper oper : staff ) {
+            if ( oper.is(ni.getName()) ) {
+                remove = oper;
             }
         }
-        if ( oper != null ) {
-            staff.remove ( oper );
-            remStaff.add ( oper );
+        if ( remove != null ) {
+            staff.remove ( remove );
+            remStaff.add ( remove );
         }
     }
     public static void addLogEvent ( OSLogEvent log ) {

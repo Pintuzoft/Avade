@@ -19,6 +19,7 @@ package operserv;
 
 import core.Proc;
 import core.HashNumeric;
+import core.HashString;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -32,10 +33,8 @@ import nickserv.NickServ;
  * @author DreamHealer
  */
 public class Oper extends HashNumeric {
- 
     private int             access;
-    private String          name;
-    private int             hash;
+    private HashString      name;
     private String          instater;
     private String[]        levels;
     private String[]        shortLevels;
@@ -65,8 +64,7 @@ public class Oper extends HashNumeric {
         try {
             /* We got a nick from the database, so lets turn it into an object.. */
             res.first ( );
-            this.name           = res.getString ( "name" );
-            this.hash           = this.name.toUpperCase().hashCode();
+            this.name           = new HashString ( res.getString ( "name" ) );
             this.access         = res.getInt ( "access" );
             this.instater       = res.getString ( "instater" );
             this.levels         = OPER_LEVEL;
@@ -79,22 +77,20 @@ public class Oper extends HashNumeric {
     }
     
     public Oper ( String name, int access, String instater )  {
-        this.name            = name;
+        this.name            = new HashString ( name );
         this.access          = access;
         this.instater        = instater;
         this.levels          = OPER_LEVEL;
         this.shortLevels     = OPER_LEVEL_SHORT;
-        this.hash            = this.name.toUpperCase().hashCode ( );
     }
     
     /* user without access */
     public Oper ( ) {
-        this.name           = "";
+        this.name           = new HashString ( "" );
         this.access         = 0;
         this.instater       = "";
         this.levels         = OPER_LEVEL;
         this.shortLevels    = OPER_LEVEL_SHORT;
-        this.hash           = this.name.toUpperCase().hashCode ( );
     }
     
     public int getAccess ( ) {
@@ -104,29 +100,21 @@ public class Oper extends HashNumeric {
             return 0;
         }
     }
-
-    public int getHashCode ( ) {
-        return this.hash;
-    }
-    
-    public String getString ( int var )  {
-        switch ( var )  {
-            case INSTATER :
-                return this.instater;
-                
-            case ACCSTRING :
-                return this.levels[this.access];
-                
-            case NAME :
-                return this.name;
-                
-            case ACCSTRINGSHORT :
-                return this.shortLevels[this.access];
-                
-            default: 
-                return null; 
+ 
+    public String getString ( HashString in )  {
+        if ( in.is(INSTATER) ) {
+            return this.instater;
             
+        } else if ( in.is(ACCSTRING) ) {
+            return this.levels[this.access];
+            
+        } else if ( in.is(NAME) ) {
+            return this.name.getString();
+            
+        } else if ( in.is(ACCSTRINGSHORT) ) {
+            return this.shortLevels[this.access];
         }
+        return null;
     } 
     
     public void setAccess ( int access ) {
@@ -137,60 +125,70 @@ public class Oper extends HashNumeric {
         return  ( i >= this.access );
     }
 
-    public boolean isAtleast ( int acc )  {
-        switch ( acc )  {
-            case MASTER :
-                return ( this.access == 5 || this.isMaster ( ) );
-                
-            case SRA :
-                return ( this.access >= 4 || this.isMaster ( ) );
-                
-            case CSOP :
-                return ( this.access >= 3 || this.isMaster ( ) );
-                
-            case SA :
-                return ( this.access >= 2 || this.isMaster ( ) );
-                
-            case IRCOP :
-                return ( this.access >= 1 || this.isMaster ( ) );
-                
-            default: 
-                return false; 
+    public boolean isAtleast ( HashString access )  {
+        if ( this.isMaster() ) {
+            return true;
+        }
+        
+        if ( access.is(MASTER) ) {
+            return this.access == 5;
+        
+        } else if ( access.is(SRA) ) {
+            return this.access >= 4;
+        
+        } else if ( access.is(CSOP) ) {
+            return this.access >= 3;
+        
+        } else if ( access.is(SA) ) {
+            return this.access >= 2;
             
+        } else if ( access.is(IRCOP) ) {
+            return this.access >= 1;
+        } 
+        
+        return false;
+        
+    }
+    
+    static public int hashToAccess ( HashString hash ) {
+        if ( hash.is(MASTER) ) {
+            return 5;
+            
+        } else if ( hash.is(SRA) ) {
+            return 4;
+        
+        } else if ( hash.is(CSOP) ) {
+            return 3;
+        
+        } else if ( hash.is(SA) ) {
+            return 2;
+        
+        } else if ( hash.is(IRCOP) ) {
+            return 1;
+        
+        } else {
+            return 0;
         }
     }
     
-    static public int hashToAccess ( int hash ) {
-        switch ( hash ) {
-            case MASTER :
-                return 5;
-            case SRA :
-                return 4;
-            case CSOP :
-                return 3;
-            case SA :
-                return 2;
-            case IRCOP :
-                return 1;
-            default :
-                return 0;
-        }
-    }
-    
-    static String hashToStr ( int hash ) {
-        switch ( hash ) {
-            case MASTER :
-                return "Master";
-            case SRA :
-                return "SRA";
-            case CSOP :
-                return "CSop";
-            case SA :
-                return "SA";
-            case IRCOP :
-                return "IRCop";
-            default :
-                return "User";
+    static String hashToStr ( HashString hash ) {        
+        if ( hash.is(MASTER) ) {
+            return "Master";
+            
+        } else if ( hash.is(SRA) ) {
+            return "SRA";
+        
+        } else if ( hash.is(CSOP) ) {
+            return "CSop";
+        
+        } else if ( hash.is(SA) ) {
+            return "SA";
+        
+        } else if ( hash.is(IRCOP) ) {
+            return "IRCop";
+        
+        } else {
+            return "User";
         }
     }
     static String accessToStr ( int access ) {
@@ -213,9 +211,16 @@ public class Oper extends HashNumeric {
     public boolean isMaster ( )  {
         return this.access == 6;
     }
-    public String getName ( ) {
+    public HashString getName ( ) {
         return this.name;
     }
+    public String getNameStr ( ) {
+        return this.name.getString();
+    }
+    public boolean is ( HashString name ) {
+        return this.name.is(name);
+    }
+    
     public void printOper ( ) {
         System.out.println ( "Oper: "+this.name );
         System.out.println ( " - instater: "+this.instater );

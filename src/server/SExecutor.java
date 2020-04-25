@@ -18,6 +18,7 @@
 package server;
 
 import core.Executor;
+import core.HashString;
 import core.Proc;
 import core.Services;
 import operserv.Oper;
@@ -38,114 +39,103 @@ public class SExecutor extends Executor {
         this.services = services;
     }
 
-    public void parse ( User user, String[] cmd )  {  
-        switch ( cmd[1].hashCode ( ) ) {
-            case MOTD :
-                doMotd ( user, cmd );
-                break;
-                
-            case VERSION :
-                doVersion ( user, cmd );
-                break;
-                
-            case INFO :
-                doInfo ( user, cmd );
-                break;
-                
-            case STATS : 
-                doStats ( user, cmd );
-                break;
-                
-            default : 
-        } 
+    public void parse ( User user, String[] cmd )  {
+        
+        HashString command = new HashString ( cmd[1] );
+        
+        if ( command.is(MOTD) ) {
+            doMotd ( user, cmd );
+        } else if ( command.is(VERSION) ) {
+            doVersion ( user, cmd );
+        } else if ( command.is(INFO) ) {
+            doInfo ( user, cmd );
+        } else if ( command.is(STATS) ) {
+            doStats ( user, cmd );
+        }
+        
     }
-    
-    public int nameToService ( String name ) {
-        if ( iCmp ( name, this.services.getString ( NAME ) ) ) {
+    public HashString nameToService ( String name ) {
+        return nameToService ( new HashString ( name ) );
+    }
+    public HashString nameToService ( HashString name ) {
+        if ( name.is(this.services.getName() ) ) {
             return SERVICES;
-        } else if ( iCmp ( name, this.services.getString ( STATS ) ) ) {
+        } else if ( name.is(this.services.getString(STATS)) ) {
             return STATS;
         }
-        return 0;
+        return null;
     }
     
     public void doMotd ( User user, String[] cmd )  { 
-        int hash = nameToService ( cmd[2] );
-        switch ( hash ) {
-            case SERVICES :
-                this.servicesMOTD ( user );
-                break;
-                
-            case STATS :
-                this.statsMOTD ( user );
-                break;
-                
-            default : 
-                this.servicesMOTD ( user );
-                
-        }         
+        HashString name = nameToService ( cmd[2] );
+        
+        if ( name.is(SERVICES) ) {
+            this.servicesMOTD ( user );
+        
+        } else if ( name.is(this.services.getString(STATS) ) ) {
+            this.statsMOTD ( user );
+        
+        } else {
+            this.servicesMOTD ( user );
+        }
+         
     }
     public void doVersion ( User user, String[] cmd )  { 
-        int hash = nameToService ( cmd[2] );
-        switch ( hash ) {
-            case SERVICES :
-                this.servicesVersion ( user );
-                break;
-                
-            case STATS :
-                this.statsVersion ( user );
-                break;
-                
-            default : 
-                this.servicesVersion ( user );
-                
-        }         
+        HashString name = nameToService ( cmd[2] );
+
+        if ( name.is(SERVICES) ) {
+            this.servicesVersion ( user );
+        
+        } else if ( name.is(this.services.getString(STATS) ) ) {
+            this.statsVersion ( user );
+        
+        } else {
+            this.servicesVersion ( user );
+        }
+ 
     }
     public void doInfo ( User user, String[] cmd )  { 
-        int hash = nameToService ( cmd[2] );
-        switch ( hash ) {
-            case SERVICES :
-                this.servicesInfo ( user );
-                break;
-                
-            case STATS :
-                this.statsInfo ( user );
-                break;
-                
-            default : 
-                this.servicesInfo ( user );
-                
-        }         
+        HashString name = nameToService ( cmd[2] );
+        
+        if ( name.is(SERVICES) ) {
+            this.servicesInfo ( user );
+        
+        } else if ( name.is(this.services.getString(STATS) ) ) {
+            this.statsInfo ( user );
+        
+        } else {
+            this.servicesInfo ( user );
+        }
+        
     }
    
     public void doStats ( User user, String[] cmd )  {
-        switch ( cmd[2].toUpperCase ( ) .hashCode ( )  )  {
-            
-            case CHAR_U : /* UPTIME */ 
-                if ( iCmp ( cmd[3], this.services.getString ( NAME )  )  )  {
+        HashString ch = new HashString ( cmd[2] );
+        HashString name = new HashString ( cmd[3] );
+        
+        if ( ch.is(U) ) {
+                if ( name.is(this.services.getName()) ) {
                     this.services.sendServicesCMD ( user, Numeric.RPL_STATSUPTIME,  "Server Up "+Proc.getUptime ( )  ); 
-                } else if ( iCmp ( cmd[3], this.services.getString ( STATS )  )  )  {
+                } else if ( name.is(this.services.getString(STATS) ) ) {
                     this.services.sendStatsCMD ( user, Numeric.RPL_STATSUPTIME,  "Server Up "+Proc.getUptime ( )  ); 
-                } 
-                break; 
-            
-            case CHAR_O : /* STAFF */
+                }     
+        
+        } else if ( ch.is(O) ) {
                 ArrayList<Oper> oList = OperServ.findRootAdmins ( );
                 oList.addAll ( OperServ.findCSOps ( )  );
                 oList.addAll ( OperServ.findServicesAdmins ( )  );
 
-                if ( iCmp ( cmd[3], this.services.getString ( NAME )  )  )  {
+                if ( name.is(this.services.getName()) ) {
                     for ( Oper o : oList )  {
                         this.services.sendServicesCMD ( user, Numeric.RPL_STATSOLINE,  o.getString ( ACCSTRINGSHORT ) +" *@* "+o.getString ( NAME )  );
                     }
-                } else if ( iCmp ( cmd[3], this.services.getString ( STATS )  )  )  {
+                } else if ( name.is(this.services.getString(STATS) ) ) {
                     for ( Oper o : oList )  {
                         this.services.sendStatsCMD ( user, Numeric.RPL_STATSOLINE,  o.getString ( ACCSTRINGSHORT ) +" *@* "+o.getString ( NAME )  );
                     }
-                } 
-                break; 
-           
+                }             
         }
+        
     }
     
     /***  MOTD  ***/

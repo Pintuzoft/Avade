@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -20,6 +20,7 @@ package nickserv;
 import core.CommandInfo;
 import core.Config;
 import core.Handler;
+import core.HashString;
 import core.Helper;
 import core.Proc;
 import core.TextFormat;
@@ -42,109 +43,95 @@ public class NSHelper extends Helper {
         this.f              = new TextFormat ( );
     }
 
-    public void parse ( User user, String[] cmd )  {
-        
+    public void parse ( User user, String[] cmd ) {
+        HashString command;
         try {
-            if ( cmd[4].isEmpty ( )  )  { 
+            if ( cmd[4].isEmpty ( ) ) {
                 this.help ( user ); 
                 return; 
             }
-        } catch ( Exception e )  {
+        } catch ( Exception e ) {
             this.help ( user );
             return;
         }
             
-        switch ( cmd[4].toUpperCase ( ) .hashCode ( )  )  {
-            case REGISTER :
-                this.doRegister ( user );
-                break;
-                
-            case IDENTIFY : 
-                this.doIdentify ( user );
-                break;
-                
-            case SIDENTIFY :
-                this.doIdentify ( user );
-                break;
-                
-            case GHOST :
-                this.doGhost ( user );
-                break;
-                
-            case SET :
-                this.doSet ( user, cmd );
-                break;
-                
-            case AUTH :
-                this.doAuth ( user );
-                break;
-                
-            case INFO :
-                this.doInfo ( user );
-                break;
-            
-            case FREEZE :
-                this.freeze ( user );
-                break;
-                
-            case HOLD :
-                this.hold ( user );
-                break;
-                
-            case MARK :
-                this.mark ( user );
-                break;
-               
-            case NOGHOST :
-                this.noghost ( user );
-                break;
-                
-            default:  
-                this.noMatch ( user, cmd[4] );
-            
-        } 
+        command = new HashString ( cmd[4] );
+        
+        if ( command.is(REGISTER) ) {
+            this.doRegister ( user );
+        
+        } else if ( command.is(IDENTIFY) ) {
+            this.doIdentify ( user );
+        
+        } else if ( command.is(SIDENTIFY) ) {
+            this.doIdentify ( user );        
+        
+        } else if ( command.is(GHOST) ) {
+            this.doGhost ( user );
+        
+        } else if ( command.is(SET) ) {
+            this.doSet ( user, cmd );
+        
+        } else if ( command.is(AUTH) ) {
+            this.doAuth ( user );
+        
+        } else if ( command.is(INFO) ) {
+            this.doInfo ( user );
+        
+        } else if ( command.is(FREEZE) ) {
+            this.freeze ( user );
+        
+        } else if ( command.is(HOLD) ) {
+            this.hold ( user );
+        
+        } else if ( command.is(MARK) ) {
+            this.mark ( user );
+        
+        } else if ( command.is(NOGHOST) ) {
+            this.noghost ( user );
+        
+        } else {
+            this.noMatch ( user, cmd[4] );
+        }
+         
     }
     
     public void doSet ( User user, String[] cmd )  {
         /* NickServ HELP REGISTER */ 
+        HashString command;
         
         if ( cmd == null || cmd.length < 6 )  {
             this.setMain ( user );
             return; 
         }
-         
-        switch ( cmd[5].toUpperCase ( ) .hashCode ( ) ) { 
-            case NOOP :
-                this.setNoOp ( user );
-                break;
-                
-            case NEVEROP :
-                this.setNeverOp ( user );
-                break;
-                
-            case MAILBLOCK :
-                this.setMailBlock ( user );
-                break;
-            case SHOWEMAIL :
-                this.setShowEmail ( user );
-                break; 
-                
-            case SHOWHOST :
-                this.setShowHost ( user );
-                break;
-                
-            case EMAIL :
-                this.setEmail ( user );
-                break;
-             
-            case PASSWD :
-                this.setPasswd ( user );
-                break;
- 
-            default :
-                this.setMain ( user );
-                
+        
+        command = new HashString ( cmd[5] );
+        
+        if ( command.is(NOOP) ) {
+            this.setNoOp ( user );
+        
+        } else if ( command.is(NEVEROP) ) {
+            this.setNeverOp ( user );
+        
+        } else if ( command.is(MAILBLOCK) ) {
+            this.setMailBlock ( user );
+        
+        } else if ( command.is(SHOWEMAIL) ) {
+            this.setShowEmail ( user );
+        
+        } else if ( command.is(SHOWHOST) ) {
+            this.setShowHost ( user );
+        
+        } else if ( command.is(EMAIL) ) {
+            this.setEmail ( user );
+        
+        } else if ( command.is(PASSWD) ) {
+            this.setPasswd ( user );
+        
+        } else {
+            this.setMain ( user );
         }
+        
     }
     
     public void help ( User user ) {

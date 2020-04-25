@@ -5,46 +5,54 @@
  */
 package operserv;
 
+import core.HashString;
+
 /**
  *
  * @author Fredrik Karlsson aka DreamHealer & avade.net
  */
 class NetServer {
-    private String name;
-    private String primary;
-    private String secondary;
-    private int hashCode;
+    private HashString name;
+    private HashString primary;
+    private HashString secondary;
     
     public NetServer ( String name, String primary, String secondary ) {
-        this.name = name;
-        this.primary = primary == null ? "-" : primary;
-        this.secondary = secondary == null ? "-" : secondary;
-        this.hashCode = name.toUpperCase().hashCode();
+        this.name = new HashString ( name );
+        this.primary = new HashString (primary == null ? "-" : primary );
+        this.secondary = new HashString ( secondary == null ? "-" : secondary );
     }
 
-    public String getName() {
+    public HashString getName() {
         return name;
     }
+    public String getNameStr() {
+        return name.getString();
+    }
 
-    public String getPrimary() {
+    public HashString getPrimary() {
         return primary;
+    }
+    public String getPrimaryStr() {
+        return primary.getString();
     }
     
     public void setPrimary ( String str ) {
-        this.primary = str;
+        this.primary = new HashString ( str );
     }
     
-    public String getSecondary() {
+    public HashString getSecondary() {
         return secondary;
+    }
+    public String getSecondaryStr() {
+        return secondary.getString();
     }
     
     public void setSecondary ( String str ) {
-        this.secondary = str;
+        this.secondary = new HashString ( str );
     }
     
-    public int getHashCode ( ) {
-        return this.hashCode;
+    public boolean is ( HashString name ) {
+        return this.name.is(name);
     }
-    
-    
+
 }

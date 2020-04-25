@@ -9,6 +9,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import core.CIDRUtils;
 import core.HashNumeric;
+import core.HashString;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -28,7 +29,7 @@ public class CSAcc extends HashNumeric {
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private NickInfo ni;
-    private int access;
+    private HashString access;
     private String lastOped;
     
     private boolean isCidr = false;
@@ -52,7 +53,13 @@ public class CSAcc extends HashNumeric {
     private int cidr = -1;
     private int hashMask;
     
-    public CSAcc ( NickInfo ni, int access, String lastOped ) {
+    /**
+     *
+     * @param ni
+     * @param access
+     * @param lastOped
+     */
+    public CSAcc ( NickInfo ni, HashString access, String lastOped ) {
         this.ni = ni;
         this.access = access;
         if ( lastOped != null ) {
@@ -63,7 +70,13 @@ public class CSAcc extends HashNumeric {
         this.hashMask = 0;
     }
     
-    public CSAcc ( String mask, int access, String lastOped ) {
+    /**
+     *
+     * @param mask
+     * @param access
+     * @param lastOped
+     */
+    public CSAcc ( String mask, HashString access, String lastOped ) {
         this.rawMask = mask;
         this.hashMask = mask.hashCode();
         String[] parts = mask.split("[!@/]");
@@ -176,18 +189,33 @@ public class CSAcc extends HashNumeric {
         return buf;
     }
     
+    /**
+     *
+     * @param str
+     * @return
+     */
     public static boolean isIPv4Address ( String str ) {
         Matcher match = IPv4.matcher ( str );
         return match.find ( );
         
     }
     
+    /**
+     *
+     * @param str
+     * @return
+     */
     public static boolean isIPv6Address ( String str ) {
         Matcher match = IPv6.matcher ( str );
         return match.find ( );
         
     }
      
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean matchUser ( User user ) {
         boolean matchNick = false;
         boolean matchUser = false;
@@ -227,17 +255,31 @@ public class CSAcc extends HashNumeric {
         return ( matchNick && matchUser && matchHost );
     }
     
+    /**
+     *
+     * @return
+     */
     public NickInfo getNick ( ) {
         return this.ni;
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean matchNick ( NickInfo ni ) {
         if ( this.ni != null && ni != null ) {
-            return ( this.ni.getHashName() == ni.getHashName() );
+            return ( this.ni.getName().is ( ni.getName() ) );
         }
         return false;
     }
     
+    /**
+     *
+     * @param mask
+     * @return
+     */
     public boolean matchMask ( String mask ) {
         if ( this.mask != null ) {
             return ( this.mask.hashCode() == mask.hashCode() );
@@ -245,6 +287,11 @@ public class CSAcc extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param mask
+     * @return
+     */
     public boolean matchHashMask ( String mask ) {
         if ( this.mask != null ) {
             return ( this.hashMask == mask.hashCode() );
@@ -252,25 +299,49 @@ public class CSAcc extends HashNumeric {
         return false;
     }
     
+    /**
+     * getMask
+     * @return
+     */
     public String getMask ( ) {
         return this.nick+"!"+this.user+"@"+this.host+( isCidr ? "/"+this.cidr : "" );
     } 
     
+    /**
+     * getHashMask
+     * @return
+     */
     public int getHashMask ( ) {
         return this.hashMask;
     }
     
+    /**
+     * getRawMask
+     * @return
+     */
     public String getRawMask ( ) {
         return this.rawMask;
     }
     
-    public int getAccess ( ) {
+    /**
+     * GetAccess
+     * @return
+     */
+    public HashString getAccess ( ) {
         return this.access;
     }
 
+    /**
+     * getLastOped
+     * @return
+     */
     public String getLastOped ( ) {
         return this.lastOped;
     }
+
+    /**
+     * updateLastOped
+     */
     public void updateLastOped ( ) {
         this.lastOped = dateFormat.format ( new Date ( ) );
     }

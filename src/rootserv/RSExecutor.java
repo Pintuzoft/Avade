@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program hasAccess free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program hasAccess distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -19,6 +19,7 @@ package rootserv;
 
 import core.Executor;
 import core.Handler;
+import core.HashString;
 import core.Proc;
 import nickserv.NickInfo;
 import nickserv.NickServ;
@@ -49,29 +50,24 @@ public class RSExecutor extends Executor {
         
         this.found = true; /* Assume that everything will go correctly */
 
-        switch ( cmd[3].toUpperCase ( ) .hashCode ( )  )  {
-            case STOP :
-                this.stop ( user, cmd );
-                break;
-                          
-            case REHASH :
-                this.rehash ( user, cmd );
-                break;
-                
-            case SRAW :
-                this.sraw ( user, cmd );
-                break;
-                
-            case SRA :
-                this.sra ( user, cmd );
-                break;
-                 
-            case PANIC :
-                this.panic ( user, cmd );
-                break;
-                
-            default: 
+        HashString command = new HashString ( cmd[3] );
+        
+        if ( command.is(STOP) ) {
+            this.stop ( user, cmd );
+        
+        } else if ( command.is(REHASH) ) {
+            this.rehash ( user, cmd );
+        
+        } else if ( command.is(SRAW) ) {
+            this.sraw ( user, cmd );
+        
+        } else if ( command.is(SRA) ) {
+            this.sra ( user, cmd );
+        
+        } else if ( command.is(PANIC) ) {
+            this.panic ( user, cmd );
         }
+         
         this.snoop.msg ( this.found, user, cmd );
     }
 
@@ -113,6 +109,7 @@ public class RSExecutor extends Executor {
         System.out.println ( "debug ( doSra );" );
         NickInfo sra;
         NickInfo target;
+        HashString command;
         
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" ) );
@@ -123,11 +120,13 @@ public class RSExecutor extends Executor {
             return;
         }
 
-        if ( cmd[4].toUpperCase().hashCode() == LIST ) {
-            this.doListSra ( user ); 
+        command = new HashString ( cmd[4] );
+        
+        if ( command.is(LIST) ) {
+            this.doListSra ( user );
             return;
         }
-        
+         
         sra     = NickServ.findNick ( user.getSID().getOper().getString ( NAME ) );
         target  = NickServ.findNick ( cmd[5] );
         
@@ -138,29 +137,26 @@ public class RSExecutor extends Executor {
             this.service.sendMsg ( user, output ( NICK_NOT_REGGED, cmd[5] )  );
 
         } else {
-            switch ( cmd[4].toUpperCase().hashCode ( ) ) {
-                case ADD :
-                    if ( RSDatabase.addSra ( sra, target )  )  {
-                        this.service.sendMsg ( user, output ( SRA_ADD, target.getName ( )  )  );
-                        this.service.sendGlobOp ( output ( GLOB_SRA_ADD, sra.getName ( ) , target.getName ( )  )  );
-                    } else {
-                        this.service.sendMsg ( user, output ( SRA_NOT_ADD, target.getName ( )  )  );
-                    }
-                    break;
-                    
-                case DEL :
-                    if ( RSDatabase.delSra ( target )  )  {
-                        this.service.sendMsg ( user, output ( SRA_DEL, target.getName ( )  )  );
-                        this.service.sendGlobOp ( output ( GLOB_SRA_DEL, sra.getName ( ) , target.getName ( )  )  );
-                    } else {
-                        this.service.sendMsg ( user, output ( SRA_NOT_DEL, target.getName ( )  )  );
-                    }
-                    break;
-                    
-                default:  
-                    this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" )  ); 
-                
+            if ( command.is(ADD) ) {
+                if ( RSDatabase.addSra ( sra, target )  )  {
+                    this.service.sendMsg ( user, output ( SRA_ADD, target.getNameStr() ) );
+                    this.service.sendGlobOp ( output ( GLOB_SRA_ADD, sra.getNameStr(), target.getNameStr() ) );
+                } else {
+                    this.service.sendMsg ( user, output ( SRA_NOT_ADD, target.getNameStr() ) );
+                }   
+           
+            } else if ( command.is(DEL) ) {
+                if ( RSDatabase.delSra ( target )  )  {
+                    this.service.sendMsg ( user, output ( SRA_DEL, target.getNameStr() ) );
+                    this.service.sendGlobOp ( output ( GLOB_SRA_DEL, sra.getNameStr(), target.getNameStr() ) );
+                } else {
+                    this.service.sendMsg ( user, output ( SRA_NOT_DEL, target.getNameStr() ) );
+                }
+            
+            } else {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" )  ); 
             }
+            
         }
     }
      
@@ -182,11 +178,11 @@ public class RSExecutor extends Executor {
         //  0           1       2                           3     4   5       = 6
         NickInfo sra;
         System.out.println ( "debug ( doPanic );" );
-        int state;
+        HashString state;
         String panic;
         
         if ( cmd.length > 4 ) {
-            state = cmd[4].toUpperCase().hashCode();
+            state = new HashString ( cmd[4] );
         } else {
             state = NONE;
         }
@@ -198,70 +194,55 @@ public class RSExecutor extends Executor {
             return;
         }
         
-        switch ( state ) {
-            case OPER :
-            case IDENT :
-            case USER :
-                RootServ.setPanic ( state );
-                panic = RootServ.getPanicStr ( state );
-                break;
-
-            case NONE :
-                Handler.getRootServ().sendMsg ( u, "Panic state is: "+RootServ.getPanicStr ( NONE ) );
-                return;
-                
-            default : 
-                Handler.getRootServ().sendMsg ( u, "Error: not a valid panic state" );
-                return;
+        if ( state.is(OPER) ||
+             state.is(IDENT) ||
+             state.is(USER) ) {
+            RootServ.setPanic ( state );
+            panic = RootServ.getPanicStr ( state );            
+        
+        } else if ( state.is(NONE) ) {
+            Handler.getRootServ().sendMsg ( u, "Panic state is: "+RootServ.getPanicStr ( NONE ) );
+            return;
+            
+        } else {
+            Handler.getRootServ().sendMsg ( u, "Error: not a valid panic state" );
+            return;
         }
         Handler.getRootServ().sendGlobOp ( sra.getName()+" changed PANIC state to: "+panic );
     }
     
     /* OUTPUT */
-    public String output ( int code, String... args )  {
-        switch ( code )  {
-            case ACCESS_DENIED :
-                return "Access denied!";
-                
-            case SYNTAX_ERROR :
-                return "Syntax: /OperServ "+args[0];
-                
-            case NICK_NOT_REGGED :
-                return "Nick "+args[0]+" is not registered";
-                
-            case SRA_ADD :
-                return "Nick "+args[0]+" was added to the SRA list";
-                
-            case SRA_NOT_ADD :
-                return "Nick "+args[0]+" was NOT added to the SRA list"; 
-                
-            case SRA_DEL :
-                return "Nick "+args[0]+" was deleted from the SRA list";
-                
-            case SRA_NOT_DEL :
-                return "Nick "+args[0]+" was NOT deleted from the SRA list";
-                
-            case GLOB_SRA_ADD :
-                return args[0]+" has added "+args[1]+" to the Services Root Admin list";
-                
-            case GLOB_SRA_DEL :
-                return args[0]+" has removed "+args[1]+" from the Services Root Admin list";
-                
-            default: 
-                return ""; 
-            
-        }
+    public String output ( HashString code, String... args )  {
+        if ( code.is(ACCESS_DENIED) ) {
+            return "Access denied!";
+        
+        } else if ( code.is(SYNTAX_ERROR) ) {
+            return "Syntax: /OperServ "+args[0];
+        
+        } else if ( code.is(NICK_NOT_REGGED) ) {
+            return "Nick "+args[0]+" is not registered";
+        
+        } else if ( code.is(SRA_ADD) ) {
+            return "Nick "+args[0]+" was added to the SRA list";
+        
+        } else if ( code.is(SRA_NOT_ADD) ) {
+            return "Nick "+args[0]+" was NOT added to the SRA list"; 
+        
+        } else if ( code.is(SRA_DEL) ) {
+            return "Nick "+args[0]+" was deleted from the SRA list";
+        
+        } else if ( code.is(SRA_NOT_DEL) ) {
+            return "Nick "+args[0]+" was NOT deleted from the SRA list";
+        
+        } else if ( code.is(GLOB_SRA_ADD) ) {
+            return args[0]+" has added "+args[1]+" to the Services Root Admin list";
+        
+        } else if ( code.is(GLOB_SRA_DEL) ) {
+            return args[0]+" has removed "+args[1]+" from the Services Root Admin list";
+        
+        } else {
+            return "";
+        }  
     }
     
-    private static final int ACCESS_DENIED      = 1001;
-    private static final int SYNTAX_ERROR       = 1002;
-    private static final int NICK_NOT_REGGED    = 1003;
-    private static final int SRA_ADD            = 1004;
-    private static final int SRA_NOT_ADD        = 1005;
-    private static final int SRA_DEL            = 1006;
-    private static final int SRA_NOT_DEL        = 1007;
-    
-    private static final int GLOB_SRA_ADD       = 1101;
-    private static final int GLOB_SRA_DEL       = 1102;
-
 }

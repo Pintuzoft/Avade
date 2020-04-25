@@ -18,6 +18,7 @@
 package command;
 
 import core.HashNumeric;
+import core.HashString;
 
 /**
  *
@@ -27,12 +28,12 @@ public class Command extends HashNumeric {
     private String      id;
     private int         hash;
     private Object      target;
-    private int         targetType;
-    private int         command;
+    private HashString  targetType;
+    private HashString  command;
     private String      extra;
     private String      extra2;
     
-    public Command ( String id, Object target, int targetType, int command, String extra, String extra2 )  {
+    public Command ( String id, Object target, HashString targetType, HashString command, String extra, String extra2 )  {
         this.id = id;
         this.hash = id.hashCode ( );
         this.target = target;
@@ -54,11 +55,11 @@ public class Command extends HashNumeric {
         return this.target;
     }
     
-    public int getTargetType ( ) { 
+    public HashString getTargetType ( ) { 
         return this.targetType;
     }
     
-    public int getCommand ( ) {
+    public HashString getCommand ( ) {
         return this.command;
     } 
 

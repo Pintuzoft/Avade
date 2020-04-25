@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program isSet distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -27,6 +27,7 @@ import command.Command;
 import core.CommandInfo;
 import core.Database;
 import core.Handler;
+import core.HashString;
 import core.Proc;
 import core.Service;
 import core.StringMatch;
@@ -102,14 +103,14 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Get nick email" )              );
     }
     
-    public static ArrayList<CommandInfo> getCMDList ( int access ) {
+    public static ArrayList<CommandInfo> getCMDList ( HashString access ) {
         return Handler.getNickServ().getCommandList ( access );
     }
-    public static boolean enoughAccess ( User user, int hashName ) {
+    public static boolean enoughAccess ( User user, HashString hashName ) {
         return Handler.getNickServ().checkAccess ( user, hashName );
     }
     
-    public boolean checkAccess ( User user, int hashName )  {
+    public boolean checkAccess ( User user, HashString hashName )  {
         int access              = user.getAccess ( );
         CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
         if ( access < cmdInfo.getAccess ( )  )  {
@@ -128,30 +129,28 @@ public class NickServ extends Service {
         //user.getUserFlood().incCounter ( this );
         
         cmd[3] = cmd[3].substring ( 1 );
-        switch ( cmd[3].toUpperCase ( ) .hashCode ( )  )  {
-            case HELP :
-                this.helper.parse ( user, cmd );
-                break;
-                
-            default: 
-                this.executor.parse ( user, cmd );
-                
-        } 
+        HashString command = new HashString ( cmd[3] );
+        if ( command.is(HELP) ) {
+            this.helper.parse ( user, cmd );
+        } else {
+            this.executor.parse ( user, cmd );
+        }
+         
     }
       
     /* Registered entities */
     public static NickInfo findNick ( String source )  {
-        int hashCode;
+        HashString name;
         NickInfo ni2;
         
         if ( source.contains ( ":" )  )  {
-            hashCode = source.substring ( 1 ) .toUpperCase ( ) .hashCode ( );
+            name = new HashString ( source.substring(1) );
         } else {
-            hashCode = source.toUpperCase ( ) .hashCode ( );
+            name = new HashString ( source );
         }
         /* Check our active list first */
         for ( NickInfo ni : niList )  { 
-            if ( ni.getHashName ( )  == hashCode )  {
+            if ( ni.is(name) )  {
                 return ni;
             }
         }
@@ -159,11 +158,11 @@ public class NickServ extends Service {
     }
     
     /* Registered entities */
-    public static NickInfo findNick ( int hashCode )  {
+    public static NickInfo findNick ( HashString name )  {
         NickInfo ni2;
         /* Check our active list first */
         for ( NickInfo ni : niList )  { 
-            if ( ni.getHashName ( )  == hashCode )  {
+            if ( ni.is(name) )  {
                 return ni;
             }
         }
@@ -173,7 +172,7 @@ public class NickServ extends Service {
     static ArrayList<NickInfo> searchNicks ( String string ) {
         ArrayList<NickInfo> nicks = new ArrayList<>();
         for ( NickInfo ni : niList) {
-            if ( StringMatch.wild ( ni.getName().toUpperCase(), string.toUpperCase() ) ) {
+            if ( StringMatch.wild ( ni.getName().getString().toUpperCase(), string.toUpperCase() ) ) {
                 nicks.add ( ni );
             }
         }
@@ -211,7 +210,7 @@ public class NickServ extends Service {
             return;
         }
         for ( User user : Handler.findUsersByNick ( ni ) ) {
-            if ( ni.getHashName() != user.getHash() ) {
+            if ( ! user.hasAccess(ni.getName()) ) {
                 user.getSID().del ( ni );
                 Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
             }
@@ -225,8 +224,8 @@ public class NickServ extends Service {
         for ( User user : Handler.findUsersByNick ( ni ) ) {
             user.getSID().del ( ni );
             Handler.addUpdateSID ( user.getSID() );
-            if ( user.getHashName() == ni.getHashName() ) {
-                ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+user.getString ( NAME ) +" 0 -r" );
+            if ( user.hasAccess(ni.getName()) ) {
+                ServSock.sendCmd ( ":"+Proc.getConf().get(NAME)+" SVSMODE "+user.getName()+" 0 -r" );
                 Handler.getGuestServ().addNick ( user, ni );
             }
             Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
@@ -280,18 +279,14 @@ public class NickServ extends Service {
         if ( NSDatabase.activateConnection() && newAuthList.size() > 0 ) {
             ArrayList<NSAuth> auths = new ArrayList<>();
             for ( NSAuth auth : newAuthList ) {
-                switch ( auth.getType() ) {
-                    case MAIL :
-                        if ( NSDatabase.addMail ( auth ) ) {
-                            auths.add ( auth );
-                        }
-                        break;
-                        
-                    case PASS :
-                        if ( NSDatabase.addPass ( auth ) ) {
-                            auths.add ( auth );
-                        }
-                        break;
+                if ( auth.is(MAIL) ) {
+                    if ( NSDatabase.addMail ( auth ) ) {
+                        auths.add ( auth );
+                    }
+                } else if ( auth.is(PASS) ) {
+                    if ( NSDatabase.addPass ( auth ) ) {
+                        auths.add ( auth );
+                    }
                 }
             }
             for ( NSAuth auth : auths ) {
@@ -351,25 +346,18 @@ public class NickServ extends Service {
 
     /*************/
     
-    private static ArrayList<NickInfo> getWorkList ( int name ) {
-        switch ( name ) {
-            case REGISTER :
-                return regList;
-            
-            case CHANGE :
-                return changeList;
-            
-            case DELETE :
-                return deleteList;
-            
-            default :
-                return new ArrayList<>();
+    private static ArrayList<NickInfo> getWorkList ( HashString it ) {
+        if      ( it.is(REGISTER) )         { return regList;                   }
+        else if ( it.is(CHANGE) )           { return changeList;                }
+        else if ( it.is(DELETE) )           { return deleteList;                }
+        else {
+            return new ArrayList<>();
         }
     }
     
-    public static void addToWorkList ( int list, NickInfo ni ) {
+    public static void addToWorkList ( HashString list, NickInfo ni ) {
         for ( NickInfo ni2 : getWorkList ( list ) ) {
-            if ( ni2.getHashName() == ni.getHashName() ) {
+            if ( ni2.is(ni) ) {
                 return;
             }
         }
@@ -453,7 +441,7 @@ public class NickServ extends Service {
     public static void deleteNick ( NickInfo ni )  {
         NickInfo target = null;
         for ( NickInfo nBuf : niList )  {
-            if ( nBuf.getHashName ( )  == ni.getHashName ( )  )  {
+            if ( nBuf.is(ni) ) {
                 target = nBuf;
             }
         }
@@ -469,7 +457,7 @@ public class NickServ extends Service {
             return;
         }
         
-        ni = NickServ.findNick ( u.getHashName ( ) );
+        ni = NickServ.findNick ( u.getName ( ) );
         
         if ( ni != null ) {
             if ( u.getSID() != null && u.getSID().isIdentified ( ni ) ) {
@@ -505,11 +493,11 @@ public class NickServ extends Service {
         ArrayList<ChanInfo> cList;
         ArrayList<ChanInfo> remList = new ArrayList<>();
         CSAcc acc = null;
-        int[] lists = { SOP, AOP, AKICK };
-        HashMap<Integer,Integer> map = new HashMap ( );
-        map.put ( AOP, "DELAOP".hashCode() );
-        map.put ( SOP, "DELSOP".hashCode() );
-        map.put ( AKICK, "DELAKICK".hashCode() );
+        HashString[] lists = { SOP, AOP, AKICK };
+        //HashMap<Integer,Integer> map = new HashMap ( );
+        //map.put ( AOP, "DELAOP".hashCode() );
+        //map.put ( SOP, "DELSOP".hashCode() );
+        //map.put ( AKICK, "DELAKICK".hashCode() );
         
         remList.addAll ( ni.getChanAccess ( FOUNDER ) );
         for ( ChanInfo ci : remList ) {
@@ -518,12 +506,12 @@ public class NickServ extends Service {
             CSDatabase.logEvent ( log );
         }
 
-        for ( int list : lists ) {
+        for ( HashString list : lists ) {
             remList.addAll ( ni.getChanAccess ( list ) );
             for ( ChanInfo ci : remList ) {
                 if ( ( acc = ci.getAccess ( list, ni ) ) != null ) {
                     ci.delAccess ( list, acc );
-                    CSAccessLogEvent log = new CSAccessLogEvent ( ci.getName(), map.get ( list ), ni.getName() );
+                    CSAccessLogEvent log = new CSAccessLogEvent ( ci.getName(), list, ni.getNameStr() );
                     ChanServ.addAccessLog ( log );
                 }
             }
@@ -542,7 +530,7 @@ public class NickServ extends Service {
         }
         niList.remove ( ni );
         
-        /* When all is done lets put the nick in the delete list */
+        /* When all isSet done lets put the nick in the delete list */
         NickServ.addToWorkList ( DELETE, ni );
     }    
 

@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import core.HashString;
 import core.Proc;
 import core.Service;
 import monitor.Snoop;
@@ -30,7 +31,7 @@ public class OSSnoop extends Snoop {
 
     public OSSnoop ( Service service )  {
         super ( );
-        String channel          = Proc.getConf ( ) .get (SNOOPOPERSERV );
+        HashString channel      = Proc.getConf().get(SNOOPOPERSERV);
         this.service            = service;
         this.chan               = channel;
     } 

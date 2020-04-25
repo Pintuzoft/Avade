@@ -1,12 +1,12 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program is free software; you can redistribute it and/or
+ * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This program isSet distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -73,7 +73,9 @@ public class Handler extends HashNumeric {
     private String[]                        data; 
     private String                          source;
     private static Date                     date;
-
+    private HashString                      command;
+    
+    
     private static SimpleTimeZone           timeZone;
     private static Locale                   locale;
     private static SimpleDateFormat         sdf;
@@ -85,6 +87,7 @@ public class Handler extends HashNumeric {
     private String                          buf; 
     private Queue                           cmdQueue;
     private static boolean                  sanity;
+    private HashString bufhash;
     
     public Handler ( )  { 
         this.config = Proc.getConf ( );
@@ -124,34 +127,30 @@ public class Handler extends HashNumeric {
         guest = null;
     }
     
-    public static void initService ( int type, Service service ) {
+    public static void initService ( HashString type, Service service ) {
         if ( service == null ) {
-            switch ( type ) {
-                case ROOTSERV :
-                    root = new RootServ ( );
-                    
-                case OPERSERV :
-                    oper = new OperServ ( );
-                    
-                case NICKSERV :
-                    nick = new NickServ ( );
-                    
-                case CHANSERV :
-                    chan = new ChanServ ( );
-                    
-                case MEMOSERV :
-                    memo = new MemoServ ( );
-                          
-                case GUESTSERV :
-                    guest = new GuestServ ( );
-                             
-                case GLOBAL :
-                    global = new Service ( "Global" ) {};
-                             
-                default :
-                    
+            if ( type.is(ROOTSERV) ) {
+                root = new RootServ ( );
+            
+            } else if ( type.is(OPERSERV) ) {
+                oper = new OperServ ( );
+            
+            } else if ( type.is(NICKSERV) ) {
+                nick = new NickServ ( );
+            
+            } else if ( type.is(CHANSERV) ) {
+                chan = new ChanServ ( );
+            
+            } else if ( type.is(MEMOSERV) ) {
+                memo = new MemoServ ( );
+            
+            } else if ( type.is(GUESTSERV) ) {
+                guest = new GuestServ ( );
+            
+            } else if ( type.is(GLOBAL) ) {
+                global = new Service ( "Global" ) {};
             }
-        }
+        } 
     }
     
     public void process ( String read )  {
@@ -169,41 +168,35 @@ public class Handler extends HashNumeric {
             Proc.log ( Handler.class.getName ( ) , e );
             return;
         }
-
+        
+        
         try {
             if ( this.data[0].contains ( ":" )  )  {
                 /* We are reading from a server or user */
                 this.source = this.data[0].substring ( 1 );
                 if ( this.source.contains ( "." )  )  { 
                     /* Server stuff */
+                    this.command = new HashString ( this.data[1] );
+                    
+                    if ( command.is(SERVER) ) {
+                        sList.add ( new Server ( this.data ) );
+                        root.sendPanic();
+                        
+                    } else if ( command.is(SJOIN) ) {
+                        doChan ( true );
 
-                    switch ( this.data[1].hashCode ( )  )  {
-                        case SERVER :
-                            sList.add ( new Server ( this.data ) );
-                            root.sendPanic();
-                            break;
-                            
-                        case SJOIN :
-                            doChan ( true );
-                            break;
-                            
-                        case TOPIC :
-                            doTopic ( this.data );
-                            break;
-                            
-                        case LUSERSLOCK :
-                            doFinishSync ( this.data );
-                            break;
-                            
-                        case GLOBOPS :
-                            doGlobOps ( this.data );
-                            break;
-                            
-                        case OS :
-                            doOS ( this.data );
-                            break;
-                            
-                    } 
+                    } else if ( command.is(TOPIC) ) {
+                        doTopic ( this.data );
+
+                    } else if ( command.is(LUSERSLOCK) ) {
+                        doFinishSync ( this.data );
+
+                    } else if ( command.is(GLOBOPS) ) {
+                        doGlobOps ( this.data );
+
+                    } else if ( command.is(OS) ) {
+                        doOS ( this.data );
+                    }
                     
                 } else {
                     /* User stuff */ 
@@ -212,74 +205,64 @@ public class Handler extends HashNumeric {
                         return; 
                     }
                     
-
                     User user; 
                     user = findUser ( this.source );
-                     
+                    
+                    if ( user == null ) {
+                        System.out.println("DEBUG: NO USER FOUND!!!");
+                    }
+                    
                     if ( oper.isIgnored ( user ) ) {
                         return;
                     }
-                    switch ( this.data[1].hashCode ( )  )  {
-                        case PRIVMSG :
-                            doPrivmsg ( user );
-                            break;
-                            
-                        case MODE :
-                            doMode ( user );
-                            break;
-                            
-                        case SJOIN :
-                            doSJoin ( user );
-                            break;
-                            
-                        case TOPIC :
-                            doTopic ( user, this.data );
-                            break;
-                            
-                        case PART :
-                            doPart ( user );
-                            break;
-                            
-                        case KICK :
-                            doKick ( user );
-                            break;
-                            
-                        case QUIT :
-                            deleteUser ( user );
-                            break;
-                            
-                        case KILL :
-                            //this.nullService ( user ); /* null if service */
+                    
+                    this.command = new HashString ( this.data[1] );
+                     
+                    if ( this.command.is(PRIVMSG) ) {
+                        doPrivmsg ( user );
+                    
+                    } else if ( this.command.is(MODE) ) {
+                        doMode ( user );
+                    
+                    } else if ( this.command.is(SJOIN) ) {
+                        doSJoin ( user );
+                    
+                    } else if ( this.command.is(TOPIC) ) {
+                        doTopic ( user, this.data );
+                    
+                    } else if ( this.command.is(PART) ) {
+                        doPart ( user );
+                    
+                    } else if ( this.command.is(KICK) ) {
+                        doKick ( user );
+                    
+                    } else if ( this.command.is(QUIT) ) {
+                        deleteUser ( user );
+                    
+                    } else if ( this.command.is(KILL) ) {
+                        //this.nullService ( user ); /* null if service */
                             User u;
                             if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
                                 deleteUser ( u );
                             }
-                            break;
-                            
-                        case NICK :
-                            doNick ( user );
-                            break;
-                            
-                        case MOTD :
-                            this.services.parse ( user, this.data );
-                            break;
-                            
-                        case VERSION :
-                            this.services.parse ( user, this.data );
-                            break;
-                            
-                        case INFO :
-                            this.services.parse ( user, this.data );
-                            break;
-                            
-                        case STATS :
-                            this.services.parse ( user, this.data );
-                            break;
-                            
-                        default : 
-                            
+                    
+                    } else if ( this.command.is(NICK) ) {
+                        doNick ( user );
+                        
+                        
+                    } else if ( this.command.is(MOTD) ) {
+                        this.services.parse ( user, this.data );
+                    
+                    } else if ( this.command.is(VERSION) ) {
+                        this.services.parse ( user, this.data );
+                    
+                    } else if ( this.command.is(INFO) ) {
+                        this.services.parse ( user, this.data );
+                    
+                    } else if ( this.command.is(STATS) ) {
+                        this.services.parse ( user, this.data );
                     }
- 
+                     
                     // :DreamHealer NICK fr :1321662151
                     // :DreamHea1er QUIT :Quit: leaving         
                     // :DreamHealer MODE #friends 1320518761 -o DreamHealer
@@ -288,48 +271,40 @@ public class Handler extends HashNumeric {
 
             } else {
                 /* We are getting  */
-                switch ( this.data[0].hashCode ( )  )  {
-                        case SERVER :
-                            sList.add ( new Server ( this.data ) );
-                            root.sendPanic();
-                            break;
-                            
-                        case SJOIN :
-                            this.doChan ( false );
-                            break;
-                            
-                        case SQUIT :
-                            this.doSquit ( );
-                            break;
-                            
-                        case SVINFO :
-                            this.doSVInfo ( );
-                            break;
-                            
-                        case PING :
-                            this.doPing ( );
-                            break;
-                            
-                        case NICK :
-                            this.doNick ( );
-                            break;
-                                  
-                        case SF :
-                            this.doSF ( );
-                            break;
-                            
-                        case ERROR :
-                            this.doError ( );
-                            break;
-                            
-                        default : 
-                            
+
+                this.command = new HashString ( this.data[0] );
+                
+                if ( this.command.is(SERVER) ) {
+                    sList.add ( new Server ( this.data ) );
+                    root.sendPanic();
+                
+                } else if ( this.command.is(SJOIN) ) {
+                    this.doChan ( false );
+                
+                } else if ( this.command.is(SQUIT) ) {
+                    this.doSquit ( );
+                
+                } else if ( this.command.is(SVINFO) ) {
+                    this.doSVInfo ( );
+                
+                } else if ( this.command.is(PING) ) {
+                    this.doPing ( );
+                
+                } else if ( this.command.is(NICK) ) {
+                    this.doNick ( );
+                
+                } else if ( this.command.is(SF) ) {
+                    this.doSF ( );
+                
+                } else if ( this.command.is(ERROR) ) {
+                    this.doError ( );
                 }
                  
             }
         } catch ( Exception e )  {
             Proc.log ( Handler.class.getName ( ) , e );
         }
+        
     }
     
     /*****************************/
@@ -349,60 +324,47 @@ public class Handler extends HashNumeric {
     
     //     :Guest12203 PRIVMSG NickServ@services.sshd.biz :identify asd.
     private void doPrivmsg ( User user )  {
-        this.buf = this.data[2].toUpperCase ( ) .substring ( 0, this.data[2].lastIndexOf ( "@" )  );
+        HashString service = new HashString ( this.data[2].substring ( 0, this.data[2].lastIndexOf ( "@" ) ) );
         
-        switch ( this.buf.hashCode ( )  )  {
-            case ROOTSERV :
-                if ( RootServ.isUp ( )  )  { 
-                    Handler.root.parse ( user, this.data );
-                } else { 
-                    this.sendNoSuchNick ( user, "RootServ" ); 
-                }
-                break;
-                
-            case OPERSERV :
-                oper.parse ( user, this.data );
-                break;
-                
-            case CHANSERV :
-                if ( ChanServ.isUp ( ) ) { 
-                    chan.parse ( user, this.data );
-                } else { 
-                    this.sendNoSuchNick ( user, "ChanServ" ); 
-                } 
-                break;
-                
-            case NICKSERV :
-                if ( NickServ.isUp ( ) ) { 
-                    nick.parse ( user, this.data ); 
-                } else { 
-                    this.sendNoSuchNick ( user, "NickServ" );
-                }
-                break;
-                
-            case MEMOSERV :
-                if ( MemoServ.isUp ( ) ) { 
-                    memo.parse ( user, this.data ); 
-                } else { 
-                    this.sendNoSuchNick ( user, "MemoServ" ); 
-                }
-                break;
-                
-            default : 
-                
+        if ( service.is(ROOTSERV) ) {
+            if ( RootServ.isUp ( )  )  { 
+                Handler.root.parse ( user, this.data );
+            } else { 
+                this.sendNoSuchNick ( user, "RootServ" ); 
+            }
+
+        } else if ( service.is(OPERSERV) ) {
+            oper.parse ( user, this.data );
+
+        } else if ( service.is(CHANSERV) ) {
+            if ( ChanServ.isUp ( ) ) { 
+                chan.parse ( user, this.data );
+            } else { 
+                this.sendNoSuchNick ( user, "ChanServ" ); 
+            } 
+            
+        } else if ( service.is(NICKSERV) ) {
+            if ( NickServ.isUp ( ) ) { 
+                nick.parse ( user, this.data ); 
+            } else { 
+                this.sendNoSuchNick ( user, "NickServ" );
+            }
+            
+        } else if ( service.is(MEMOSERV) ) {
+            if ( MemoServ.isUp ( ) ) { 
+                memo.parse ( user, this.data ); 
+            } else { 
+                this.sendNoSuchNick ( user, "MemoServ" ); 
+            } 
         }
+         
     }
     
     private void doOS ( String[] data ) {
-        switch ( data[2].toUpperCase().hashCode() ) {
-            case SFAKILL :
-                oper.addSFAkill ( data );
-                break;
-                
-            default :
-                
-        }
-        
+        HashString command = new HashString ( data[2] );
+        if ( command.is(SFAKILL) ) {
+            oper.addSFAkill ( data );
+        } 
     }
       
     private void doSF ( ) {
@@ -448,43 +410,63 @@ public class Handler extends HashNumeric {
     private void doNick ( )  {
         User u = new User ( this.data );
         ServicesID sid = null;
-
+        System.out.println("doNick(): 0");
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
         try {
+        System.out.println("doNick(): 1");
             long serviceID = Long.parseLong ( this.data[8] );
+        System.out.println("doNick(): 2");
             if ( serviceID > 999 ) {
+        System.out.println("doNick(): 3");
                 u.setSID ( Handler.findSplitSID ( serviceID ) );
             }
+        System.out.println("doNick(): 4");
             
         } catch ( NumberFormatException ex ) {
+        System.out.println("doNick(): 5");
             Proc.log ( Handler.class.getName ( ), ex );
         }
+        System.out.println("doNick(): 6");
         
         if ( u.getSID() == null ) {
+        System.out.println("doNick(): 7");
             u.setSID ( new ServicesID ( ) );
         }  
+        System.out.println("doNick(): 8");
         
         NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
+        System.out.println("doNick(): 9");
         
         if ( ni != null && u.getModes().is ( IDENT ) ) {
+        System.out.println("doNick(): 10");
             u.getSID().add ( ni );
         } else {
+        System.out.println("doNick(): 11");
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
+        System.out.println("doNick(): 12");
             u.getModes().set ( IDENT, false );
         }
+        System.out.println("doNick(): 13");
         
         NickServ.fixIdentState ( u );
+        System.out.println("doNick(): 14");
         uList.add ( u );
+        System.out.println("doNick(): 15");
         
         Server s = findServer ( this.data[7] );
+        System.out.println("doNick(): 16");
         if ( s != null ) {
+        System.out.println("doNick(): 17");
             s.addUser ( u );
         }
+        System.out.println("doNick(): 18");
 //        NickInfo ni;
   //      if ( () == null ) {
     //    }
         checkTrigger ( u );
+        System.out.println("doNick(): 19");
         this.oper.checkUser ( u ); /* Add user in OperServ check queue (akills etc) */
+        System.out.println("doNick(): 20");
     }
     
     private static void checkTrigger ( User user ) {
@@ -499,15 +481,24 @@ public class Handler extends HashNumeric {
             }
         }
         String reason;
-        switch ( Trigger.getAction() ) {
-            case AKILL :
+        
+        HashString action = Trigger.getAction();
+        
+        if ( action.is(AKILL) ) {
                 String stamp = dateFormat.format ( new Date ( ) );
                 String percent;
                 boolean foundOperMatch = false;
+                HashString id;
+                HashString mask;
                 String expire = Handler.expireToDateString ( stamp, "30m" );
-                if ( ipCount > Trigger.getActionIP() ) {
+                if ( ipCount > Trigger.getActionIP ( ) ) {
                     reason = "Cloning. Too many clients found from this IP. 30 min ban.";
-                    ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
+                    id = new HashString ( ""+System.nanoTime() );
+                    mask = new HashString ( "*!*@"+user.getIp() );
+       //    public ServicesBan ( HashString type, HashString id, boolean readyID, HashString mask, String reason, String instater, String timeStr, String expireStr ) {
+
+                    
+                    ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
                     percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
                     if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
                         Handler.getOperServ().addServicesBan ( ban );
@@ -521,8 +512,10 @@ public class Handler extends HashNumeric {
                     }
                 }
                 if ( ipCount > Trigger.getActionRange() ) {
+                    id = new HashString ( ""+System.nanoTime() );
+                    mask = new HashString ( "*!*@"+user.getIp() );
                     reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
-                    ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
+                    ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
                     percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
                     if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
                         Handler.getOperServ().addServicesBan ( ban );
@@ -535,24 +528,16 @@ public class Handler extends HashNumeric {
                         oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
                     }
                 }
-                break;
-            
-            case KILL :
+        
+        } else if ( action.is(KILL) ) {
                 if ( ipCount > Trigger.getActionIP() ) {
                     reason = "Cloning. Too many clients found from this IP.";
                     oper.sendGlobOp ( "KILL: "+user.getFullMask()+" for cloning." );
                     oper.sendRaw ( "KILL "+user.getName()+" :"+reason );
                     Handler.deleteUser ( user );
                 }
-                break;
-                
-            default:
-                
         }
-        
-        
-        
-
+         
   /*      if ( Trigger.getAction() == AKILL && ipCount > Trigger.getActionIP() ) {
                 String stamp = dateFormat.format ( new Date ( ) );
                 String reason = "Cloning. Too many clients found from this IP. 30 min ban.";
@@ -682,26 +667,21 @@ public class Handler extends HashNumeric {
         System.out.println("debug: doGlobOps()");
         CSLogEvent log;
         User user = Handler.findUser ( this.data[2].substring ( 1 ) );
-        int command = this.data[4].hashCode();
+        HashString command = new HashString ( this.data[4] );
         Chan chan = Handler.findChan(this.data[5].substring ( 1 ));
         //String chan = this.data[5].substring ( 1 );
         String string = Handler.cutArrayIntoString ( this.data, 6 ).replace(")", "");
         
-        switch ( command ) {
-            case SAJOIN :
-                log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, user.getOper().getName() );
-                ChanServ.addLog ( log );
-                chan.toggleSaJoin();
-                break;
-                
-            case SAMODE :
-                log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, user.getOper().getName() );
-                ChanServ.addLog ( log );
-                break;
-                
-            default :
-                
+        if ( command.is(SAJOIN) ) {
+            log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, user.getOper().getNameStr() );
+            ChanServ.addLog ( log );
+            chan.toggleSaJoin();
+        
+        } else if ( command.is(SAMODE) ) {
+            log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, user.getOper().getNameStr() );
+            ChanServ.addLog ( log );
         }
+         
     }
 
     /* Take array and cut it into string starting at position. Good for 
@@ -751,52 +731,57 @@ public class Handler extends HashNumeric {
         try { 
             sidList.add ( sid ); 
         } catch ( Exception e )  {
-            Proc.log ( Handler.class.getName ( ) , e );
+            Proc.log ( Handler.class.getName(), e );
         }
     }
     
-
-    public static User findUser ( String source ) {
-        if  ( uList == null )  {
-            return null;
-        }
-        int code = source.toUpperCase().hashCode ( );
-        for ( User u : uList ) {
-  //          System.out.println("NICK:"+u.getString(NAME));
-//            System.out.println("d: u:"+u.getString(NAME)+":"+u.hashCode()+":source:"+source+":"+code);
-            if ( u.hashCode() == code ) {
-                return u;
+    public static User findUser ( String name ) {
+        System.out.println("DEBUG: findUser: "+name);
+        HashString hash = new HashString ( name );
+        return findUser ( hash );
+    }
+    
+    public static User findUser ( HashString name ) {
+        for ( User user : uList ) {
+            System.out.println("DEBUG: finduser: "+name+":"+user.getNameStr());
+            if ( user.is(name) ) {
+                System.out.println("returning user");
+                return user;
             }
         } 
+        System.out.println("returning null");
         return null;
     }
     
-    public static Chan findChan ( String source )  {
-        int hashCode = source.toUpperCase().hashCode ( );
+    public static Chan findChan ( String name ) {
+        return findChan ( new HashString ( name ) );
+    }
+    
+    public static Chan findChan ( HashString name )  {
         for ( Chan c : cList )  {
-            if ( c.getHashName ( ) == hashCode )  {
+            if ( c.is(name) )  {
                 return c;
             }
         }
         return null;
     }
      
-    public Server getServer ( String source )  {
-        return findServer ( source );
+    public static Server findServer ( String source )  {
+        HashString name = new HashString ( source );
+        return findServer ( name );
     }
     
-    public static Server findServer ( String source )  {
-        int hashCode = source.toUpperCase().hashCode ( );
-        for ( Server s : sList )  {
-            if ( s.getHashName ( )  == hashCode )  {
-                return s;
+    public static Server findServer ( HashString name )  {
+        for ( Server server : sList )  {
+            if ( server.is(name) )  {
+                return server;
             }
         }
         return null;
     }
 
     private void deleteEmpty ( Chan chan )  {
-        /* If the channel is empty lets remove it from memory */
+        /* If the channel isSet empty lets remove it from memory */
         try {
             if ( chan.empty ( ) )  {
                  cList.remove ( chan );
@@ -841,7 +826,7 @@ public class Handler extends HashNumeric {
     public void doRecursiveUList ( User u )  { 
         try {
             Config conf = Proc.getConf ( );
-            Server sHub = this.getServer ( conf.get ( CONNNAME )  );
+            Server sHub = this.findServer ( conf.get ( CONNNAME )  );
             if ( sHub != null )  {
                 sHub.recursiveUserList ( u, "" );
             }
@@ -927,7 +912,7 @@ public class Handler extends HashNumeric {
     public int runMinuteMaintenance ( )  {
         int todoAmount = 0;
         try {
-            initServices ( ); /* make sure everything is running */
+            initServices ( ); /* make sure everything isSet running */
             todoAmount += oper.minMaintenance ( );
             db.runMaintenance ( );
             
@@ -944,7 +929,7 @@ public class Handler extends HashNumeric {
         ArrayList<ServicesID> splitExpire = new ArrayList<>();
         int todoAmount = 0;
         try {
-            initServices ( ); /* make sure everything is running */
+            initServices ( ); /* make sure everything isSet running */
             todoAmount += NickServ.maintenance ( );
             todoAmount += ChanServ.maintenance ( );
             for ( ServicesID s : splitSIDs ) {
@@ -1028,7 +1013,7 @@ public class Handler extends HashNumeric {
         }
         ChanInfo ci = ChanServ.findChan ( data[2] );
         if ( ci != null )  {
-            /* The channel is registered, lets check if access is needed then set a new topic on it */
+            /* The channel isSet registered, lets check if access isSet needed then set a new topic on it */
               
             /* Save topic only if its goes through the checks */
             if ( chan.checkTopic ( user, c ) ) {
@@ -1075,11 +1060,14 @@ public class Handler extends HashNumeric {
     }
      
     public static ArrayList<User> findUsersByMask ( String mask )  {
+        return findUsersByMask ( new HashString ( mask ) );
+    }
+    public static ArrayList<User> findUsersByMask ( HashString mask )  {
         ArrayList<User> ul = new ArrayList<> ( );
         for ( User user : uList )  {
-            if ( StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask )         ||
-                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask )     ||
-                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask )  )  {
+            if ( StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask.getString() )         ||
+                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask.getString() )     ||
+                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask.getString() )  )  {
                  ul.add ( user );
             }  
         } 
@@ -1145,28 +1133,24 @@ public class Handler extends HashNumeric {
         }
         
         /* take only the last char */
-        state = String.valueOf ( data.charAt ( data.length ( ) - 1 ) );
-        switch ( state.toUpperCase().hashCode ( ) ) {
-            case CHAR_m : 
-                timeUnit = "MINUTE";
-                break;
-                
-            case CHAR_h : 
-                timeUnit = "HOUR";
-                break;
-                
-            case CHAR_d : 
-                timeUnit = "DAY";
-                break;
-                         
-            case CHAR_y : 
-                timeUnit = "YEAR";
-                break;
-                
-            default: 
-                return "INTERVAL 0 DAYS";
-            
+        HashString ch = new HashString ( String.valueOf(data.charAt(data.length()-1)) );
+         
+        if ( ch.is(m) ) {
+            timeUnit = "MINUTE";
+        
+        } else if ( ch.is(h) ) {
+            timeUnit = "HOUR";
+        
+        } else if ( ch.is(d) ) {
+            timeUnit = "DAY";
+        
+        } else if ( ch.is(y) ) {
+            timeUnit = "YEAR";
+        
+        } else {
+            return "INTERVAL 0 DAYS";
         }
+         
         return  "INTERVAL "+( amount * multiply )+" "+timeUnit;
     }
  
@@ -1247,12 +1231,21 @@ public class Handler extends HashNumeric {
             state = ""+data.charAt ( data.length() - 1 );
         }
         
-        switch ( state.toUpperCase().hashCode ( ) ) {
-            case CHAR_m: { multiply = 60; break;            }
-            case CHAR_h: { multiply = 60*60; break;         }
-            case CHAR_d: { multiply = 60*60*24; break;      }
-            default:     { multiply = 60;                   }
+        HashString ch = new HashString ( state );
+        
+        if ( ch.is(m) ) {
+            multiply = 60;
+        
+        } else if ( ch.is(h) ) {
+            multiply = 60*60;
+        
+        } else if ( ch.is(d) ) {
+            multiply = 60*60*24;
+        
+        } else {
+            multiply = 60;
         }
+         
         date.setTime ( date.getTime() + ( amount * multiply * 1000 ) );
         return dateFormat.format ( date );
     }
@@ -1273,47 +1266,40 @@ public class Handler extends HashNumeric {
     }
 
     private void nullService ( User user ) {
-        int nameHash = user.getString ( NAME ).toUpperCase().hashCode();
-        switch ( nameHash ) {
-            case ROOTSERV :
-                root = null;
-                break;
-                
-            case OPERSERV :
-                oper = null;
-                break;
-                
-            case NICKSERV :
-                nick = null;
-                break;
-                
-            case CHANSERV :
-                chan = null;
-                break;
-                
-            case MEMOSERV :
-                memo = null;
-                break;
-                
-            case GUESTSERV :
-                guest = null;
-                break;
-                
-            case GLOBAL :
-                global = null;
-                break;
-                
+        HashString name = user.getName();
+        
+        if ( name.is(ROOTSERV) ) {
+            root = null;
+        
+        } else if ( name.is(OPERSERV) ) {
+            oper = null;
+        
+        } else if ( name.is(NICKSERV) ) {
+            nick = null;
+        
+        } else if ( name.is(CHANSERV) ) {
+            chan = null;
+        
+        } else if ( name.is(MEMOSERV) ) {
+            memo = null;
+        
+        } else if ( name.is(GUESTSERV) ) {
+            guest = null;
+        
+        } else if ( name.is(GLOBAL) ) {
+            global = null;
         }
+         
     }
 
     private void doError ( ) {
-        int sub1 = this.data[1].replace(":", "").toUpperCase().hashCode();
-        int sub2 = this.data[2].replace(":", "").toUpperCase().hashCode();
+        HashString sub1 = new HashString ( this.data[1].replace(":", "") );
+        HashString sub2 = new HashString ( this.data[2].replace(":", "") );
         
-        if ( sub1 == CLOSING && sub2 == LINK ) {
+        if ( sub1 == CLOSING && 
+             sub2 == LINK ) {
             this.reInitServices ( );
         }
-         
     }
 
     public static ArrayList<Server> getServerList ( ) {
