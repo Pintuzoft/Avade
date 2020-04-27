@@ -225,12 +225,12 @@ public class CSDatabase extends Database {
                             "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = ? "+
                             "WHERE name = ?";
                     ps = sql.prepareStatement ( query );
-                    ps.setString  ( 1, ci.getFounder().getName().getString() );
+                    ps.setString  ( 1, ci.getFounder().getNameStr() );
                     ps.setString  ( 2, ci.getPass ( ) );
                     ps.setString  ( 3, salt.getString() );
                     ps.setString  ( 4, ci.getString ( DESCRIPTION ) );
                     ps.setString  ( 5, ci.getString ( LASTUSED ) );
-                    ps.setString  ( 6, ci.getString ( NAME )  ); 
+                    ps.setString  ( 6, ci.getNameStr() ); 
                     ps.executeUpdate ( );
                     ps.close ( );
                 }
@@ -999,9 +999,16 @@ public class CSDatabase extends Database {
             while ( res.next ( ) )  { 
                 settings = getSettings ( res.getString ( 1 ) ); 
                 chanFlag = getChanFlag ( new HashString ( res.getString ( 1 ) ) );
-                ci = new ChanInfo ( res.getString ( 1 ), res.getString ( 2 ), res.getString ( 3 ),
-                                    res.getString ( 4 ), getChanTopic ( res.getString ( 1 ) ),
-                                    res.getString ( 5 ), res.getString ( 6 ), settings );
+                ci = new ChanInfo ( 
+                    res.getString ( 1 ), 
+                    res.getString ( 2 ), 
+                    res.getString ( 3 ),
+                    res.getString ( 4 ),
+                    getChanTopic ( res.getString ( 1 ) ),
+                    res.getString ( 5 ), 
+                    res.getString ( 6 ), 
+                    settings
+                );
                 ci.setAccessList ( SOP, getChanAccess ( ci, SOP ) );
                 ci.setAccessList ( AOP, getChanAccess ( ci, AOP ) );
                 ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK ) );

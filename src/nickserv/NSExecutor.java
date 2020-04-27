@@ -242,18 +242,22 @@ import java.util.regex.Pattern;
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DROP <pass>" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
                 this.snoop.msg (false, NICK_NOT_REGISTERED, new HashString(result.getString1()), user, cmd );
                 return;            
+        
         } else if ( result.is(IDENTIFY_FAIL) ) {
                 this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr() ) ); 
                 this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(IS_MARKED) ) {
                 this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
                 this.snoop.msg (false, IS_MARKED, result.getNick().getName(), user, cmd );
                 return;             
+        
         } else if ( result.is(IS_FROZEN) ) {
                 this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
                 this.snoop.msg (false, IS_FROZEN, result.getString1(), user, cmd );

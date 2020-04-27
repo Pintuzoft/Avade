@@ -168,8 +168,7 @@ public class Handler extends HashNumeric {
             Proc.log ( Handler.class.getName ( ) , e );
             return;
         }
-        
-        
+         
         try {
             if ( this.data[0].contains ( ":" )  )  {
                 /* We are reading from a server or user */
@@ -207,11 +206,7 @@ public class Handler extends HashNumeric {
                     
                     User user; 
                     user = findUser ( this.source );
-                    
-                    if ( user == null ) {
-                        System.out.println("DEBUG: NO USER FOUND!!!");
-                    }
-                    
+                     
                     if ( oper.isIgnored ( user ) ) {
                         return;
                     }

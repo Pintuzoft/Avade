@@ -47,45 +47,8 @@ public class NSDatabase extends Database {
     private static ResultSet            res;
     private static ResultSet            res2;
     private static PreparedStatement    ps;
- 
-    /* Create hashcode in database for all nicknames that doesnt have one */
-    public static int fixDBHash ( )  {
-        String name;
-        LinkedList<String> names = new LinkedList<> ( );
-        
-        if ( ! activateConnection ( ) ) {
-            return -2;
-        }
-        
-        try {
-            String query = "SELECT name FROM nick WHERE hashcode IS NULL;";
-            ps = sql.prepareStatement ( query );
-            res = ps.executeQuery ( );
-                 
-            while ( res.next ( )  )  {
-                names.add ( res.getString ( 1 )  );
-            }
-            res.close ( );
-            ps.close ( );
-                 
-            for ( int index=0; index<names.size ( ); index++ )  {
-                name = names.get ( index );
-                query = "UPDATE nick SET hashcode = ? WHERE name = ?;";
-                ps = sql.prepareStatement ( query );
-                ps.setInt      ( 1, name.toUpperCase ( ) .hashCode ( )  );
-                ps.setString   ( 2, name );
-                ps.executeUpdate ( );
-                ps.close ( );
-            } 
-        } catch  ( SQLException ex )  {
-            Logger.getLogger ( NSDatabase.class.getName ( )  ) .log ( Level.SEVERE, null, ex );
-            return -1;
-        }
-        return 1;
-    }
-    
-    
-      /* NickServ Methods */
+  
+    /* NickServ Methods */
     public static int createNick ( NickInfo ni )  { 
         Config config = Proc.getConf ( );
         if ( ! activateConnection ( )  )  {
@@ -98,14 +61,14 @@ public class NSDatabase extends Database {
         /* Try add the nick */
         try {
             HashString salt = config.get ( SECRETSALT );
-            
             /* NICK */
-            String query = "insert into nick  ( name, hashcode, mask, regstamp, stamp )  "
-                          +"values  ( ?, ?, ?, now(), now() )";
+            String query = "insert into nick  ( name,  mask, regstamp, stamp )  "
+                          +"values  ( ?, ?, ?, ? )";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getString ( NAME ) );
-            ps.setString   ( 2, ni.getName().getCodeStr() );
-            ps.setString   ( 3, ni.getString ( USER ) +"@"+ni.getString ( IP ) );
+            ps.setString   ( 1, ni.getNameStr() );
+            ps.setString   ( 2, ni.getString(USER)+"@"+ni.getString ( IP ) );
+            ps.setString   ( 3, ni.getString ( REGTIME ) );
+            ps.setString   ( 4, ni.getString ( REGTIME ) );
             ps.execute ( );
             ps.close ( );
 
@@ -133,7 +96,7 @@ public class NSDatabase extends Database {
             query = "insert into nicksetting  ( name,noop,neverop,mailblock,showemail,showhost )  "
                   + "values ( ?, ?, ?, ?, ?, ? );";
             ps = sql.prepareStatement ( query );
-            ps.setString   ( 1, ni.getString ( NAME )                                    );
+            ps.setString   ( 1, ni.getNameStr()                                       );
             ps.setInt      ( 2, ni.getSettings().is ( NOOP ) ?1:0                     );
             ps.setInt      ( 3, ni.getSettings().is ( NEVEROP ) ?1:0                  );
             ps.setInt      ( 4, ni.getSettings().is ( MAILBLOCKED ) ?1:0              );
@@ -184,7 +147,7 @@ public class NSDatabase extends Database {
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, mask );
                 ps.setString   ( 2, ni.getString ( LASTUSED ) );
-                ps.setString   ( 3, ni.getString ( NAME ) );
+                ps.setString   ( 3, ni.getNameStr() );
                 ps.executeUpdate ( );
                 ps.close ( );
             }
@@ -274,7 +237,7 @@ public class NSDatabase extends Database {
                     }                
                 }
 
-                ps.setString   ( index, ni.getString ( NAME )                                    );
+                ps.setString   ( index, ni.getNameStr()                                    );
                 ps.executeUpdate ( );
             }
             ps.close ( ); 
@@ -428,7 +391,7 @@ public class NSDatabase extends Database {
         try {
             String query = "delete from nick where name = ?;";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ni.getName().getString()  );
+            ps.setString  ( 1, ni.getNameStr() );
             ps.execute ( );
             ps.close ( ); 
             return true;
@@ -786,7 +749,6 @@ public class NSDatabase extends Database {
             HashString salt = config.get ( SECRETSALT );
             
             String query = "select n.name,"+
-                           "  n.hashcode,"+
                            "  n.mask,"+
                            "  (select aes_decrypt(pass,?) from passlog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as pass,"+
                            "  (select aes_decrypt(mail,?) from maillog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as mail,"+
@@ -804,7 +766,7 @@ public class NSDatabase extends Database {
             int $count = 0;
              
             while ( res.next ( ) ) { 
-                buf = res.getString(3).split ( Pattern.quote ( "@" ) );
+                buf = res.getString(2).split ( Pattern.quote ( "@" ) );
                 System.out.println("debug: buf[0]: "+buf[0]);
                 System.out.println("debug: buf[1]: "+buf[1]);
                 settings = getSettings ( res.getString ( 1 ) );
@@ -816,13 +778,12 @@ public class NSDatabase extends Database {
                  
                 ni = new NickInfo ( 
                     res.getString ( 1 ),
-                    res.getInt ( 2 ),
                     buf[0],
                     buf[1],
+                    res.getString ( 3 ),
                     res.getString ( 4 ),
                     res.getString ( 5 ),
                     res.getString ( 6 ),
-                    res.getString ( 7 ),
                     settings,
                     exp
                 );

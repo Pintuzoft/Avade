@@ -64,7 +64,7 @@ public class NickInfo extends HashNumeric {
     private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /* DATABASE */
-    public NickInfo ( String name, int hash, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
+    public NickInfo ( String name, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
         // System.out.println ( "Debug: NickInfo ( "+name+" )" );
         this.name       = new HashString ( name );
         this.hashMask   = new HashString ( user+"@"+host );
@@ -164,7 +164,7 @@ public class NickInfo extends HashNumeric {
         if      ( it.is(NAME) )         { return this.name.getString();                     }
         else if ( it.is(USER) )         { return this.user.getString();                     }
         else if ( it.is(HOST) )         { return this.host.getString();                     }
-        else if ( it.is(IP) )           { return this.ip.getString();                       }
+        else if ( it.is(IP) )           { return this.host.getString();                     }
         else if ( it.is(MAIL) )         { return this.mail;                                 }
         else if ( it.is(FULLMASK) )     { return this.name+"!"+this.user+"@"+this.host;     }
         else if ( it.is(LASTUSED) )     { return this.lastUsed;                             }

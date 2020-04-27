@@ -83,7 +83,7 @@ public class Queue extends HashNumeric {
 
     private void execute ( Command command )  {
         boolean res = false;
-        if ( command.getTargetType ( ) == NICKINFO )  {
+        if ( command.getTargetType().is(NICKINFO) )  {
             /* Target is a nickname */ 
             NickInfo ni =  ( NickInfo )  command.getTarget ( );
             HashString cmd = command.getCommand();

@@ -72,8 +72,7 @@ public class NickServ extends Service {
         is              = true;
         this.snoop      = new NSSnoop ( this ); 
         this.executor   = new NSExecutor ( this, this.snoop );
-        this.helper     = new NSHelper ( this, this.snoop ); 
-        NSDatabase.fixDBHash ( ); /* Fix hashnames in table nick */
+        this.helper     = new NSHelper ( this, this.snoop );
         this.loadNicks ( ); /* Load all nicks */
         this.expireUnAuth = System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ); /* check unauthed nicks in 1 hour */
         this.setCommands();

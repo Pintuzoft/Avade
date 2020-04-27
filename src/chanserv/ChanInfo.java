@@ -228,8 +228,8 @@ public class ChanInfo extends HashNumeric {
         } 
         else if ( it.is(NAME) )             { return this.name.getString();     }
         else if ( it.is(DESCRIPTION) )      { return this.desc;                 }
-        else if ( it.is(LASTUSED) )         { return this.name.getString();     }
-        else if ( it.is(REGTIME) )          { return this.name.getString();     }
+        else if ( it.is(LASTUSED) )         { return this.lastUsed;     }
+        else if ( it.is(REGTIME) )          { return this.regTime;     }
         return "";
     }
  

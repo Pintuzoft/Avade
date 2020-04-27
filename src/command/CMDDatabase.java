@@ -49,15 +49,15 @@ public class CMDDatabase extends Database {
             return cList;
         }
         try {
-            String query = "SELECT id,target,targettype,command,extra,extra2 "
-                         + "FROM command "
-                         + "ORDER BY id ASC;";
+            String query = "select id,target,targettype,command,extra,extra2 "
+                         + "from command "
+                         + "order by id ASC;";
             preparedStmt = sql.prepareStatement ( query );
             res = preparedStmt.executeQuery ( );
 
             while ( res.next ( ) ) {
                 try {
-                    HashString type = new HashString ( res.getString(3) );
+                    HashString type = new HashString ( res.getString(3) ); 
                     
                     if ( type.is(NICKINFO) ) {
                         if ( ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
@@ -95,8 +95,8 @@ public class CMDDatabase extends Database {
             return;
         }
         try {
-            String query = "DELETE FROM command "
-                         + "WHERE id = ?";
+            String query = "delete from command "
+                         + "where id = ?";
             preparedStmt = sql.prepareStatement ( query );
             preparedStmt.setString  ( 1, id );
             preparedStmt.execute ( );

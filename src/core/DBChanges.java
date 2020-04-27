@@ -135,6 +135,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db120043 ( ) );
                 qList.add ( "update settings set value = '1.2004-3' where name = 'version'" );
 
+            case 120044 :
+                qList.add ( "to: v1.2004-4");
+                qList.addAll ( this.db120044 ( ) );
+                qList.add ( "update settings set value = '1.2004-4' where name = 'version'" );
+
                 break;
                 
             default :
@@ -499,6 +504,12 @@ public class DBChanges extends HashNumeric {
         qList.add ( "insert into nicklog (name,flag,usermask,stamp) (select name,'R' as flag,concat('*!*@',substring(mask, instr(mask, '@')+1)) as usermask,regstamp as stamp from nick);" );
         qList.add ( "insert into nicklog (name,flag,usermask,stamp) (select name,'Am' as flag,concat('*!*@',substring(mask, instr(mask, '@')+1)) as usermask,regstamp as stamp from nick);" );
         qList.add ( "insert into chanlog (name,flag,usermask,stamp) select c.name as name,'R' as flag,concat('*!*@',substring(n.mask, instr(n.mask, '@')+1)) as usermask,c.regstamp as stamp from chan as c join nick as n on n.name=c.founder;" );
+        return qList;
+    }
+        
+    private ArrayList<String> db120044 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add ( "alter table nick drop hashcode;" );
         return qList;
     }
         
