@@ -135,13 +135,10 @@ public class NickSetting extends HashNumeric {
         }
     } 
      
-    private String isFirst ( boolean first ) {
-        return ( ! first ? ", " : "" ); 
-    }
     
     public String getInfoStr ( )  {
-        String buf      = new String ( );
-        boolean first   = true;         
+        String buf = new String ( );
+        boolean first = true;         
         HashString[] sList = { 
             NOOP, NEVEROP, MAILBLOCKED, 
             SHOWEMAIL, SHOWHOST, MARK, 
@@ -152,12 +149,15 @@ public class NickSetting extends HashNumeric {
             if ( is ( setting ) ) {
                 buf += this.isFirst ( first ); 
                 buf += this.modeString ( setting );
-                first = true;
+                first = false;
             }
         }
         return buf; 
     }  
-  
+    private String isFirst ( boolean first ) {
+        return ( first ? "" : ", " ); 
+    }
+    
     public void allFalse ( )  {
         this.mailBlock  = false;
         this.neverOp    = false;

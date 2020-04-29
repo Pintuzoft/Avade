@@ -194,18 +194,22 @@ import java.util.regex.Pattern;
                 this.service.sendMsg ( user, output ( SYNTAX_ID_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_ID_ERROR, user.getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1 ( ) ) );
                 this.snoop.msg (false, NICK_NOT_REGISTERED, new HashString(result.getString1()), user, cmd );
                 return;            
+        
         } else if ( result.is(IDENTIFY_FAIL) ) {
                 this.service.sendMsg (user, output (PASSWD_ERROR, result.getNick().getNameStr() ) ); 
                 this.snoop.msg (false, PASSWD_ERROR, result.getNick().getName ( ), user, cmd );
                 return;            
+        
         } else if ( result.is(IS_FROZEN) ) {
                 this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
                 this.snoop.msg (false, IS_FROZEN, new HashString(result.getString1()), user, cmd );
                 return;            
+        
         } else if ( result.is(IS_THROTTLED) ) {
                 this.service.sendMsg (user, output (IS_THROTTLED, result.getString1 ( ) ) );
                 this.snoop.msg (false, IS_THROTTLED, new HashString(result.getString1()), user, cmd );
@@ -415,22 +419,27 @@ import java.util.regex.Pattern;
                 this.service.sendMsg ( user, output ( SYNTAX_GHOST_ERROR, "" ) );
                 this.snoop.msg ( false, SYNTAX_GHOST_ERROR, user.getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, nick ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, user.getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(IDENTIFY_FAIL) ) {
                 this.service.sendMsg ( user, output ( PASSWD_ERROR, nick ) );
                 this.snoop.msg ( false, PASSWD_ERROR, nick, user, cmd );
                 return;            
+        
         } else if ( result.is(NO_SUCH_NICK) ) {
                 this.service.sendMsg (user, output (NO_SUCH_NICK, result.getString1 ( ) ) );
                 this.snoop.msg ( false, NO_SUCH_NICK, user.getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(IS_FROZEN) ) {
                 this.service.sendMsg (user, output (IS_FROZEN, result.getString1 ( ) ) );
                 this.snoop.msg ( false, IS_FROZEN, user.getName(), user, cmd );
                 return;            
+        
         } else if ( result.is(IS_NOGHOST) ) {
                 this.service.sendMsg (user, output (IS_NOGHOST, result.getString1 ( ) ) );
                 this.service.sendGlobOp (output (GLOB_IS_NOGHOST, user.getFullMask(), result.getString1 ( ) ) );
@@ -477,19 +486,19 @@ import java.util.regex.Pattern;
         /* Show that the nick hasnt been authed if it hasnt */
         
         if ( user.isAtleast ( IRCOP ) ) {
-            if ( ni.is(FROZEN) || ni.is(MARKED) || ni.is(HELD) ) {
+            if ( ni.isSet(FROZEN) || ni.isSet(MARKED) || ni.isSet(HELD) || ni.isSet (NOGHOST) ) {
                 this.service.sendMsg ( user, f.b ( ) +"   --- IRCop ---" );
             }
-            if ( ni.is ( FROZEN ) ) {
+            if ( ni.isSet ( FROZEN ) ) {
                 this.service.sendMsg ( user, f.b ( ) +"      Frozen: "+ni.getSettings().getInstater ( FREEZE ) );
             }
-            if ( ni.is ( MARKED ) ) {
+            if ( ni.isSet ( MARKED ) ) {
                 this.service.sendMsg ( user, f.b ( ) +"      Marked: "+ni.getSettings().getInstater ( MARK ) );
             }
-            if ( ni.is ( HELD ) ) {
+            if ( ni.isSet ( HELD ) ) {
                 this.service.sendMsg ( user, f.b ( ) +"        Held: "+ni.getSettings().getInstater ( HOLD ) );
             }
-            if ( ni.is ( NOGHOST ) ) {
+            if ( ni.isSet ( NOGHOST ) ) {
                 this.service.sendMsg ( user, f.b ( ) +"     NoGhost: "+ni.getSettings().getInstater ( NOGHOST ) );
             }
         }
@@ -963,7 +972,7 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( NICK_NOT_REGGED );
-                } else if ( ni.is ( FROZEN ) ) {
+                } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN ); 
                 } else if ( ni.getThrottle().isThrottled() ) {
@@ -983,7 +992,7 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
                     result.setString1 ( user.getString ( NAME ) );
                     result.setStatus ( NICK_NOT_REGGED );
-                } else if ( ni.is ( FROZEN ) ) {
+                } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
                 } else if ( ! ni.is(user) && ni.getThrottle().isThrottled() ) {
@@ -1006,10 +1015,10 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
                     result.setString1 ( user.getString ( NAME ) );
                     result.setStatus ( NICK_NOT_REGGED );
-                } else if ( ni.is ( FROZEN ) ) {
+                } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN ); 
-                } else if ( ni.is ( MARKED ) ) {
+                } else if ( ni.isSet ( MARKED ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED ); 
                 } else if ( ( auth = NSDatabase.fetchAuth ( user, cmd[4] ) ) == null ) {
@@ -1027,10 +1036,10 @@ import java.util.regex.Pattern;
                 } else if ( ( target = Handler.findUser ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( NO_SUCH_NICK );    
-                } else if ( ni.is ( FROZEN ) ) {
+                } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
-                } else if ( ni.is ( NOGHOST ) ) {
+                } else if ( ni.isSet ( NOGHOST ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_NOGHOST ); 
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
@@ -1079,7 +1088,7 @@ import java.util.regex.Pattern;
                 } else if ( ni.isSet(MARK) && ( command != MARK || command == MARK && cmd[4].charAt(0) != '-' ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
-                } else if ( ( ni.is ( command ) && ! unset ) || ( ! ni.is (command ) && unset ) ) {
+                } else if ( ( ni.isSet ( command ) && ! unset ) || ( ! ni.isSet (command ) && unset ) ) {
                     result.setNick ( ni );
                     String buf = unset ? "Un" : "";
                     result.setString1 ( buf+this.getCommandStr ( command ) );
@@ -1101,7 +1110,7 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ni.is ( MARK ) ) {
+                } else if ( ni.isSet ( MARK ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
                 } else {
@@ -1114,10 +1123,10 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
                     result.setString1 ( user.getString(NAME) );
                     result.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ni.is ( FROZEN ) ) {
+                } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
-                } else if ( ni.is ( MARK ) ) {
+                } else if ( ni.isSet ( MARK ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
@@ -1137,10 +1146,10 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
                     result.setString1 ( user.getString(NAME) );
                     result.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ni.is ( FROZEN ) ) {
+                } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
-                } else if ( ni.is ( MARK ) ) {
+                } else if ( ni.isSet ( MARK ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
@@ -1162,7 +1171,7 @@ import java.util.regex.Pattern;
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( NICK_NOT_REGISTERED );
-                } else if ( ni.is ( MARK ) ) {
+                } else if ( ni.isSet ( MARK ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
                 } else {

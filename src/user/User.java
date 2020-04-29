@@ -184,19 +184,12 @@ public class User extends HashNumeric {
   
     public void partAll ( )  {
         /* We have to flush the user out from all channels */
-        System.out.println("0:"+this.cList.size ( ));
         if ( this.cList.size ( ) > 0 )  {
-        System.out.println("1");
             for ( Chan c : this.cList )  {
-        System.out.println("2:"+c.getString(NAME));
                 c.remUser ( this );
-        System.out.println("3");
             }
-        System.out.println("4");
             this.cList.clear ( );
-        System.out.println("5");
         }
-        System.out.println("6");
     }
 
     public boolean isIdented ( NickInfo ni )    { 
