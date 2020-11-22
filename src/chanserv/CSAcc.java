@@ -31,6 +31,7 @@ public class CSAcc extends HashNumeric {
     private NickInfo ni;
     private HashString access;
     private String lastOped;
+    private boolean isNick;
     
     private boolean isCidr = false;
     private boolean isIPv4 = false;
@@ -45,14 +46,14 @@ public class CSAcc extends HashNumeric {
     private Pattern userPattern;
     private Pattern hostPattern;
     private CIDRUtils cidrUtils;
-    private String rawMask;
-    private String mask;
+    
+    private HashString mask;
     private String nick;
     private String user;
     private String host;
     private int cidr = -1;
-    private int hashMask;
     
+
     /**
      *
      * @param ni
@@ -61,13 +62,12 @@ public class CSAcc extends HashNumeric {
      */
     public CSAcc ( NickInfo ni, HashString access, String lastOped ) {
         this.ni = ni;
+        this.isNick = true;
         this.access = access;
         if ( lastOped != null ) {
             this.lastOped = lastOped.substring(0,19);
-        } else {
-            this.lastOped = lastOped;
         }
-        this.hashMask = 0;
+        this.mask = null;
     }
     
     /**
@@ -77,8 +77,7 @@ public class CSAcc extends HashNumeric {
      * @param lastOped
      */
     public CSAcc ( String mask, HashString access, String lastOped ) {
-        this.rawMask = mask;
-        this.hashMask = mask.hashCode();
+        this.mask = new HashString(mask);
         String[] parts = mask.split("[!@/]");
         this.nick = parts[0];
         this.user = parts[1];
@@ -220,7 +219,6 @@ public class CSAcc extends HashNumeric {
         boolean matchNick = false;
         boolean matchUser = false;
         boolean matchHost = false;
-              
         /* Match registered nick */
         if ( this.ni != null ) {
             return user.isIdented ( ni );
@@ -280,9 +278,10 @@ public class CSAcc extends HashNumeric {
      * @param mask
      * @return
      */
-    public boolean matchMask ( String mask ) {
+    public boolean matchMask ( String in ) {
+        HashString mask = new HashString(in);
         if ( this.mask != null ) {
-            return ( this.mask.hashCode() == mask.hashCode() );
+            return this.mask.is(mask);
         }
         return false;
     }
@@ -292,35 +291,24 @@ public class CSAcc extends HashNumeric {
      * @param mask
      * @return
      */
-    public boolean matchHashMask ( String mask ) {
+    public boolean matchHashMask ( String in ) {
+        HashString mask = new HashString ( in );
         if ( this.mask != null ) {
-            return ( this.hashMask == mask.hashCode() );
+            return this.mask.is(mask);
         }
         return false;
     }
     
     /**
-     * getMask
-     * @return
-     */
-    public String getMask ( ) {
-        return this.nick+"!"+this.user+"@"+this.host+( isCidr ? "/"+this.cidr : "" );
-    } 
-    
-    /**
      * getHashMask
      * @return
      */
-    public int getHashMask ( ) {
-        return this.hashMask;
+    public HashString getMask ( ) {
+        return this.mask;
     }
-    
-    /**
-     * getRawMask
-     * @return
-     */
-    public String getRawMask ( ) {
-        return this.rawMask;
+
+    public String getMaskStr() {
+        return this.mask.getString();
     }
     
     /**
@@ -345,5 +333,13 @@ public class CSAcc extends HashNumeric {
     public void updateLastOped ( ) {
         this.lastOped = dateFormat.format ( new Date ( ) );
     }
+    
+    /**
+     * isNick
+     */
+    public boolean isNick ( ) {
+        return this.ni != null;
+    }
+
     
 }

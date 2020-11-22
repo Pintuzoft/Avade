@@ -120,19 +120,19 @@ public class OSDatabase extends Database {
         
         if ( ban.getType().is(AKILL) ) {
                 id = "AK"+ban.getID ( );
-                flag = ( command == DEL ? "AK-" : "AK+" );            
+                flag = ( command.is(DEL) ? "AK-" : "AK+" );            
         
         } else if ( ban.getType().is(IGNORE) ) {
                 id = "IG"+ban.getID ( );
-                flag = ( command == DEL ? "IG-" : "IG+" );            
+                flag = ( command.is(DEL) ? "IG-" : "IG+" );            
         
         } else if ( ban.getType().is(SQLINE) ) {
                 id = "SQ"+ban.getID ( );
-                flag = ( command == DEL ? "SQ-" : "SQ+" );            
+                flag = ( command.is(DEL) ? "SQ-" : "SQ+" );            
         
         } else if ( ban.getType().is(SGLINE) ) {
                 id = "SQ"+ban.getID ( );
-                flag = ( command == DEL ? "SG-" : "SG+" );            
+                flag = ( command.is(DEL) ? "SG-" : "SG+" );            
         
         } else {
             return;
@@ -804,7 +804,7 @@ public class OSDatabase extends Database {
         try {
             ps = sql.prepareStatement ( query );
             ps.setLong     ( 1, sf.getID ( ) );
-            ps.setString   ( 2, sf.getPattern ( ) );
+            ps.setString   ( 2, sf.getPattern().getString() );
             ps.setString   ( 3, sf.getFlags ( ) );
             ps.setString   ( 4, sf.getInstater ( ) );
             ps.setString   ( 5, sf.getReason ( ) );

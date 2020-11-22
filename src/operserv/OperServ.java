@@ -139,7 +139,7 @@ public class OperServ extends Service {
     
     public boolean checkAccess ( User user, HashString hashName ) {
         int access = user.getAccess ( );
-        if ( hashName == AUTOKILL ) {
+        if ( hashName.is(AUTOKILL) ) {
             hashName = AKILL;
         }
         CommandInfo cmdInfo = this.findCommandInfo ( hashName );
@@ -483,8 +483,12 @@ public class OperServ extends Service {
     
     public void parse ( User user, String[] cmd )  {
         user.getUserFlood().incCounter ( this );
- 
-        HashString command = new HashString ( cmd[3].substring ( 1 ) );
+        if ( cmd == null || cmd[3].isEmpty ( )  )  { 
+            return; 
+        }
+        
+        cmd[3] = cmd[3].substring ( 1 );
+        HashString command = new HashString ( cmd[3] );
         
         if ( user == null ) {
             System.out.println("DEBUG: parse() -> no user");
@@ -969,9 +973,9 @@ public class OperServ extends Service {
         }
     }
     public static SpamFilter findSpamFilter ( String pattern ) {
-        int hash = pattern.toUpperCase().hashCode();
+        HashString hash = new HashString(pattern);
         for ( SpamFilter sf : spamfilters ) {
-            if ( sf.getHashPattern() == hash ) {
+            if ( sf.getPattern().is(hash) ) {
                 return sf;
             }
         }
@@ -1031,10 +1035,10 @@ public class OperServ extends Service {
     
     static void addOper ( Oper oper ) {
         Oper rem = null;
-        int hash = oper.getName().hashCode();
+        HashString hash = oper.getName();
         for ( Oper o : staff ) {
             System.out.println("addOper: "+hash+":"+o.getName().hashCode());
-            if ( o.getName().hashCode() == hash ) {
+            if ( o.getName().is(hash) ) {
                 rem = o;
             }
         }
@@ -1070,9 +1074,9 @@ public class OperServ extends Service {
     }
 
     public boolean isSpamFiltered(String string) {
-        int hash = string.toUpperCase().hashCode();
+        HashString hash = new HashString ( string );
         for ( SpamFilter sf : spamfilters ) {
-            if ( sf.getHashPattern() == hash ) {
+            if ( sf.getPattern().is(hash) ) {
                 return true;
             }
         }

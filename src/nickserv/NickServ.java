@@ -113,7 +113,11 @@ public class NickServ extends Service {
         int access              = user.getAccess ( );
         CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
         if ( access < cmdInfo.getAccess ( )  )  {
-            Handler.getNickServ().sendMsg ( user, "   Command "+cmdInfo.getName ( ) +" are for "+cmdInfo.getAccessStr ( ) +" only .. *sigh*" );
+            if ( user.isAtleast(IRCOP) ) {
+                Handler.getNickServ().sendMsg ( user, "   Command "+cmdInfo.getName ( ) +" are for "+cmdInfo.getAccessStr ( ) +" only .. *sigh*" );
+            } else {
+                Handler.getNickServ().sendMsg ( user, "Error: no such command." );
+            }
             return false;
         }
         return true;
@@ -223,8 +227,9 @@ public class NickServ extends Service {
         for ( User user : Handler.findUsersByNick ( ni ) ) {
             user.getSID().del ( ni );
             Handler.addUpdateSID ( user.getSID() );
-            if ( user.hasAccess(ni.getName()) ) {
+            if ( user.is(ni.getName()) ) {
                 ServSock.sendCmd ( ":"+Proc.getConf().get(NAME)+" SVSMODE "+user.getName()+" 0 -r" );
+                user.setMode ( IDENT, false );
                 Handler.getGuestServ().addNick ( user, ni );
             }
             Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
@@ -459,7 +464,11 @@ public class NickServ extends Service {
         ni = NickServ.findNick ( u.getName ( ) );
         
         if ( ni != null ) {
-            if ( u.getSID() != null && u.getSID().isIdentified ( ni ) ) {
+            if ( ni.isSet(FROZEN) && u.getSID().isIdentified(ni) ) {
+                /* Nick is frozen so lets unidentify the user */
+                NickServ.unIdentifyAllFromNick ( ni );
+            }
+            if ( u.getSID().isIdentified ( ni ) ) {
                 u.getSID().resetTimers ( );
                 if ( ni.isAuth ( ) ) {
                     /* Send ident mode and serviceID to user */                         

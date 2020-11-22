@@ -221,9 +221,9 @@ public class CSDatabase extends Database {
                      ci.getChanges().hasChanged ( DESCRIPTION ) ||
                      ci.getChanges().hasChanged ( LASTUSED ) ) {
                     HashString salt = config.get ( SECRETSALT );
-                    query = "UPDATE chan SET "+
-                            "founder = ?, pass = AES_ENCRYPT(?,?), description = ?, stamp = ? "+
-                            "WHERE name = ?";
+                    query = "update chan set "+
+                            "founder = ?, pass = aes_encrypt(?,?), description = ?, stamp = ? "+
+                            "where name = ?";
                     ps = sql.prepareStatement ( query );
                     ps.setString  ( 1, ci.getFounder().getNameStr() );
                     ps.setString  ( 2, ci.getPass ( ) );
@@ -289,6 +289,8 @@ public class CSDatabase extends Database {
                     query = "update chansetting "+
                             "set "+changes+" "+
                             "where name = ?";
+                    
+                    System.out.println("changed: "+changes);
                     
                     ps = sql.prepareStatement ( query );
                     int index = 1;
@@ -550,6 +552,8 @@ public class CSDatabase extends Database {
      * @return
      */
     public static int updateChanAccessLastOped ( ChanInfo ci, CSAcc acc ) {
+        String query;
+        String target;
         if ( ! activateConnection ( ) ) {
             /* No SQL connection */
             return -2;
@@ -559,12 +563,24 @@ public class CSDatabase extends Database {
             return -3;
         } else {
             try {
-                String query = "update chanaccess set lastoped = ? "
-                             + "where name = ? and nick = ?";
+                if ( acc.isNick() ) {
+                    query = "update chanaccess "+
+                            "set lastoped = ? "+
+                            "where name = ? "+
+                            "and nick = ?";
+                    target = acc.getNick().getNameStr();
+                } else {
+                    query = "update chanaccess_mask "+
+                            "set lastoped = ? "+
+                            "where name = ? "+
+                            "and mask = ?";
+                    target = acc.getMaskStr();
+                }
+                
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, acc.getLastOped() );
                 ps.setString   ( 2, ci.getName().getString() );
-                ps.setString   ( 3, acc.getNick().getName().getString() );
+                ps.setString   ( 3, target );
                 ps.execute ( );
                 ps.close ( );
                  
@@ -586,8 +602,9 @@ public class CSDatabase extends Database {
      * @param access
      * @return
      */
-    public static int addChanAccess ( ChanInfo ci, CSAcc op, HashString access )  {
-
+    public static int addChanAccess ( ChanInfo ci, CSAcc op )  {
+        HashString access = op.getAccess();
+        String table = null;
         if ( ! activateConnection ( )  )  {
             /* No SQL connection */
             return -2;
@@ -607,15 +624,29 @@ public class CSDatabase extends Database {
                 } else if ( access.is(AOP) ) {
                     acc = "aop";
                 }
-                 
-                String query = "insert into chanaccess ( name,access,nick )  "
-                             + "values ( ?, ?, ? ) "
-                             + "on duplicate key "
-                             + "update access = ?";
+                
+                System.out.println("debug: ci: "+ci.getName().getString());
+                System.out.println("debug: acc: "+acc);
+                String query;
+                String target;
+                if ( op.isNick() ) {
+                    query = "insert into chanaccess ( name, access, nick ) "+
+                            "values ( ?, ?, ? ) "+
+                            "on duplicate key "+
+                            "update access = ?";
+                    target = op.getNick().getNameStr();
+                } else {
+                    query = "insert into chanaccess_mask ( name, access, mask ) "+
+                            "values ( ?, ?, ? ) "+
+                            "on duplicate key "+
+                            "update access = ?";
+                    target = op.getMaskStr();
+                }
+                
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, ci.getName().getString() );
                 ps.setString   ( 2, acc );
-                ps.setString   ( 3, op.getNick ( ) !=null ? op.getNick().getNameStr( ) : op.getMask ( ) );
+                ps.setString   ( 3, target );
                 ps.setString   ( 4, acc );
                 ps.execute ( );
                 ps.close ( );
@@ -639,7 +670,8 @@ public class CSDatabase extends Database {
      * @return
      */
     public static int removeChanAccess ( ChanInfo ci, CSAcc access )  {
-
+        String query;
+        String target;
         if ( ! activateConnection ( )  )  {
             return -2;
 
@@ -648,13 +680,22 @@ public class CSDatabase extends Database {
             
         } else {
             /* Try add the chan */          
-            try {    
-                String query = "delete from chanaccess "
-                             + "where name = ? "
-                             + "and nick = ?";
+            try {
+                if ( access.isNick() ) {
+                    query = "delete from chanaccess "+
+                            "where name = ? "+
+                            "and nick = ?";
+                    target = access.getNick().getNameStr();
+                } else {
+                    query = "delete from chanaccess_mask "+
+                            "where name = ? "+
+                            "and mask = ?";
+                    target = access.getMaskStr();
+                }
+                
                 ps = sql.prepareStatement ( query );
                 ps.setString   ( 1, ci.getName().getString() );
-                ps.setString   ( 2, access.getNick ( ) !=null ? access.getNick().getNameStr() : access.getMask ( ) );
+                ps.setString   ( 2, target );
                 ps.execute ( );
                 ps.close ( );
                  
@@ -808,13 +849,20 @@ public class CSDatabase extends Database {
                 acc = "aop";
             }
 
-            String query = "select nick,lastoped "
-                         + "from chanaccess "
-                         + "where name = ? "
-                         + "and access = ?";
+            String query = "select nick,lastoped "+
+                           "from chanaccess "+
+                           "where name = ? "+
+                           "and access = ?"+
+                           "union all "+
+                           "select mask,lastoped "+
+                           "from chanaccess_mask "+
+                           "where name = ? "+
+                           "and access = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName().getString() );
             ps.setString  ( 2, acc );
+            ps.setString  ( 3, ci.getName().getString() );
+            ps.setString  ( 4, acc );
             res3 = ps.executeQuery ( );
 
             while ( res3.next ( ) ) { 

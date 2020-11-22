@@ -304,14 +304,14 @@ public class Handler extends HashNumeric {
     
     /*****************************/
     
-    private void doChan  ( boolean check )  {
+    private void doChan ( boolean check ) {
         Chan c;
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
             c.addUserList(data);
         } else {
             c = new Chan ( this.data ); 
             cList.add ( c ); 
-            if  ( check )  {
+            if ( check ) {
                 chan.checkSettings ( c );
             }
         }
@@ -405,63 +405,40 @@ public class Handler extends HashNumeric {
     private void doNick ( )  {
         User u = new User ( this.data );
         ServicesID sid = null;
-        System.out.println("doNick(): 0");
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
         try {
-        System.out.println("doNick(): 1");
             long serviceID = Long.parseLong ( this.data[8] );
-        System.out.println("doNick(): 2");
             if ( serviceID > 999 ) {
-        System.out.println("doNick(): 3");
                 u.setSID ( Handler.findSplitSID ( serviceID ) );
             }
-        System.out.println("doNick(): 4");
             
         } catch ( NumberFormatException ex ) {
-        System.out.println("doNick(): 5");
             Proc.log ( Handler.class.getName ( ), ex );
         }
-        System.out.println("doNick(): 6");
         
         if ( u.getSID() == null ) {
-        System.out.println("doNick(): 7");
             u.setSID ( new ServicesID ( ) );
         }  
-        System.out.println("doNick(): 8");
         
         NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
-        System.out.println("doNick(): 9");
         
         if ( ni != null && u.getModes().is ( IDENT ) ) {
-        System.out.println("doNick(): 10");
             u.getSID().add ( ni );
         } else {
-        System.out.println("doNick(): 11");
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
-        System.out.println("doNick(): 12");
             u.getModes().set ( IDENT, false );
         }
-        System.out.println("doNick(): 13");
         
         NickServ.fixIdentState ( u );
-        System.out.println("doNick(): 14");
         uList.add ( u );
-        System.out.println("doNick(): 15");
         
         Server s = findServer ( this.data[7] );
-        System.out.println("doNick(): 16");
         if ( s != null ) {
-        System.out.println("doNick(): 17");
             s.addUser ( u );
         }
-        System.out.println("doNick(): 18");
-//        NickInfo ni;
-  //      if ( () == null ) {
-    //    }
+
         checkTrigger ( u );
-        System.out.println("doNick(): 19");
         this.oper.checkUser ( u ); /* Add user in OperServ check queue (akills etc) */
-        System.out.println("doNick(): 20");
     }
     
     private static void checkTrigger ( User user ) {
@@ -731,20 +708,16 @@ public class Handler extends HashNumeric {
     }
     
     public static User findUser ( String name ) {
-        System.out.println("DEBUG: findUser: "+name);
         HashString hash = new HashString ( name );
         return findUser ( hash );
     }
     
     public static User findUser ( HashString name ) {
         for ( User user : uList ) {
-            System.out.println("DEBUG: finduser: "+name+":"+user.getNameStr());
             if ( user.is(name) ) {
-                System.out.println("returning user");
                 return user;
             }
         } 
-        System.out.println("returning null");
         return null;
     }
     

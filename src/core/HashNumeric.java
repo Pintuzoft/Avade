@@ -419,6 +419,7 @@ public abstract class HashNumeric extends TextFormat {
     public static HashString LIST_VERBOSE_WIPED = new HashString ( "LIST_VERBOSE_WIPED" );
     public static HashString CHAN_IS_FROZEN = new HashString ( "CHAN_IS_FROZEN" );
     public static HashString CHAN_IS_CLOSED = new HashString ( "CHAN_IS_CLOSED" );
+    public static HashString CHAN_IS_RELAY = new HashString ( "CHAN_IS_RELAY" );
     public static HashString CHAN_SET_FLAG = new HashString ( "CHAN_SET_FLAG" );
     public static HashString CHANFLAG_EXIST = new HashString ( "CHANFLAG_EXIST" );
     public static HashString ALREADY_ON_LIST = new HashString ( "ALREADY_ON_LIST" );

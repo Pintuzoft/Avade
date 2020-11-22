@@ -207,7 +207,18 @@ public class ChanServ extends Service {
      */
     public void checkAllUsers ( ChanInfo ci )  {
         Chan c;
-        if (  ( c = Handler.findChan ( ci.getName ( )  )  )  != null )  {
+        if ( ( c = Handler.findChan ( ci.getName() ) ) != null ) {
+            for ( User u : c.getList ( ALL ) ) {
+                this.checkUser ( c, u );                
+            }
+        }
+    }   
+    /**
+     *
+     * @param ci
+     */
+    public void checkAllUsers ( Chan c )  {
+        if ( c != null ) {
             for ( User u : c.getList ( ALL ) ) {
                 this.checkUser ( c, u );                
             }
@@ -223,35 +234,56 @@ public class ChanServ extends Service {
         ChanInfo ci;
         NickInfo ni;
         CSAcc acc;
-        if ( ( ci = findChan ( c.getString ( NAME ) ) ) != null ) {
+        
+        /* Relay channel */
+        if ( c.isRelay() ) {
+            if ( ( ci = findChan ( c.getRelay() ) ) != null && ci.isRelayed() ) {
+                if ( ci.isAtleastAop ( user ) ) {
+                    Handler.getChanServ().opUser ( c, user );
+                } else {
+                    banUser ( c, user, "*!*@"+user.getHost() );
+                    kickUser ( c, user, "Restricted for "+c.getRelay()+" staff" );
+                }
+            }
+            
+        /* Registered channel */
+        } else if ( ( ci = findChan ( c.getName() ) ) != null ) {
+            
+            /* SAJoin */
             if ( c.isSaJoin() ) {
                 c.toggleSaJoin();
                 return;
             }
-                 
+                
+            /* Frozen/Closed */
             if ( ci.isSet ( FROZEN ) || ci.isSet ( CLOSED ) ) {
                 return;
+                
+            /* Restricted */
             }  else if ( ci.isSet ( RESTRICT ) ) {
                 banUser ( c, user, null );
-                kickUser ( c, user );
+                kickUser ( c, user, "Restricted channel" );
             }
             
+            /* User Access */
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
                 ci.setLastUsed ( );
                 if ( ni == null || ( ni != null && ! ni.is ( NEVEROP ) ) ) {
                     opUser ( c, user );
                     ci.updateLastOped ( user );
-                }    
+                }
+            
+            /* AKick */
             } else if ( ci.isAkick ( user ) ) {
                 acc = ci.getAkickAccess ( user );
-                banUser ( c, user, ( acc.getRawMask() != null ? acc.getRawMask() : null ) );
-                kickUser ( c, user );
+                banUser ( c, user, ( acc.getMask() != null ? acc.getMask().getString() : null ) );
+                kickUser ( c, user, "AutoKicked" );
                 
+            /* OPGuard */
             } else if ( c.isOp ( user ) && ci.isSet ( OPGUARD ) ) {
                 this.deOpUser ( c, user );
-            }
-            
+            } 
         }
     }
      
@@ -374,11 +406,14 @@ public class ChanServ extends Service {
      * @param c
      * @param user
      */
-    public void kickUser ( Chan c, User user )  {
+    public void kickUser ( Chan c, User user, String reason )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( c.nickIsPresent ( user.getName() ) ) {
+            if ( reason == null ) {
+                reason = user.getNameStr();
+            }
             c.remUser ( user );
-            this.sendCmd ( "KICK "+c.getString ( NAME ) +" :"+user.getString ( NAME )  );
+            this.sendCmd ( "KICK "+c.getNameStr()+" :"+user.getNameStr() );
         }
     }
     
@@ -395,8 +430,7 @@ public class ChanServ extends Service {
             c.chModeUser ( user, OP, OP, false );
             if ( ( ci = ChanServ.findChan ( c.getString(NAME) ) ) != null ) {
                 ci.setLastUsed();
-                ci.getChanges().change ( LASTUSED );
-                ci.changed();
+                ci.changed(LASTUSED);
             }
         }
     }

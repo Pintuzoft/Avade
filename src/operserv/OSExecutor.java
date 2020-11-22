@@ -87,7 +87,7 @@ public class OSExecutor extends Executor {
                     command.is(IGNORE) ||
                     command.is(AKILL) ||
                     command.is(AUTOKILL) ) {
-            if ( command == AUTOKILL ) {
+            if ( command.is(AUTOKILL) ) {
                 command = AKILL;
             }
             this.doServicesBan ( command, user, cmd );
@@ -833,7 +833,7 @@ public class OSExecutor extends Executor {
         if ( result.is(SHOWLIST) ) {
                 this.service.sendMsg ( user, "*** SpamFilter LIST ***" );
                 for ( SpamFilter sf : OperServ.getSpamFilters ( ) ) {
-                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern(), sf.getFlags(), sf.getInstater(), sf.getExpire(), sf.getReason() ) );
+                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), sf.getExpire(), sf.getReason() ) );
                 }
                 this.service.sendMsg ( user, "*** End of List ***" );            
         
@@ -1241,7 +1241,7 @@ public class OSExecutor extends Executor {
                 // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :AKILL time 30 *!*@1.2.3.4 spamming hasAccess not allowed
                 //            0       1                          2      3    4  5           6 7                       = 8+
                 sub = (cmd.length > 4 ? new HashString ( cmd[4] ) : new HashString ( "0" ) );
-                if ( sub == TIME ) {
+                if ( sub.is(TIME) ) {
                     sub = ADD;
                 } 
                 time = cmd.length > 5 ? cmd[5] : "30";
@@ -1252,44 +1252,44 @@ public class OSExecutor extends Executor {
                     result.setStatus ( SYNTAX_ERROR );
                 
                     
-                } else if ( sub == LIST && isShorterThanLen ( 6, cmd ) ) {
+                } else if ( sub.is(LIST) && isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus( SYNTAX_ERROR_LIST );
                     
-                } else if ( sub == LIST && cmd.length > 5 ) {
+                } else if ( sub.is(LIST) && cmd.length > 5 ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( LIST );
                             
                     
                     
                     
-                } else if ( sub == INFO && isShorterThanLen ( 6, cmd ) ) {
+                } else if ( sub.is(INFO) && isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_INFO );
 
-                } else if ( sub == INFO && ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null ) {
+                } else if ( sub.is(INFO) && ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( BAN_NO_EXIST );
                     
-                } else if ( sub == INFO && ban != null ) {
+                } else if ( sub.is(INFO) && ban != null ) {
                     result.setServicesBan ( ban );
                     result.setStatus ( INFO );
                     
                     
                     
                     
-                } else if ( sub == DEL && isShorterThanLen ( 6, cmd ) ) {
+                } else if ( sub.is(DEL) && isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus( SYNTAX_ERROR_DEL );
                     
-                } else if ( sub == DEL && 
+                } else if ( sub.is(DEL) && 
                             ( ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null &&
                               ( ban = OperServ.findBan ( command, cmd[5] ) ) == null ) ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( BAN_NO_EXIST );
                 
-                } else if ( sub == DEL && ( oper = NickServ.findNick ( ban.getInstater() ) ) != null && 
+                } else if ( sub.is(DEL) && ( oper = NickServ.findNick ( ban.getInstater() ) ) != null && 
                             ! ( oper.getAccess() < user.getAccess() || user.isIdented(oper) || user.isAtleast(SRA) ) ) {
                     result.setStatus ( ACCESS_DENIED );
                 
-                } else if ( sub == DEL && ban != null ) {
+                } else if ( sub.is(DEL) && ban != null ) {
                     result.setServicesBan ( ban );
                     result.setStatus ( DEL );
                 
@@ -1333,11 +1333,11 @@ public class OSExecutor extends Executor {
                  
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( sub == LIST ) {
+                } else if ( sub.is(LIST) ) {
                     result.setStatus ( SHOWLIST );
-                } else if ( sub == DEL && isShorterThanLen ( 6, cmd ) ) {
+                } else if ( sub.is(DEL) && isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_DEL );
-                } else if ( sub == DEL ) {
+                } else if ( sub.is(DEL) ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( DEL );
                 } else if ( isShorterThanLen ( 9, cmd ) ) {
@@ -1425,20 +1425,20 @@ public class OSExecutor extends Executor {
                 } else if ( (sub = new HashString(cmd[4])) == null || 
                             ( ! sub.is(LIST) && ! sub.is(DEL) && ! sub.is(SET) && ! sub.is(MISSING) ) ) {
                     result.setStatus ( SYNTAX_ERROR );                
-                } else if ( sub == DEL && isShorterThanLen( 6, cmd ) ) {
+                } else if ( sub.is(DEL) && isShorterThanLen( 6, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_DEL );                    
-                } else if ( sub == DEL && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
+                } else if ( sub.is(DEL) && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( NO_SUCH_SERVER );                    
-                } else if ( sub == DEL ) {
+                } else if ( sub.is(DEL) ) {
                     result.setServer ( server1 );
                     result.setStatus ( DEL );
-                } else if ( sub == SET && isShorterThanLen( 8, cmd ) ) {
+                } else if ( sub.is(SET) && isShorterThanLen( 8, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_SET );                    
-                } else if ( sub == SET && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
+                } else if ( sub.is(SET) && ( server1 = OperServ.getServer ( cmd[5] ) ) == null ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( NO_SUCH_SERVER );                    
-                } else if ( sub == SET && 
+                } else if ( sub.is(SET) && 
                             ( (sub2 = new HashString(cmd[6])) == null || 
                                ! sub2.is(PRIMARY) && ! sub2.is(SECONDARY) ) ) {
                     result.setStatus ( SYNTAX_ERROR_SET );                    

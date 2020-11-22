@@ -137,6 +137,7 @@ public class CSSnoop extends Snoop {
             else if ( it.is(LIST_VERBOSE_WIPED) )       { return "LIST_VERBOSE_WIPED";      }
             else if ( it.is(CHAN_IS_FROZEN) )           { return "CHAN_IS_FROZEN";          }
             else if ( it.is(CHAN_IS_CLOSED) )           { return "CHAN_IS_CLOSED";          }
+            else if ( it.is(CHAN_IS_RELAY) )            { return "CHAN_IS_RELAY";           }
             else if ( it.is(CHAN_SET_FLAG) )            { return "CHAN_SET_FLAG";           } 
             else if ( it.is(CHANFLAG_EXIST) )           { return "CHANFLAG_EXIST";          } 
             else if ( it.is(ALREADY_ON_LIST) )          { return "ALREADY_ON_LIST";         } 

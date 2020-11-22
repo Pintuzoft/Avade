@@ -21,8 +21,7 @@ import java.util.logging.Logger;
  */
 public class SpamFilter extends HashNumeric {
     private long id;
-    private String pattern;
-    private int hashPattern;
+    private HashString pattern;
     private String flags;
     private String instater;
     private String reason;
@@ -54,8 +53,7 @@ public class SpamFilter extends HashNumeric {
 
     public SpamFilter ( long id, String pattern, String flags, String instater, String reason, String stamp, String expire ) {
         this.id = id;
-        this.pattern = pattern;
-        this.hashPattern = pattern.toUpperCase().hashCode();
+        this.pattern = new HashString ( pattern );
         this.flags = flags;
         this.instater = instater;
         this.reason = reason;
@@ -84,7 +82,7 @@ public class SpamFilter extends HashNumeric {
         return this.id;
     }
     
-    public String getPattern() {
+    public HashString getPattern() {
         return this.pattern;
     }
 
@@ -110,10 +108,6 @@ public class SpamFilter extends HashNumeric {
 
     public String getExpire() {
         return this.expire;
-    }
-    
-    public int getHashPattern ( ) {
-        return this.hashPattern;
     }
     
     private void flagsToBits ( ) {

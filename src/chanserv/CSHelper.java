@@ -143,9 +143,7 @@ public class CSHelper extends Helper {
         if ( buf.length() > 0 ) {
             Handler.getOperServ().sendMsg ( user, "       "+f.b()+buf+f.b()  );
         }
-        
-        
-
+         
         if ( access > 0 ) {
             this.service.sendMsg ( user, "   "+f.b ( ) +"--- IRC Operator ---"+f.b ( )                                             );
 
@@ -303,11 +301,11 @@ public class CSHelper extends Helper {
     public void akick ( User user )  {
         this.showStart ( user, "Akick" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AKICK <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b( )+"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AKICK <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b( )+""   );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Add, delete or list AutoKicked users in the channel."                                      );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   Make sure that permanently banned users are akicked to ensure"                             );
         this.service.sendMsg ( user, "   the safety of your channel."                                                               );
         this.showEnd ( user );
@@ -320,11 +318,11 @@ public class CSHelper extends Helper {
     public void op ( User user )  {
         this.showStart ( user, "Op" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ OP <#chan> <nick>"+f.b ( ) +""                             );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ OP <#chan> <nick>"+f.b ( ) +""                               );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Gives a user op ( @ )  in the channel by chanserv based on your access level."             );
+        this.service.sendMsg ( user, "   Gives a user op(@) in the channel by chanserv based on your access level."                 );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   No recommendations at this point"                                                          );
         this.showEnd ( user );
     }
@@ -336,11 +334,11 @@ public class CSHelper extends Helper {
     public void deOp ( User user )  {
         this.showStart ( user, "DeOp" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ DEOP <#chan> <nick>"+f.b ( ) +""                           );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ DEOP <#chan> <nick>"+f.b ( ) +""                             );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Removes op ( @ )  from a user in the channel by chanserv based on your access level."      );
+        this.service.sendMsg ( user, "   Removes op(@) from a user in the channel by chanserv based on your access level."          );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   No recommendations at this point"                                                          );
         this.showEnd ( user );
     }
@@ -352,11 +350,11 @@ public class CSHelper extends Helper {
     public void unBan ( User user )  {
         this.showStart ( user, "UnBan" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ UNBAN <#chan> [<nick>]"+f.b ( ) +""                        );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ UNBAN <#chan> [<nick>]"+f.b ( ) +""                          );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Unbans a user from a channel the user has access to"                                       );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   A good way to regain control of a channel"                                                 );
         this.showEnd ( user );
     }
@@ -368,11 +366,11 @@ public class CSHelper extends Helper {
     public void invite ( User user )  {
         this.showStart ( user, "Invite" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ INVITE <#chan>"+f.b ( ) +""                                );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ INVITE <#chan>"+f.b ( ) +""                                  );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Sends an invite to a channel that will evade all channel modes that are keeping you out"   );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   A good way to regain access to a closed channel"                                           );
         this.showEnd ( user );
     }
@@ -384,11 +382,11 @@ public class CSHelper extends Helper {
     public void why ( User user )  {
         this.showStart ( user, "Why" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ WHY <#chan> <nick>"+f.b ( ) +""                            );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ WHY <#chan> <nick>"+f.b ( ) +""                              );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Will look up and tell which access a user has to a channel"                                );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   Keep this information to yourself"                                                         );
         this.showEnd ( user );
     }
@@ -400,11 +398,11 @@ public class CSHelper extends Helper {
     public void chanList ( User user )  { 
         this.showStart ( user, "ChanList" ); 
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ CHANLIST"+f.b ( ) +""                                      );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ CHANLIST"+f.b ( ) +""                                        );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Will list all channels you have access to and show access channel identified nick"         );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   Keep this information to yourself"                                                         ); 
         this.showEnd ( user );
     }
@@ -428,7 +426,7 @@ public class CSHelper extends Helper {
     public void mKick ( User user )  { 
         this.showStart ( user, "MKick" ); 
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ MKICK <#Channel>"+f.b ( ) +""                              );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ MKICK <#Channel>"+f.b ( ) +""                                );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Will kick all users in the given channel but only if you hold the highest rank"            );
         this.service.sendMsg ( user, "   currently inside the channel. A founder will always be able to mkick a channel while"      );
@@ -436,7 +434,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   the founder present in the channel."                                                       );
         this.service.sendMsg ( user, "   Please note that the channel will be held for 60 seconds after issuing a MKICK."           );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   Misusing this command could get your channel frozen."                                      ); 
         this.showEnd ( user );
     }
@@ -448,14 +446,14 @@ public class CSHelper extends Helper {
     public void mDeOp ( User user )  { 
         this.showStart ( user, "MDeOp" ); 
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ MDEOP <#Channel>"+f.b ( ) +""                              );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ MDEOP <#Channel>"+f.b ( ) +""                                );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Will deop ( @ )  all users in the given channel but only if you hold the highest rank"     );
+        this.service.sendMsg ( user, "   Will deop(@) all users in the given channel but only if you hold the highest rank"         );
         this.service.sendMsg ( user, "   currently inside the channel. A founder will always be able to mdeop a channel while"      );
         this.service.sendMsg ( user, "   an AOP only will be able to mdeop the channel as long as there are no SOP's or"            );
         this.service.sendMsg ( user, "   the founder present in the channel."                                                       );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   Misusing this command could get your channel frozen."                                      ); 
         this.showEnd ( user );
     }
@@ -491,7 +489,10 @@ public class CSHelper extends Helper {
         else if ( command.is(LEAVEOPS) )        { this.setLeaveOps ( user );    }
         else if ( command.is(AUTOAKICK) )       { this.setAutoAKick ( user );   }
         else if ( command.is(PRIVATE) )         { this.setPrivate ( user );     }
-         
+        else {
+            this.setMain ( user );
+        }
+        
     } 
           
     /**

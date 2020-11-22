@@ -223,10 +223,6 @@ public class ChanSetting extends HashNumeric {
         return this.modeLock;
     }
     
-    private String isFirst ( boolean first ) {
-        return ! first ? ", " : ""; 
-    }
-    
     /**
      *
      * @return
@@ -242,8 +238,12 @@ public class ChanSetting extends HashNumeric {
         try { 
             for ( HashString setting : sList ) {
                 if ( is ( setting ) ) {
-                    buf += this.isFirst ( first );
-                    buf += this.modeString ( setting );
+                    if ( first ) {
+                        buf += this.modeString ( setting );
+                        first = false;
+                    } else {
+                        buf += ", "+this.modeString( setting );
+                    }
                 }
             }
             
@@ -256,10 +256,13 @@ public class ChanSetting extends HashNumeric {
                 } else if ( this.topicLock.is(FOUNDER) ) {
                     acc = "FOUNDER";
                 }
-                 
-                buf += this.isFirst ( first );
-                buf += this.modeString ( TOPICLOCK ) +" ( "+acc+" ) ";
-                first = false;
+                
+                if ( first ) {
+                    buf += this.modeString ( TOPICLOCK ) +" ("+acc+")";
+                    first = false;
+                } else {
+                    buf += ", "+this.modeString ( TOPICLOCK ) +" ("+acc+")";
+                }
             }
 
             return buf; 

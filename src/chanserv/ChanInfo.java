@@ -48,6 +48,7 @@ public class ChanInfo extends HashNumeric {
     private String          regTime;
     private String          lastUsed; 
     private Throttle        throttle;       /* throttle login attempts */
+    private boolean         relayed;
 
     private ArrayList<CSAcc> klist;
     private ArrayList<CSAcc> slist;
@@ -90,6 +91,7 @@ public class ChanInfo extends HashNumeric {
         this.remAccList = new ArrayList<>();
         this.updAccList = new ArrayList<>();
         this.newLogList = new ArrayList<>();
+        this.checkRelay();
     }
     
     /**
@@ -142,7 +144,7 @@ public class ChanInfo extends HashNumeric {
         if ( CSDatabase.checkConn() && this.addAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
             for ( CSAcc acc : this.addAccList ) {
-                if ( CSDatabase.addChanAccess ( this, acc, acc.getAccess() ) == 1 ) {
+                if ( CSDatabase.addChanAccess ( this, acc ) == 1 ) {
                     access.add ( acc );
                 }
             }
@@ -254,7 +256,7 @@ public class ChanInfo extends HashNumeric {
      */
     public boolean setDescription ( String desc )  {
         this.desc = desc;
-        this.changed();
+        this.changed(DESCRIPTION);
         return true;
     }
 
@@ -267,7 +269,7 @@ public class ChanInfo extends HashNumeric {
     public boolean setPass ( String oldPass, String newPass )  {
         if ( this.pass.compareTo ( oldPass )  == 0 )  {
             this.pass = newPass;
-            this.changed();
+            this.changed(LASTUSED);
             return true;
         }
         return false;
@@ -304,7 +306,7 @@ public class ChanInfo extends HashNumeric {
      */
     public void setSettings ( ChanSetting settings )  {
         this.settings = settings;
-        this.changed();
+        this.changed(LASTUSED);
     }
 
     private void attachFounder ( String founder )  {
@@ -331,7 +333,7 @@ public class ChanInfo extends HashNumeric {
      */
     public void setTopic ( Topic topic )  {
         this.topic = topic; 
-        this.changed();
+        this.changed(LASTUSED);
     }
 
     /**
@@ -375,7 +377,7 @@ public class ChanInfo extends HashNumeric {
             return 0; 
         }
         
-        if ( ni.hashCode ( ) == this.founder.hashCode ( ) ) {
+        if ( ni.is(this.founder) ) {
             return 3;
         } else if ( this.isAccess ( SOP, ni ) ) {
             return 2;
@@ -422,11 +424,12 @@ public class ChanInfo extends HashNumeric {
      * @param mask
      * @return  *******************************/
  
-    public boolean delAkick ( String mask )  {
+    public boolean delAkick ( String in )  {
+        HashString mask = new HashString (in);
         CSAcc del = null;
         for ( CSAcc akick : this.klist )  {
             if ( akick.getMask ( ) != null )  {
-                if ( mask.toUpperCase().hashCode ( ) == akick.getMask().toUpperCase().hashCode ( ) ) {
+                if ( mask.is(akick.getMask()) ) {
                     del = akick;
                 }
             }
@@ -518,7 +521,7 @@ public class ChanInfo extends HashNumeric {
     public String getIsFounder ( User user ) {
         for ( NickInfo ni : user.getSID().getNiList ( ) ) {
             if ( this.founder.is(ni) ) {
-                return ni.getName().getString();
+                return ni.getNameStr();
             }
         }
         return null;
@@ -595,7 +598,7 @@ public class ChanInfo extends HashNumeric {
      * @param user
      * @return
      */
-    public boolean isAtleastAop ( User user )  {
+    public boolean isAtleastAop ( User user ) {
         HashString[] types = { AOP, SOP };
         for ( HashString type : types ) {
             for ( CSAcc acc : getAccessList ( type ) ) {
@@ -639,12 +642,12 @@ public class ChanInfo extends HashNumeric {
      */
     public void addToAccList ( HashString list, CSAcc acc ) {
         for ( CSAcc a : getAccList ( list ) ) {
-            if ( acc.getHashMask ( ) == 0 && a.getHashMask() == 0 ) {
+            if ( acc.getMask() == null && a.getMask() == null ) {
                 if ( acc.getNick().is(a.getNick() ) ) {
                     return;
                 }
-            } else if ( acc.getHashMask() != 0 && a.getHashMask() != 0 ) {
-                if ( acc.getHashMask() == a.getHashMask() ) {
+            } else if ( acc.getMask() != null && a.getMask() != null ) {
+                if ( acc.getMask() == a.getMask() ) {
                     return;
                 }
             }
@@ -803,7 +806,7 @@ public class ChanInfo extends HashNumeric {
                     rem = entry;
                 } else if ( entry.getMask() != null &&
                             acc.getMask() != null &&
-                            entry.matchMask(acc.getMask()) ) {
+                            entry.getMask().is(acc.getMask()) ) {
                     rem = entry;
                 }
             }
@@ -847,9 +850,9 @@ public class ChanInfo extends HashNumeric {
         for ( CSAcc acc : getAccessList ( access ) )  {
             if ( acc.matchUser ( user ) ) {
                 if ( acc.getNick() != null ) {
-                    return acc.getNick().getName().getString();
+                    return acc.getNick().getNameStr();
                 } else {
-                    return acc.getMask();
+                    return acc.getMaskStr();
                 }
             }
         }
@@ -1016,6 +1019,16 @@ public class ChanInfo extends HashNumeric {
         this.settings.set(setting, state);
         this.changes.change(setting);
     }
+    
+    /**
+     *
+     * @param setting
+     * @param instater
+     */
+    public void set ( HashString setting, String instater ) {
+        this.settings.set(setting, instater);
+        this.changes.change(setting);
+    }
 
     /**
      *
@@ -1029,7 +1042,8 @@ public class ChanInfo extends HashNumeric {
     /**
      *
      */
-    public void changed ( ) {
+    public void changed ( HashString setting ) {
+        this.getChanges().change ( setting );
         ChanServ.addToWorkList ( CHANGE, this );
     }
 
@@ -1059,6 +1073,22 @@ public class ChanInfo extends HashNumeric {
      */
     public Throttle getThrottle ( ) {
         return this.throttle;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean isRelayed ( ) {
+        return this.relayed;
+    }
+
+    private void checkRelay() {
+        if ( this.settings.is(AUDITORIUM) ) {
+            this.relayed = true;
+        } else {
+            this.relayed = false;
+        }
     }
 
 }

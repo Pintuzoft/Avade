@@ -22,6 +22,7 @@ import core.Handler;
 import core.Proc;
 import core.HashNumeric;
 import core.HashString;
+import core.StringMatch;
 import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
@@ -44,6 +45,9 @@ public class Chan extends HashNumeric {
     private ChanMode            modes;
     private boolean sajoin = false;
     
+    private boolean             isRelay;
+    private HashString          relay;
+    
     /* STATIC */
     //public static Comparator<Chan>      comparator =  ( Chan c1, Chan c2 )  -> { return c1.hashCode ( )  - c2.hashCode ( ); };
 
@@ -57,16 +61,30 @@ public class Chan extends HashNumeric {
         this.uList          = new ArrayList<>( );    /* userlist */
         this.modes.set ( ChanMode.SERVER, data );
         this.addUserList ( data );
-
+        this.checkRelay();
         //System.out.println ( "IN CHAN..." );
 
     }
-    
-   
+       
     public Chan ( HashString code )  {
         this.name = code;
     }
     
+    private void checkRelay ( ) {
+        if ( StringMatch.wild(this.name.getString(), "*-relay") ) {
+            this.isRelay = true;
+            this.relay = new HashString ( this.name.getString().substring(0, this.name.getString().length()-6) );
+        }
+    }
+    
+    public HashString getRelay ( ) {
+        return this.relay;
+    }
+    
+    public boolean isRelay ( ) {
+        return this.isRelay;
+    } 
+
     public void addUserList ( String[] data )  {
         // :irc.avade.net SJOIN 1374147654 #friends +c  :@Guest33015 @DreamHealer 
         //      0           1       2       3       4       5+
@@ -121,7 +139,7 @@ public class Chan extends HashNumeric {
         for ( User u : vList ) {
             ChanServ.addCheckUser ( this, u );
         }
-        for ( User u : vList ) {
+        for ( User u : oList ) {
             ChanServ.addCheckUser ( this, u );
         }
     }

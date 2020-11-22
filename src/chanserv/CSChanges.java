@@ -116,104 +116,39 @@ public class CSChanges extends Changes {
      * @return
      */
     public boolean hasChanged ( HashString setting ) {
-        if ( setting.is(FREEZE) ) {
-            return this.freeze;
-        
-        } else if ( setting.is(MARK) ) {
-            return this.mark;
-        
-        } else if ( setting.is(HOLD) ) {
-            return this.hold;
-        
-        } else if ( setting.is(MAILBLOCK) ) {
-            return this.mailblock;
-        
-        } else if ( setting.is(CLOSE) ) {
-            return this.close;
-        
-        } else if ( setting.is(AUDITORIUM) ) {
-            return this.auditorium;
-        
-        } else if ( setting.is(TOPIC) ) {
-            return this.topic;
-        
-        } else if ( setting.is(LASTUSED) ) {
-            return this.lastused;
-        
-        } else if ( setting.is(DESCRIPTION) ) {
-            return this.description;
-        
-        } else if ( setting.is(TOPICLOCK) ) {
-            return this.topiclock;
-        
-        } else if ( setting.is(MODELOCK) ) {
-            return this.modelock;
-        
-        } else if ( setting.is(KEEPTOPIC) ) {
-            return this.keeptopic;
-        
-        } else if ( setting.is(IDENT) ) {
-            return this.ident;
-        
-        } else if ( setting.is(OPGUARD) ) {
-            return this.opguard;
-        
-        } else if ( setting.is(RESTRICT) ) {
-            return this.restrict;
-        
-        } else if ( setting.is(VERBOSE) ) {
-            return this.verbose;
-        
-        } else if ( setting.is(LEAVEOPS) ) {
-            return this.leaveops;
-        
-        } else if ( setting.is(AUTOAKICK) ) {
-            return this.autoakick;
-        
-        } else if ( setting.is(FOUNDER) ) {
-            return this.founder;
-        
-        } else if ( setting.is(JOIN_CONNECT_TIME) ) {
-            return this.join_connect_time;
-        
-        } else if ( setting.is(TALK_CONNECT_TIME) ) {
-            return this.talk_connect_time;
-        
-        } else if ( setting.is(TALK_JOIN_TIME) ) {
-            return this.talk_join_time;
-        
-        } else if ( setting.is(MAX_BANS) ) {
-            return this.max_bans;
-        
-        } else if ( setting.is(NO_NOTICE) ) {
-            return this.no_notice;
-        
-        } else if ( setting.is(NO_CTCP) ) {
-            return this.no_ctcp;
-        
-        } else if ( setting.is(NO_PART_MSG) ) {
-            return this.no_part_msg;
-        
-        } else if ( setting.is(EXEMPT_OPPED) ) {
-            return this.exempt_opped;
-        
-        } else if ( setting.is(EXEMPT_VOICED) ) {
-            return this.exempt_voiced;
-        
-        } else if ( setting.is(EXEMPT_IDENTD) ) {
-            return this.exempt_identd;
-        
-        } else if ( setting.is(EXEMPT_REGISTERED) ) {
-            return this.exempt_registered;
-        
-        } else if ( setting.is(EXEMPT_INVITES) ) {
-            return this.exempt_invites;
-        
-        } else if ( setting.is(GREETMSG) ) {
-            return this.greetmsg;
-        }
-        return false;
-        
+        if      ( setting.is(FREEZE) )              { return this.freeze;               } 
+        else if ( setting.is(MARK) )                { return this.mark;                 }
+        else if ( setting.is(HOLD) )                { return this.hold;                 }
+        else if ( setting.is(MAILBLOCK) )           { return this.mailblock;            }
+        else if ( setting.is(CLOSE) )               { return this.close;                }
+        else if ( setting.is(AUDITORIUM) )          { return this.auditorium;           } 
+        else if ( setting.is(TOPIC) )               { return this.topic;                } 
+        else if ( setting.is(LASTUSED) )            { return this.lastused;             } 
+        else if ( setting.is(DESCRIPTION) )         { return this.description;          }
+        else if ( setting.is(TOPICLOCK) )           { return this.topiclock;            }
+        else if ( setting.is(MODELOCK) )            { return this.modelock;             }
+        else if ( setting.is(KEEPTOPIC) )           { return this.keeptopic;            }
+        else if ( setting.is(IDENT) )               { return this.ident;                }
+        else if ( setting.is(OPGUARD) )             { return this.opguard;              }
+        else if ( setting.is(RESTRICT) )            { return this.restrict;             }
+        else if ( setting.is(VERBOSE) )             { return this.verbose;              }
+        else if ( setting.is(LEAVEOPS) )            { return this.leaveops;             }
+        else if ( setting.is(AUTOAKICK) )           { return this.autoakick;            }
+        else if ( setting.is(FOUNDER) )             { return this.founder;              }
+        else if ( setting.is(JOIN_CONNECT_TIME) )   { return this.join_connect_time;    }
+        else if ( setting.is(TALK_CONNECT_TIME) )   { return this.talk_connect_time;    }
+        else if ( setting.is(TALK_JOIN_TIME) )      { return this.talk_join_time;       }
+        else if ( setting.is(MAX_BANS) )            { return this.max_bans;             }
+        else if ( setting.is(NO_NOTICE) )           { return this.no_notice;            }
+        else if ( setting.is(NO_CTCP) )             { return this.no_ctcp;              }
+        else if ( setting.is(NO_PART_MSG) )         { return this.no_part_msg;          }
+        else if ( setting.is(EXEMPT_OPPED) )        { return this.exempt_opped;         }
+        else if ( setting.is(EXEMPT_VOICED) )       { return this.exempt_voiced;        }
+        else if ( setting.is(EXEMPT_IDENTD) )       { return this.exempt_identd;        }
+        else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exempt_registered;    }
+        else if ( setting.is(EXEMPT_INVITES) )      { return this.exempt_invites;       }
+        else if ( setting.is(GREETMSG) )            { return this.greetmsg;             }
+        return false;        
     }
     
     /**
@@ -221,6 +156,7 @@ public class CSChanges extends Changes {
      * @param setting
      */
     public void change ( HashString setting ) {
+        System.out.println("change: "+setting);
         if ( setting.is(FREEZE) ) {
             this.freeze = true;
             this.changed = true;
@@ -356,46 +292,26 @@ public class CSChanges extends Changes {
      */
     public void printChanges ( ) {
         System.out.println("***** Changes *****");
-        if ( this.freeze ) 
-            System.out.println("Changes: freeze!");
-        if ( this.mark ) 
-            System.out.println("Changes: mark!");
-        if ( this.hold ) 
-            System.out.println("Changes: hold!");
-        if ( this.pass ) 
-            System.out.println("Changes: pass!");
-        if ( this.mailblock ) 
-            System.out.println("Changes: mailblock!");
-        if ( this.changed ) 
-            System.out.println("Changes: changed!");
-        if ( this.changed )
-            System.out.println("Changes: changed!");
-        if ( this.close )
-            System.out.println("Changes: close!");
-        if ( this.auditorium )
-            System.out.println("Changes: auditorium!");
-        if ( this.topic )
-            System.out.println("Changes: topic!");
-        if ( this.lastused )
-            System.out.println("Changes: lastused!");
-        if ( this.description )
-            System.out.println("Changes: description!");
-        if ( this.topiclock )
-            System.out.println("Changes: topiclock!");
-        if ( this.modelock )
-            System.out.println("Changes: modelock!");
-        if ( this.keeptopic )
-            System.out.println("Changes: keeptopic!");
-        if ( this.ident )
-            System.out.println("Changes: ident!");
-        if ( this.restrict )
-            System.out.println("Changes: restrict!");
-        if ( this.verbose )
-            System.out.println("Changes: verbose!");
-        if ( this.leaveops )
-            System.out.println("Changes: leaveops!");
-        if ( this.autoakick )
-            System.out.println("Changes: autoakick!");
+        if ( this.freeze )          { System.out.println("Changes: freeze!");       }
+        if ( this.mark )            { System.out.println("Changes: mark!");         }
+        if ( this.hold )            { System.out.println("Changes: hold!");         }
+        if ( this.pass )            { System.out.println("Changes: pass!");         }
+        if ( this.mailblock )       { System.out.println("Changes: mailblock!");    }
+        if ( this.changed )         { System.out.println("Changes: changed!");      }
+        if ( this.changed )         { System.out.println("Changes: changed!");      }
+        if ( this.close )           { System.out.println("Changes: close!");        }
+        if ( this.auditorium )      { System.out.println("Changes: auditorium!");   }
+        if ( this.topic )           { System.out.println("Changes: topic!");        }
+        if ( this.lastused )        { System.out.println("Changes: lastused!");     }
+        if ( this.description )     { System.out.println("Changes: description!");  }
+        if ( this.topiclock )       { System.out.println("Changes: topiclock!");    }
+        if ( this.modelock )        { System.out.println("Changes: modelock!");     }
+        if ( this.keeptopic )       { System.out.println("Changes: keeptopic!");    }
+        if ( this.ident )           { System.out.println("Changes: ident!");        }
+        if ( this.restrict )        { System.out.println("Changes: restrict!");     }
+        if ( this.verbose )         { System.out.println("Changes: verbose!");      }
+        if ( this.leaveops )        { System.out.println("Changes: leaveops!");     }
+        if ( this.autoakick )       { System.out.println("Changes: autoakick!");    }
     }
 
     

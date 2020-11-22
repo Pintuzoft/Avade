@@ -24,6 +24,7 @@ import core.Executor;
 import core.Handler;
 import core.HashString;
 import core.Proc;
+import core.StringMatch;
 import core.TextFormat;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -247,7 +248,7 @@ public class CSExecutor extends Executor {
                 Handler.getChanServ().opUser (c, targetUser );
             }
         } 
-        ci.changed();        
+        ci.changed(LASTUSED);        
     }
 
     /**
@@ -320,7 +321,7 @@ public class CSExecutor extends Executor {
             Handler.getChanServ().deOpUser (c, targetUser );
             this.snoop.msg (true, NICK_DEOP, targetUser.getName(), user, cmd );
         }
-        ci.changed();        
+        ci.changed(LASTUSED);        
     }
  
     /**
@@ -349,8 +350,8 @@ public class CSExecutor extends Executor {
             return; 
             
         } else if ( result.was(NICK_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getUser().getNameStr() ) ); 
-            this.snoop.msg (false, NICK_NOT_REGISTERED, result.getUser().getName(), user, cmd );
+            this.service.sendMsg (user, output (NICK_NOT_REGISTERED, user.getNameStr() ) ); 
+            this.snoop.msg (false, NICK_NOT_REGISTERED, user.getNameStr(), user, cmd );
             return;
             
         } else if ( result.was(CHAN_NOT_EXIST) ) {
@@ -358,14 +359,19 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1 ( ), user, cmd );
             return;
             
+        } else if ( result.was(CHAN_IS_RELAY) ) {
+            this.service.sendMsg (user, output (CHAN_IS_RELAY, cmd[4] ) ); 
+            this.snoop.msg (false, CHAN_IS_RELAY, cmd[4], user, cmd );
+            return;
+                   
         } else if ( result.was(CHAN_ALREADY_REGGED) ) {
             this.service.sendMsg (user, output (CHAN_ALREADY_REGGED, result.getChanInfo().getNameStr() ) ); 
-            this.snoop.msg (false, CHAN_ALREADY_REGGED, result.getChanInfo().getName ( ), user, cmd );
+            this.snoop.msg (false, CHAN_ALREADY_REGGED, result.getChanInfo().getNameStr(), user, cmd );
             return;
             
         } else if ( result.was(USER_NOT_OP) ) {
             this.service.sendMsg (user, output (USER_NOT_OP, result.getChan().getNameStr() ) ); 
-            this.snoop.msg (false, USER_NOT_OP, result.getChan().getName(), user, cmd );
+            this.snoop.msg (false, USER_NOT_OP, result.getChan().getNameStr(), user, cmd );
             return;
         }
         
@@ -403,7 +409,7 @@ public class CSExecutor extends Executor {
         user.getSID().add ( ci ); /* identified to the channel */
         cmd[5] = "pass_redacted";
         this.snoop.msg ( true, REGISTER_DONE, ci.getName ( ), user, cmd );
-        ci.changed();
+        ci.changed(LASTUSED);
     }
 
     /**
@@ -455,7 +461,7 @@ public class CSExecutor extends Executor {
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ci.getNameStr()  )  ); 
         user.getSID().add ( ci );
         this.snoop.msg ( true, PASSWD_ACCEPTED, ci.getName(), user, cmd );
-        ci.changed();          
+        ci.changed(LASTUSED);          
     } 
  
     private void drop ( User user, String[] cmd ) {
@@ -608,6 +614,10 @@ public class CSExecutor extends Executor {
     }
 
     private void access ( HashString access, User user, String[] cmd ) {
+        if ( isShorterThanLen ( 6, cmd ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "<AOP|SOP> <#chan> <ADD|DEL|LIST> [<nick|#NUM>]" ) );
+            return;
+        }
         HashString command = new HashString ( cmd[5] );
         if ( command.is(LIST) ) {
             doListAccess ( user, cmd, access );
@@ -805,6 +815,11 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, output ( NOT_ENOUGH_ACCESS, "" ) ); 
             this.snoop.msg ( false, NOT_ENOUGH_ACCESS, user.getName ( ), user, cmd );
             return;
+               
+        } else if ( result.was(NICK_HAS_NOOP) ) {
+            this.service.sendMsg ( user, output ( NICK_HAS_NOOP, result.getNick2().getNameStr() ) ); 
+            this.snoop.msg ( false, NICK_HAS_NOOP, user.getName ( ), user, cmd );
+            return;
         
         } else if ( result.was(XOP_NOT_FOUND) ) {
             this.service.sendMsg ( user, output ( XOP_NOT_FOUND, "" ) ); 
@@ -831,7 +846,7 @@ public class CSExecutor extends Executor {
         HashString command = result.getCommand();
         HashString subcommand = result.getSubCommand();
         CSAcc acc = result.getAcc();
-         
+              
         if ( ( ni2 = result.getNick2() ) == null ) {
             mask = result.getString1().getString(); 
         } 
@@ -839,9 +854,14 @@ public class CSExecutor extends Executor {
         if ( acc != null && acc.getNick() != null ) {
             what = acc.getNick().getNameStr();
         } else if ( acc != null && acc.getMask() != null ) {
-            what = acc.getMask();
+            what = acc.getMask().getString();
         } else {
             what = "-";
+        }
+
+        if ( acc == null ) {
+            acc = new CSAcc (ni2, access, null);
+            what = ni2.getNameStr();
         }
         
         if ( subcommand.is(ADD) ) {
@@ -852,23 +872,23 @@ public class CSExecutor extends Executor {
             if ( ci.getSettings().is ( VERBOSE ) ) {
                 this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getNameStr(), what, listName ) );
             }
-            if ( command == AKICK && ci.isSet ( AUTOAKICK ) ) {
+            if ( command.is ( AKICK ) && ci.isSet ( AUTOAKICK ) ) {
                 c.addCheckUsers();
             }
-            ci.changed();
-            this.snoop.msg ( true, ACCESS_ADDED, ci.getName(), user, cmd );
+            ci.changed(subcommand);
+            this.snoop.msg ( true, ACCESS_ADDED, ci.getNameStr(), user, cmd );
             
         } else if ( subcommand.is(DEL) ) {
             ci.delAccess ( access, acc );
             ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), this.getDelList(access), what, user ) );
             this.service.sendMsg ( user, output ( NICK_DELETED, what, listName ) );
-            if ( ci.getSettings().is ( VERBOSE ) ) {
+            if ( ci.getSettings().is(VERBOSE) ) {
                 this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_DELETED, ni.getNameStr(), what, listName ) );
             }
-            ci.changed();
+            ci.changed(subcommand);
             this.snoop.msg ( true, ACCESS_DELETED, ci.getName(), user, cmd );
         }
-        ci.changed();
+        ci.changed(LASTUSED);
     }
     
     private void unban ( User user, String[] cmd )  {
@@ -919,13 +939,13 @@ public class CSExecutor extends Executor {
         NickInfo ni = result.getNick ( );
         User target = result.getTarget ( );
 
-        if ( ci.getSettings().is ( VERBOSE ) ) {
+        if ( ci.isSet(VERBOSE) ) {
             this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getNameStr() , target.getNameStr() , "UnBan" )  );
         } 
         Handler.getChanServ().unBanUser ( c, target );
         this.service.sendMsg ( user, output ( CHAN_UNBAN, target.getNameStr(), ci.getNameStr() ) );
         this.snoop.msg ( true, CHAN_UNBAN, ci.getName ( ), user, cmd );
-        ci.changed();
+        ci.changed(LASTUSED);
     }
 
     private void invite ( User user, String[] cmd )  {
@@ -968,12 +988,12 @@ public class CSExecutor extends Executor {
         Chan c = result.getChan ( );
         ChanInfo ci = result.getChanInfo ( );
         NickInfo ni = result.getNick ( ); 
-        if ( ci.getSettings().is ( VERBOSE ) ) {
+        if ( ci.isSet ( VERBOSE ) ) {
             this.service.sendOpMsg ( ci, output ( NICK_INVITED, ni.getNameStr(), ci.getNameStr ( ) )  );
         } 
         Handler.getChanServ().invite ( c, user );
         this.snoop.msg ( true, NICK_INVITED, ni.getName(), user, cmd );
-        ci.changed();
+        ci.changed(LASTUSED);
     }
      
     /* Tells a channel staff how a user has access to a channel */
@@ -1035,27 +1055,27 @@ public class CSExecutor extends Executor {
             
         } else if ( result.was(NICK_NOT_REGISTERED) ) {
             this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, NICK_NOT_REGISTERED, result.getString1 ( ), user, cmd );
+            this.snoop.msg (false, NICK_NOT_REGISTERED, result.getString1().getString(), user, cmd );
             return;
             
         } else if ( result.was(CHAN_NOT_REGISTERED) ) {
             this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
+            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1().getString(), user, cmd );
             return;
             
         } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
+            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr() ) ); 
+            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getNameStr(), user, cmd );
             return;
             
         } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
+            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) ); 
+            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getNameStr(), user, cmd );
             return;
             
         } else if ( result.was(ACCESS_DENIED) ) {
             this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
+            this.snoop.msg (false, ACCESS_DENIED, result.getString1().getString(), user, cmd );
             return;
         }
          
@@ -1081,78 +1101,77 @@ public class CSExecutor extends Executor {
         // chan  ( name, pass, desc, topic, regstamp, stamp ) 
         // chansetting  ( name,keeptopic,topiclock,ident,opguard,restrict,verbose,mailblock,leaveops,private ) 
         if ( command.is(DESCRIPTION) ) {
-            doDescription ( user, ci, cmd );
-                ci.getChanges().change ( DESCRIPTION );
+                doDescription ( user, ci, cmd );
+                ci.changed ( DESCRIPTION );
                 this.snoop.msg ( true, SET_DESCRIPTION, ci.getName(), user, cmd );
             
         } else if ( command.is(TOPICLOCK) ) {
-            doTopicLock ( user, ci, setting );
-                ci.getChanges().change ( TOPICLOCK );
+                doTopicLock ( user, ci, setting );
+                ci.changed ( TOPICLOCK );
                 this.snoop.msg ( true, SET_TOPICLOCK, ci.getName(), user, cmd );
         
         } else if ( command.is(MODELOCK) ) {
             doModeLock ( user, ci, cmd );
-                ci.getChanges().change ( MODELOCK );
+                ci.changed ( MODELOCK );
                 this.snoop.msg ( true, SET_MODELOCK, ci.getName(), user, cmd );
         
         } else if ( command.is(KEEPTOPIC) ) {
-            this.sendWillOutput ( user, flag, "keep your topic if channel goes empty.", "forget the topic if the channel goes empty." );
+                this.sendWillOutput ( user, flag, "keep your topic if channel goes empty.", "forget the topic if the channel goes empty." );
                 ci.getSettings().set ( KEEPTOPIC, flag );
-                ci.getChanges().change ( KEEPTOPIC );
+                ci.changed ( KEEPTOPIC );
                 this.snoop.msg ( true, SET_KEEPTOPIC, ci.getName(), user, cmd );
         
         } else if ( command.is(IDENT) ) {
-            this.sendWillOutput ( user, flag, "require channel ops to identify to their nicks.", "require channel ops to identify to their nicks." );
+                this.sendWillOutput ( user, flag, "require channel ops to identify to their nicks.", "require channel ops to identify to their nicks." );
                 ci.getSettings().set ( IDENT, flag );
-                ci.getChanges().change ( IDENT );
+                ci.changed ( IDENT );
                 this.snoop.msg ( true, SET_IDENT, ci.getName(), user, cmd );
         
         } else if ( command.is(OPGUARD) ) {
-            this.sendWillOutput ( user, flag, "guard channel ops.", "require ops to identify to their nicks." );
+                this.sendWillOutput ( user, flag, "guard channel ops.", "require ops to identify to their nicks." );
                 ci.getSettings().set ( OPGUARD, flag );
-                ci.getChanges().change ( OPGUARD );
+                ci.changed ( OPGUARD );
                 this.snoop.msg ( true, SET_OPGUARD, ci.getName(), user, cmd );
         
         } else if ( command.is(RESTRICT) ) {
-            this.sendWillOutput ( user, flag, "restrict users from entering the channel.", "restrict users from entering the channel." );
+                this.sendWillOutput ( user, flag, "restrict users from entering the channel.", "restrict users from entering the channel." );
                 ci.getSettings().set ( RESTRICT, flag );
-                ci.getChanges().change ( RESTRICT );
+                ci.changed ( RESTRICT );
                 this.snoop.msg ( true, SET_RESTRICT, ci.getName(), user, cmd );
         
         } else if ( command.is(VERBOSE) ) {
-            this.sendWillOutput ( user, flag, "notify current ops of channel changes.", "notify current ops of channel changes." );
+                this.sendWillOutput ( user, flag, "notify current ops of channel changes.", "notify current ops of channel changes." );
                 ci.getSettings().set ( VERBOSE, flag );
-                ci.getChanges().change ( VERBOSE );
+                ci.changed ( VERBOSE );
                 this.snoop.msg ( true, SET_VERBOSE, ci.getName(), user, cmd );
         
         } else if ( command.is(MAILBLOCK) ) {
-            this.sendWillOutput ( user, flag, "deny the channel password to be mailed to the founders email.", "deny the channel password to be mailed to the founders mail." );
+                this.sendWillOutput ( user, flag, "deny the channel password to be mailed to the founders email.", "deny the channel password to be mailed to the founders mail." );
                 ci.getSettings().set ( MAILBLOCK, flag );
-                ci.getChanges().change ( MAILBLOCK );
+                ci.changed ( MAILBLOCK );
                 this.snoop.msg ( true, SET_MAILBLOCK, ci.getName(), user, cmd );
         
         } else if ( command.is(LEAVEOPS) ) {
-            this.sendWillOutput ( user, flag, "leave ops ( @ )  to the first user entering the channel after its been empty.", "leave ops(@)." );
+                this.sendWillOutput ( user, flag, "leave ops ( @ )  to the first user entering the channel after its been empty.", "leave ops(@)." );
                 ci.getSettings().set ( LEAVEOPS, flag );
-                ci.getChanges().change ( LEAVEOPS );
+                ci.changed ( LEAVEOPS );
                 this.snoop.msg ( true, SET_LEAVEOPS, ci.getName(), user, cmd );
         
         } else if ( command.is(AUTOAKICK) ) {
-            this.sendWillOutput ( user, flag, "remove matching users on akick.", "leave ops(@)." );
+                this.sendWillOutput ( user, flag, "remove matching users on akick.", "leave ops(@)." );
                 ci.getSettings().set ( AUTOAKICK, flag );
-                ci.getChanges().change ( AUTOAKICK );
+                ci.changed ( AUTOAKICK );
                 this.snoop.msg ( true, SET_AUTOAKICK, ci.getName(), user, cmd );
         
         } else {
-            this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
-            this.snoop.msg ( false, SETTING_NOT_FOUND, ci.getName(), user, cmd );
+            this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[5] ) );
+            this.snoop.msg ( false, SETTING_NOT_FOUND, ci.getNameStr(), user, cmd );
             return;
         }
-        ci.changed();
     }
+    
     private void getPass ( User user, String[] cmd ) {
         CMDResult result = this.validateCommandData ( user, GETPASS, cmd );
-        
         if ( result.was(SYNTAX_ERROR) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "GETPASS <#chan>" )  );
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
@@ -1206,13 +1225,13 @@ public class CSExecutor extends Executor {
             return;
             
         } else if ( result.was(CHANFLAG_EXIST) ) {
-            this.service.sendMsg (user, output (CHANFLAG_EXIST, result.getChanInfo().getNameStr ( ), result.getString1().getString() ) ); 
+            this.service.sendMsg (user, output (CHANFLAG_EXIST, result.getChanInfo().getNameStr(), result.getString1().getString() ) ); 
             this.snoop.msg (false, CHANFLAG_EXIST, result.getString1 ( ), user, cmd );
             return; 
             
         } else if ( result.was(IS_MARKED) ) {
             this.service.sendMsg (user, output (IS_MARKED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, IS_MARKED, result.getChanInfo().getName ( ), user, cmd );
+            this.snoop.msg (false, IS_MARKED, result.getChanInfo().getNameStr(), user, cmd );
             return;
         }
          
@@ -1220,8 +1239,10 @@ public class CSExecutor extends Executor {
         ChanInfo ci = result.getChanInfo ( );
         HashString command = result.getCommand ( );
         CSLogEvent log;
-        ChanInfo relay;
         NickInfo instater;
+        Chan c;
+        
+        System.out.println("debug: "+command);
         
         /* UNAUDITORIUM */
         if ( command.is(UNAUDITORIUM) ) {
@@ -1231,13 +1252,16 @@ public class CSExecutor extends Executor {
                 this.snoop.msg ( false, ACCESS_DENIED_SRA, ci.getName ( ), user, cmd );
                 return;
             }
-            if ( ( relay = ChanServ.findChan ( ci.getName()+"-relay" ) ) != null ) {
-                Handler.getChanServ().dropChan ( relay );
-            }
+//            if ( ( relay = ChanServ.findChan ( ci.getName()+"-relay" ) ) != null ) {
+//                Handler.getChanServ().dropChan ( relay );
+//            }
+
+            ci.getSettings().set ( AUDITORIUM, "" );
             this.service.sendMsg ( user, "Please note that the auditorium channel mode handles joins/parts differently than normal and will cause "+
                                          "users becoming out of sync. Its for that reason recommended to masskick the channel after removing the mode to sort the possible desync." );
             this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :-A");
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
+            ci.changed(command);
         
         /* UNMARK || UNFREEZE || REOPEN || UNHOLD*/
         } else if ( command.is(UNMARK) ||
@@ -1251,64 +1275,73 @@ public class CSExecutor extends Executor {
                 return;
             }
             ci.getSettings().set ( flag, "" );
-            ci.getChanges().change ( flag );
             log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getNameStr() );
             ChanServ.addLog ( log );
             this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getNameStr(), "Un"+ci.getSettings().modeString ( flag ) ) );
             this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been Un"+ci.getSettings().modeString ( flag )+" by: "+oper.getName() );
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
-            ci.changed();
+            ci.changed(flag);
             
         /* AUDITORIUM */
         } else if ( command.is(AUDITORIUM) ) {
-            if ( ( relay = ChanServ.findChan ( ci.getName()+"-relay" ) ) != null ) {
-                this.service.sendMsg ( user, "Error: Relay channel: "+ci.getName()+"-relay is already registered." );
-                this.snoop.msg ( true, CHAN_ALREADY_REGGED, ci.getName ( ), user, cmd );
-                return;
+//            if ( ( relay = ChanServ.findChan ( ci.getName()+"-relay" ) ) != null ) {
+//                this.service.sendMsg ( user, "Error: Relay channel: "+ci.getName()+"-relay is already registered." );
+//                this.snoop.msg ( true, CHAN_ALREADY_REGGED, ci.getName ( ), user, cmd );
+//                return;
+//            }
+
+//            Random rand = new Random ( );
+//            String pass = "R"+rand.nextInt(99999999);
+//            Topic topic = new Topic ( "Relay channel for "+ci.getName(), "ChanServ", System.currentTimeMillis() / 1000 );
+//            relay = new ChanInfo ( ci.getName()+"-relay", user.getOper().getNick(), pass, "Relay channel for "+ci.getName(), topic );
+//            ChanSetting settings = new ChanSetting ();
+//            settings.setModeLock("+spt-n");
+//            relay.setTopic ( topic );
+//            relay.setSettings ( settings );
+//            ChanServ.addChan ( relay );
+//            this.service.sendMsg ( user, "Relay channel: "+relay.getName()+" has been registered to you. This is the channel " );
+//            this.service.sendMsg ( user, "where regular user chat will end up instead of the main channel. Keep this channel secret." );
+//            this.service.sendMsg ( user, "Relay chan password: "+pass );
+//            this.service.sendMsg ( user, " " );
+  
+
+            ci.getSettings().set ( AUDITORIUM, oper.getNameStr() );
+            if ( ( c = Handler.findChan ( ci.getNameStr()+"-relay" ) ) != null ) {
+                Handler.getChanServ().checkAllUsers(c);
             }
-            Random rand = new Random ( );
-            String pass = "R"+rand.nextInt(99999999);
-            Topic topic = new Topic ( "Relay channel for "+ci.getName(), "ChanServ", System.currentTimeMillis() / 1000 );
-            relay = new ChanInfo ( ci.getName()+"-relay", user.getOper().getNick(), pass, "Relay channel for "+ci.getName(), topic );
-            ChanSetting settings = new ChanSetting ();
-            settings.setModeLock("+spt-n");
-            relay.setTopic ( topic );
-            relay.setSettings ( settings );
-            ChanServ.addChan ( relay );
-            this.service.sendMsg ( user, "Relay channel: "+relay.getName()+" has been registered to you. This is the channel " );
-            this.service.sendMsg ( user, "where regular user chat will end up instead of the main channel. Keep this channel secret." );
-            this.service.sendMsg ( user, "Relay chan password: "+pass );
+            this.service.sendMsg ( user, "Channel message from users is now relayed to "+ci.getNameStr()+"-relay" );
             this.service.sendMsg ( user, " " );
             this.service.sendMsg ( user, "Please note that the auditorium channel mode handles joins/parts differently than normal and" );
             this.service.sendMsg ( user, "will cause users becoming out of sync. Its for that reason recommended to masskick the channel" );
             this.service.sendMsg ( user, "after removing the mode to sort the possible desync." );
             this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :+A");
-            this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
-            ChanServ.addToWorkList ( REGISTER, ci );
+            this.snoop.msg ( true, CHAN_SET_FLAG, ci.getNameStr(), user, cmd );
+            ci.changed(command);
+//            ChanServ.addToWorkList ( REGISTER, ci );
         
-        /* MARK || MARK || CLOSE || HOLD */
+        /* MARK || FREEZE || CLOSE || HOLD */
         } else if ( command.is(MARK) ||
-                    command.is(MARK) ||
+                    command.is(FREEZE) ||
                     command.is(CLOSE) ||
                     command.is(HOLD) ) {
-            ci.set ( flag, oper.getName() );
-            ci.getChanges().change ( flag );
+            ci.set ( flag, oper.getNameStr() );
             log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getNameStr() );
             ChanServ.addLog ( log );
             this.service.sendMsg ( user, output ( CHAN_SET_FLAG, ci.getNameStr(), ci.getSettings().modeString ( flag ) )  );
-            this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been "+ci.getSettings().modeString ( flag )+" by: "+oper.getName() );
+            this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been "+ci.getSettings().modeString(flag)+" by: "+oper.getName() );
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
-            ci.changed();
+            ci.changed(command);
         
         /* NO SUCH COMMAND */
         } else {
-            this.snoop.msg ( false, SYNTAX_ERROR, ci.getName ( ), user, cmd );
+            this.snoop.msg ( false, SYNTAX_ERROR, ci.getName(), user, cmd );
         }
          
     }
       
     private void doDescription ( User user, ChanInfo ci, String[] cmd ) {
-        String buf = Handler.cutArrayIntoString ( cmd, 5 );
+        String buf = Handler.cutArrayIntoString ( cmd, 6 );
+        this.service.sendMsg ( user, ci.getNameStr()+" channel description is now set to: "+buf );
         ci.setDescription ( buf );
     }
        
@@ -1424,7 +1457,7 @@ public class CSExecutor extends Executor {
         ChanServ.addLog ( log );
         ChanServ.deopAll ( c );
         this.snoop.msg ( true, NICK_MDEOP_CHAN, ci.getName ( ), user, cmd );
-        ci.changed();
+        ci.changed(LASTUSED);
     }
     
     /**
@@ -1483,7 +1516,7 @@ public class CSExecutor extends Executor {
         ChanServ.addLog ( log );
         ci.kickAll ( "Masskick by "+ni.getName() );
         this.snoop.msg ( true, NICK_MKICK_CHAN, ci.getName(), user, cmd );
-        ci.changed();
+        ci.changed(LASTUSED);
     }
     
     /**
@@ -1675,7 +1708,7 @@ public class CSExecutor extends Executor {
             }
             ci.getChanFlag().setShortFlag ( command, sho );
             ci.getChanges().change ( command );
-            ci.changed();
+            ci.changed(command);
             this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
             this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
@@ -1692,7 +1725,7 @@ public class CSExecutor extends Executor {
             boolean boo = ( commandVal.equalsIgnoreCase ( "ON" ) );
             ci.getChanFlag().setBooleanFlag ( command, boo );
             ci.getChanges().change ( command );
-            ci.changed();
+            ci.changed(command);
             this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
             this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
@@ -1701,7 +1734,7 @@ public class CSExecutor extends Executor {
             String message = Handler.cutArrayIntoString ( cmd, 6 );
             ci.getChanFlag().setGreetmsg ( message );
             ci.getChanges().change ( command );
-            ci.changed();
+            ci.changed(command);
             this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+" :"+message );
             this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+message );
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
@@ -1890,8 +1923,8 @@ public class CSExecutor extends Executor {
                     command.is(AKICK) ) {
             
             //:DreamHealer PRIVMSG ChanServ@services.avade.net :akick #friends add *!*@10.0.1/24
-                //           0       1                           2      3        4   5             6
-                if ( isShorterThanLen ( 7, cmd ) ) {
+                //       0       1                           2      3        4   5             6
+                if ( isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
                 } 
                 ci = ChanServ.findChan ( cmd[4] );
@@ -1899,13 +1932,17 @@ public class CSExecutor extends Executor {
                 if (ci != null) {
                     ni = ci.getNickByUser ( user );
                 }
-                if ( ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
+                
+                if ( cmd.length > 6 && ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
                     mask = cmd[6];
                 }
                 
                 subcommand = new HashString ( cmd[5] );
-                if ( subcommand != ADD && subcommand != DEL ) {
+                
+                if ( ! subcommand.is(ADD) && 
+                     ! subcommand.is(DEL) ) {
                     result.setStatus ( SYNTAX_ERROR );
+
                 } else if ( ni2 == null && ! ( mask.contains("!") && mask.contains("@") ) ) {
                     result.setString1 ( cmd[6] );
                     result.setStatus ( NICK_NOT_REGISTERED );
@@ -1917,7 +1954,7 @@ public class CSExecutor extends Executor {
                     result.setStatus ( CHAN_IS_FROZEN );  
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     result.setChanInfo ( ci );
-                    result.setStatus ( CHAN_IS_CLOSED );  
+                    result.setStatus ( CHAN_IS_CLOSED );
                 } else if ( ni == null || ( ! ci.isAtleastSop ( ni ) && ! ni.is(ni2) ) ) {
                     result.setString1 ( user.getName() );
                     result.setStatus ( ACCESS_DENIED );
@@ -1930,16 +1967,21 @@ public class CSExecutor extends Executor {
                     result.setStatus ( NOT_ENOUGH_ACCESS );
                 } else if ( ( acc = getAcc ( command, ci, ni2 ) ) == null && 
                             ( acc = getAcc ( command, ci, mask ) ) == null &&
-                            subcommand == DEL ) {
+                            subcommand.is ( DEL ) ) {
                     result.setStatus ( XOP_NOT_FOUND );
-                } else if ( subcommand == ADD && acc != null ) {
+                } else if ( subcommand.is(ADD) && acc != null ) {
                     if ( ni2 != null ) {
                         result.setString1 ( ni2.getName() );
                     } else {
                         result.setString1 ( mask );
                     }
                     result.setStatus ( XOP_ALREADY_PRESENT );
-                } else if ( subcommand == ADD && 
+                } else if ( subcommand.is(ADD) &&
+                            ni2 != null &&
+                            ni2.isSet ( NOOP ) ) {
+                    result.setNick2 ( ni2 );
+                    result.setStatus ( NICK_HAS_NOOP );
+                } else if ( subcommand.is ( ADD ) && 
                             ( ( ni2 != null && ( acc = new CSAcc ( ni2, command, null ) ) == null ) ||
                               ( mask != null && ( acc = new CSAcc ( mask, command, null ) ) == null ) ) ) {  
                     result.setStatus ( XOP_ADD_FAIL );
@@ -2178,12 +2220,15 @@ public class CSExecutor extends Executor {
                     result.setStatus ( NICK_NOT_IDENTIFIED );
                 } else if ( ( c = Handler.findChan ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
-                    result.setStatus ( CHAN_NOT_EXIST );   
+                    result.setStatus ( CHAN_NOT_EXIST );
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) != null ) {
                     result.setChanInfo ( ci );
-                    result.setStatus ( CHAN_ALREADY_REGGED );      
+                    result.setStatus ( CHAN_ALREADY_REGGED );
+                } else if ( StringMatch.wild(c.getNameStr(), "*-relay" ) ) {
+                    result.setChan(c);
+                    result.setStatus(CHAN_IS_RELAY);
                 } else if ( ! c.isOp ( user ) ) {
-                    result.setChan ( c );                   
+                    result.setChan ( c );
                     result.setStatus ( USER_NOT_OP );
                 } else {
                     result.setChan(c);
@@ -2273,28 +2318,41 @@ public class CSExecutor extends Executor {
                     command.is(FREEZE) ||
                     command.is(CLOSE) ||
                     command.is(HOLD) ) {
+            
+                boolean remove = false;
+                String name = null;
+                if ( cmd.length > 4 ) {
+                    remove = cmd[4].charAt(0) == '-';
+                    if ( remove ) {
+                        name = cmd[4].substring ( 1 );
+                    } else {
+                        name = cmd[4];
+                    }
+                }
                 result.setCommand ( command );
                 if ( ! ChanServ.enoughAccess ( user, command ) ) {
-                    result.setStatus ( ACCESS_DENIED );
+                    result.setStatus ( ACCESS_DENIED );                
                 } else if ( isShorterThanLen ( 5, cmd ) ) {
-                    result.setStatus ( SYNTAX_ERROR );
+                    result.setStatus ( SYNTAX_ERROR );                
                 } else if ( ( ci = ChanServ.findChan ( cmd[4].replace ( "-", "" ) ) ) == null ) {
                     result.setString1 ( cmd[4].replace ( "-", "" ) );
-                    result.setStatus ( CHAN_NOT_REGISTERED );
-                } else if ( ci.isSet ( MARK ) && ( command != MARK || command == MARK && cmd[4].charAt(0) != '-' ) ) {
+                    result.setStatus ( CHAN_NOT_REGISTERED );                
+                } else if ( ci.isSet ( MARK ) && ( !command.is(MARK) || (command.is(MARK) && ! remove) ) ) {
                     result.setChanInfo ( ci );
-                    result.setStatus ( IS_MARKED );   
-                } else if ( ci.isSet ( command ) && command != MARK && cmd[4].charAt(0) != '-' ) {
+                    result.setStatus ( IS_MARKED );                
+                } else if ( ci.isSet ( command ) && 
+                            ! command.is(MARK) && 
+                            ! remove ) {
                     result.setChanInfo ( ci );
                     result.setString1 ( this.getCommandStr ( command ) );
-                    result.setStatus ( CHANFLAG_EXIST );
-                } else if ( ! ci.isSet ( command ) && cmd[4].charAt(0) == '-' ) {
+                    result.setStatus ( CHANFLAG_EXIST );                
+                } else if ( ! ci.isSet ( command ) && remove ) {
                     result.setChanInfo ( ci );
                     result.setString1 ( this.getCommandStr ( this.getAntiCommand ( command ) ) );
-                    result.setStatus ( CHANFLAG_EXIST );
+                    result.setStatus ( CHANFLAG_EXIST );                
                 } else {
                     result.setChanInfo ( ci );
-                    if ( cmd[4].charAt ( 0 ) == '-' ) {
+                    if ( remove ) {
                         result.setCommand ( this.getAntiCommand ( command ) );
                     }
                 }
@@ -2309,7 +2367,7 @@ public class CSExecutor extends Executor {
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( CHAN_NOT_REGISTERED );
-                } else if ( ci.isSet ( MARK ) ) {
+                } else if ( ci.isSet(MARK) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( IS_MARKED );
                 } else {
@@ -2321,10 +2379,10 @@ public class CSExecutor extends Executor {
     
     private HashString getAntiCommand ( HashString command ) {
         if      ( command.is(MARK) )            { return UNMARK; }
-        else if ( command.is(FREEZE) )            { return UNFREEZE; }
-        else if ( command.is(CLOSE) )            { return REOPEN; }
+        else if ( command.is(FREEZE) )          { return UNFREEZE; }
+        else if ( command.is(CLOSE) )           { return REOPEN; }
         else if ( command.is(HOLD) )            { return UNHOLD; }
-        else if ( command.is(AUDITORIUM) )            { return UNAUDITORIUM; }
+        else if ( command.is(AUDITORIUM) )      { return UNAUDITORIUM; }
         else {
             return new HashString ( "0" );
         }
@@ -2426,6 +2484,9 @@ public class CSExecutor extends Executor {
 
         else if ( output.is(CHAN_ALREADY_REGGED) ) 
             return "Error: chan "+f.b ( ) +args[0]+f.b ( ) +" is already registered."; 
+        
+        else if ( output.is(CHAN_IS_RELAY) ) 
+            return "Error: chan "+f.b()+args[0]+f.b()+" is a relay channel cannot be registered."; 
 
         else if ( output.is(CHAN_NOT_EXIST) ) 
             return "Error: chan "+f.b ( ) +args[0]+f.b ( ) +" does not exist.";
@@ -2440,7 +2501,7 @@ public class CSExecutor extends Executor {
             return "Error: You need to be op(@) in "+f.b ( ) +args[0]+f.b ( ) +" to perform that command.";
             
         else if ( output.is(NICK_HAS_NOOP) ) 
-            return "Error: "+args[0]+" does not wish to be added to any channel list  ( noop ) ";
+            return "Error: "+args[0]+" does not wish to be added to any channel list (NOOP) ";
             
         else if ( output.is(WILL_NOW) ) 
             return "Your chan will now "+args[0];

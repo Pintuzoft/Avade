@@ -192,12 +192,18 @@ public class User extends HashNumeric {
         }
     }
 
-    public boolean isIdented ( NickInfo ni )    { 
-        return  (  ( ni != null && this.sid != null ) ? this.sid.isIdentified ( ni ) : false ); 
+    public boolean isIdented ( NickInfo ni ) {
+        if ( ni != null && this.sid != null ) {
+            return this.sid.isIdentified ( ni );
+        }
+        return false;
     }     
 
-    public boolean isIdented ( ChanInfo ci ) { 
-        return  ( ( ci != null && this.sid != null ) ? this.sid.isIdentified ( ci ) : false ); 
+    public boolean isIdented ( ChanInfo ci ) {
+        if ( ci != null && this.sid != null ) {
+            return this.sid.isIdentified ( ci );
+        }
+        return false;
     } 
     
     public String getFullMask ( ) { 
@@ -346,5 +352,9 @@ public class User extends HashNumeric {
     
     public HashString getMask ( ) {
         return this.mask;
+    }
+
+    public void setMode(HashString mode, boolean state) {
+        this.getModes().set ( mode, state );
     }
 }

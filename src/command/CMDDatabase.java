@@ -75,7 +75,7 @@ public class CMDDatabase extends Database {
                     }
                      
                 } catch ( SQLException e ) {
-                    Proc.log ( CMDDatabase.class.getName ( ), e );
+                    Proc.log ( CMDDatabase.class.getName(), e );
                 }    
             }  
             res.close ( );
@@ -85,7 +85,6 @@ public class CMDDatabase extends Database {
         } catch  ( SQLException ex )  {
             Proc.log ( CMDDatabase.class.getName ( ), ex );
         }
-        System.out.println("debug: getCommands(end): "+cList.size());
         return cList;
     }
     

@@ -30,9 +30,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import operserv.Oper;
 import operserv.OperServ;
@@ -561,10 +558,11 @@ public class NSDatabase extends Database {
         }    
         try {
             String query = "insert into nickexp "
-                         + " ( name,lastsent,mailcount )  "
-                         + "values  ( ?, ?, ? )  "
+                         + " ( name, lastsent, mailcount ) "
+                         + "values  ( ?, ?, ? ) "
                          + "on duplicate key "
                          + "update lastsent = ?, mailcount = ?";
+             
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, ni.getNameStr() );
             ps.setLong     ( 2, ni.getNickExp().getLastSent ( ) );
@@ -574,10 +572,10 @@ public class NSDatabase extends Database {
             ps.executeUpdate ( );
             ps.close ( );
 
-            idleUpdate  (  "saveNickExp ( ) "  );
+            idleUpdate ( "saveNickExp()" );
             return true;
         } catch ( SQLException ex ) {
-            Proc.log ( NSDatabase.class.getName ( ), ex );
+            Proc.log ( NSDatabase.class.getName(), ex );
         }
         return false;
     }

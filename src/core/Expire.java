@@ -26,42 +26,42 @@ public class Expire {
     private int mailCount;
     private final int maxMail = 5;
     
-    public Expire ( )  {
-        this.lastSent   = 0;
-        this.mailCount  = 0;
+    public Expire ( ) {
+        this.lastSent = 0;
+        this.mailCount = 0;
     }
      
-    public void setLastSent ( long in )         { this.lastSent     = in;   }
-    public void setMailCount ( int in )         { this.mailCount    = in;   }
+    public void setLastSent ( long in )         { this.lastSent = in;       }
+    public void setMailCount ( int in )         { this.mailCount = in;      }
     
-    public long getLastSent ( )                { return this.lastSent;     }
-    public int getMailCount ( )                { return this.mailCount;    }
+    public long getLastSent ( )                 { return this.lastSent;     }
+    public int getMailCount ( )                 { return this.mailCount;    }
 
-    public void incMailCount ( )  { 
-        this.lastSent =  (  System.currentTimeMillis ( ) /1000  );
+    public void incMailCount ( ) { 
+        this.lastSent = ( System.currentTimeMillis ( ) / 1000 );
         this.mailCount++;
     }
 
-    public void reset ( )  {
-        this.lastSent   = 0;
-        this.mailCount  = 0;
+    public void reset ( ) {
+        this.lastSent = 0;
+        this.mailCount = 0;
     }
     
-    public void print ( )  {
+    public void print ( ) {
         System.out.println ( "NickExp-Debug: lastMail:"+this.lastSent );
         System.out.println ( "NickExp-Debug: mailCount:"+this.mailCount );
     }
     
     /* Return true if its time to send another mail and we havent sent too many  ( 5 )  */
-    public boolean isTimeToSendAnotherMail ( )  {
-        long lastMail   =  (  System.currentTimeMillis ( ) /1000 - this.getLastSent ( )   );
-        long maxTime    = 60 * 60 * 24; /* Wait 24 hours between mails */
-        return  (  this.mailCount <= this.maxMail && lastMail > maxTime  );
+    public boolean isTimeToSendAnotherMail ( ) {
+        long lastMail = ( System.currentTimeMillis ( ) / 1000 - this.getLastSent ( ) );
+        long maxTime  = 60 * 60 * 24; /* Wait 24 hours between mails */
+        return  ( this.mailCount <= this.maxMail && lastMail > maxTime );
     }
     
-    public boolean shouldExpire ( )  {
-        long lastMail   =  (  System.currentTimeMillis ( ) /1000 - this.getLastSent ( )   );
-        long maxTime    = 60 * 60 * 24 * 2; /* Wait 2 days after last mail */
-        return  (  this.mailCount > this.maxMail && lastMail > maxTime  );
+    public boolean shouldExpire ( ) {
+        long lastMail = ( System.currentTimeMillis ( ) / 1000 - this.getLastSent ( ) );
+        long maxTime  = 60 * 60 * 24 * 2; /* Wait 2 days after last mail */
+        return ( this.mailCount > this.maxMail && lastMail > maxTime );
     }
 }
