@@ -17,6 +17,7 @@
  */
 package rootserv;
 
+import core.Config;
 import core.Executor;
 import core.Handler;
 import core.HashString;
@@ -58,6 +59,9 @@ public class RSExecutor extends Executor {
         } else if ( command.is(REHASH) ) {
             this.rehash ( user, cmd );
         
+        } else if ( command.is(SHOWCONFIG) ) {
+            this.showConfig ( user, cmd );
+                
         } else if ( command.is(SRAW) ) {
             this.sraw ( user, cmd );
         
@@ -72,7 +76,7 @@ public class RSExecutor extends Executor {
     }
 
     private void rehash ( User user, String[] cmd )  {
-        if ( Proc.rehashConf ( )  )  {
+        if ( Proc.rehashConf ( user )  )  {
             this.service.sendMsg ( user, "Rehashing services successful" );
         } else {
             this.service.sendMsg ( user, "Rehashing services failed" );
@@ -100,6 +104,14 @@ public class RSExecutor extends Executor {
          }
         this.service.sendRaw ( buf );
     }
+        
+    private void showConfig ( User user, String[] cmd )  {
+        this.service.sendMsg ( user, "*** Services Config:" );
+        for ( String c : Proc.getConf().getConfigList ( user ) ) {
+            this.service.sendMsg ( user, c );
+        }
+        this.service.sendMsg ( user, "*** End of Config ***" );
+    }
     
     /* SRA */
     private void sra ( User user, String[] cmd )  {
@@ -113,6 +125,7 @@ public class RSExecutor extends Executor {
         
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" ) );
+            return;
         }
 
         if ( ! RSDatabase.checkConn ( )  )  {

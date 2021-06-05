@@ -23,7 +23,6 @@ import core.HashNumeric;
 import core.HashString;
 import nickserv.NickInfo;
 import java.util.LinkedList;
-import nickserv.NickServ;
 
 /**
  *

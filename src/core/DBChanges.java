@@ -145,6 +145,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db120071 ( ) );
                 qList.add ( "update settings set value = '1.2007-1' where name = 'version'" );
 
+            case 120111 :
+                qList.add ( "to: v1.2011-1");
+                qList.addAll ( this.db120111 ( ) );
+                qList.add ( "update settings set value = '1.2011-1' where name = 'version'" );
+
                 break;
                 
             default :
@@ -523,6 +528,12 @@ public class DBChanges extends HashNumeric {
         qList.add("CREATE TABLE chanaccess_mask (name varchar(33) NOT NULL, access varchar(12) NOT NULL,mask varchar(110) NOT NULL,lastoped datetime DEFAULT NULL,PRIMARY KEY (name,mask),CONSTRAINT FOREIGN KEY (name) REFERENCES chan (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1");
         qList.add("insert into chanaccess_mask (name,access,mask,lastoped) select name,access,nick as mask,lastoped from chanaccess where nick like '%!%' or nick like '%*%'");
         qList.add("delete from chanaccess where nick like '%!%' or nick like '%*%'");
+        return qList;
+    }
+        
+    private ArrayList<String> db120111 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add("create table exception (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);");
         return qList;
     }
         

@@ -24,12 +24,14 @@ import core.Database;
 import core.HashString;
 import core.LogEvent;
 import core.Proc;
+import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 import operserv.Oper;
 import operserv.OperServ;
@@ -47,17 +49,14 @@ public class NSDatabase extends Database {
   
     /* NickServ Methods */
     public static int createNick ( NickInfo ni )  { 
-        Config config = Proc.getConf ( );
         if ( ! activateConnection ( )  )  {
             return -2;
         } else if ( ni == null )  {
             return -3;
-        } else if ( config == null ) {
-            return -4;
         }
         /* Try add the nick */
         try {
-            HashString salt = config.get ( SECRETSALT );
+            HashString salt = Proc.getConf().get ( SECRETSALT );
             /* NICK */
             String query = "insert into nick  ( name,  mask, regstamp, stamp )  "
                           +"values  ( ?, ?, ?, ? )";
@@ -113,7 +112,6 @@ public class NSDatabase extends Database {
     
     /* NickServ Methods */
     public static int updateNick ( NickInfo ni )  {
-        Config config = Proc.getConf ( );
         ni.getChanges().printChanges();
         if ( ! ni.getChanges().changed ( ) ) {
             return 1;
@@ -123,8 +121,6 @@ public class NSDatabase extends Database {
             return -2;
         } else if ( ni == null )  {
             return -3;
-        } else if ( config == null ) {
-            return -4;
         } 
         
 //        System.out.println("updateNick0: "+ni.getString ( USER ) );
@@ -133,7 +129,7 @@ public class NSDatabase extends Database {
         
         /* Try change the nick */
         try {
-            HashString salt = config.get ( SECRETSALT ); 
+            HashString salt = Proc.getConf().get ( SECRETSALT ); 
             String query;
             String mask = ni.getString(USER)+"@"+ni.getString(IP);
             if ( ni.getChanges().hasChanged ( FULLMASK ) ||
@@ -728,13 +724,12 @@ public class NSDatabase extends Database {
         return true;
     }
     
-    static ArrayList<NickInfo> getAllNicks ( )  {
-        ArrayList<NickInfo> nList = new ArrayList<> ( );
+    static HashMap<BigInteger,NickInfo> getAllNicks ( )  {
+        HashMap<BigInteger,NickInfo> nList = new HashMap<>();
         NickInfo ni;
         String[] buf;
         NickSetting settings;
         Expire exp;
-        Config config = Proc.getConf ( );
         long now;
         long now2;
 
@@ -743,8 +738,8 @@ public class NSDatabase extends Database {
         }
         
         try {
-            now = System.currentTimeMillis();
-            HashString salt = config.get ( SECRETSALT );
+            now = System.nanoTime();
+            HashString salt = Proc.getConf().get ( SECRETSALT );
             
             String query = "select n.name,"+
                            "  n.mask,"+
@@ -765,8 +760,6 @@ public class NSDatabase extends Database {
              
             while ( res.next ( ) ) { 
                 buf = res.getString(2).split ( Pattern.quote ( "@" ) );
-                System.out.println("debug: buf[0]: "+buf[0]);
-                System.out.println("debug: buf[1]: "+buf[1]);
                 settings = getSettings ( res.getString ( 1 ) );
                 exp = getNickExp ( res.getString ( 1 ) );
                 exp = ( exp != null ? exp : new Expire ( ) );
@@ -785,21 +778,21 @@ public class NSDatabase extends Database {
                     settings,
                     exp
                 );
-                System.out.println("Loading nick: "+ni.getName());
+//                System.out.println("Loading nick: "+ni.getName());
                 Oper oper =  OperServ.getOper ( ni.getName() );
-                System.out.println(" - Oper: "+oper.getName() );
-                System.out.println(" - Access: "+oper.getAccess() );
-                System.out.println(" - Instater: "+oper.getString ( INSTATER ) );
+//                System.out.println(" - Oper: "+oper.getName() );
+//                System.out.println(" - Access: "+oper.getAccess() );
+//                System.out.println(" - Instater: "+oper.getString ( INSTATER ) );
                 
                 if ( ni.getEmail() != null ) {
                     ni.getSettings().set ( AUTH, true );
                 }
                 ni.setOper ( OperServ.getOper ( ni.getName() ) );
-                nList.add ( ni );
+                nList.put ( ni.getName().getCode(), ni );
                 $count++; 
             } 
-            now2 = System.currentTimeMillis();
-            System.out.print(".. "+$count+" nicks loaded [took "+(now2-now)+"ms]\n");
+            now2 = System.nanoTime();
+            System.out.print(".. "+$count+" nicks loaded [took "+(now2-now)+"ns]\n");
             res.close ( );
             ps.close ( );
         } catch ( SQLException ex )  {

@@ -10,44 +10,31 @@ package core;
  * @author Fredrik Karlsson aka DreamHealer & avade.net
  */
 public class Trigger extends HashNumeric {
-    private static boolean warn;
-    private static HashString action;
-    private static int warnIP;
-    private static int warnRange;
-    private static int actionIP;
-    private static int actionRange;
     
-    public Trigger ( ) {
-        warn = Proc.getConf().getBoolean ( TRIGGERWARN );
-        action = Proc.getConf().get ( TRIGGERACTION );
-        warnIP = Proc.getConf().getInt ( TRIGGERWARNIP );
-        warnRange = Proc.getConf().getInt ( TRIGGERWARNRANGE );
-        actionIP = Proc.getConf().getInt ( TRIGGERACTIONIP );
-        actionRange = Proc.getConf().getInt ( TRIGGERACTIONRANGE );
-    }
+    public Trigger ( ) { /* Nothing to do */ }
 
     public static boolean isWarn() {
-        return warn;
+        return Proc.getConf().getBoolean ( TRIGGERWARN );
     }
 
     public static HashString getAction() {
-        return action;
+        return Proc.getConf().get ( TRIGGERACTION );
     }
 
     public static int getWarnIP() {
-        return warnIP;
+        return Proc.getConf().getInt ( TRIGGERWARNIP );
     }
 
     public static int getWarnRange() {
-        return warnRange;
+        return Proc.getConf().getInt ( TRIGGERWARNRANGE );
     }
 
     public static int getActionIP() {
-        return actionIP;
+        return Proc.getConf().getInt ( TRIGGERACTIONIP );
     }
 
     public static int getActionRange() {
-        return actionRange;
+        return Proc.getConf().getInt ( TRIGGERACTIONRANGE );
     }
     
     

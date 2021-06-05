@@ -26,8 +26,10 @@ import core.Proc;
 import core.Service;
 import core.StringMatch;
 import core.TextFormat;
+import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
+import java.util.HashMap;
 import user.UserCheck;
 
 /**
@@ -46,7 +48,7 @@ public class ChanServ extends Service {
     private static ArrayList<ChanInfo> changeList = new ArrayList<>();
     private static ArrayList<ChanInfo> deleteList = new ArrayList<>();
     
-    private static ArrayList<ChanInfo> ciList = new ArrayList<>(); /* List of regged channels */
+    private static HashMap<BigInteger,ChanInfo> ciList = new HashMap<>(); /* List of regged channels */
 
     private static ArrayList<UserCheck> chUserCheckList = new ArrayList<>();
     
@@ -144,7 +146,7 @@ public class ChanServ extends Service {
     }
      
     private void loadChans ( )  {
-        ciList = CSDatabase.getAllChans ( );
+        ciList = CSDatabase.getAllChans();
     }
     
     /**
@@ -162,7 +164,7 @@ public class ChanServ extends Service {
             Proc.log ( ChanServ.class.getName ( ), e );
         }
         
-        user.getUserFlood().incCounter ( this );
+//        user.getUserFlood().incCounter ( this );
          
         cmd[3] = cmd[3].substring ( 1 );
         HashString command = new HashString ( cmd[3] );
@@ -502,12 +504,8 @@ public class ChanServ extends Service {
      */
 
     public static ChanInfo findChan ( HashString name )  {
-        for ( ChanInfo ci : ciList )  {
-            if ( ci.getName().is(name) ) {
-                return ci;
-            }
-        } 
-        return null; 
+        return ciList.get(name.getCode());
+//        return ( ciList.containsKey(name.getCode()) ? ciList.get(name.getCode()) : null );
     }
 
     /**
@@ -523,7 +521,9 @@ public class ChanServ extends Service {
     
     static ArrayList<ChanInfo> searchChans ( String string ) {
         ArrayList<ChanInfo> chans = new ArrayList<>();
-        for ( ChanInfo ci : ciList ) {
+        ChanInfo ci = null;
+        for ( HashMap.Entry<BigInteger,ChanInfo> entry : ciList.entrySet() ) {
+            ci = entry.getValue();
             if ( StringMatch.wild ( ci.getName().getString().toUpperCase(), string.toUpperCase() ) ||
                  StringMatch.wild ( ci.getString (TOPIC).toUpperCase(), string.toUpperCase() ) ) {
                 chans.add ( ci );
@@ -540,7 +540,7 @@ public class ChanServ extends Service {
         if ( ! is ) {
             return;
         } 
-        ciList.add ( ci );
+        ciList.put ( ci.getName().getCode(), ci );
         ci.getFounder().addToAccessList ( FOUNDER, ci );
     }
 
@@ -549,9 +549,16 @@ public class ChanServ extends Service {
      * @param ci
      */
     public static void delChan ( ChanInfo ci ) { 
-        if ( ! is )  {return;} 
-        ChanInfo target = null;
-        for ( ChanInfo cBuf : ciList )  {
+        if ( ! is )  { return; } 
+        ChanInfo target = ciList.remove(ci.getName().getCode());
+        
+        if ( target != null ) {
+            target.getFounder().remFromAccessList ( FOUNDER, target );
+        }
+/*        
+        ChanInfo cBuf = null;
+        for ( HashMap.Entry<BigInteger,ChanInfo> entry : ciList.entrySet() ) {
+            cBuf = entry.getValue();
             if ( cBuf.is(ci) ) {
                 target = cBuf;
             }
@@ -559,7 +566,7 @@ public class ChanServ extends Service {
         if ( target != null )  {
             ciList.remove ( target );
             target.getFounder().remFromAccessList ( FOUNDER, target );
-        }
+        }*/
     }
 
     /**
@@ -610,7 +617,7 @@ public class ChanServ extends Service {
      *
      * @param c
      */
-    public static void deopAll ( Chan c )  { 
+    public static void deopAll ( Chan c )  {
         c.getList ( ALL ).forEach ( ( u ) -> {
             ChanServ.service.deOpUser ( c, u );
         }); 
@@ -628,7 +635,7 @@ public class ChanServ extends Service {
      *
      * @return
      */
-    public static int maintenance ( )  {
+    public static int secMaintenance ( )  {
         int todoAmount = 0;
         todoAmount += snoop.maintenance();
         todoAmount += writeLogs ( );
@@ -639,7 +646,12 @@ public class ChanServ extends Service {
         checkUserList ( );
         return todoAmount;
     }
-    
+    public static int maintenance ( )  {
+        int todoAmount = 0;
+        
+        return todoAmount;
+    }
+ 
     private static void checkUserList ( ) {
         ArrayList<UserCheck> checked = new ArrayList<>();
         for ( UserCheck uc : chUserCheckList ) {

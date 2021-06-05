@@ -17,12 +17,18 @@
  */
 package core;
 
+import chanserv.ChanServ;
 import server.ServSock;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import memoserv.MemoServ;
+import nickserv.NickServ;
 import operserv.OperServ;
+import rootserv.RootServ;
+import user.User;
 
 /**
  *
@@ -38,13 +44,14 @@ public class Proc extends HashNumeric {
     private static boolean              run; 
     private static Log                  logger; 
     private static long                 start;
+    private static long                 servicesStart;
     private long                        ticker; 
     private long                        minMaintenance;
     private long                        hourMaintenance;
-    private long secMaintenance;
+    private long                        secMaintenance;
     private int                         minuteDelay;
     private int                         hourDelay; 
-    private int secondDelay;
+    private int                         secondDelay;
 
     private String                      read; 
     private static Config               config;
@@ -59,14 +66,14 @@ public class Proc extends HashNumeric {
         
         this.handler            = new Handler ( );
 
-        start                   = System.currentTimeMillis ( );
-
+        start                   = System.nanoTime();
+        servicesStart           = System.currentTimeMillis();
         this.secMaintenance     = start;
         this.minMaintenance     = start;
         this.hourMaintenance    = start;
-        this.secondDelay        = 1000; /* Every second */
-        this.minuteDelay        = 60 * 1000; /* Every minute */
-        this.hourDelay          = 60 * 60 * 1000; /* Every hour */
+        this.secondDelay        = 1000000; /* Every second */
+        this.minuteDelay        = 60 * 1000000; /* Every minute */
+        this.hourDelay          = 60 * 60 * 1000000; /* Every hour */
         this.runLoop ( );
     }
     
@@ -106,7 +113,6 @@ public class Proc extends HashNumeric {
                 /* We didnt find any new data so lets take a nap */
                 try {
                     Thread.sleep ( sleep );          
-                    
                 } catch  ( InterruptedException ex )  {
                     Logger.getLogger ( Proc.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
                 }
@@ -115,14 +121,14 @@ public class Proc extends HashNumeric {
                 }
             }      
             /* HOUR */
-            hourAgo = System.currentTimeMillis ( ) - this.hourDelay;
+            hourAgo = System.nanoTime ( )- this.hourDelay;
             if ( this.hourMaintenance < hourAgo )  {
                 this.handler.runHourMaintenance ( );
-                this.hourMaintenance = System.currentTimeMillis ( );
+                this.hourMaintenance = System.nanoTime ( );
             }
             
             /* MINUTE */
-            minAgo = System.currentTimeMillis ( ) - this.minuteDelay;
+            minAgo = System.nanoTime ( ) - this.minuteDelay;
             if ( this.minMaintenance < minAgo )  {
                 this.handler.runMinuteMaintenance ( );
                 if ( Proc.conn.timedOut() ) { /* Did we time out? */
@@ -131,17 +137,17 @@ public class Proc extends HashNumeric {
                     Handler.unloadServices ( );
                     Handler.initServices ( );
                 }
-                this.minMaintenance = System.currentTimeMillis ( );
+                this.minMaintenance = System.nanoTime ( );
             }
             /* SECOND */
-            secAgo = System.currentTimeMillis ( ) - this.secondDelay;
+            secAgo = System.nanoTime() - this.secondDelay;
             if ( this.secMaintenance < secAgo )  {
-                todoAmount = this.handler.runSecondMaintenance ( );
-                todoAmount += this.handler.runMaintenance ( );
+                todoAmount = this.handler.runSecMaintenance ( );
+                //todoAmount += this.handler.runMaintenance ( );
                 if ( Handler.sanityCheck ( ) ) {
                     Handler.initServices ( );
                 }
-                this.secMaintenance = System.currentTimeMillis ( );
+                this.secMaintenance = System.nanoTime ( );
             }
             if ( todoAmount > 0 ) {
                 commandChain++;
@@ -156,7 +162,7 @@ public class Proc extends HashNumeric {
         } while ( this.handler.runMinuteMaintenance ( ) > 0 );
         do {
             Handler.getRootServ().sendGlobOp ( "Running: handler->secMaintenance" );
-        } while ( this.handler.runSecondMaintenance ( ) > 0 );
+        } while ( this.handler.runSecMaintenance ( ) > 0 );
         
         Handler.getRootServ().sendGlobOp ( "SERVICES IS NOW STOPPED!..." );
         Proc.conn.disconnect();
@@ -197,13 +203,27 @@ public class Proc extends HashNumeric {
             Logger.getLogger ( Proc.class.getName ( )  ) .log ( Level.SEVERE, null, ex ); 
         } 
     }
-    public static boolean rehashConf ( )  {
+    public static boolean rehashConf ( User user )  {
         Config conf = new Config ( );
+        
         if ( conf.isValid ( )  )  {
             config = conf;
-            if ( OperServ.isUp ( )  )  {
-                Handler.getOperServ().updConf();
+            if ( RootServ.isUp ( ) ) {
+                Handler.getRootServ().setCommands();
             }
+            if ( OperServ.isUp ( ) ) {
+                Handler.getOperServ().setCommands();
+            }
+            if ( ChanServ.isUp ( ) ) {
+                Handler.getOperServ().setCommands();
+            }
+            if ( NickServ.isUp ( ) ) {
+                Handler.getOperServ().setCommands();
+            }
+            if ( MemoServ.isUp ( ) ) {
+                Handler.getOperServ().setCommands();
+            }
+           
             return true;
         }
         return false;
@@ -215,7 +235,7 @@ public class Proc extends HashNumeric {
  
     public static String getUptime ( )  {
         try {
-            long duration   =  ( System.currentTimeMillis ( )  - Proc.start ) /1000;
+            long duration   =  ( System.currentTimeMillis ( )  - Proc.servicesStart ) /1000;
 
             long year, month, week, day, hour, minute, second;
             long years, months, weeks, days, hours, minutes, seconds;
@@ -257,7 +277,7 @@ public class Proc extends HashNumeric {
                          ( days     > 0  ? days+" Day(s), "      : "" ) +
                          ( hours    > 0  ? hours+" Hour(s), "    : "" ) +
                          ( minutes  > 0  ? minutes+" Min(s), "   : "" ) +
-                         ( seconds  < 10 ? "0"+seconds+" Sec(s)" : seconds+" Sec(s)" );
+                         ( seconds  < 10 ? seconds+" Sec(s)" : seconds+" Sec(s)" );
         
         } catch ( Exception e ) { 
             Proc.log ( Proc.class.getName ( ) , e ); 

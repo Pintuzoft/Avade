@@ -31,6 +31,7 @@ import memoserv.MemoServ;
 import chanserv.ChanServ;
 import command.Queue;
 import guestserv.GuestServ;
+import java.math.BigInteger;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -39,6 +40,7 @@ import nickserv.NickServ;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.logging.Level;
@@ -51,34 +53,33 @@ import operserv.ServicesBan;
  * @author DreamHealer
  */
 public class Handler extends HashNumeric { 
-    private static RootServ                 root;
-    private static OperServ                 oper;
-    private static NickServ                 nick;
-    private static ChanServ                 chan;
-    private static MemoServ                 memo;
-    private static GuestServ                guest;
-    private static Service                  global;
+    private static RootServ                     root;
+    private static OperServ                     oper;
+    private static NickServ                     nick;
+    private static ChanServ                     chan;
+    private static MemoServ                     memo;
+    private static GuestServ                    guest;
+    private static Service                      global;
 
-    private Services                        services;
-    private Snoop                           snoop;
-    private Config                          config; 
-    private Trigger                         trigger;
-    private static ArrayList<User>          uList = new ArrayList<>();
-    private static ArrayList<ServicesID>    splitSIDs = new ArrayList<>();
-    private static ArrayList<ServicesID>    updServicesID = new ArrayList<>();
-    private static ArrayList<Chan>          cList = new ArrayList<>();
-    private static ArrayList<Server>        sList = new ArrayList<>();
-    private static ArrayList<ServicesID>    sidList = new ArrayList<>();
-    private static Database                 db; 
-    private String[]                        data; 
-    private String                          source;
-    private static Date                     date;
-    private HashString                      command;
+    private Services                            services;
+    private Snoop                               snoop;
+    private Trigger                             trigger;
+    private static HashMap<BigInteger, User>    uList = new HashMap<>();
+    private static ArrayList<ServicesID>        splitSIDs = new ArrayList<>();
+    private static ArrayList<ServicesID>        updServicesID = new ArrayList<>();
+    private static HashMap<BigInteger,Chan>     cList = new HashMap<>();
+    private static ArrayList<Server>            sList = new ArrayList<>();
+    private static ArrayList<ServicesID>        sidList = new ArrayList<>();
+    private static Database                     db; 
+    private String[]                            data; 
+    private String                              source;
+    private static Date                         date;
+    private HashString                          command;
     
     
-    private static SimpleTimeZone           timeZone;
-    private static Locale                   locale;
-    private static SimpleDateFormat         sdf;
+    private static SimpleTimeZone               timeZone;
+    private static Locale                       locale;
+    private static SimpleDateFormat             sdf;
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
     /* Maintenance Delays */
@@ -90,7 +91,6 @@ public class Handler extends HashNumeric {
     private HashString bufhash;
     
     public Handler ( )  { 
-        this.config = Proc.getConf ( );
         db              = new Database ( );
         Handler.initServices ( );
         Database.loadSIDs ( );
@@ -244,7 +244,6 @@ public class Handler extends HashNumeric {
                     } else if ( this.command.is(NICK) ) {
                         doNick ( user );
                         
-                        
                     } else if ( this.command.is(MOTD) ) {
                         this.services.parse ( user, this.data );
                     
@@ -310,7 +309,7 @@ public class Handler extends HashNumeric {
             c.addUserList(data);
         } else {
             c = new Chan ( this.data ); 
-            cList.add ( c ); 
+            cList.put ( c.getName().getCode(), c ); 
             if ( check ) {
                 chan.checkSettings ( c );
             }
@@ -380,7 +379,7 @@ public class Handler extends HashNumeric {
         sList.remove ( s );
     }
     private void doSVInfo ( )  {
-        Proc.log ( "DEBUG: connection established in: "+ ( System.currentTimeMillis ( ) -Proc.getStartTime ( )  ) +"ms" );
+        Proc.log ( "DEBUG: connection established in: "+ ( System.nanoTime() - Proc.getStartTime()  ) +"ns" );
     }
     private void doPing ( )  {
         this.pong ( this.data[1] );
@@ -405,58 +404,144 @@ public class Handler extends HashNumeric {
     private void doNick ( )  {
         User u = new User ( this.data );
         ServicesID sid = null;
+        System.out.println("doNick: 0");
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
         try {
             long serviceID = Long.parseLong ( this.data[8] );
             if ( serviceID > 999 ) {
                 u.setSID ( Handler.findSplitSID ( serviceID ) );
             }
+        System.out.println("doNick: 1");
             
         } catch ( NumberFormatException ex ) {
             Proc.log ( Handler.class.getName ( ), ex );
+        System.out.println("doNick: 2");
         }
         
+        System.out.println("doNick: 3");
         if ( u.getSID() == null ) {
+        System.out.println("doNick: 4");
             u.setSID ( new ServicesID ( ) );
         }  
         
+        System.out.println("doNick: 5");
         NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
         
         if ( ni != null && u.getModes().is ( IDENT ) ) {
+        System.out.println("doNick: 6");
             u.getSID().add ( ni );
         } else {
+        System.out.println("doNick: 7");
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
             u.getModes().set ( IDENT, false );
         }
+        System.out.println("doNick: 8");
         
         NickServ.fixIdentState ( u );
-        uList.add ( u );
+        uList.put ( u.getName().getCode(), u );
+        System.out.println("doNick: 9");
         
         Server s = findServer ( this.data[7] );
         if ( s != null ) {
+        System.out.println("doNick: 10");
             s.addUser ( u );
         }
+        System.out.println("doNick: 11");
 
         checkTrigger ( u );
         this.oper.checkUser ( u ); /* Add user in OperServ check queue (akills etc) */
+        System.out.println("doNick: 12");
     }
     
     private static void checkTrigger ( User user ) {
         int ipCount = 0;
         int rangeCount = 0;
-        for ( User u : uList ) {
+        User u = null;
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+            u = entry.getValue();
             if ( u.ipMatch ( user.getHostInfo().getIpHash() ) ) {
+                if ( u.getModes().is(OPER) ) {
+                    return;
+                }
                 ++ipCount;
             } 
             if ( u.rangeMatch ( user.getHostInfo().getRangeHash() ) ) {
+                if ( u.getModes().is(OPER) ) {
+                    return;
+                }
                 ++rangeCount;
             }
         }
         String reason;
+        //System.out.println("DEBUG: ipCount = "+ipCount);
+        if ( Trigger.isWarn() ) {
+            /* WARN */
+            if ( ipCount > Trigger.getWarnIP() ) {
+                if ( ipCount % 10 == 0 ) {
+                    oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
+                }
+            } else if ( rangeCount > Trigger.getWarnRange() ) {
+                if ( rangeCount % 10 == 0 ) {
+                    oper.sendGlobOp ( "Warning! possible clones: "+rangeCount+" clients from range: *!*@"+user.getHostInfo().getRange() );
+                }
+            }
+        }
+        /* ACTION */
+        if ( Trigger.getAction().is(AKILL) ) {
+            if ( ipCount > Trigger.getActionIP() ) {
+                String stamp = dateFormat.format ( new Date ( ) );
+                String percent;
+                HashString id;
+                HashString mask;
+                String expire = Handler.expireToDateString ( stamp, "30m" );
+                reason = "Cloning. Too many clients found from this IP. 30 min ban.";
+                id = new HashString ( ""+System.nanoTime() );
+                mask = new HashString ( "*!*@"+user.getIp() );
+                ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
+                percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
+                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
+                    OperServ.addServicesBan ( ban );
+                    Handler.getOperServ().sendServicesBan ( ban );
+                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
+                }
+            } else if ( rangeCount > Trigger.getActionRange() ) {
+                String stamp = dateFormat.format ( new Date ( ) );
+                String percent;
+                HashString id;
+                HashString mask;
+                String expire = Handler.expireToDateString ( stamp, "30m" );
+                id = new HashString ( ""+System.nanoTime() );
+                mask = new HashString ( "*!*@"+user.getIp() );
+                reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
+                ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
+                percent = String.format("%.02f", (float) rangeCount / Handler.getUserList().size() * 100 );
+                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
+                    OperServ.addServicesBan ( ban );
+                    Handler.getOperServ().sendServicesBan ( ban );
+                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
+                }
+            }
+        } else if ( Trigger.getAction().is(KILL) ) {
+           if ( ipCount > Trigger.getActionIP() ) {
+                reason = "Cloning. Too many clients found from this IP.";
+                oper.sendGlobOp ( "KILL: "+user.getFullMask()+" for cloning." );
+                oper.sendRaw ( "KILL "+user.getName()+" :"+reason );
+                Handler.deleteUser ( user );
+            } else if ( rangeCount > Trigger.getActionRange() ) {
+                reason = "Cloning. Too many clients found from this IP-range.";
+                oper.sendGlobOp ( "KILL: "+user.getFullMask()+" for cloning." );
+                oper.sendRaw ( "KILL "+user.getName()+" :"+reason );
+                Handler.deleteUser ( user );
+            }
+        }
+
         
-        HashString action = Trigger.getAction();
         
-        if ( action.is(AKILL) ) {
+        
+        
+        
+        
+/*        if ( action.is(AKILL) ) {
                 String stamp = dateFormat.format ( new Date ( ) );
                 String percent;
                 boolean foundOperMatch = false;
@@ -467,7 +552,6 @@ public class Handler extends HashNumeric {
                     reason = "Cloning. Too many clients found from this IP. 30 min ban.";
                     id = new HashString ( ""+System.nanoTime() );
                     mask = new HashString ( "*!*@"+user.getIp() );
-       //    public ServicesBan ( HashString type, HashString id, boolean readyID, HashString mask, String reason, String instater, String timeStr, String expireStr ) {
 
                     
                     ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
@@ -557,12 +641,17 @@ public class Handler extends HashNumeric {
     /* user wants to change nick */
     private void doNick ( User user )  {
         NickInfo ni;
+        User u;
         if ( user == null ) {
             return;
         }
+        
         if ( this.data.length >= 3 ) {
+            uList.remove(user.getName().getCode());
             user.setName ( this.data[2] );
+            uList.put(user.getName().getCode(), user);
         }
+        
         ni = NickServ.findNick ( user.getString ( NAME )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );
@@ -685,7 +774,7 @@ public class Handler extends HashNumeric {
     
     private void pong ( String target )  { 
         try { 
-            this.sendCmd ( ":"+config.get ( NAME ) +" PONG "+config.get ( NAME ) +" "+target ); 
+            this.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" PONG "+Proc.getConf().get ( NAME ) +" "+target ); 
         } catch ( Exception e ) {
             Proc.log ( Handler.class.getName ( ) , e );
         } 
@@ -708,17 +797,19 @@ public class Handler extends HashNumeric {
     }
     
     public static User findUser ( String name ) {
-        HashString hash = new HashString ( name );
-        return findUser ( hash );
+        return findUser ( new HashString ( name ) );
     }
     
     public static User findUser ( HashString name ) {
-        for ( User user : uList ) {
-            if ( user.is(name) ) {
-                return user;
-            }
-        } 
-        return null;
+        //for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+        //    if ( entry.getValue().is(name) )  {
+        //        return entry.getValue();
+        //    }
+        //}
+         
+        //return null;
+        
+        return ( uList.containsKey(name.getCode()) ? uList.get(name.getCode()) : null );
     }
     
     public static Chan findChan ( String name ) {
@@ -726,14 +817,16 @@ public class Handler extends HashNumeric {
     }
     
     public static Chan findChan ( HashString name )  {
-        for ( Chan c : cList )  {
-            if ( c.is(name) )  {
-                return c;
-            }
-        }
-        return null;
+        //for ( HashMap.Entry<BigInteger,Chan> entry : cList.entrySet() ) {
+        //    if ( entry.getValue().is(name) )  {
+        //        return entry.getValue();
+        //    }
+        //}
+        //return null;
+        
+        return ( cList.containsKey(name.getCode()) ? cList.get(name.getCode()) : null );
     }
-     
+    
     public static Server findServer ( String source )  {
         HashString name = new HashString ( source );
         return findServer ( name );
@@ -752,7 +845,7 @@ public class Handler extends HashNumeric {
         /* If the channel isSet empty lets remove it from memory */
         try {
             if ( chan.empty ( ) )  {
-                 cList.remove ( chan );
+                cList.remove ( chan );
             }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -793,8 +886,7 @@ public class Handler extends HashNumeric {
 
     public void doRecursiveUList ( User u )  { 
         try {
-            Config conf = Proc.getConf ( );
-            Server sHub = this.findServer ( conf.get ( CONNNAME )  );
+            Server sHub = this.findServer ( Proc.getConf().get ( HUBNAME ) );
             if ( sHub != null )  {
                 sHub.recursiveUserList ( u, "" );
             }
@@ -807,7 +899,9 @@ public class Handler extends HashNumeric {
         return db; 
     }
 
-    public static SimpleDateFormat getSdf ( )           { return sdf; }
+    public static SimpleDateFormat getSdf ( ) { 
+        return sdf; 
+    }
     
 
     public static ServicesID findSid ( long id )  {
@@ -834,25 +928,19 @@ public class Handler extends HashNumeric {
     }
    
     /* MAINTENANCE METHODS */
-    public int runSecondMaintenance() {
+    public int runSecMaintenance() {
         int todoAmount = 0;
-        for ( User user : uList ) {
-            user.secMaintenence ( );
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+            entry.getValue().secMaintenence ( );
         }
         /* Database updates */
         todoAmount += oper.secMaintenance ( );
-        todoAmount += NickServ.maintenance ( );
-        todoAmount += ChanServ.maintenance ( );
+        todoAmount += ChanServ.secMaintenance ( );
         todoAmount += NickServ.secMaintenance ( );
         todoAmount += updateServicesIDs();
         return todoAmount;
     }
-    public int runMaintenance() {
-        int todoAmount = 0;
-       
-        return todoAmount;
-    }
-    
+      
     public static void addUpdateSID ( ServicesID servicesId ) {
         for ( ServicesID sid : updServicesID ) {
             if ( sid.getID() == servicesId.getID() ) {
@@ -883,7 +971,8 @@ public class Handler extends HashNumeric {
             initServices ( ); /* make sure everything isSet running */
             todoAmount += oper.minMaintenance ( );
             db.runMaintenance ( );
-            
+            todoAmount += NickServ.maintenance ( );
+            todoAmount += ChanServ.maintenance ( );
  //           this.checkNiStates ( );
             this.sidCleaner ( );
             this.cmdQueue.maintenance ( );
@@ -1014,16 +1103,16 @@ public class Handler extends HashNumeric {
     }
 
     private void sendNoSuchNick ( User user, String name )  {
-        ServSock.sendCmd ( ":"+config.get ( NAME ) +" 371 "+user.getString ( NAME ) +" :"+name+" has been disabled, try again later." ); 
+        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" 371 "+user.getString ( NAME ) +" :"+name+" has been disabled, try again later." ); 
     }
      
     public static ArrayList<User> findUsersByNick ( NickInfo ni )  {
         ArrayList<User> ul = new ArrayList<> ( );
-        for  (  User user : uList  )  {
-            if  (  user.isIdented ( ni )   )  {
-                ul.add ( user );
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+            if ( entry.getValue().isIdented(ni) ) {
+                ul.add ( entry.getValue() );
             }
-        } 
+        }
         return ul;
     }
      
@@ -1032,7 +1121,9 @@ public class Handler extends HashNumeric {
     }
     public static ArrayList<User> findUsersByMask ( HashString mask )  {
         ArrayList<User> ul = new ArrayList<> ( );
-        for ( User user : uList )  {
+        User user = null;
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+            user = entry.getValue();
             if ( StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask.getString() )         ||
                  StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask.getString() )     ||
                  StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask.getString() )  )  {
@@ -1045,10 +1136,12 @@ public class Handler extends HashNumeric {
     
     public static ArrayList<User> findUsersByBan ( ServicesBan ban ) {
         ArrayList<User> ul = new ArrayList<>();
+        User u = null;
         if ( ban.getCidr() == null ) {
             ul = findUsersByMask ( ban.getMask() );
         } else {
-            for ( User u : uList ) {
+            for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+                u = entry.getValue();
                 try {
                     if ( ban.getCidr().isInRange ( u.getIp() ) ) {
                         ul.add ( u );
@@ -1065,7 +1158,9 @@ public class Handler extends HashNumeric {
    
     public static ArrayList<User> findUsersByNick ( String nick ) {
         ArrayList<User> ul = new ArrayList<> ( );
-        for ( User user : uList ) {
+        User user = null;
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+            user = entry.getValue();
             if ( StringMatch.nickWild ( user.getString ( NAME ), nick ) ) {
                 ul.add ( user );
             }
@@ -1075,7 +1170,9 @@ public class Handler extends HashNumeric {
 
     public static ArrayList<User> findUsersByGcos ( String gcos ) {
         ArrayList<User> ul = new ArrayList<> ( );
-        for ( User user : uList ) {
+        User user = null;
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
+            user = entry.getValue();
             if ( StringMatch.wild ( user.getString ( REALNAME ), gcos ) ) {
                 ul.add ( user );
             }
@@ -1156,7 +1253,6 @@ public class Handler extends HashNumeric {
     }
     
     public static String expireToDateString ( String datetime, String data ) {
-        String strBuf;
         int ms = 60*1000;
         int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1164,6 +1260,7 @@ public class Handler extends HashNumeric {
         Date date;
         try {
             date = dateFormat.parse ( datetime );
+            System.out.println("DEBUG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: "+data );
             amount = Integer.parseInt ( data );            
         } catch ( NumberFormatException | ParseException ex ) {
             Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
@@ -1225,7 +1322,7 @@ public class Handler extends HashNumeric {
     }
 
     
-    public static ArrayList<User> getUserList ( ) {
+    public static HashMap<BigInteger,User> getUserList ( ) {
         return uList;
     }
 
@@ -1281,7 +1378,9 @@ public class Handler extends HashNumeric {
     
     public static ArrayList<User> findIdentifiedUsersByChan ( ChanInfo ci ) {
         ArrayList<User> iList = new ArrayList<>();
-        for ( User user : uList ) {
+        User user = null;
+        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) { 
+            user = entry.getValue();
             if ( user.isIdented ( ci ) ) {
                 iList.add ( user );
             }
@@ -1306,7 +1405,7 @@ public class Handler extends HashNumeric {
         return splitSIDs;
     }
 
-    public static ArrayList<Chan> getChanList ( ) {
+    public static HashMap<BigInteger,Chan> getChanList ( ) {
         return cList;
     }
  

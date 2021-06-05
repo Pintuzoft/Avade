@@ -19,107 +19,63 @@ package core;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.yaml.snakeyaml.Yaml;
+import user.User;
 /**
  *
  * @author DreamHealer
  */
 public class Config extends HashNumeric {
+    private HashMap<BigInteger,HashString> configStr; 
+    private HashMap<BigInteger,Integer> configInt;
+    private HashMap<BigInteger,Boolean> configBool;
+    private HashMap<BigInteger,HashString> whiteList;
+    private HashMap<BigInteger,Integer> commands;
+    private static final HashString[] cList = { 
+        STOP,REHASH,BAHAMUT,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,JUPE,
+        DELETE,SQLINE,SGLINE,CLOSE,FREEZE,HOLD,MARK,NOGHOST,GETPASS,GETEMAIL,
+        AKILL,MAKILL,BANLOG,GLOBAL,IGNORE,AUDIT,SERVER,CHANLIST,LIST,AUDITORIUM,
+        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG 
+    };
+    private static final HashString[] keyStrings = {
+        NAME,DOMAIN,NETNAME,STATS,MASTER,AUTHURL, LOGFILE, EXPIRE, SECRETSALT,
+        HUBNAME,HUBHOST,HUBPORT,HUBPASS,MYSQLHOST,MYSQLPORT,MYSQLUSER,MYSQLPASS,
+        MYSQLDB,SERVICEUSER,SERVICEHOST,SERVICEGCOS,TRIGGERACTION,SNOOPROOTSERV,
+        SNOOPOPERSERV,SNOOPCHANSERV,SNOOPNICKSERV,SNOOPMEMOSERV 
+    };
+    private static final HashString[] keyInts = {
+        TRIGGERWARNIP,TRIGGERWARNRANGE,TRIGGERACTIONIP,TRIGGERACTIONRANGE
+    };
+    private static final HashString[] keyBools = {
+        FORCEMODES,TRIGGERWARN
+    };
     private boolean valid;
-    private HashString fileName;
-
-    private HashString name;
-    private HashString domain;
-    private HashString netname;
-    private HashString stats;
-    private HashString master;
-    private HashString authurl;
-    private HashString logfile;
-    private HashString expire;
-    private HashString secretsalt;
-    private boolean forcemodes;
-    
-    private HashString connName;
-    private HashString connHost;
-    private HashString connPort;
-    private HashString connPass;
-    
-    private HashString mysqlHost;
-    private HashString mysqlPort;
-    private HashString mysqlUser;
-    private HashString mysqlPass;
-    private HashString mysqlDB;
-    
-    private ArrayList<HashString> whiteList = new ArrayList<>();
-    
-    private HashString serviceUser;
-    private HashString serviceHost;
-    private HashString serviceGcos;
-    
-    private boolean triggerWarn;
-    private HashString triggerAction;
-    private int triggerWarnIP;
-    private int triggerWarnRange;
-    private int triggerActionIP;
-    private int triggerActionRange;
- 
-    private HashString snoopRootServ;
-    private HashString snoopOperServ;
-    private HashString snoopNickServ;
-    private HashString snoopChanServ;
-    private HashString snoopMemoServ;
-    
-    /* COMMANDS (set all to 5 - master) */
-    private int stop = 5;
-    private int rehash = 5;
-    private int bahamut = 5;
-    private int sraw = 5;
-    private int panic = 5;
-    private int uinfo = 5;
-    private int cinfo = 5;
-    private int ninfo = 5;
-    private int sinfo = 5;
-    private int ulist = 5;
-    private int jupe = 5;
-    private int delete = 5;
-    private int sqline = 5;
-    private int sgline = 5;
-    private int close = 5;
-    private int freeze = 5;
-    private int hold = 5;
-    private int mark = 5;
-    private int noghost = 5;
-    private int getpass = 5;
-    private int getemail = 5;
-    private int akill = 5;
-    private int makill = 5;
-    private int banlog = 5;
-    private int global = 5;
-    private int ignore = 5;
-    private int audit = 5;
-    private int server = 5;
-    private int chanlist = 5;
-    private int list = 5;
-    private int auditorium = 5;
-    private int staff = 5;
-    private int searchlog = 5;
-    private int uptime = 5;
-    private int comment = 5;
-    private int topiclog = 5;
-    private int forcenick = 5;
-    private int snooplog = 5;
+    private static final HashString fileName = new HashString ( "services.conf" );
     
     public Config ( ) { 
-        fileName = new HashString ( "services.conf" ); 
+        this.configStr = new HashMap<>();
+        this.configInt = new HashMap<>();
+        this.configBool = new HashMap<>();
+        this.whiteList = new HashMap<>();
+        this.commands = new HashMap<>();
         this.init ( );
+        // this.printCommands ( );
     }
 
+    private void printCommands ( ) {
+        System.out.println("printCommands:");
+        for ( HashMap.Entry<BigInteger, Integer> cmd : commands.entrySet() ) {
+            System.out.println("  - "+cmd.getKey()+":"+cmd.getValue());
+        }
+    }
+    
     private void init ( ) {
         this.loadYamlConf();
     }
@@ -134,7 +90,31 @@ public class Config extends HashNumeric {
         }
         return new HashString ( result.get(key).toString() );
     }
+     
+    private HashString[] getKeys ( HashString type ) {
+        if ( type.is(STRING) ) {
+            return keyStrings;
+            
+        } else if ( type.is(BOOLEAN) ) {
+            return keyBools;
+
+        } else if ( type.is(INTEGER) ) {
+            return keyInts;
+        }
+        return null;
+    }
     
+    private HashMap getHashMap ( HashString type ) {
+        if ( type.is(STRING) ) {
+            return this.configStr;
+        } else if ( type.is(BOOLEAN) ) {
+            return this.configBool;
+        } else if ( type.is(INTEGER) ) {
+            return this.configInt;
+        }
+        return null;
+    }
+     
     /*
      * Load config and validate it at the same time
      */
@@ -145,269 +125,60 @@ public class Config extends HashNumeric {
         try {
             InputStream ios = new FileInputStream ( new File ( fileName ) );
             Map<String,Object> result = ( Map<String,Object> ) yaml.load ( ios );
-            this.name = parseKey ( result, "name" );
-            this.domain = parseKey ( result, "domain" );
-            this.netname = parseKey ( result, "netname" );
-            this.stats = parseKey ( result, "stats" );
-            this.master = parseKey ( result, "master" );
-            this.authurl = parseKey ( result, "authurl" );
-            this.logfile = parseKey ( result, "logfile" );
-            this.expire = parseKey ( result, "expire" );
-            this.secretsalt = parseKey ( result, "secretsalt" );
-            this.forcemodes = parseKey ( result, "forcemodes" ).is(YES);
-          
-            /* CONNECT */
-            String[] connect = result.get("connect").toString().replace("{", "").replace("}", "").split(",");
+            
+            HashString[] types = { STRING, BOOLEAN, INTEGER };
+            for ( HashString type : types ) {
+                //System.out.println(""+type.getString()+":");
+                HashString[] keys = this.getKeys ( type );            
+                for ( HashString key : keys ) {
+                    //System.out.println("   - "+key.getString());
+                    HashString parsed = parseKey ( result, key.getString().toLowerCase() );
+                    if ( type.is(BOOLEAN) ) {
+                        this.getHashMap(type).put( key.getCode(), parsed.is(YES) );
+
+                    } else if ( type.is(INTEGER) ) {
+                        this.getHashMap(type).put(key.getCode(), Integer.parseInt(parsed.getString()));
+                        
+                    } else {
+                        this.getHashMap(type).put( key.getCode(), parsed );
+                    }
+                }
+            }
              
-            for ( String str : connect ) {
-                String[] data = str.split("=");
-                HashString it = new HashString ( data[0] );
-                HashString val = new HashString ( data[1] );
-                
-                System.out.println("DEBUG: "+it.getCode()+":"+NAME.getCode());
-
-                if ( it.getCode() == NAME.getCode() ) {
-                    System.out.println("DEBUG: it == NAME");
-                } else {
-                    System.out.println("DEBUG: NOT!!");
-                }
-
-
-                if ( it.is(NAME) ) {
-                    this.connName = new HashString ( data[1] );
-                } else if ( it.is(HOST) ) {
-                    this.connHost = new HashString ( data[1] );
-                } else if ( it.is(PORT) ) {
-                    this.connPort = new HashString ( data[1] );
-                } else if ( it.is(PASS) ) {
-                    this.connPass = new HashString ( data[1] );
-                }
-            }
-            System.out.println("DEBUG: this.connName: "+this.connName);
-            if ( this.connName == null ) {
-                printErrorAndExit ( "connect->name" );
-            }
-            if ( this.connHost == null ) {
-                printErrorAndExit ( "connect->host" );
-            }
-            if ( this.connPort == null ) {
-                printErrorAndExit ( "connect->port" );
-            }
-            if ( this.connPass == null ) {
-                printErrorAndExit ( "connect->pass" );
-            }
-            
-            /* MYSQL */
-            String[] mysql = result.get("mysql").toString().replace("{", "").replace("}", "").split(",");            
-            for ( String str : mysql ) {
-                String[] data = str.split("=");
-                HashString it = new HashString ( data[0] );
-                if ( it.is(HOST) ) {
-                    this.mysqlHost = new HashString ( data[1] );
-                } else if ( it.is(PORT) ) {
-                    this.mysqlPort = new HashString ( data[1] );
-                } else if ( it.is(USER) ) {
-                    this.mysqlUser = new HashString ( data[1] );
-                } else if ( it.is(PASS) ) {
-                    this.mysqlPass = new HashString ( data[1] );
-                } else if ( it.is(DB) ) {
-                    this.mysqlDB = new HashString ( data[1] );
-                }
-            }
-            
-            if ( this.mysqlHost == null ) {
-                printErrorAndExit ( "mysql->host" );
-            }
-            if ( this.mysqlPort == null ) {
-                printErrorAndExit ( "mysql->port" );
-            }
-            if ( this.mysqlUser == null ) {
-                printErrorAndExit ( "mysql->user" );
-            }
-            if ( this.mysqlPass == null ) {
-                printErrorAndExit ( "mysql->pass" );
-            }
-            if ( this.mysqlDB == null ) {
-                printErrorAndExit ( "mysql->db" );
-            }
-            
             /* WHITELIST */
             String[] wlist = result.get("whitelist").toString().replace("{","").replace("}","").split(",");            
             for ( String str : wlist ) {
-                String data = str.replace("[","").replace("]","");
-                this.whiteList.add ( new HashString ( data.trim() ) );
+                HashString data = new HashString ( str.replace("[","").replace("]","").trim() );
+                this.whiteList.put ( data.getCode(), data );
             }
             if ( this.whiteList.isEmpty() ) {
                 System.out.println("Warning!: The whitelist is empty, add services ip and staff addresses");
             }
-                      
-            /* SERVICE */
-            String[] service = result.get("service").toString().replace("{","").replace("}","").split(",");            
-            for ( String str : service ) {
-                String[] data = str.split("=");
-                HashString it = new HashString ( data[0] );
-                if ( it.is(USER) ) {
-                    this.serviceUser = new HashString ( data[1] );
-                } else if ( it.is(HOST) ) {
-                    this.serviceHost = new HashString ( data[1] );
-                } else if ( it.is(GCOS) ) {
-                    this.serviceGcos = new HashString ( data[1] );
+              
+            /* COMMANDS */
+            HashString[] accesses = { SRA, CSOP, SA, IRCOP };
+            for ( HashString access : accesses ) {
+                //System.out.println(""+access.getString()+":");
+                String[] cmds = fixResult ( result.get(access.getString().toLowerCase()).toString() );
+                for ( String cmd : cmds ) {
+                    //System.out.println("   - "+cmd);
+                    HashString data = new HashString ( cmd );
+                    this.setCommand ( data, str2acc ( access ) );
                 }
             }
             
-            if ( this.serviceUser == null ) {
-                printErrorAndExit ( "service->user" );
-            }
-            if ( this.serviceHost == null ) {
-                printErrorAndExit ( "service->host" );
-            }
-            if ( this.serviceGcos == null ) {
-                printErrorAndExit ( "service->gcos" );
-            }
-
-            /* TRIGGER */
-            String[] trigger = result.get("trigger").toString().replace("{","").replace("}","").split(",");
-            for ( String str : trigger ) {
-                String[] data = str.split("=");
-                HashString it = new HashString ( data[0] );
-                
-                if ( it.is(WARN) ) {
-                    this.triggerWarn = data[1].equalsIgnoreCase ( "true" );
-                } else if ( it.is(ACTION) ) {
-                    this.triggerAction = new HashString ( data[1] );
-                } else if ( it.is(WARNIP) ) {
-                    this.triggerWarnIP = Integer.parseInt ( data[1] );
-                } else if ( it.is(WARNRANGE) ) {
-                    this.triggerWarnRange = Integer.parseInt ( data[1] );
-                } else if ( it.is(ACTIONIP) ) {
-                    this.triggerActionIP = Integer.parseInt ( data[1] );
-                } else if ( it.is(ACTIONRANGE) ) {
-                    this.triggerActionRange = Integer.parseInt ( data[1] );
-                }
-                
-            }
-
-            if ( this.triggerWarnIP <= 0 ) {
-                printErrorAndExit ( "trigger->warnip" );
-            }
-            if ( this.triggerWarnRange <= 0 ) {
-                printErrorAndExit ( "trigger->warnrange" );
-            }
-            if ( this.triggerActionIP <= 0 ) {
-                printErrorAndExit ( "trigger->akillip" );
-            }
-            if ( this.triggerActionRange <= 0 ) {
-                printErrorAndExit ( "trigger->akillrange" );
-            }
-         
-            /* SNOOP */
-            String[] snoop = result.get("snoop").toString().replace("{","").replace("}","").split(",");            
-            for ( String str : snoop ) {
-                String[] data = str.split("=");
-                System.out.println("DEBUG: "+data[0]+" : "+data[1]);
-                HashString it = new HashString ( data[0] );
-                
-                if ( it.is(ROOTSERV) ) { 
-                    this.snoopRootServ = new HashString ( data[1] );
-                } else if ( it.is(OPERSERV) ) {
-                    this.snoopOperServ = new HashString ( data[1] );
-                } else if ( it.is(NICKSERV) ) {
-                    this.snoopNickServ = new HashString ( data[1] );
-                } else if ( it.is(CHANSERV) ) {
-                    this.snoopChanServ = new HashString ( data[1] );
-                } else if ( it.is(MEMOSERV) ) {
-                    this.snoopMemoServ = new HashString ( data[1] );
-                }
-
-            }
-            if ( this.snoopRootServ == null ) {
-                printErrorAndExit ( "snoop->rootserv" );
-            }
-            if ( this.snoopOperServ == null ) {
-                printErrorAndExit ( "snoop->operserv" );
-            }
-            if ( this.snoopNickServ == null ) {
-                printErrorAndExit ( "snoop->nickserv" );
-            }
-            if ( this.snoopChanServ == null ) {
-                printErrorAndExit ( "snoop->chanserv" );
-            }
-            if ( this.snoopMemoServ == null ) {
-                printErrorAndExit ( "snoop->memoserv" );
-            }
-
-            /* SRA */
-            String[] sra = result.get("sra").toString().replace("{","").replace("}","").split(",");            
-            for ( String str : sra ) {
-                HashString data = new HashString ( str.replace("[","").replace("]","") );
-                this.setCommand ( data, str2acc ( SRA ) );
-            }
-            
-            /* CSOP */
-            String[] csop = result.get("csop").toString().replace("{","").replace("}","").split(",");            
-            for ( String str : csop ) {
-                HashString data = new HashString ( str.replace("[","").replace("]","") );
-                this.setCommand ( data, str2acc ( CSOP ) );
-            }
-            
-            /* SA */
-            String[] sa = result.get("sa").toString().replace("{","").replace("}","").split(",");            
-            for ( String str : sa ) {
-                HashString data = new HashString ( str.replace("[","").replace("]","") );
-                this.setCommand ( data, str2acc ( SA ) );
-            }
-            
-            /* IRCOP */
-            String[] ircop = result.get("ircop").toString().replace("{","").replace("}","").split(",");            
-            for ( String str : ircop ) {
-                HashString data = new HashString ( str.replace("[","").replace("]","") );
-                this.setCommand ( data, str2acc ( IRCOP ) );
-            }
-            
-        } catch (FileNotFoundException ex) {
+            this.valid = true;
+        } catch (Exception ex) {
             Logger.getLogger(Config.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
- 
-    private void setCommand ( HashString it, int access ) {
-        if ( it.is(STOP) )                  { this.stop         = access;       }
-        if ( it.is(SRAW) )                  { this.sraw         = access;       }
-        if ( it.is(REHASH) )                { this.rehash       = access;       }
-        if ( it.is(BAHAMUT) )               { this.bahamut      = access;       }
-        if ( it.is(PANIC) )                 { this.panic        = access;       }
-        if ( it.is(UINFO) )                 { this.uinfo        = access;       }
-        if ( it.is(CINFO) )                 { this.cinfo        = access;       }
-        if ( it.is(NINFO) )                 { this.ninfo        = access;       }
-        if ( it.is(SINFO) )                 { this.sinfo        = access;       }
-        if ( it.is(ULIST) )                 { this.ulist        = access;       }
-        if ( it.is(JUPE) )                  { this.jupe         = access;       }
-        if ( it.is(DELETE) )                { this.delete       = access;       }
-        if ( it.is(SQLINE) )                { this.sqline       = access;       }
-        if ( it.is(SGLINE) )                { this.sgline       = access;       }
-        if ( it.is(CLOSE) )                 { this.close        = access;       }
-        if ( it.is(FREEZE) )                { this.freeze       = access;       }
-        if ( it.is(HOLD) )                  { this.hold         = access;       }
-        if ( it.is(MARK) )                  { this.mark         = access;       }
-        if ( it.is(NOGHOST) )               { this.noghost      = access;       }
-        if ( it.is(GETPASS) )               { this.getpass      = access;       }
-        if ( it.is(GETEMAIL) )              { this.getemail     = access;       }
-        if ( it.is(AKILL) )                 { this.akill        = access;       }
-        if ( it.is(MAKILL) )                { this.makill       = access;       }
-        if ( it.is(BANLOG) )                { this.banlog       = access;       }
-        if ( it.is(GLOBAL) )                { this.global       = access;       }
-        if ( it.is(IGNORE) )                { this.ignore       = access;       }
-        if ( it.is(AUDIT) )                 { this.audit        = access;       }
-        if ( it.is(SERVER) )                { this.server       = access;       }
-        if ( it.is(CHANLIST) )              { this.chanlist     = access;       }
-        if ( it.is(LIST) )                  { this.list         = access;       }
-        if ( it.is(AUDITORIUM) )            { this.auditorium   = access;       }
-        if ( it.is(STAFF) )                 { this.staff        = access;       }
-        if ( it.is(SEARCHLOG) )             { this.searchlog    = access;       }
-        if ( it.is(UPTIME) )                { this.uptime       = access;       }
-        if ( it.is(COMMENT) )               { this.comment      = access;       }
-        if ( it.is(TOPICLOG) )              { this.topiclog     = access;       }
-        if ( it.is(FORCENICK) )             { this.forcenick    = access;       }
-        if ( it.is(SNOOPLOG) )              { this.snooplog     = access;       }
+    
+    private String[] fixResult ( String result ) {
+        return result.replace("{","").replace("}","").replace("[","").replace("]","").split(",");
+    }
+    
+    private void setCommand ( HashString command, int access ) {
+        this.commands.put(command.getCode(), access);
     }
  
     private void parseValue ( String key, String val ) {
@@ -429,95 +200,70 @@ public class Config extends HashNumeric {
         return this.valid;
     }
       
-    public ArrayList<HashString> getWhiteList ( ) {
+    public HashMap<BigInteger,HashString> getWhiteList ( ) {
         return this.whiteList;
     }
     
-    public int getInt ( HashString it )  {
-        if ( it.is(STOP) )                  { return this.stop;                 }
-        if ( it.is(SRAW) )                  { return this.sraw;                 }
-        if ( it.is(REHASH) )                { return this.rehash;               }
-        if ( it.is(BAHAMUT) )               { return this.bahamut;              }
-        if ( it.is(PANIC) )                 { return this.panic;                }
-        if ( it.is(UINFO) )                 { return this.uinfo;                }
-        if ( it.is(CINFO) )                 { return this.cinfo;                }
-        if ( it.is(NINFO) )                 { return this.ninfo;                }
-        if ( it.is(SINFO) )                 { return this.sinfo;                }
-        if ( it.is(ULIST) )                 { return this.ulist;                }
-        if ( it.is(UPTIME) )                { return this.uptime;               }
-        if ( it.is(AKILL) )                 { return this.akill;                }
-        if ( it.is(MAKILL) )                { return this.makill;               }
-        if ( it.is(STAFF) )                 { return this.staff;                }
-        if ( it.is(SEARCHLOG) )             { return this.searchlog;            }
-        if ( it.is(AUDIT) )                 { return this.audit;                }
-        if ( it.is(COMMENT) )               { return this.comment;              }
-        if ( it.is(GLOBAL) )                { return this.global;               }
-        if ( it.is(IGNORE) )                { return this.ignore;               }
-        if ( it.is(BANLOG) )                { return this.banlog;               }
-        if ( it.is(SQLINE) )                { return this.sqline;               }
-        if ( it.is(SGLINE) )                { return this.sgline;               }
-        if ( it.is(JUPE) )                  { return this.jupe;                 }
-        if ( it.is(SERVER) )                { return this.server;               }
-        if ( it.is(FREEZE) )                { return this.freeze;               }
-        if ( it.is(CLOSE) )                 { return this.close;                }
-        if ( it.is(HOLD) )                  { return this.hold;                 }
-        if ( it.is(LIST) )                  { return this.list;                 }
-        if ( it.is(CHANLIST) )              { return this.chanlist;             }
-        if ( it.is(GETPASS) )               { return this.getpass;              }
-        if ( it.is(GETEMAIL) )              { return this.getemail;             }
-        if ( it.is(MARK) )                  { return this.mark;                 }
-        if ( it.is(NOGHOST) )               { return this.noghost;              }
-        if ( it.is(AUDITORIUM) )            { return this.auditorium;           }
-        if ( it.is(DELETE) )                { return this.delete;               }
-        if ( it.is(TOPICLOG) )              { return this.topiclog;             }
-        if ( it.is(FORCENICK) )             { return this.forcenick;            }
-        if ( it.is(SNOOPLOG) )              { return this.snooplog;             }
-        if ( it.is(TRIGGERWARNIP) )         { return this.triggerWarnIP;        }
-        if ( it.is(TRIGGERWARNRANGE) )      { return this.triggerWarnRange;     }
-        if ( it.is(TRIGGERACTIONIP) )       { return this.triggerActionIP;      }
-        if ( it.is(TRIGGERACTIONRANGE) )    { return this.triggerActionRange;   }
-        return -1;
+    public int getInt ( HashString name )  {
+        int access = this.configInt.get(name.getCode());
+        return access;
     }
     
-    
-    
-    public HashString get ( HashString it )  {
-        if ( it.is(NAME) )                  { return this.name;                 }
-        if ( it.is(DOMAIN) )                { return this.domain;               }
-        if ( it.is(NETNAME) )               { return this.netname;              }
-        if ( it.is(MASTER) )                { return this.master;               }
-        if ( it.is(SECRETSALT) )            { return this.secretsalt;           }
-        if ( it.is(CONNNAME) )              { return this.connName;             }
-        if ( it.is(CONNHOST) )              { return this.connHost;             }
-        if ( it.is(CONNPASS) )              { return this.connPass;             }
-        if ( it.is(CONNPORT) )              { return this.connPort;             }
-        if ( it.is(STATS) )                 { return this.stats;                }
-        if ( it.is(SNOOPROOTSERV) )         { return this.snoopRootServ;        }
-        if ( it.is(SNOOPOPERSERV) )         { return this.snoopOperServ;        }
-        if ( it.is(SNOOPNICKSERV) )         { return this.snoopNickServ;        }
-        if ( it.is(SNOOPCHANSERV) )         { return this.snoopChanServ;        }
-        if ( it.is(SNOOPMEMOSERV) )         { return this.snoopMemoServ;        }
-        if ( it.is(SERVICEUSER) )           { return this.serviceUser;          }
-        if ( it.is(SERVICEHOST) )           { return this.serviceHost;          }
-        if ( it.is(SERVICEGCOS) )           { return this.serviceGcos;          }
-        if ( it.is(MYSQLHOST) )             { return this.mysqlHost;            }
-        if ( it.is(MYSQLUSER) )             { return this.mysqlUser;            }
-        if ( it.is(MYSQLPASS) )             { return this.mysqlPass;            }
-        if ( it.is(MYSQLPORT) )             { return this.mysqlPort;            }
-        if ( it.is(MYSQLDB) )               { return this.mysqlDB;              }
-        if ( it.is(AUTHURL) )               { return this.authurl;              }
-        if ( it.is(LOGFILE) )               { return this.logfile;              }
-        if ( it.is(EXPIRE) )                { return this.expire;               }       
-        if ( it.is(TRIGGERACTION) )         { return this.triggerAction;        }
-
-        return null;
+    public HashString get ( HashString name )  {
+        return ( this.configStr.get(name.getCode()) != null ? this.configStr.get(name.getCode()) : null );
     }   
      
-    public boolean getBoolean ( HashString in ) {
-        if ( in.is(FORCEMODES) )            { return this.forcemodes;           }
-        if ( in.is(TRIGGERWARN) )           { return this.triggerWarn;          }
-        return false;
+    public boolean getBoolean ( HashString name ) {
+        return ( this.configBool.get(name.getCode()) != null ? this.configBool.get(name.getCode()) : false );
     }
+    
+    public ArrayList<String> getConfigList ( User user ) {
+        ArrayList<String> list = new ArrayList<>();
+        System.out.println("DEBUG: HERE!!");
 
+        HashString[] types = { STRING,INTEGER,BOOLEAN };
+        for ( HashString type : types ) {
+            for ( HashString key : this.getKeys(type) ) {
+                list.add( ""+key.getString().toLowerCase()+": "+this.getHashMap(type).get(key.getCode()) );
+            }
+        }
+
+        list.add ( "whiteList: " );
+        for ( HashMap.Entry<BigInteger,HashString> entry : this.whiteList.entrySet() ) {
+            list.add ( " - "+entry.getValue().getString() );
+        }
+        
+        HashString[] accesses = { IRCOP, SA, CSOP, SRA, MASTER };
+        for ( HashString access : accesses ) {
+            list.add ( ""+access.getString()+" commands:" );
+            list.addAll ( getCommandsByAccess ( str2acc ( access ) ) );
+        }
+        
+        return list;
+    }
+    
+    private ArrayList<String> getCommandsByAccess ( int access ) {
+        ArrayList<String> list = new ArrayList<>();
+        for ( HashString cmd : cList ) {
+            if ( this.commands.get(cmd.getCode()) == access ) {
+                list.add ( " - "+cmd.getString().toLowerCase() );
+            }
+        }
+        return list;
+    }
+    
+    public int getCommandAccess ( HashString name ) {
+        //System.out.println("name: "+name.getString()+":"+name.getCodeStr());
+        if ( name == null ) {
+            System.out.println("name is null!!");
+        }
+        if ( commands == null ) {
+            System.out.println("commands is null!!");
+        }     
+        if ( commands.get(name.getCode()) == null ) {
+            System.out.println("commands.get is null!!");
+        }     
+        
+        return commands.get(name.getCode());
+    }
 }
-

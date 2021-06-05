@@ -29,12 +29,16 @@ import static core.HashNumeric.NAME;
 import core.HashString;
 import core.Service;
 import guestserv.GuestServ;
+import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
 import java.util.Timer;
+import nickserv.NSDatabase;
+import nickserv.NSLogEvent;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import server.Server;
@@ -307,7 +311,7 @@ public class OSExecutor extends Executor {
     }
     
     private void doUList ( User user )  {
-        Server s = Handler.findServer ( Proc.getConf().get ( CONNNAME ) );
+        Server s = Handler.findServer ( Proc.getConf().get ( HUBNAME ) );
         if ( ! OperServ.enoughAccess ( user, UINFO ) ) {
             return;
         }
@@ -316,8 +320,8 @@ public class OSExecutor extends Executor {
     
     private void doCList ( User user )  {
         this.service.sendMsg ( user, "*** Channel List ***" );
-        for ( Chan c : Handler.getChanList() ) {
-            this.service.sendMsg ( user, " - "+c.getString(NAME) );
+        for ( HashMap.Entry<BigInteger,Chan> entry : Handler.getChanList().entrySet() ) {
+            this.service.sendMsg ( user, " - "+entry.getValue().getString(NAME) );
         }
         this.service.sendMsg ( user, "*** End of List ***" );
     }
@@ -628,8 +632,8 @@ public class OSExecutor extends Executor {
         OSLogEvent log = new OSLogEvent ( new HashString ( "-" ), GLOBAL, user, user.getOper().getNick() );
         log.setData ( string );
         OSDatabase.logEvent ( log );
-        for ( User u : Handler.getUserList ( ) ) {
-            global.sendMsg ( u, "[Global Notice]: "+string );
+        for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
+            global.sendMsg ( entry.getValue(), "[Global Notice]: "+string );
         }
     }
 
@@ -692,7 +696,7 @@ public class OSExecutor extends Executor {
         if ( ! serverName.contains ( "." ) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (all servers need to contain dots in their names)" ) );
             return;
-        } else if ( serverName.is ( Proc.getConf().get(CONNNAME) ) ) {
+        } else if ( serverName.is ( Proc.getConf().get(HUBNAME) ) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (services hub cannot be juped)" ) );
             return;
         }
@@ -885,10 +889,11 @@ public class OSExecutor extends Executor {
         }
          
         String pattern;
-        NickInfo oper = result.getNick();
-        User u = Handler.findUser (result.getString1() );
-        String newNick = result.getString2();
+        NickInfo oper = result.getNick ( );
+        User u = Handler.findUser ( result.getString1() );
+        String newNick = result.getString2 ( );
         Random rand = new Random ( );
+        String string = oper.getName()+" has issued FORCENICK on: "+u.getName();
         int index = 0;
         
         if ( newNick == null ) {
@@ -900,18 +905,19 @@ public class OSExecutor extends Executor {
                 }
             }
             newNick = "Guest"+index;
-            Handler.getOperServ().sendGlobOp ( oper.getName()+" has issued FORCENICK on: "+u.getName() );
-        
-        } else {
-            Handler.getOperServ().sendGlobOp ( oper.getName()+" has issued FORCENICK on: "+u.getName()+" -> "+newNick );
         }
+        string += " -> "+newNick;
+        Handler.getOperServ().sendGlobOp ( string);
+        OSLogEvent log = new OSLogEvent ( u.getName(), FORCENICK, user, user.getOper().getNick() );
+        log.setData ( string );
+        OSDatabase.logEvent ( log );
         Handler.getOperServ().sendServ ( "SQLINE "+u.getName()+" :You cannot use this nick." );
         Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
+        
         Timer timer = new Timer ( );
         timer.schedule( new UnSQlineTask ( u.getNameStr() ), 15000);
         
         OperServ.addTimer ( timer );
-        
         
         u.setName(newNick);
     }

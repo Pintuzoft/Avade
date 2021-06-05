@@ -64,7 +64,7 @@ class ModeLock extends HashNumeric {
         this.init ( );
         this.modes = data;
         for ( int index = 0; index < data.length ( ); index++ ) {
-            System.out.println("Parsing mlock: "+data.charAt(index));
+//            System.out.println("Parsing mlock: "+data.charAt(index));
             switch ( ( ""+data.charAt ( index ) ).hashCode ( ) ) {
                case MODE_PLUS :
                    state = 1;

@@ -46,7 +46,7 @@ public class HashString {
             crypt.reset ( );
             crypt.update ( this.string.toUpperCase().getBytes ( ) );
             hex = String.format ( "%064x", new BigInteger ( 1, crypt.digest ( ) ) );
-            code = new BigInteger ( hex, 16 );
+            this.code = new BigInteger ( hex, 16 );
         } catch ( NoSuchAlgorithmException ex ) {
             Logger.getLogger(HashString.class.getName()).log ( Level.SEVERE, null, ex );
         }

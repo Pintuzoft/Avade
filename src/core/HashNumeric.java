@@ -23,13 +23,14 @@ package core;
  */
 public abstract class HashNumeric extends TextFormat {
     /* CONFIG */
+    
     public static HashString NAME = new HashString ( "NAME" );
     public static HashString DOMAIN = new HashString ( "DOMAIN" );
     public static HashString NETNAME = new HashString ( "NETNAME" );
-    public static HashString CONNNAME = new HashString ( "CONNNAME" );
-    public static HashString CONNHOST = new HashString ( "CONNHOST" );
-    public static HashString CONNPASS = new HashString ( "CONNPASS" );
-    public static HashString CONNPORT = new HashString ( "CONNPORT" );
+    public static HashString HUBNAME = new HashString ( "HUBNAME" );
+    public static HashString HUBHOST = new HashString ( "HUBHOST" );
+    public static HashString HUBPASS = new HashString ( "HUBPASS" );
+    public static HashString HUBPORT = new HashString ( "HUBPORT" );
     public static HashString MASTER = new HashString ( "MASTER" );
     public static HashString SECRETSALT = new HashString ( "SECRETSALT" );
     public static HashString STATS = new HashString ( "STATS" );
@@ -68,6 +69,9 @@ public abstract class HashNumeric extends TextFormat {
     public static HashString LOGFILE = new HashString ( "LOGFILE" );
     public static HashString EXPIRE = new HashString ( "EXPIRE" );
     public static HashString FORCEMODES = new HashString ( "FORCEMODES" );
+    public static HashString STRING = new HashString ( "STRING" );
+    public static HashString INTEGER = new HashString ( "INTEGER" );
+    public static HashString BOOLEAN = new HashString ( "BOOLEAN" );
     public static HashString ERROR = new HashString ( "ERROR" );
     public static HashString CLOSING = new HashString ( "CLOSING" );
     public static HashString LINK = new HashString ( "LINK" );
@@ -518,6 +522,7 @@ public abstract class HashNumeric extends TextFormat {
     public static HashString SYNTAX_ERROR_LIST = new HashString ( "SYNTAX_ERROR_LIST" );
     public static HashString SYNTAX_ERROR_SET = new HashString ( "SYNTAX_ERROR_SET" );
     public static HashString NO_SUCH_SERVER = new HashString ( "NO_SUCH_SERVER" );
+    public static HashString SHOWCONFIG = new HashString ( "SHOWCONFIG" );
     
     public static HashString SRA_ADD          = new HashString ( "SRA_ADD" );
     public static HashString SRA_NOT_ADD      = new HashString ( "SRA_NOT_ADD" );

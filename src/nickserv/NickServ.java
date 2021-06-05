@@ -32,6 +32,7 @@ import core.Proc;
 import core.Service;
 import core.StringMatch;
 import core.TextFormat;
+import java.math.BigInteger;
 import server.ServSock;
 import user.User;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class NickServ extends Service {
     
     /* Oper stuff */
     private NSSnoop                         snoop;          /* Object that parse and respond to help queries */ 
-    private static ArrayList<NickInfo>      niList  = new ArrayList<> ( ); /* List of focused regged nicknames */  
+    private static HashMap<BigInteger,NickInfo>      niList  = new HashMap<> ( ); /* List of focused regged nicknames */  
     private static TextFormat               f       = new TextFormat ( );;
 
     private static ArrayList<NSAuth>        newAuthList = new ArrayList<>();
@@ -144,37 +145,27 @@ public class NickServ extends Service {
     /* Registered entities */
     public static NickInfo findNick ( String source )  {
         HashString name;
-        NickInfo ni2;
+        NickInfo ni;
         
         if ( source.contains ( ":" )  )  {
             name = new HashString ( source.substring(1) );
         } else {
             name = new HashString ( source );
         }
-        /* Check our active list first */
-        for ( NickInfo ni : niList )  { 
-            if ( ni.is(name) )  {
-                return ni;
-            }
-        }
-        return null; 
+        return findNick ( name );
     }
     
     /* Registered entities */
     public static NickInfo findNick ( HashString name )  {
-        NickInfo ni2;
-        /* Check our active list first */
-        for ( NickInfo ni : niList )  { 
-            if ( ni.is(name) )  {
-                return ni;
-            }
-        }
-        return null; 
+        return niList.get(name.getCode());
+//        return ( niList.containsKey(name.getCode()) ? niList.get(name.getCode()) : null );
     }
 
     static ArrayList<NickInfo> searchNicks ( String string ) {
+        NickInfo ni;
         ArrayList<NickInfo> nicks = new ArrayList<>();
-        for ( NickInfo ni : niList) {
+        for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
+            ni = entry.getValue();
             if ( StringMatch.wild ( ni.getName().getString().toUpperCase(), string.toUpperCase() ) ) {
                 nicks.add ( ni );
             }
@@ -186,15 +177,15 @@ public class NickServ extends Service {
         if ( ! is ) {
             return;
         } 
-        niList.add ( ni ); 
+        niList.put ( ni.getName().getCode(), ni ); 
     }
 
     public static void listNicks ( ) {
         if ( ! is ) {
             return;
         }
-        for ( NickInfo ni : niList ) {
-            System.out.println ( "NICKLIST: "+ni.getString ( FULLMASK ) );
+        for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
+            System.out.println ( "NICKLIST: "+entry.getValue().getString ( FULLMASK ) );
         }
     }
  
@@ -237,7 +228,9 @@ public class NickServ extends Service {
     }
     
     public static int secMaintenance ( ) {
-        for ( NickInfo ni : niList ) {
+        NickInfo ni = null;
+        for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
+            ni = entry.getValue();
             if ( ni.isState ( OLD ) ) {
                 if ( ni.getExp().isTimeToSendAnotherMail ( ) ) {
                     SendMail.sendExpNick ( ni );
@@ -399,8 +392,8 @@ public class NickServ extends Service {
     /* Send statement to identify nickname */
     
     public static void adRegNick ( User u )  {
-        Handler.getNickServ ( ) .sendMsg ( u, "The nick "+f.b ( ) +u.getString ( NAME ) +f.b ( ) +" is already registered" );
-        Handler.getNickServ ( ) .sendMsg ( u, "You now have 60 seconds to identify as the owner of nickname "+f.b ( ) +u.getString ( NAME ) +f.b ( )  );
+        Handler.getNickServ().sendMsg ( u, "The nick "+f.b ( ) +u.getString ( NAME ) +f.b ( ) +" is already registered" );
+        Handler.getNickServ().sendMsg ( u, "You now have 60 seconds to identify as the owner of nickname "+f.b ( ) +u.getString ( NAME ) +f.b ( )  );
     }
     public static void is ( boolean state ) { 
         is = state; 
@@ -444,7 +437,9 @@ public class NickServ extends Service {
     
     public static void deleteNick ( NickInfo ni )  {
         NickInfo target = null;
-        for ( NickInfo nBuf : niList )  {
+        NickInfo nBuf = null;
+        for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
+            nBuf = entry.getValue();
             if ( nBuf.is(ni) ) {
                 target = nBuf;
             }

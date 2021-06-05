@@ -48,7 +48,7 @@ class RSHelper extends Helper {
         Oper oper = user.getSID().getOper ( ); 
         System.out.println("debug RootServ:parse()");
         if ( ! oper.isAtleast ( SRA )  )  {
-            this.service.sendMsg ( user, "   RootServ is for Root Admins  ( SRA )  only .. *sigh*" );
+            this.service.sendMsg ( user, "   RootServ is for Services Root Admins (SRA)  only .. *sigh*" );
             
         } else {
             command = new HashString ( cmd[4] );
@@ -58,6 +58,9 @@ class RSHelper extends Helper {
             } else if ( command.is(SRA) ) {
                 this.sra ( user );
             
+            } else if ( command.is(SHOWCONFIG) ) {
+                this.sraw ( user );
+
             } else if ( command.is(SRAW) ) {
                 this.sraw ( user );
             

@@ -23,10 +23,13 @@ import core.HashString;
 import core.Proc;
 import core.StringMatch;
 import core.Service;
+import java.math.BigInteger;
 import java.text.DateFormat;
 import user.User;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.Timer;
 import nickserv.NickInfo;
@@ -96,10 +99,6 @@ public class OperServ extends Service {
         setCommands ( );
     }
 
-    public void updConf ( ) {
-        setCommands ( );
-    }
- 
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
         cmdList.add ( new CommandInfo ( "HELP",      1,                         "Show help information" )                       );
@@ -603,7 +602,7 @@ public class OperServ extends Service {
     }
   
     public void sendServicesBan ( ServicesBan ban )  {
-                
+        User u = null;   
         if ( ban != null )  {
             // getListByCommand(ban.getType()).add ( ban );
           //  addServicesBans.add ( ban );
@@ -629,7 +628,9 @@ public class OperServ extends Service {
                 String nick;
                 User buf;
                 String prefix = "SQLined";
-                for ( User u : Handler.getUserList() ) {
+                
+                for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
+                    u = entry.getValue();
                     nick = u.getString ( NAME );
                     if ( StringMatch.nickWild ( nick, ban.getMask().getString() ) ) {
                         while ( ( buf = Handler.findUser ( prefix+index ) ) != null ) {
@@ -643,7 +644,8 @@ public class OperServ extends Service {
             } else if ( ban.is(SGLINE) ) {
                 this.unBan ( ban );
                 this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
-                for ( User u : Handler.getUserList() ) {
+                for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
+                    u = entry.getValue();
                     if ( StringMatch.wild ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
                         this.sendServ ( "KILL "+u.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
                     }
@@ -1025,8 +1027,8 @@ public class OperServ extends Service {
     }
     
     public static boolean isWhiteListed ( HashString usermask ) {
-        for ( HashString white : Proc.getConf().getWhiteList ( ) ) {
-            if ( StringMatch.maskWild ( usermask.getString(), "*"+white ) ) {
+        for ( Map.Entry<BigInteger,HashString> white : Proc.getConf().getWhiteList().entrySet() ) {
+            if ( StringMatch.maskWild ( usermask.getString(), "*"+white.getValue() ) ) {
                 return true;
             }
         }

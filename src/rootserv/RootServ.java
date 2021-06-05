@@ -66,11 +66,12 @@ public class RootServ extends Service {
      
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
-        cmdList.add ( new CommandInfo ( "PANIC",    CMDAccess ( PANIC ),    "Manage the services panic state" )  );
-        cmdList.add ( new CommandInfo ( "REHASH",   CMDAccess ( REHASH ),   "Reload the config file" )  );
-        cmdList.add ( new CommandInfo ( "SRAW",     CMDAccess ( SRAW ),     "Send raw messages from services to the network" )  );
-        cmdList.add ( new CommandInfo ( "SRA",      CMDAccess ( SRA ),      "Manage the Services Root Admin list" )  );
-        cmdList.add ( new CommandInfo ( "STOP",     CMDAccess ( STOP ),     "Correct way to stop services" )  );
+        cmdList.add ( new CommandInfo ( "PANIC",      CMDAccess ( PANIC ),      "Manage the services panic state" )  );
+        cmdList.add ( new CommandInfo ( "REHASH",     CMDAccess ( REHASH ),     "Reload the config file" )  );
+        cmdList.add ( new CommandInfo ( "SHOWCONFIG", CMDAccess ( SHOWCONFIG ), "Print current services config" )  );
+        cmdList.add ( new CommandInfo ( "SRAW",       CMDAccess ( SRAW ),       "Send raw messages from services to the network" )  );
+        cmdList.add ( new CommandInfo ( "SRA",        CMDAccess ( SRA ),        "Manage the Services Root Admin list" )  );
+        cmdList.add ( new CommandInfo ( "STOP",       CMDAccess ( STOP ),       "Correct way to stop services" )  );
     }  
     
     
@@ -102,7 +103,9 @@ public class RootServ extends Service {
         }
 
         /* :DreamHealer PRIVMSG OperServ@stats.sshd.biz :help */
-         
+        
+        cmd[3] = cmd[3].substring ( 1 );
+        
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         

@@ -70,11 +70,10 @@ public class Database extends HashNumeric {
         try {
             if ( sql == null || ! sql.isValid ( 1 )  )  {
                 if ( System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
-                    Config conf = Proc.getConf ( );
                     sql = DriverManager.getConnection ( 
-                            "jdbc:mysql://"+conf.get(MYSQLHOST)+":"+Integer.parseInt( conf.get(MYSQLPORT).getString() )+"/"+conf.get(MYSQLDB).getString(), 
-                            conf.get(MYSQLUSER).getString(), 
-                            conf.get(MYSQLPASS).getString()
+                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString(), 
+                            Proc.getConf().get(MYSQLUSER).getString(), 
+                            Proc.getConf().get(MYSQLPASS).getString()
                     );           
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {

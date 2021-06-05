@@ -22,6 +22,7 @@ import core.Config;
 import core.Database;
 import core.HashString;
 import core.Proc;
+import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import nickserv.NickInfo;
 import java.sql.ResultSet;
@@ -29,6 +30,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import nickserv.NickServ;
 import user.User;
 
@@ -102,17 +104,14 @@ public class CSDatabase extends Database {
      */
 
     public static int createChan ( ChanInfo ci )  {
-        Config config = Proc.getConf ( );
         if ( ! activateConnection ( )  )  {
             return -2;
         } else if ( ci == null ) {
             return -3;
-        } else if ( config == null ) {
-            return -4;
         } else {
             
             try {
-                HashString salt = config.get ( SECRETSALT );
+                HashString salt = Proc.getConf().get ( SECRETSALT );
                 String query = "insert into chan ( name, founder, pass, description, regstamp, stamp )  "
                              + "values ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
@@ -205,14 +204,11 @@ public class CSDatabase extends Database {
      */
 
     public static int updateChan ( ChanInfo ci )  { 
-        Config config = Proc.getConf ( );
         if ( ! activateConnection ( )  )  {
             /* No SQL connection */
             return -2;
         } else if ( ci == null ) {
             return -3;
-        } else if ( config == null ) {
-            return -4;
         } else {
             /* Try add the chan */          
             try {
@@ -220,7 +216,7 @@ public class CSDatabase extends Database {
                 if ( ci.getChanges().hasChanged ( FOUNDER ) ||
                      ci.getChanges().hasChanged ( DESCRIPTION ) ||
                      ci.getChanges().hasChanged ( LASTUSED ) ) {
-                    HashString salt = config.get ( SECRETSALT );
+                    HashString salt = Proc.getConf().get ( SECRETSALT );
                     query = "update chan set "+
                             "founder = ?, pass = aes_encrypt(?,?), description = ?, stamp = ? "+
                             "where name = ?";
@@ -752,7 +748,6 @@ public class CSDatabase extends Database {
         Topic topic = null;
         String[] buf;
         
-        System.out.println("0:");
         if ( ! activateConnection ( )  )  {
             return topic;
         }
@@ -829,11 +824,11 @@ public class CSDatabase extends Database {
      * @param access
      * @return
      */
-    public static ArrayList<CSAcc> getChanAccess ( ChanInfo ci, HashString access )  {
+    public static HashMap<BigInteger,CSAcc> getChanAccess ( ChanInfo ci, HashString access )  {
         String[] buf;
         NickInfo ni;
         String stamp;
-        ArrayList<CSAcc> opList = new ArrayList<> ( );
+        HashMap<BigInteger,CSAcc> opList = new HashMap<>();
         if ( ! activateConnection ( )  )  {
             return opList;
         }
@@ -871,11 +866,14 @@ public class CSDatabase extends Database {
                     stamp = res3.getString ( 2 );
                     if ( ni != null ) {
                         chanOp = new CSAcc ( ni, access, stamp );
+                        opList.put ( ni.getName().getCode(), chanOp );
+                        
                     } else {
-                        //System.out.println("DEBUG!!!!!: "+res3.getString ( 1 ) );
-                        chanOp = new CSAcc ( res3.getString ( 1 ), access, stamp );
+                        chanOp = new CSAcc ( res3.getString(1), access, stamp );
+                        opList.put ( chanOp.getMask().getCode(), chanOp );
+
                     }
-                    opList.add ( chanOp );
+                    
 
                 } catch ( SQLException | NumberFormatException e )  {
                     Proc.log ( CSDatabase.class.getName ( ), e );
@@ -1019,22 +1017,21 @@ public class CSDatabase extends Database {
         return true;
     } 
  
-    static ArrayList<ChanInfo> getAllChans ( )  {
+    static HashMap<BigInteger,ChanInfo> getAllChans ( )  {
         ChanInfo ci;
-        ArrayList<ChanInfo> cList = new ArrayList<> ( );
+        HashMap<BigInteger,ChanInfo> cList = new HashMap<>();
         ChanSetting settings;
         CSFlag chanFlag = null;
         Topic topic;
         String[] buf;
-        Config config = Proc.getConf ( );
         long now;
         long now2;
         if ( ! activateConnection ( )  )  {
             return cList;
         }
         try { 
-            now = System.currentTimeMillis();
-            HashString salt = config.get ( SECRETSALT );
+            now = System.nanoTime();
+            HashString salt = Proc.getConf().get ( SECRETSALT );
             String query = "select name,founder,AES_DECRYPT(pass,?) as pass,description,regstamp,stamp "
                          + "from chan " 
                          + "order by name";
@@ -1066,11 +1063,11 @@ public class CSDatabase extends Database {
                 } else {
                    ci.setChanFlag ( new CSFlag ( res.getString ( 1 ) ) );
                 }
-                cList.add ( ci );
+                cList.put ( ci.getName().getCode(), ci );
                 $count++;
             }
-            now2 = System.currentTimeMillis();
-            System.out.print(".. "+$count+" chans loaded [took "+(now2-now)+"ms]\n");
+            now2 = System.nanoTime();
+            System.out.print(".. "+$count+" chans loaded [took "+(now2-now)+"ns]\n");
             res.close ( );
             ps.close ( );
             idleUpdate ( "getAllChans ( ) " );
@@ -1092,7 +1089,6 @@ public class CSDatabase extends Database {
         ChanInfo ci; 
         ChanSetting settings;
         CSFlag chanFlag = null;
-        Config config = Proc.getConf ( );
         
         if ( pattern.isEmpty ( )  )  {
             return null;
@@ -1107,7 +1103,7 @@ public class CSDatabase extends Database {
             return cList;
         }
         try { 
-            HashString salt = config.get ( SECRETSALT );
+            HashString salt = Proc.getConf().get ( SECRETSALT );
             String query = "select c.name,c.founder,AES_DECRYPT(c.pass,?),c.description,c.regstamp,c.stamp "
                          + "from chan as c "
                          + "where c.name rlike ? "
@@ -1155,7 +1151,7 @@ public class CSDatabase extends Database {
                            "greetmsg "+
                     "from chanflag "+
                     "where name = ?";
-            System.out.println(query);
+//            System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, name.getString() );
             res2 = ps.executeQuery ( );

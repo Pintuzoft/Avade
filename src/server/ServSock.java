@@ -46,18 +46,18 @@ public class ServSock extends HashNumeric {
         last = System.currentTimeMillis();
         lastPing = this.last;
         try {
-            this.sock = new Socket ( Proc.getConf().get(CONNHOST).getString(), Integer.parseInt ( Proc.getConf().get(CONNPORT).getString() ) );
+            this.sock = new Socket ( Proc.getConf().get(HUBHOST).getString(), Integer.parseInt ( Proc.getConf().get(HUBPORT).getString() ) );
             this.sock.setKeepAlive ( true );
             this.sock.setSoTimeout ( 200 );
             out = new PrintWriter ( this.sock.getOutputStream ( ) , true );
             this.in = new BufferedReader ( new InputStreamReader ( this.sock.getInputStream ( ) ) );
 
         } catch  ( UnknownHostException e )  {
-            System.out.println ( "Don't know about host: "+Proc.getConf().get ( CONNNAME ) );
+            System.out.println ( "Don't know about host: "+Proc.getConf().get ( HUBNAME ) );
             System.exit ( 1 );
 
         } catch  ( IOException e )  {
-            System.out.println ( "Couldn't get I/O for the connection to: "+Proc.getConf().get ( CONNNAME )  );
+            System.out.println ( "Couldn't get I/O for the connection to: "+Proc.getConf().get ( HUBNAME )  );
             System.exit ( 1 );
         }
 
@@ -98,7 +98,7 @@ public class ServSock extends HashNumeric {
     public static void sendCmd ( String cmd )  {
         try {   
             if ( ! cmd.contains ( "PONG" )  )  {
-                System.out.println ( "Sending: "+cmd );
+                //System.out.println ( "Sending: "+cmd );
             } 
             out.println ( cmd ); 
         } catch ( Exception e )  {
@@ -107,7 +107,7 @@ public class ServSock extends HashNumeric {
     }
 
     public void authenticate ( )  {
-        sendCmd ( "PASS "+Proc.getConf().get ( CONNPASS ) +" :TS.."          );
+        sendCmd ( "PASS "+Proc.getConf().get ( HUBPASS ) +" :TS.."          );
         sendCmd ( "SERVER "+Proc.getConf().get ( NAME ) +" 1 :services"     );
         sendCmd ( "SERVER "+Proc.getConf().get ( STATS ) +" 1 :stats"       );
     }

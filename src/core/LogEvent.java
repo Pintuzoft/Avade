@@ -124,6 +124,7 @@ public abstract class LogEvent extends HashNumeric {
         else if ( hash.is(ADDIRCOP) )       { return "IRCop+";      }
         else if ( hash.is(DELIRCOP) )       { return "IRCop-";      }
         else if ( hash.is(GLOBAL) )         { return "Global";      }
+        else if ( hash.is(FORCENICK) )      { return "FN";          }
         else {
             return null;
         }

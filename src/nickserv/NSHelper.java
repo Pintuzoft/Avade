@@ -184,8 +184,7 @@ public class NSHelper extends Helper {
                 }
             }
             
-            Config conf = Proc.getConf();
-            System.out.println( "debug: mark: "+conf.getInt(MARK)+":"+NickServ.getCMDList ( SRA ).size() );
+            System.out.println( "debug: mark: "+Proc.getConf().getCommandAccess(MARK)+":"+NickServ.getCMDList(SRA).size() );
         }
         this.showEnd ( user );
     }

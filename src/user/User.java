@@ -218,37 +218,41 @@ public class User extends HashNumeric {
         String buf = new String ( );
         buf = "";
  
-        if ( this.sid != null )  {
-            for ( NickInfo ni : this.sid.getNiList ( )  )  {
-                buf +=  ( buf.isEmpty ( ) ?"":" " ) +ni.getString ( NAME );
-            }
+        if ( this.sid == null )  {
+            this.sid = new ServicesID ( );
         }
+        for ( NickInfo ni : this.sid.getNiList ( )  )  {
+            buf +=  ( buf.isEmpty ( ) ?"":" " ) +ni.getString ( NAME );
+        }
+        
         return buf;
     }
     
     public String getIDChans ( )  {
         String buf = new String ( );
         buf = ""; 
-        
-        if ( this.sid != null )  {
-            for ( ChanInfo ci : this.sid.getCiList ( )  )  {
-                buf +=  ( buf.isEmpty ( ) ?"":" " ) +ci.getString ( NAME );
-            }
+        if ( this.sid == null )  {
+            this.sid = new ServicesID ( );
+        }
+        for ( ChanInfo ci : this.sid.getCiList ( )  )  {
+            buf +=  ( buf.isEmpty ( ) ?"":" " ) +ci.getString ( NAME );
         }
         return buf;
     }
 
 
     public void unIdentify ( ChanInfo ci ) {
-        if ( this.sid != null ) {
-            this.sid.unIdentify ( ci );
+        if ( this.sid == null )  {
+            this.sid = new ServicesID ( );
         }
+        this.sid.unIdentify ( ci );
     }
 
     public void unIdentify ( NickInfo ni ) {
-        if ( this.sid != null ) {
-            this.sid.unIdentify ( ni );
+        if ( this.sid == null )  {
+            this.sid = new ServicesID ( );
         }
+        this.sid.unIdentify ( ni );
     }
     
 
@@ -327,8 +331,7 @@ public class User extends HashNumeric {
         } else {
             System.out.println ( "DEBUG!!: getaccess().sid:!null" );
         }
-        
-        
+         
         if ( this.sid == null ) {
             this.sid = new ServicesID ();
         }

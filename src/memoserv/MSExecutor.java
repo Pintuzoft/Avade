@@ -26,6 +26,8 @@ import core.Executor;
 import core.Handler;
 import core.HashString;
 import core.TextFormat;
+import java.math.BigInteger;
+import java.util.HashMap;
 import mail.SendMail;
 import user.User;
 
@@ -164,11 +166,11 @@ import user.User;
                 /* Allow memo through */
                 this.sendToNick ( user, ni, ci.getFounder ( ), cmd );
                 
-                for ( CSAcc op : ci.getAccessList ( SOP ) ) {
-                    this.sendToNick ( user, ni, op.getNick ( ), cmd );
+                for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(SOP).entrySet() ) {
+                    this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
                 }
-                for ( CSAcc op : ci.getAccessList ( AOP ) ) {
-                    this.sendToNick ( user, ni, op.getNick ( ), cmd );
+                for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(AOP).entrySet() ) {
+                    this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
                 }
                 
             } else {

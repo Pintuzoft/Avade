@@ -153,15 +153,14 @@ import java.util.Date;
     }
 
     public void sendRaw ( String command )  {
-        System.out.println ( "Trying: "+command );
+        //System.out.println ( "Trying: "+command );
         this.send ( RAW, command );
     } 
     
     
     /* COMMANDS */
-    public int CMDAccess ( HashString command ) { 
-        System.out.println ( "Debug CMDAccess ( "+Proc.getConf().getInt ( command )+" )" );
-        return Proc.getConf().getInt ( command ); 
+    public int CMDAccess ( HashString command ) {
+        return Proc.getConf().getCommandAccess ( command ); 
     }
     
     /* Returns the list of added commands with its access and info */

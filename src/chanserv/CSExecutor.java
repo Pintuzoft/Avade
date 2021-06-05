@@ -26,6 +26,7 @@ import core.HashString;
 import core.Proc;
 import core.StringMatch;
 import core.TextFormat;
+import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
@@ -33,6 +34,7 @@ import nickserv.NickServ;
 import user.User;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -543,6 +545,7 @@ public class CSExecutor extends Executor {
         ChanInfo ci = result.getChanInfo ( );
         Handler.getChanServ().dropChan ( ci );
         this.service.sendMsg ( user, output ( CHANNELDELETED, ci.getNameStr() ) );
+        this.service.sendGlobOp ( "Channel: "+ci.getName()+" has been deleted by: "+user.getNameStr()+" ("+user.getOper().getNameStr()+")" );
         CSLogEvent log = new CSLogEvent ( ci.getName(), DELETE, user.getFullMask(), user.getOper().getNameStr() );
         ChanServ.addLog ( log );
         this.snoop.msg ( true, CHANNELDELETED, ci.getName(), user, cmd );
@@ -733,8 +736,10 @@ public class CSExecutor extends Executor {
         ci = result.getChanInfo ( );
         String accStr = accessToString ( access );
         this.showStart ( true, user, ci, f.b ( ) +accStr+" list for: "+f.b ( )  ); 
-        ArrayList<CSAcc> list = ci.getAccessList ( access );
-        for ( CSAcc acc : list )  {     
+        
+        
+        for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(access).entrySet() ) {
+            CSAcc acc = entry.getValue();
             if ( acc.getNick ( ) != null )  {
                 if ( acc.getLastOped() != null ) {
                     this.service.sendMsg ( user,  " - "+acc.getNick().getName()+" ("+acc.getNick().getString ( FULLMASK )+") - [LastOped: "+acc.getLastOped()+"]" );
@@ -1256,12 +1261,13 @@ public class CSExecutor extends Executor {
 //                Handler.getChanServ().dropChan ( relay );
 //            }
 
-            ci.getSettings().set ( AUDITORIUM, "" );
+            ci.getSettings().set ( flag, "" );
             this.service.sendMsg ( user, "Please note that the auditorium channel mode handles joins/parts differently than normal and will cause "+
                                          "users becoming out of sync. Its for that reason recommended to masskick the channel after removing the mode to sort the possible desync." );
             this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :-A");
+            this.service.sendGlobOp ( "Channel: "+ci.getName()+" Auditorium mode has been UnSet by: "+oper.getName() );
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName ( ), user, cmd );
-            ci.changed(command);
+            ci.changed(flag);
         
         /* UNMARK || UNFREEZE || REOPEN || UNHOLD*/
         } else if ( command.is(UNMARK) ||
@@ -1305,7 +1311,7 @@ public class CSExecutor extends Executor {
 //            this.service.sendMsg ( user, " " );
   
 
-            ci.getSettings().set ( AUDITORIUM, oper.getNameStr() );
+            ci.getSettings().set ( flag, oper.getNameStr() );
             if ( ( c = Handler.findChan ( ci.getNameStr()+"-relay" ) ) != null ) {
                 Handler.getChanServ().checkAllUsers(c);
             }
@@ -1315,8 +1321,10 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, "will cause users becoming out of sync. Its for that reason recommended to masskick the channel" );
             this.service.sendMsg ( user, "after removing the mode to sort the possible desync." );
             this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :+A");
+            this.service.sendGlobOp ( "Channel: "+ci.getName()+" Auditorium mode has been set by: "+oper.getName() );
+
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getNameStr(), user, cmd );
-            ci.changed(command);
+            ci.changed(flag);
 //            ChanServ.addToWorkList ( REGISTER, ci );
         
         /* MARK || FREEZE || CLOSE || HOLD */
@@ -1512,6 +1520,7 @@ public class CSExecutor extends Executor {
             this.service.sendOpMsg ( ci, output ( NICK_MKICK_CHAN, ni.getNameStr(), ci.getNameStr ( )  )  );
         }                    
         this.service.sendMsg ( user, output ( NICK_MKICK, c.getNameStr() ) );
+        this.service.sendGlobOp ( ni.getNameStr()+" Mass-Kicked channel: "+ci.getNameStr() );
         CSLogEvent log = new CSLogEvent ( ci.getName(), MKICK, user.getFullMask(), ( isOper ? ni.getNameStr() : null )  );
         ChanServ.addLog ( log );
         ci.kickAll ( "Masskick by "+ni.getName() );
@@ -1810,8 +1819,9 @@ public class CSExecutor extends Executor {
         for ( HashString access : lists ) {
             String accStr = accessToString ( access );
             this.service.sendMsg ( user,  accStr.toUpperCase()+": " );
-            ArrayList<CSAcc> list = ci.getAccessList ( access );
-            for ( CSAcc acc : list )  {     
+            
+            for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(access).entrySet() ) {
+                CSAcc acc = entry.getValue();
                 if ( acc.getNick ( ) != null )  {
                     this.service.sendMsg ( user,  "  "+acc.getNick().getName()+" ("+acc.getNick().getString ( FULLMASK ) +") - [LastOped: "+acc.getLastOped()+"]" );
                 } else {
@@ -1845,7 +1855,6 @@ public class CSExecutor extends Executor {
         boolean needAccess  = false;
         HashString str1 = null;
         HashString str2 = null;
-        Config conf = Proc.getConf();
         
         if ( command.is(CHANFLAG) ) {
             
