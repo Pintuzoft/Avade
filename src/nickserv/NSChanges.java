@@ -22,7 +22,7 @@ import core.HashString;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class NSChanges extends Changes {
     private boolean freeze;
@@ -39,11 +39,17 @@ public class NSChanges extends Changes {
     private boolean showemail;
     private boolean showhost;
   
+    /**
+     *
+     */
     public NSChanges ( ) {
         super ( );
         clean ( );
     }
     
+    /**
+     *
+     */
     public void clean ( ) {
         this.freeze = false;
         this.mark = false;
@@ -61,6 +67,11 @@ public class NSChanges extends Changes {
         this.changed = false;
     }
     
+    /**
+     *
+     * @param it
+     * @return
+     */
     public boolean hasChanged ( HashString it ) {
         if      ( it.is(FREEZE) )       { return this.freeze;                   }
         else if ( it.is(MARK) )         { return this.mark;                     }
@@ -80,6 +91,10 @@ public class NSChanges extends Changes {
         }
     }
     
+    /**
+     *
+     * @param it
+     */
     public void change ( HashString it ) {
         if ( it.is(FREEZE) ) {
             this.freeze = true;
@@ -136,6 +151,9 @@ public class NSChanges extends Changes {
          
     }
     
+    /**
+     *
+     */
     public void printChanges ( ) {
         System.out.println("***** Changes *****");
         if ( this.freeze ) 

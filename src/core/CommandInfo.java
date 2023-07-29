@@ -29,6 +29,12 @@ public class CommandInfo extends HashNumeric {
     private String patch;
     private static String basePatch = "            ";
     
+    /**
+     *
+     * @param name
+     * @param access
+     * @param description
+     */
     public CommandInfo ( String name, int access, String description )  {
         this.name           = new HashString ( name );
         this.description    = description;
@@ -36,27 +42,55 @@ public class CommandInfo extends HashNumeric {
         this.patch          = createPatch ( this.name );
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) {
         return this.name;
     }
 
+    /**
+     *
+     * @return
+     */
     public int getAccess ( ) {
         return this.access;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getDescription ( ) {
         return this.description;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getPatch ( ) {
         return this.patch;
     }
     
     /* Return a suitable patch based on namn length */
+
+    /**
+     *
+     * @param str
+     * @return
+     */
+
     public static String createPatch ( HashString str ) {
         return basePatch.substring ( 0, basePatch.length ( ) - str.length ( ) );
     }
 
+    /**
+     *
+     * @param it
+     * @return
+     */
     public boolean isAcc ( HashString it )  {
         if      ( it.is(USER) )             { return this.access == 0;          } 
         else if ( it.is(IRCOP) )            { return this.access == 1;          }
@@ -69,6 +103,10 @@ public class CommandInfo extends HashNumeric {
         }
     }
      
+    /**
+     *
+     * @return
+     */
     public String getAccessStr ( )  {
         switch ( this.access )  {
             case 1 :
@@ -92,6 +130,11 @@ public class CommandInfo extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param ci
+     * @return
+     */
     public boolean is ( HashString ci ) {
         return this.name.is(ci);
     }

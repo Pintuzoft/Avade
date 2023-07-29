@@ -33,6 +33,15 @@ public class Command extends HashNumeric {
     private String      extra;
     private String      extra2;
     
+    /**
+     *
+     * @param id
+     * @param target
+     * @param targetType
+     * @param command
+     * @param extra
+     * @param extra2
+     */
     public Command ( String id, Object target, HashString targetType, HashString command, String extra, String extra2 )  {
         this.id = id;
         this.hash = id.hashCode ( );
@@ -43,30 +52,58 @@ public class Command extends HashNumeric {
         this.extra2 = extra2;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getID ( ) {
         return this.id;
     }
     
+    /**
+     *
+     * @return
+     */
     public int getHashCode ( ) {
         return this.hash;
     }
     
+    /**
+     *
+     * @return
+     */
     public Object getTarget ( ) {
         return this.target;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getTargetType ( ) { 
         return this.targetType;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getCommandData ( ) {
         return this.commandData;
     } 
 
+    /**
+     *
+     * @return
+     */
     public String getExtra() {
         return extra;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getExtra2() {
         return extra2;
     }

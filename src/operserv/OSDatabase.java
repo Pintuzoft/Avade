@@ -36,6 +36,10 @@ public class OSDatabase extends Database {
     private static ResultSet            res2;
     private static PreparedStatement    ps;
  
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> getAllStaff ( )  {
         Oper oper;
         if ( ! activateConnection ( )  )  {
@@ -82,6 +86,13 @@ public class OSDatabase extends Database {
         return true;
     }*/
     /* End NickServ */
+
+    /**
+     *
+     * @param ban
+     * @return
+     */
+
   
     public static boolean addServicesBan ( ServicesBan ban )  {
         String list = getListByHash ( ban.getType() );
@@ -111,6 +122,11 @@ public class OSDatabase extends Database {
         return true;
     }
 
+    /**
+     *
+     * @param command
+     * @param ban
+     */
     public static void logServicesBan ( HashString command, ServicesBan ban ) {
         String id;
         String flag;
@@ -157,7 +173,11 @@ public class OSDatabase extends Database {
         } 
     }
 
-   
+    /**
+     *
+     * @param ban
+     * @return
+     */
     public static boolean delServicesBan ( ServicesBan ban )  {
         String list = getListByHash ( ban.getType() );
         if ( ! activateConnection ( ) ) {
@@ -181,6 +201,11 @@ public class OSDatabase extends Database {
         return false;
     }
    
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static ArrayList<ServicesBan> getServicesBans ( HashString hash )  {
         String list = getListByHash ( hash );
         ArrayList<ServicesBan> banList = new ArrayList<> ( );
@@ -217,6 +242,10 @@ public class OSDatabase extends Database {
         return banList;
     }
     
+    /**
+     *
+     * @return
+     */
     public static ArrayList<SpamFilter> getSpamFilters ( ) {
         ArrayList<SpamFilter> sfList = new ArrayList<>();
         String query;
@@ -304,6 +333,11 @@ public class OSDatabase extends Database {
         return ban;
     }
 
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static ArrayList<ServicesBan> getExpiredBans ( HashString hash ) {
         String list = getListByHash ( hash );
         ArrayList<ServicesBan> banList = new ArrayList<> ( ); 
@@ -342,7 +376,11 @@ public class OSDatabase extends Database {
         return banList;
     }
     
-    
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static String getListByHash ( HashString hash ) {
         if ( hash.is(AKILL) )               { return "akill";       } 
         else if ( hash.is(IGNORE) )         { return "ignorelist";  }
@@ -485,6 +523,11 @@ public class OSDatabase extends Database {
         return deleted;
     }
 
+    /**
+     *
+     * @param server
+     * @return
+     */
     public static boolean addServer ( NetServer server ) {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -708,6 +751,11 @@ public class OSDatabase extends Database {
         return lsList;
     }
 
+    /**
+     *
+     * @param oper
+     * @return
+     */
     public static boolean addStaff ( Oper oper ) {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -732,6 +780,11 @@ public class OSDatabase extends Database {
         return true;
     }
     
+    /**
+     *
+     * @param oper
+     * @return
+     */
     public static boolean delStaff ( Oper oper )  {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -857,10 +910,22 @@ public class OSDatabase extends Database {
   */   
   
     /* LOG EVENT */
+
+    /**
+     *
+     * @param log
+     * @return
+     */
+
     public static int logEvent ( OSLogEvent log ) {
         int id = Database.logEvent( "operlog", log );
         return id;
     }
+
+    /**
+     *
+     * @param id
+     */
     public static void delLogEvent ( int id ) {
         Database.delLogEvent( "operlog", id );
     }

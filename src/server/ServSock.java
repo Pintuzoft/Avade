@@ -41,6 +41,9 @@ public class ServSock extends HashNumeric {
     private static long                 lastPing;
     private static long                 defaultPing = 120000;
     
+    /**
+     *
+     */
     public ServSock ( )  {
         last = System.currentTimeMillis();
         lastPing = this.last;
@@ -65,11 +68,18 @@ public class ServSock extends HashNumeric {
         this.authenticate ( );
     }
 
-
+    /**
+     *
+     * @return
+     */
     public boolean isConnected ( )  { 
         return this.sock.isConnected ( );
     }
 
+    /**
+     *
+     * @return
+     */
     public String readLine ( )  {
         try { 
             this.buf = this.in.readLine ( );
@@ -84,6 +94,9 @@ public class ServSock extends HashNumeric {
         return null;
     }
 
+    /**
+     *
+     */
     public void disconnect ( )  {
         try {
             this.sock.close ( );
@@ -94,6 +107,10 @@ public class ServSock extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param cmd
+     */
     public static void sendCmd ( String cmd )  {
         try {   
             if ( ! cmd.contains ( "PONG" )  )  {
@@ -105,12 +122,19 @@ public class ServSock extends HashNumeric {
         }
     }
 
+    /**
+     *
+     */
     public void authenticate ( )  {
         sendCmd ( "PASS "+Proc.getConf().get ( HUBPASS ) +" :TS.."          );
         sendCmd ( "SERVER "+Proc.getConf().get ( NAME ) +" 1 :services"     );
         sendCmd ( "SERVER "+Proc.getConf().get ( STATS ) +" 1 :stats"       );
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean timedOut ( ) {
         return System.currentTimeMillis() - this.last > defaultPing;
     }

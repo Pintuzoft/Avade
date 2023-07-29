@@ -31,13 +31,25 @@ import java.util.Timer;
 public class GuestServ extends Service {
     private Random rand;
     private int index;
+
+    /**
+     *
+     */
     public static int max = 89999;
     
+    /**
+     *
+     */
     public GuestServ ( )  {
         super ( "GuestServ" );
         this.rand = new Random ( );
     }
     
+    /**
+     *
+     * @param user
+     * @param ni
+     */
     public void addNick ( User user, NickInfo ni )  {
         if ( ! user.isIdented ( ni ) ) {
             Timer adTimer = new Timer ( true );

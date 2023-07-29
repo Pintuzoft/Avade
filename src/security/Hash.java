@@ -27,6 +27,11 @@ import java.util.logging.Logger;
 public class Hash {
     private static MessageDigest enc; 
     
+    /**
+     *
+     * @param original
+     * @return
+     */
     public static String md5 ( String original )  {
         try {
             enc = MessageDigest.getInstance ( "MD5" );

@@ -33,11 +33,20 @@ import java.util.ArrayList;
 public class SExecutor extends Executor {
     private Services services;
 
+    /**
+     *
+     * @param services
+     */
     public SExecutor ( Services services )  {
         super ( );
         this.services = services;
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         
         HashString command = new HashString ( cmd[1] );
@@ -53,9 +62,21 @@ public class SExecutor extends Executor {
         }
         
     }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     public HashString nameToService ( String name ) {
         return nameToService ( new HashString ( name ) );
     }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     public HashString nameToService ( HashString name ) {
         if ( name.is(this.services.getName() ) ) {
             return SERVICES;
@@ -65,6 +86,11 @@ public class SExecutor extends Executor {
         return null;
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doMotd ( User user, String[] cmd )  { 
         HashString name = nameToService ( cmd[2] );
         
@@ -79,6 +105,12 @@ public class SExecutor extends Executor {
         }
          
     }
+
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doVersion ( User user, String[] cmd )  { 
         HashString name = nameToService ( cmd[2] );
 
@@ -93,6 +125,12 @@ public class SExecutor extends Executor {
         }
  
     }
+
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doInfo ( User user, String[] cmd )  { 
         HashString name = nameToService ( cmd[2] );
         
@@ -108,6 +146,11 @@ public class SExecutor extends Executor {
         
     }
    
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doStats ( User user, String[] cmd )  {
         HashString ch = new HashString ( cmd[2] );
         HashString name = new HashString ( cmd[3] );
@@ -137,7 +180,8 @@ public class SExecutor extends Executor {
         
     }
     
-    /***  MOTD  ***/
+    /***  MOTD
+     * @param user ***/
     public void servicesMOTD ( User user )  {
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTDSTART,  "***  ( Services )  Message of the day ***"                                   );
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     Avade IRC Services was created to assist users and staff with their"    );
@@ -169,23 +213,34 @@ public class SExecutor extends Executor {
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTDEND,    "*** End of MOTD ***"                                                        );
     }
     
+    /**
+     *
+     * @param user
+     */
     public void statsMOTD ( User user )  {
         this.services.sendStatsCMD ( user, Numeric.RPL_MOTDSTART,     "***  ( Stats )  Message of the day ***"                                      );
         this.services.sendStatsCMD ( user, Numeric.RPL_MOTD,          "     Stats is a psudo-server linked to services."                            );
         this.services.sendStatsCMD ( user, Numeric.RPL_MOTDEND,       "*** End of MOTD ***"                                                         );
     }
 
-    /***  MOTD  ***/
+    /***  MOTD
+     * @param user ***/
     public void servicesVersion ( User user )  {
         this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade IRC Services (Avade) Version"                                      );
         this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion().getVersion ( )                                         );
     }
+
+    /**
+     *
+     * @param user
+     */
     public void statsVersion ( User user )  {
         this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade IRC Services (Avade) Version"                                      );
         this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion().getVersion ( )                                         );
     }
 
-    /***  INFO  ***/
+    /***  INFO
+     * @param user ***/
     public void servicesInfo ( User user )  {
         this.services.sendServicesCMD ( user, Numeric.RPL_INFOSTART,  "***  ( Services )  Information ***"                                                      );
         this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Avade IRC Services (Avade) User Services (NickServ, ChanServ, MemoServ) "         );
@@ -201,6 +256,11 @@ public class SExecutor extends Executor {
         this.services.sendServicesCMD ( user, Numeric.RPL_INFO,       "     Services uptime: "+Proc.getUptime ( )                                              );
         this.services.sendServicesCMD ( user, Numeric.RPL_INFOEND,    "*** End of Info ***"                                                                     );
     }
+
+    /**
+     *
+     * @param user
+     */
     public void statsInfo ( User user )  {
         this.services.sendStatsCMD ( user, Numeric.RPL_INFOSTART,     "***  ( Stats )  Information ***"                                                         );
         this.services.sendStatsCMD ( user, Numeric.RPL_INFO,          "     Avade IRC Services (Avade) IRC Operator Services (OperServ, RootServ)"              );

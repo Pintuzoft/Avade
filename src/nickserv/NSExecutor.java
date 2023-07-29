@@ -46,6 +46,11 @@ import java.util.regex.Pattern;
     private static final Pattern    VALID_EMAIL_ADDRESS_REGEX = Pattern.compile ( "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE );
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public NSExecutor ( NickServ service, NSSnoop snoop )  {
         super ( );
         this.service        = service;
@@ -53,6 +58,11 @@ import java.util.regex.Pattern;
         this.f              = new TextFormat ( );
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd ) {
         HashString command;
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
@@ -116,11 +126,20 @@ import java.util.regex.Pattern;
          
     }
  
+    /**
+     *
+     * @param user
+     */
     public void help ( User user )  {
         this.service.sendMsg ( user, output ( CMD_NOT_FOUND_ERROR, "" )  );
         this.service.sendMsg ( user, output ( SHOW_HELP, new String[] { this.service.getNameStr() } )  );
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void register ( User user, String[] cmd )  { /* DONE? */
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :register pass email
         //       0         1              2                     3      4     5      = 6
@@ -173,6 +192,11 @@ import java.util.regex.Pattern;
 
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void identify ( User user, String[] cmd )  {
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :identify moew               = 5
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :identify dreamhealer moew   = 6
@@ -314,7 +338,11 @@ import java.util.regex.Pattern;
         this.snoop.msg ( true, DELETE, ni.getName(), user, cmd );
     }
    
-     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void list ( User user, String[] cmd )  { /* DONE? */
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :list dream*
         //      0          1            2                     3    4     = 5
@@ -346,6 +374,11 @@ import java.util.regex.Pattern;
         this.snoop.msg ( true, LIST, user.getOper().getName(), user, cmd );
     }
   
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void sIdentify ( User user, String[] cmd )  {
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :sidentify moew               = 5
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :sidentify dreamhealer moew   = 6
@@ -404,6 +437,11 @@ import java.util.regex.Pattern;
         this.snoop.msg ( true, SIDENTIFY, ni.getName(), user, cmd );
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void ghost ( User user, String[] cmd )  {
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :ghost dreamhealer pass  
         //            0       1                          2      3           4    5  = 6
@@ -459,6 +497,11 @@ import java.util.regex.Pattern;
         this.snoop.msg ( true, GHOST, ni.getNameStr(), user, cmd );
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void info ( User user, String[] cmd )  { /* DONE? */
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :info dreamhealer
         //      0          1            2                     3       4     = 5
@@ -779,6 +822,15 @@ import java.util.regex.Pattern;
          
     }
  
+    /**
+     *
+     * @param command
+     * @param cmdStr
+     * @param user
+     * @param ni
+     * @param enable
+     * @param cmd
+     */
     public void doSetBoolean ( HashString command, String cmdStr, User user, NickInfo ni, boolean enable, String[] cmd )  {
         this.sendIsOutput ( user, enable, cmdStr );
         ni.getSettings().set ( command, enable );
@@ -787,6 +839,12 @@ import java.util.regex.Pattern;
         this.snoop.msg ( true, SET, ni.getName(), user, cmd );        
     }
 
+    /**
+     *
+     * @param command
+     * @param user
+     * @param cmd
+     */
     public void doSetString ( HashString command, User user, String[] cmd ) {
         /* :DreamHea1er PRIVMSG NickServ@services.sshd.biz :set command <pass> <newemail>            */
         /*      0          1               2                 3       4      5           6   = 7      */
@@ -869,6 +927,12 @@ import java.util.regex.Pattern;
          
     }
 
+    /**
+     *
+     * @param user
+     * @param enable
+     * @param str
+     */
     public void sendIsOutput ( User user, boolean enable, String str )  {
         if ( enable ) { 
             this.service.sendMsg ( user, output ( NICK_IS_NOW, str ) );
@@ -878,7 +942,13 @@ import java.util.regex.Pattern;
         }
     }
        
-
+    /**
+     *
+     * @param online
+     * @param user
+     * @param ni
+     * @param str
+     */
     public void showStart ( boolean online, User user, NickInfo ni, String str )  {
         if ( Handler.findUser ( ni.getString ( NAME ) ) == null )  {
             this.service.sendMsg ( user, "*** "+str+ni.getString ( NickInfo.NAME ) + ( online?" [Offline]":"" ) +" ***" );
@@ -887,16 +957,34 @@ import java.util.regex.Pattern;
         }
     }
    
+    /**
+     *
+     * @param user
+     * @param str
+     */
     public void showEnd ( User user, String str ) { 
         this.service.sendMsg ( user, "*** End of "+str+" ***" );
     }
 
+    /**
+     *
+     * @param email
+     * @return
+     */
     public static boolean validEmail ( String email )  {
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher ( email );
         return matcher.find ( );
     }
 
     /* EXTERNAL COMMANDS */
+
+    /**
+     *
+     * @param ni
+     * @param command
+     * @return
+     */
+
     public boolean authMail ( NickInfo ni, Command command )  { 
         ArrayList<User> uList;
         //ni.getSettings().set ( AUTH, true );
@@ -916,6 +1004,13 @@ import java.util.regex.Pattern;
         }
         return false;
     }
+
+    /**
+     *
+     * @param ni
+     * @param command
+     * @return
+     */
     public boolean authPass ( NickInfo ni, Command command )  { 
         ArrayList<User> uList;
         //ni.getSettings().set ( AUTH, true );
@@ -1220,6 +1315,12 @@ import java.util.regex.Pattern;
        
     }
     
+    /**
+     *
+     * @param code
+     * @param args
+     * @return
+     */
     public String output ( HashString code, String... args )  {
         
         if ( code.is(SYNTAX_ERROR) ) {

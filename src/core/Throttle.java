@@ -25,17 +25,44 @@ package core;
  * @author DreamHealer
  */
 public class Throttle {
+
+    /**
+     *
+     */
     protected long lastHit;
+
+    /**
+     *
+     */
     protected int hits;
+
+    /**
+     *
+     */
     protected static int maxhits    = 3;      /* max hits until throttle kicks in */
+
+    /**
+     *
+     */
     protected static int range      = 5;      /* seconds until out of range */
+
+    /**
+     *
+     */
     protected static int maxtime    = 300;    /* seconds until throttle is removed */
     
+    /**
+     *
+     */
     public Throttle ( ) { 
         this.lastHit = System.currentTimeMillis();
         this.hits = 0;
     } 
     
+    /**
+     *
+     * @return
+     */
     public boolean isThrottled ( ) {
         /* Is it throttled return true */
         if ( this.hits > maxhits ) {

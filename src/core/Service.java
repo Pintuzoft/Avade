@@ -28,16 +28,51 @@ import java.util.Date;
  * @author DreamHealer
  */
  public abstract class Service extends HashNumeric {
+
+    /**
+     *
+     */
     protected HashString name;
+
+    /**
+     *
+     */
     protected HashString user;
+
+    /**
+     *
+     */
     protected HashString host;
+
+    /**
+     *
+     */
     protected HashString server;
+
+    /**
+     *
+     */
     protected HashString realName;
+
+    /**
+     *
+     */
     protected Date       date;
+
+    /**
+     *
+     */
     protected int        hashCode;
+
+    /**
+     *
+     */
     protected ArrayList<CommandInfo> cmdList;
     
-    
+    /**
+     *
+     * @param name
+     */
     protected Service ( String name )  {
         this.name = new HashString ( name ); 
         this.init ( );
@@ -53,6 +88,11 @@ import java.util.Date;
         this.send ( NICK, this.name.getString() );
     }
     
+    /**
+     *
+     * @param it
+     * @param data
+     */
     public void send ( HashString it, String data )  {
         try {
             if ( it.is(RAW) ) {
@@ -77,10 +117,18 @@ import java.util.Date;
         }
     }
     
+    /**
+     *
+     */
     public void disconnect ( )  {
         ServSock.sendCmd ( ":"+this.name+" QUIT :Disconnected" );
     }
     
+    /**
+     *
+     * @param u
+     * @return
+     */
     protected boolean user ( User u ) { 
         try { 
             return  ( user != null ); 
@@ -90,6 +138,11 @@ import java.util.Date;
         return false;
     }
 
+    /**
+     *
+     * @param str
+     * @return
+     */
     public String getCmd ( String str )  {
         String buf;
         try {
@@ -102,38 +155,77 @@ import java.util.Date;
         return null;
     }
 
+    /**
+     *
+     * @param u
+     * @param msg
+     */
     public void sendMsg ( User u, String msg ) { 
         this.send ( RAW, ":"+this.name+" NOTICE "+u.getNameStr()+" :"+msg );
     }
     
+    /**
+     *
+     * @param ci
+     * @param msg
+     */
     public void sendOpMsg ( ChanInfo ci, String msg ) { 
         this.send ( RAW, ":"+this.name+" NOTICE @"+ci.getNameStr()+" :"+msg );
     }
        
+    /**
+     *
+     * @param msg
+     */
     public void sendGlobOp ( String msg ) { 
         this.send ( RAW, ":"+this.name+" GLOBOPS :"+msg ); 
     }
     
+    /**
+     *
+     * @param command
+     */
     public void sendCmd (  String command ) { 
         this.send ( RAW, ":"+this.name+" "+command ); 
     }
 
+    /**
+     *
+     * @param u
+     */
     public void accessDenied ( User u ) { 
         this.sendMsg ( u, "Access Denied.!" ); 
     }
  
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) { 
         return this.name; 
     }
     
+    /**
+     *
+     * @return
+     */
     public String getNameStr ( ) { 
         return this.name.getString(); 
     }
     
+    /**
+     *
+     * @param size
+     * @return
+     */
     protected static int getIndexFromSize ( int size ) {
         return size > 5 ? 5 : size;
     }
     
+    /**
+     *
+     * @param cmd
+     */
     public void sendServ ( String cmd )  {
         if ( this.name.is(OPERSERV) ) {
             ServSock.sendCmd ( ":"+Proc.getConf().get ( STATS ) +" "+cmd );
@@ -150,17 +242,35 @@ import java.util.Date;
         return Proc.getConf().get ( NAME ); 
     }
 
+    /**
+     *
+     * @param command
+     */
     public void sendRaw ( String command )  {
         this.send ( RAW, command );
     } 
     
     
     /* COMMANDS */
+
+    /**
+     *
+     * @param command
+     * @return
+     */
+
     public int CMDAccess ( HashString command ) {
         return Proc.getConf().getCommandAccess ( command ); 
     }
     
     /* Returns the list of added commands with its access and info */
+
+    /**
+     *
+     * @param access
+     * @return
+     */
+
     public ArrayList<CommandInfo> getCommandList ( HashString access )    { 
         ArrayList<CommandInfo> list = new ArrayList<> ( );
         for ( CommandInfo ci : cmdList )  {
@@ -172,6 +282,13 @@ import java.util.Date;
     }
      
     /* find and return the correct commandInfo */
+
+    /**
+     *
+     * @param hash
+     * @return
+     */
+
     public CommandInfo findCommandInfo ( HashString hash )  {
         for ( CommandInfo ci : this.cmdList )  {
              if ( ci.is(hash) ) {

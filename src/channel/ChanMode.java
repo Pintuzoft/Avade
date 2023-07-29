@@ -26,6 +26,9 @@ import core.HashString;
  */
 public class ChanMode extends HashNumeric {
                     
+    /**
+     *
+     */
     public ChanMode ( )  { 
         this.init ( ); 
     }
@@ -47,6 +50,11 @@ public class ChanMode extends HashNumeric {
         this.set ( MODE_m, false );
     }
 
+    /**
+     *
+     * @param type
+     * @param data
+     */
     public void set ( HashString type, String[] data )  {
         if ( type.is(SERVER) ||
              type.is(MODE) ) {
@@ -55,6 +63,10 @@ public class ChanMode extends HashNumeric {
         
     }
      
+    /**
+     *
+     * @param data
+     */
     public void setModeString ( String data ) {
         boolean state = false;
         for ( int index=0; index < data.length ( ); index++ )  {
@@ -131,6 +143,13 @@ public class ChanMode extends HashNumeric {
     /* 
      * Set channel mode to a specific boolean state
      */
+
+    /**
+     *
+     * @param mode
+     * @param state
+     */
+
     public void set ( int mode, boolean state )  {
         switch ( mode )  {
             case MODE_r :
@@ -197,6 +216,13 @@ public class ChanMode extends HashNumeric {
     /*
      * Returns the boolean state of a specific channel mode
      */
+
+    /**
+     *
+     * @param mode
+     * @return
+     */
+
     public boolean is ( int mode )  {
         switch ( mode )  {
             case MODE_r :
@@ -247,6 +273,10 @@ public class ChanMode extends HashNumeric {
         }
     } 
     
+    /**
+     *
+     * @return
+     */
     public String getModes ( ) {
         String buf = "+";
         buf += this.is ( MODE_r ) ? "r" : "";

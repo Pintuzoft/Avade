@@ -30,12 +30,22 @@ public class MSHelper extends Helper {
     private MSSnoop         snoop;
     private TextFormat      f;
   
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public MSHelper ( MemoServ service, MSSnoop snoop )  {
         super ( service ); 
         this.snoop      = snoop;
         this.f          = new TextFormat ( );
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         HashString command;
         try {
@@ -74,6 +84,10 @@ public class MSHelper extends Helper {
          
     }
 
+    /**
+     *
+     * @param user
+     */
     public void help ( User user )  {
         /* MemoServ HELP */
 
@@ -95,6 +109,10 @@ public class MSHelper extends Helper {
         this.showEnd ( user );   
     }
 
+    /**
+     *
+     * @param user
+     */
     public void send ( User user )  {
         /* MemoServ SEND */ 
         this.showStart ( user, "Send" );
@@ -117,6 +135,10 @@ public class MSHelper extends Helper {
         this.showEnd ( user );
     }
 
+    /**
+     *
+     * @param user
+     */
     public void csend ( User user )  {
         /* MemoServ SEND */ 
         this.showStart ( user, "CSend" );
@@ -138,6 +160,10 @@ public class MSHelper extends Helper {
 
         this.showEnd ( user );    }
 
+    /**
+     *
+     * @param user
+     */
     public void list ( User user )  {
         /* MemoServ LIST */ 
         this.showStart ( user, "List" );
@@ -157,6 +183,11 @@ public class MSHelper extends Helper {
 
         this.showEnd ( user );    }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void read ( User user, String[] cmd )  {
         /* MemoServ READ */ 
         this.showStart ( user, "Read" );
@@ -177,6 +208,10 @@ public class MSHelper extends Helper {
 
         this.showEnd ( user );    }
 
+    /**
+     *
+     * @param user
+     */
     public void del ( User user )  {
         /* MemoServ DEL */ 
         this.showStart ( user, "Del" );

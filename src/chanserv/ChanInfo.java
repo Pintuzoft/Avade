@@ -1024,6 +1024,8 @@ public class ChanInfo extends HashNumeric {
     
     /**
      *
+     * @param setting
+     * @param setting
      */
     public void changed ( HashString setting ) {
         this.getChanges().change ( setting );

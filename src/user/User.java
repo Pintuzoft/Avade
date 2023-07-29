@@ -50,6 +50,10 @@ public class User extends HashNumeric {
     
     private UserFlood                   flood;
         
+    /**
+     *
+     * @param data
+     */
     public User ( String[] data )  {
         // NICK NickServ 1 1320454528 + service sshd.biz services.sshd.biz 0 1320454528 :NickServ Services
         // 0    1        2 3          4 5       6        7                 8 9          9         10
@@ -81,14 +85,26 @@ public class User extends HashNumeric {
         this.flood = new UserFlood ( this );
     }
 
+    /**
+     *
+     * @param code
+     */
     public User ( HashString code )  {
         this.name = code;
     }
   
+    /**
+     *
+     */
     public void serverConnect ( )  {
         this.server.addUser ( this ); /* We are connected so lets add ourself to the server */ 
     }
  
+    /**
+     *
+     * @param in
+     * @return
+     */
     public String getString ( HashString in )  {
         if ( in.is(NAME) ) {
             return this.name.getString();
@@ -115,20 +131,46 @@ public class User extends HashNumeric {
     }
    
     /* Make hostinfo object transparent */
+
+    /**
+     *
+     * @return
+     */
+
     public String getHost ( ) { 
         return this.hi.getHost ( );
     }
+
+    /**
+     *
+     * @return
+     */
     public HostInfo getHostInfo ( ) { 
         return this.hi;
     }
        
+    /**
+     *
+     * @param ipHash
+     * @return
+     */
     public boolean ipMatch ( int ipHash ) { 
         return this.hi.ipMatch ( ipHash );
     }
+
+    /**
+     *
+     * @param ipHash
+     * @return
+     */
     public boolean rangeMatch ( int ipHash ) { 
         return this.hi.rangeMatch ( ipHash );
     }
     
+    /**
+     *
+     * @return
+     */
     public String getIp ( ) { 
         return this.hi.getIp ( );
     }
@@ -137,26 +179,50 @@ public class User extends HashNumeric {
         return this.hi.getRealHost ( );
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) {
         return this.name;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getNameStr ( ) {
         return this.name.getString();
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getUser ( ) {
         return this.user;
     }
      
+    /**
+     *
+     * @return
+     */
     public UserMode getModes ( ) { 
         return this.modes;
     }
     
+    /**
+     *
+     * @return
+     */
     public Server getServ ( ) { 
         return this.server;
     }
 
+    /**
+     *
+     * @param in
+     */
     public void setName ( String in ) {
         HashString nameHash = new HashString ( in );
         if ( ! this.name.is(nameHash) ) {
@@ -165,23 +231,41 @@ public class User extends HashNumeric {
         this.name = nameHash;
     } /* /nick */
      
+    /**
+     *
+     * @param data
+     */
     public void setMode ( String[] data ) { 
         this.modes.set ( MODE, data );
     }
 
+    /**
+     *
+     * @param chan
+     */
     public void addChan ( Chan chan ) { 
         this.cList.add ( chan );
     }
 
+    /**
+     *
+     * @param chan
+     */
     public void remChan ( Chan chan ) { 
         this.cList.remove ( chan );
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean isOper ( ) {  
         return this.modes.is ( OPER );
     }
 
-  
+    /**
+     *
+     */
     public void partAll ( )  {
         /* We have to flush the user out from all channels */
         if ( !this.cList.isEmpty() )  {
@@ -192,6 +276,11 @@ public class User extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean isIdented ( NickInfo ni ) {
         if ( ni != null && this.sid != null ) {
             return this.sid.isIdentified ( ni );
@@ -199,6 +288,11 @@ public class User extends HashNumeric {
         return false;
     }     
 
+    /**
+     *
+     * @param ci
+     * @return
+     */
     public boolean isIdented ( ChanInfo ci ) {
         if ( ci != null && this.sid != null ) {
             return this.sid.isIdentified ( ci );
@@ -206,14 +300,25 @@ public class User extends HashNumeric {
         return false;
     } 
     
+    /**
+     *
+     * @return
+     */
     public String getFullMask ( ) { 
         return this.name+"!"+this.user+"@"+this.getHost ( ); 
     } 
     
+    /**
+     *
+     */
     public void quitServer ( ) { 
         this.server.remUser ( this );
     }
 
+    /**
+     *
+     * @return
+     */
     public String getIDNicks ( )  {
         String buf = "";
         buf = "";
@@ -228,6 +333,10 @@ public class User extends HashNumeric {
         return buf;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getIDChans ( )  {
         String buf = "";
         buf = ""; 
@@ -240,7 +349,10 @@ public class User extends HashNumeric {
         return buf;
     }
 
-
+    /**
+     *
+     * @param ci
+     */
     public void unIdentify ( ChanInfo ci ) {
         if ( this.sid == null )  {
             this.sid = new ServicesID ( );
@@ -248,6 +360,10 @@ public class User extends HashNumeric {
         this.sid.unIdentify ( ci );
     }
 
+    /**
+     *
+     * @param ni
+     */
     public void unIdentify ( NickInfo ni ) {
         if ( this.sid == null )  {
             this.sid = new ServicesID ( );
@@ -257,6 +373,12 @@ public class User extends HashNumeric {
     
 
     /* Attached user to an existing sid*/
+
+    /**
+     *
+     * @param sid
+     */
+
     public void attachSid ( ServicesID sid )    {         
         this.sid = sid; 
     }
@@ -264,19 +386,38 @@ public class User extends HashNumeric {
     
     
     /* Return sid */
+
+    /**
+     *
+     * @return
+     */
+
     public ServicesID getSID ( )  { 
         return this.sid; 
     }
     
     /* Create new sid */
 //    private void newSID ( )         { this.sid = new ServicesID ( ); }
+
+    /**
+     *
+     * @return
+     */
     
     public int getState ( ) { 
         return this.state;
     }
+
+    /**
+     *
+     */
     public void setState ( ) {
         this.state++;
     }
+
+    /**
+     *
+     */
     public void resetState ( ) {
         this.state = 0;
     }
@@ -292,6 +433,13 @@ public class User extends HashNumeric {
     } 
 */
 
+    /**
+     *
+     * @param access
+     * @return
+     */
+
+
     public boolean hasAccess ( HashString access )  {
         int numacc = Oper.hashToAccess ( access );
         for ( NickInfo ni : this.sid.getNiList() ) {
@@ -302,21 +450,49 @@ public class User extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean is ( User user ) {
         return this.name.is(user.getName());
     }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     public boolean is ( HashString name ) {
         return this.name.is(name);
     }
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean is ( NickInfo ni ) {
         return this.name.is(ni);
     }
     
+    /**
+     *
+     * @return
+     */
     public ArrayList<Chan> getChans ( )  {
         return this.cList;
     }
    
     /* User has oper object and access higher or equal to specific access */
+
+    /**
+     *
+     * @param access
+     * @return
+     */
+
     public boolean isAtleast ( HashString access )  {
         if ( this.getOper() == null ) {
             return false;
@@ -324,6 +500,10 @@ public class User extends HashNumeric {
         return ( this.isOper() && this.getOper().isAtleast ( access ) );
     } 
   
+    /**
+     *
+     * @return
+     */
     public int getAccess ( ) {
         if ( this.sid == null ) {
             System.out.println ( "DEBUG!!: getaccess().sid:null" );
@@ -336,26 +516,51 @@ public class User extends HashNumeric {
         }
         return this.sid.getAccess ( );
     }
+
+    /**
+     *
+     * @return
+     */
     public Oper getOper ( ) {
         return this.sid.getOper ( );
     }
     
+    /**
+     *
+     * @return
+     */
     public UserFlood getUserFlood ( ) {
         return this.flood;
     }
 
+    /**
+     *
+     */
     public void secMaintenence() {
         this.flood.maintenence();
     }
 
+    /**
+     *
+     * @param sid
+     */
     public void setSID ( ServicesID sid ) {
         this.sid = sid;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getMask ( ) {
         return this.mask;
     }
 
+    /**
+     *
+     * @param mode
+     * @param state
+     */
     public void setMode(HashString mode, boolean state) {
         this.getModes().set ( mode, state );
     }

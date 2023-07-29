@@ -33,10 +33,16 @@ public class Queue extends HashNumeric {
     private LinkedList<Command>     buf;
     private long                    time;
     
+    /**
+     *
+     */
     public Queue ( ) {
         this.cList = new LinkedList<> ( );
     }
     
+    /**
+     *
+     */
     public void maintenance ( ) {
         if ( time < ( System.currentTimeMillis ( ) ) ) {
             this.retrieve ( );
@@ -45,6 +51,9 @@ public class Queue extends HashNumeric {
         }
     }
     
+    /**
+     *
+     */
     public void retrieve ( ) {
         this.cList = CMDDatabase.getCommands ( );
         if ( ! this.cList.isEmpty ( ) ) {
@@ -68,7 +77,9 @@ public class Queue extends HashNumeric {
         }
     }
    
-    
+    /**
+     *
+     */
     public void next ( )  {
         Command command;
         if ( ! cList.isEmpty ( ) &&

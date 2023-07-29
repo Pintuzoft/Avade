@@ -42,6 +42,11 @@ public class CIDRUtils {
     private InetAddress endAddress;
     private final int prefixLength;
 
+    /**
+     *
+     * @param cidr
+     * @throws UnknownHostException
+     */
     public CIDRUtils ( String cidr ) throws UnknownHostException {
 
         this.cidr = cidr;
@@ -109,14 +114,28 @@ public class CIDRUtils {
         return ret;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getNetworkAddress ( ) {
         return this.startAddress.getHostAddress ( );
     }
 
+    /**
+     *
+     * @return
+     */
     public String getBroadcastAddress ( ) {
         return this.endAddress.getHostAddress ( );
     }
 
+    /**
+     *
+     * @param ipAddress
+     * @return
+     * @throws UnknownHostException
+     */
     public boolean isInRange ( String ipAddress ) throws UnknownHostException {
         InetAddress address = InetAddress.getByName ( ipAddress );
         BigInteger start = new BigInteger ( 1, this.startAddress.getAddress ( ) );

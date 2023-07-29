@@ -24,21 +24,51 @@ import user.User;
  * @author DreamHealer
  */
 public abstract class Helper extends HashNumeric {
+
+    /**
+     *
+     */
     protected Service       service;
+
+    /**
+     *
+     */
     protected boolean       found;
+
+    /**
+     *
+     */
     protected CommandInfo   cmdInfo;
     
+    /**
+     *
+     * @param service
+     */
     protected Helper ( Service service )                    { this.service = service; }
 
+    /**
+     *
+     * @param user
+     * @param str
+     */
     public void showStart ( User user, String str ) {
         str += str.length ( ) > 0 ? " ": "";
         this.service.sendMsg ( user, "*** "+this.service.name+" Help "+str+"***" ); 
     }
     
+    /**
+     *
+     * @param user
+     */
     public void showEnd ( User user ) { 
         this.service.sendMsg ( user, "*** End Help ***" ); 
     }
     
+    /**
+     *
+     * @param user
+     * @param str
+     */
     public void noMatch ( User user, String str ) {
         str += str.length ( ) > 0 ? " " : "";
         this.service.sendMsg ( user, "Sorry, no help for: "+str  ); 

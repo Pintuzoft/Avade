@@ -31,15 +31,37 @@ public class OSLogEvent extends LogEvent {
     private int id;
     private String data;
     
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     * @param stamp
+     */
     public OSLogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         super ( name, flag, mask, oper, stamp );
     }
     
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param user
+     * @param oper
+     */
     public OSLogEvent ( HashString name, HashString flag, User user, NickInfo oper ) {
         super ( name, user.getFullMask(), oper.getName().getString() );
         this.setFlag ( flag );
     }
      
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     */
     public OSLogEvent ( HashString name, HashString flag, String mask, String oper ) {
         super ( name, mask, oper );
         this.setFlag ( flag );
@@ -49,18 +71,34 @@ public class OSLogEvent extends LogEvent {
         this.flag = new HashString ( getOperFlagByHash ( flag ) );
     }
     
+    /**
+     *
+     * @param id
+     */
     public void setID ( int id ) {
         this.id = id;
     }
     
+    /**
+     *
+     * @return
+     */
     public int getID ( ) {
         return this.id;
     }
     
+    /**
+     *
+     * @param data
+     */
     public void setData ( String data ) {
         this.data = data;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getData ( ) {
         return this.data;
     }

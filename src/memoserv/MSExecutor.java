@@ -40,7 +40,11 @@ import user.User;
     private MSSnoop             snoop;
     private TextFormat          f;
  
- 
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public MSExecutor ( MemoServ service, MSSnoop snoop )  {
         super ( );
         this.service        = service;
@@ -48,7 +52,11 @@ import user.User;
         this.f              = new TextFormat ( );
     }
 
-    
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd ) {
         HashString command;
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
@@ -93,11 +101,20 @@ import user.User;
          
     }
  
+    /**
+     *
+     * @param user
+     */
     public void help ( User user )  {
         this.service.sendMsg ( user, output ( CMD_NOT_FOUND_ERROR, "" )  );
         this.service.sendMsg ( user, output ( SHOW_HELP, new String[] { this.service.getNameStr() } ) );
     }
    
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doSend ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :send nick message
         //  0           1           2                       3     4     5   = 6
@@ -142,6 +159,11 @@ import user.User;
         SendMail.sendNewMemo ( to, memo );
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doCSend ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :csend chan message
         //  0           1           2                        3     4     5   = 6
@@ -195,6 +217,11 @@ import user.User;
         }
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doList ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :list
         //  0           1           2                       3   = 4        
@@ -253,6 +280,12 @@ import user.User;
         }
         
     }
+
+    /**
+     *
+     * @param memo
+     * @param user
+     */
     public void adNewMemo ( MemoInfo memo, User user )  {
         this.service.sendMsg ( 
             user, 
@@ -261,6 +294,11 @@ import user.User;
 
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doRead ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :read 1
         //  0           1           2                       3    4 = 5
@@ -322,6 +360,11 @@ import user.User;
         }
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doDelete ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :del 1
         //  0           1           2                       3    4 = 5
@@ -384,7 +427,12 @@ import user.User;
         }
     }
 
-     
+    /**
+     *
+     * @param code
+     * @param args
+     * @return
+     */
     public String output ( int code, String... args )  {
         switch ( code )  {
             case SYNTAX_ERROR :

@@ -49,6 +49,13 @@ public class NSDatabase extends Database {
     private static PreparedStatement    ps;
   
     /* NickServ Methods */
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
+
     public static int createNick ( NickInfo ni )  { 
         if ( ! activateConnection ( )  )  {
             return -2;
@@ -112,6 +119,13 @@ public class NSDatabase extends Database {
     }
     
     /* NickServ Methods */
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
+
     public static int updateNick ( NickInfo ni )  {
         ni.getChanges().printChanges();
         if ( ! ni.getChanges().changed ( ) ) {
@@ -256,6 +270,13 @@ public class NSDatabase extends Database {
         }
     }
     
+    /**
+     *
+     * @param ni
+     * @param var
+     * @param enable
+     * @return
+     */
     public static int setVar ( NickInfo ni, HashString var, boolean enable )  {
         String variable = new String ( );
         if ( ! activateConnection ( )  )  {
@@ -294,6 +315,14 @@ public class NSDatabase extends Database {
         }
         return 1;
     }
+
+    /**
+     *
+     * @param ni
+     * @param var
+     * @param nick
+     * @return
+     */
     public static int setVar ( NickInfo ni, HashString var, String nick )  {
         String variable;
         
@@ -377,7 +406,11 @@ public class NSDatabase extends Database {
         return auth;
     }
      
-     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public static boolean deleteNick ( NickInfo ni )  { 
         if ( ! activateConnection ( ) || ni == null || ni.getName ( ) == null )  {
             return false;
@@ -420,6 +453,9 @@ public class NSDatabase extends Database {
         return nExp;
     }
     
+    /**
+     *
+     */
     public static void loadAllNickExp ( )  {
         NickInfo ni;
         if  ( ! activateConnection ( ) ) {
@@ -442,7 +478,9 @@ public class NSDatabase extends Database {
         return;
     }
 
-    
+    /**
+     *
+     */
     public static void loadAllSettings ( )  {
         NickInfo ni;
 
@@ -476,6 +514,12 @@ public class NSDatabase extends Database {
         return;
     }
   
+    /**
+     *
+     * @param ni
+     * @param command
+     * @return
+     */
     public static boolean authMail ( NickInfo ni, Command command )  {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -500,6 +544,12 @@ public class NSDatabase extends Database {
         return false;
     }
     
+    /**
+     *
+     * @param ni
+     * @param command
+     * @return
+     */
     public static boolean authPass ( NickInfo ni, Command command )  {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -568,6 +618,11 @@ public class NSDatabase extends Database {
         }
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public static boolean saveNickExp ( NickInfo ni )  {
         if  ( ! activateConnection ( )   )  {
             return false;

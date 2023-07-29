@@ -32,12 +32,26 @@ public class Topic {
     private long stamp;
     private DateFormat dateFormat = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss" );
     
+    /**
+     *
+     * @param topic
+     * @param setter
+     * @param stamp
+     */
     public Topic ( String topic, String setter, long stamp )  {
         this.text = topic.replace ("^:", "");
         this.setter = setter;
         this.stamp = stamp;
         this.timeStr = dateFormat.format ( new Date ( ) );
     }
+
+    /**
+     *
+     * @param topic
+     * @param setter
+     * @param stamp
+     * @param timeStr
+     */
     public Topic ( String topic, String setter, long stamp, String timeStr )  {
         if ( topic != null ) {
             this.text = topic.replace ("^:", "" );
@@ -49,30 +63,58 @@ public class Topic {
         }
     }
  
+    /**
+     *
+     * @return
+     */
     public String getText ( ) { 
         return text;
     } 
     
+    /**
+     *
+     * @return
+     */
     public String getSetter ( ) { 
         return setter;
     } 
     
+    /**
+     *
+     * @return
+     */
     public long getStamp ( ) {
         return this.stamp;
     } 
 
+    /**
+     *
+     * @return
+     */
     public String getTimeStr ( ) {
         return this.timeStr;
     } 
 
+    /**
+     *
+     * @param topic
+     */
     public void setText ( String topic ) { 
         this.text = topic.replace ("^:", "");
     } 
     
+    /**
+     *
+     * @param setter
+     */
     public void setSetter ( String setter ) { 
         this.setter = setter;
     } 
     
+    /**
+     *
+     * @param stamp
+     */
     public void setStamp ( long stamp ) { 
         this.stamp = stamp;
     }

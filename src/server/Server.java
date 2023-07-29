@@ -36,6 +36,10 @@ public class Server extends HashNumeric {
     private ArrayList<User>             uList;
     private ArrayList<Server>           sList;          /* Servers connected to this server */ 
     
+    /**
+     *
+     * @param data
+     */
     public Server ( String[] data )  {
         this.uList  = new ArrayList<> ( );
         this.sList  = new ArrayList<> ( );
@@ -66,39 +70,77 @@ public class Server extends HashNumeric {
         OperServ.addServer ( this.name );
     }
     
+    /**
+     *
+     * @param user
+     */
     public void addUser ( User user ) { 
         this.uList.add ( user );
     }
     
+    /**
+     *
+     * @param user
+     */
     public void remUser ( User user ) { 
         this.uList.remove ( user );
     }
     
+    /**
+     *
+     * @param server
+     */
     public void addServer ( Server server ) {
         this.sList.add ( server );
     }
 
+    /**
+     *
+     * @param server
+     */
     public void remServer ( Server server ) {
         this.sList.remove ( server );
     }
 
+    /**
+     *
+     * @return
+     */
     public int size ( ) {
         return this.uList.size ( );
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) {
         return this.name;
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public boolean is ( HashString name ) {
         return this.name.is(name);
     }
     
+    /**
+     *
+     * @return
+     */
     public Server getLink ( ) {
         return this.link;
     }
 
     /* Recursivally delete all servers and users connected to this Server */
+
+    /**
+     *
+     */
+
     public void recursiveDelete ( )  {
         /* Remove my connected servers */
         for ( Server s : this.sList )  {
@@ -118,6 +160,11 @@ public class Server extends HashNumeric {
         ServSock.sendCmd ( ":"+Proc.getConf().get ( STATS ) +" "+cmd );
     }
     
+    /**
+     *
+     * @param user
+     * @param prepend
+     */
     public void recursiveUserList ( User user, String prepend )  {
         this.sendServ ( "NOTICE "+user.getString ( NAME ) +" :"+prepend+"^- "+this.name );
         for ( User u : this.uList )  {
@@ -130,6 +177,10 @@ public class Server extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public ArrayList<User> getUserList ( ) {
         return uList;
     }

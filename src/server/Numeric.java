@@ -22,16 +22,61 @@ package server;
  * @author DreamHealer
  */
 public class Numeric { 
+
+    /**
+     *
+     */
     public static final int RPL_STATSUPTIME = 242;      /* UPTIME */
+
+    /**
+     *
+     */
     public static final int RPL_STATSOLINE  = 243;      /* OLINE */
     /* VERSION */
+
+    /**
+     *
+     */
+
     public static final int RPL_VERSION     = 351;      /* VERSION */ 
+
+    /**
+     *
+     */
     public static final int RPL_INFO        = 371;      /* INFO */ 
+
+    /**
+     *
+     */
     public static final int RPL_MOTD        = 372;      /* MOTD */ 
+
+    /**
+     *
+     */
     public static final int RPL_INFOSTART   = 373;      /* INFOSTART */
+
+    /**
+     *
+     */
     public static final int RPL_INFOEND     = 374;      /* INFOEND */ 
+
+    /**
+     *
+     */
     public static final int RPL_MOTDSTART   = 375;      /* MOTDSTART */
+
+    /**
+     *
+     */
     public static final int RPL_MOTDEND     = 376;      /* MOTDEND */ 
+
+    /**
+     *
+     */
     public static final int ERR_NOSUCHNICK  = 401;      /* NOSUCHNICK */ 
+
+    /**
+     *
+     */
     public static final int RPL_NOMOTD      = 422;      /* NOMOTD */ 
 }

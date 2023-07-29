@@ -24,19 +24,49 @@ import server.Numeric;
  * @author DreamHealer
  */
 public class TextFormat extends Numeric {
+
+    /**
+     *
+     */
     public char         bold       = 0x02;
+
+    /**
+     *
+     */
     public char         underline  = 0x1f;
+
+    /**
+     *
+     */
     public char         reversed   = 0x16;
+
+    /**
+     *
+     */
     public TextFormat ( )  {
         /* nothingness */
     }
 
+    /**
+     *
+     * @return
+     */
     public char b ( ) { 
         return this.bold;
     }
+
+    /**
+     *
+     * @return
+     */
     public char u ( ) { 
         return this.underline;
     }
+
+    /**
+     *
+     * @return
+     */
     public char r ( ) { 
         return this.reversed;
     }

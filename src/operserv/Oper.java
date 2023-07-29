@@ -56,6 +56,10 @@ public class Oper extends HashNumeric {
         "Master"
     }; // User:0 IRCOp:1 SA:2 CSop:3 SRA:4 MASTER:5
 
+    /**
+     *
+     * @param res
+     */
     public Oper ( ResultSet res )  {
         if ( res == null )  {
             return;
@@ -75,6 +79,12 @@ public class Oper extends HashNumeric {
         this.printOper();
     }
     
+    /**
+     *
+     * @param name
+     * @param access
+     * @param instater
+     */
     public Oper ( String name, int access, String instater )  {
         this.name            = new HashString ( name );
         this.access          = access;
@@ -84,6 +94,11 @@ public class Oper extends HashNumeric {
     }
     
     /* user without access */
+
+    /**
+     *
+     */
+
     public Oper ( ) {
         this.name           = new HashString ( "" );
         this.access         = 0;
@@ -92,6 +107,10 @@ public class Oper extends HashNumeric {
         this.shortLevels    = OPER_LEVEL_SHORT;
     }
     
+    /**
+     *
+     * @return
+     */
     public int getAccess ( ) {
         if ( this.access > 0 ) {
             return this.access;
@@ -100,6 +119,11 @@ public class Oper extends HashNumeric {
         }
     }
  
+    /**
+     *
+     * @param in
+     * @return
+     */
     public String getString ( HashString in )  {
         if ( in.is(INSTATER) ) {
             return this.instater;
@@ -116,14 +140,28 @@ public class Oper extends HashNumeric {
         return null;
     } 
     
+    /**
+     *
+     * @param access
+     */
     public void setAccess ( int access ) {
         this.access = access;
     }
      
+    /**
+     *
+     * @param i
+     * @return
+     */
     public boolean getAccOper ( int i )  { 
         return  ( i >= this.access );
     }
 
+    /**
+     *
+     * @param access
+     * @return
+     */
     public boolean isAtleast ( HashString access )  {
         if ( this.isMaster() ) {
             return true;
@@ -149,6 +187,11 @@ public class Oper extends HashNumeric {
         
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static int hashToAccess ( HashString hash ) {
         if ( hash.is(MASTER) ) {
             return 5;
@@ -207,42 +250,87 @@ public class Oper extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean isMaster ( )  {
         return this.access == 6;
     }
+
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) {
         return this.name;
     }
+
+    /**
+     *
+     * @return
+     */
     public String getNameStr ( ) {
         return this.name.getString();
     }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     public boolean is ( HashString name ) {
         return this.name.is(name);
     }
     
+    /**
+     *
+     */
     public void printOper ( ) {
         System.out.println ( "Oper: "+this.name );
         System.out.println ( " - instater: "+this.instater );
         System.out.println ( " - access: "+this.access );
     }
 
+    /**
+     *
+     * @return
+     */
     public NickInfo getNick() {
         return NickServ.findNick ( this.name );
     }
     
     /* MAKILL */
+
+    /**
+     *
+     * @return
+     */
+
     public ArrayList<String> getMAkill ( ) {
         return this.makill;
     }
     
+    /**
+     *
+     * @param ban
+     */
     public void addMAkill ( String ban ) {
         this.makill.add ( ban );
     }
     
+    /**
+     *
+     */
     public void clearMakill ( ) {
         this.makill.clear();
     }
 
+    /**
+     *
+     * @param string
+     * @return
+     */
     public boolean makillDuplicate(String string) {
         for ( String ban : this.makill ) {
             if ( ban.equalsIgnoreCase ( string ) ) {

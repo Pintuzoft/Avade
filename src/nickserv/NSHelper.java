@@ -35,12 +35,22 @@ public class NSHelper extends Helper {
     private NSSnoop         snoop;
     private TextFormat      f;
   
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public NSHelper ( NickServ service, NSSnoop snoop )  {
         super ( service );
         this.snoop          = snoop;
         this.f              = new TextFormat ( );
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd ) {
         HashString command;
         try {
@@ -94,6 +104,11 @@ public class NSHelper extends Helper {
          
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doSet ( User user, String[] cmd )  {
         /* NickServ HELP REGISTER */ 
         HashString command;
@@ -132,6 +147,10 @@ public class NSHelper extends Helper {
         
     }
     
+    /**
+     *
+     * @param user
+     */
     public void help ( User user ) {
         int access = user.getAccess ( );
         this.showStart ( user, "Help" );
@@ -187,6 +206,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
 
+    /**
+     *
+     * @param user
+     */
     public void doRegister ( User user ) {
         /* NickServ HELP REGISTER */
 
@@ -212,7 +235,11 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
 
-     public void doIdentify ( User user ) {
+    /**
+     *
+     * @param user
+     */
+    public void doIdentify ( User user ) {
         this.showStart ( user, "Identify" );
         this.service.sendMsg ( user, "   "                                                                                      );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ IDENTIFY <password>"+f.b ( ) +""                         );
@@ -232,7 +259,11 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
    
-     public void doGhost ( User user ) {
+    /**
+     *
+     * @param user
+     */
+    public void doGhost ( User user ) {
         this.showStart ( user, "Ghost" );
         this.service.sendMsg ( user, "   "                                                                                              );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ GHOST <nick> <password>"+f.b ( ) +""                             );
@@ -250,6 +281,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void doInfo ( User user ) {
         this.showStart ( user, "Info" );
         this.service.sendMsg ( user, "   "                                                                                              );
@@ -263,6 +298,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
      
+    /**
+     *
+     * @param user
+     */
     public void doAuth ( User user ) {
         this.showStart ( user, "Info" );
         this.service.sendMsg ( user, "   "                                                                                              );
@@ -288,6 +327,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
  
+    /**
+     *
+     * @param user
+     */
     public void setMain ( User user )  {
         /* NickServ HELP REGISTER */
         this.showStart ( user, "Set" );
@@ -311,6 +354,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
        
+    /**
+     *
+     * @param user
+     */
     public void setNoOp ( User user )  {
         this.showStart ( user, "Set NoOp" );
         this.service.sendMsg ( user, "   "                                                                  );
@@ -324,6 +371,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setNeverOp ( User user )  {
         this.showStart ( user, "Set NeverOp" );
         this.service.sendMsg ( user, "   "                                                                  );
@@ -337,6 +388,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setMailBlock ( User user )  {
         this.showStart ( user, "Set MailBlock" );
         this.service.sendMsg ( user, "   "                                                                  );
@@ -349,6 +404,10 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   No recommendations yet."                                           );
         this.showEnd ( user );    }
 
+    /**
+     *
+     * @param user
+     */
     public void setShowEmail ( User user )  {
         this.showStart ( user, "Set ShowEmail" );
         this.service.sendMsg ( user, "   "                                                                  );
@@ -362,6 +421,10 @@ public class NSHelper extends Helper {
         this.showEnd ( user );  
     }
 
+    /**
+     *
+     * @param user
+     */
     public void setShowHost ( User user )  {
         this.showStart ( user, "Set ShowHost" );
         this.service.sendMsg ( user, "   "                                                                  );

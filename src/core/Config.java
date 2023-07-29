@@ -60,6 +60,9 @@ public class Config extends HashNumeric {
     private boolean valid;
     private static final HashString fileName = new HashString ( "services.conf" );
     
+    /**
+     *
+     */
     public Config ( ) { 
         this.configStr = new HashMap<>();
         this.configInt = new HashMap<>();
@@ -198,23 +201,47 @@ public class Config extends HashNumeric {
         return this.valid;
     }
       
+    /**
+     *
+     * @return
+     */
     public HashMap<BigInteger,HashString> getWhiteList ( ) {
         return this.whiteList;
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public int getInt ( HashString name )  {
         int access = this.configInt.get(name.getCode());
         return access;
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public HashString get ( HashString name )  {
         return ( this.configStr.get(name.getCode()) != null ? this.configStr.get(name.getCode()) : null );
     }   
      
+    /**
+     *
+     * @param name
+     * @return
+     */
     public boolean getBoolean ( HashString name ) {
         return ( this.configBool.get(name.getCode()) != null ? this.configBool.get(name.getCode()) : false );
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public ArrayList<String> getConfigList ( User user ) {
         ArrayList<String> list = new ArrayList<>();
 
@@ -256,6 +283,11 @@ public class Config extends HashNumeric {
         return list;
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public int getCommandAccess ( HashString name ) {
         if ( name == null ) {
             System.out.println("name is null!!");

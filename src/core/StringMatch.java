@@ -22,24 +22,55 @@ package core;
  * @author DreamHealer
  */
 public class StringMatch { 
+
+    /**
+     *
+     * @param fullmask
+     * @param wild
+     * @return
+     */
     public static boolean maskWild ( HashString fullmask, String wild ) {
         return maskWild ( fullmask.getString(), wild);
     }
+
+    /**
+     *
+     * @param fullmask
+     * @param wild
+     * @return
+     */
     public static boolean maskWild ( String fullmask, String wild )  { 
         return fullmask.matches ( wild.replace("?","(.)").replace("!","([!])").replace("@","([@])").replace("*","(.*)")) ||
                wild.matches ( fullmask.replace("?","(.)").replace("!","([!])").replace("@","([@])").replace("*","(.*)") );
     }
     
+    /**
+     *
+     * @param nick
+     * @param wild
+     * @return
+     */
     public static boolean nickWild ( String nick, String wild ) {
         return nick.matches ( wild.replace("?","(.)").replace("*","(.*)") ) ||
                 wild.matches ( nick.replace("?","(.)").replace("*","(.*)") );
     }
     
+    /**
+     *
+     * @param str
+     * @param wild
+     * @return
+     */
     public static boolean wild ( String str, String wild ) {
         return str.matches ( wild.replace("?","(.)").replace("*","(.*)") ) ||
                 wild.matches (str.replace("?","(.)").replace("*","(.*)") );
     }
     
+    /**
+     *
+     * @param str
+     * @return
+     */
     public static boolean isInt ( String str ) {
         return str.matches ( "[0-9]+" );
     }

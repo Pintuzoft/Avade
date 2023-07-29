@@ -52,12 +52,19 @@ public class NickSetting extends HashNumeric {
     private String hold;
     private String noghost;
      
- 
+    /**
+     *
+     */
     public NickSetting ( )  {
         /* Nickname Registration */
         this.allFalse ( );
     }
    
+    /**
+     *
+     * @param it
+     * @return
+     */
     public boolean is ( HashString it )  {
         if      ( it.is(NOOP) )             { return this.noOp;                 }
         else if ( it.is(NEVEROP) )          { return this.neverOp;              }
@@ -77,6 +84,11 @@ public class NickSetting extends HashNumeric {
         }
     }   
 
+    /**
+     *
+     * @param it
+     * @param state
+     */
     public void set ( HashString it, boolean state )  {
         if      ( it.is(NOOP) )             { this.noOp         = state;        }
         else if ( it.is(NEVEROP) )          { this.neverOp      = state;        }
@@ -86,10 +98,20 @@ public class NickSetting extends HashNumeric {
         else if ( it.is(AUTH) )             { this.auth         = state;        }
     }
     
+    /**
+     *
+     * @param it
+     * @param instater
+     */
     public void set ( HashString it, String instater )  {
         this.set(it, new HashString ( instater ) );
     }
      
+    /**
+     *
+     * @param it
+     * @param instater
+     */
     public void set ( HashString it, HashString instater ) {
         if ( instater == null ) {
             instater = new HashString ( "" );
@@ -104,6 +126,11 @@ public class NickSetting extends HashNumeric {
         else if ( it.is(NOGHOST) )          { this.noghost = instater.getString();  }
     }
     
+    /**
+     *
+     * @param it
+     * @return
+     */
     public String getInstater ( HashString it ) {
         if      ( it.is(MARKED) )           { return this.mark;                 }
         else if ( it.is(MARK) )             { return this.mark;                 }
@@ -117,6 +144,11 @@ public class NickSetting extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param it
+     * @return
+     */
     public String modeString ( HashString it )  {
         if      ( it.is(NOOP) )             { return "NoOp";                    }
         else if ( it.is(NEVEROP) )          { return "NeverOp";                 }
@@ -135,7 +167,10 @@ public class NickSetting extends HashNumeric {
         }
     } 
      
-    
+    /**
+     *
+     * @return
+     */
     public String getInfoStr ( )  {
         String buf = "";
         boolean first = true;         
@@ -158,6 +193,9 @@ public class NickSetting extends HashNumeric {
         return ( first ? "" : ", " ); 
     }
     
+    /**
+     *
+     */
     public void allFalse ( )  {
         this.mailBlock  = false;
         this.neverOp    = false;
@@ -171,10 +209,19 @@ public class NickSetting extends HashNumeric {
         this.noghost    = "";
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean getAuth ( )  {
         return this.auth;
     }
    
+    /**
+     *
+     * @param it
+     * @return
+     */
     public static String hashToStr ( HashString it ) {
         if      ( it.is(FREEZE) )           { return "FREEZE";                  }
         else if ( it.is(HOLD) )             { return "HOLD";                    }
@@ -183,6 +230,9 @@ public class NickSetting extends HashNumeric {
         }    
     }
     
+    /**
+     *
+     */
     public void printSettings ( ) {
         System.out.println ( "NickSetting Mailblock: "+this.mailBlock );
         System.out.println ( "NickSetting NeverOp: "+this.neverOp );

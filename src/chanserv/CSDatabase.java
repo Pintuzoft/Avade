@@ -968,6 +968,10 @@ public class CSDatabase extends Database {
         return true;
     } 
  
+    /**
+     *
+     * @return
+     */
     public static HashMap<BigInteger,ChanInfo> getAllChans ( )  {
         ChanInfo ci;
         HashMap<BigInteger,ChanInfo> cList = new HashMap<>();
@@ -1092,6 +1096,10 @@ public class CSDatabase extends Database {
     
     }
   
+    /**
+     *
+     * @param access
+     */
     public static void loadChanAccess ( HashString access )  {
         long now;
         long now2;
@@ -1145,6 +1153,9 @@ public class CSDatabase extends Database {
         }
     }
     
+    /**
+     *
+     */
     public static void loadAllChanAccess ( )  {
         long now;
         long now2;

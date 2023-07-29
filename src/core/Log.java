@@ -37,6 +37,9 @@ public class Log extends HashNumeric {
     private long                    seconds;
     private String                  buf;
     
+    /**
+     *
+     */
     public Log ( )  {
         this.seconds        =  ( long )  ( System.currentTimeMillis ( ) /1000 );
         this.dateFormat     = new SimpleDateFormat ( "yyyy MM/dd HH:mm:ss zzz" );
@@ -62,6 +65,10 @@ public class Log extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param e
+     */
     public void out ( Exception e )  {
         try {
             this.buf = " ( "+this.getTime ( ) +" ) : "+e.getMessage ( );
@@ -77,6 +84,11 @@ public class Log extends HashNumeric {
         }
         System.err.println ( "Error: " + e.getMessage ( )  );
     }
+
+    /**
+     *
+     * @param message
+     */
     public void out ( String message )  {
         try {
             this.buf = " ( "+this.getTime ( ) +" ) : "+message;
@@ -101,6 +113,9 @@ public class Log extends HashNumeric {
         return "";
     }
     
+    /**
+     *
+     */
     public void close ( )  {
         try {
             this.out.close ( );

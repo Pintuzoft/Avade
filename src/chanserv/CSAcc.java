@@ -289,6 +289,10 @@ public class CSAcc extends HashNumeric {
         return this.mask;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getMaskStr() {
         return this.mask.getString();
     }

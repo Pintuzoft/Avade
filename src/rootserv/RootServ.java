@@ -47,6 +47,9 @@ public class RootServ extends Service {
     private static Timer                    panicTimer;
     private static boolean                  updConf; 
     
+    /**
+     *
+     */
     public RootServ ( )  {
         super ( "RootServ" );
         this.initRootServ ( );
@@ -61,10 +64,16 @@ public class RootServ extends Service {
         this.setCommands ( );
     }
     
+    /**
+     *
+     */
     public static void updConf ( ) { 
         updConf = true;
     }
      
+    /**
+     *
+     */
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
         cmdList.add ( new CommandInfo ( "PANIC",      CMDAccess ( PANIC ),      "Manage the services panic state" )  );
@@ -77,14 +86,33 @@ public class RootServ extends Service {
     
     
     /* Returns the list of added commands with its access and info */
+
+    /**
+     *
+     * @param access
+     * @return
+     */
+
     public static List<CommandInfo> getCMDList ( HashString access ) {
         return Handler.getRootServ().getCommandList ( access );
     }
      
+    /**
+     *
+     * @param user
+     * @param name
+     * @return
+     */
     public static boolean enoughAccess ( User user, HashString name ) {
         return Handler.getRootServ().checkAccess ( user, name );
     }
     
+    /**
+     *
+     * @param user
+     * @param name
+     * @return
+     */
     public boolean checkAccess ( User user, HashString name )  {
         int access              = user.getAccess ( );
         CommandInfo cmdInfo     = this.findCommandInfo (name );
@@ -95,7 +123,11 @@ public class RootServ extends Service {
         return true;
     }
     
-    
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  { 
         HashString command = new HashString ( cmd[3].substring(1) );
         
@@ -116,6 +148,9 @@ public class RootServ extends Service {
          
     }
  
+    /**
+     *
+     */
     public static void adPanic ( ) {
         panicTimer = new Timer ( );
         panicTimer.schedule ( new TimerTask ( ) {
@@ -128,6 +163,10 @@ public class RootServ extends Service {
         );
     }
     
+    /**
+     *
+     * @param state
+     */
     public static void setPanic ( HashString state ) {
         panic = state;
         Handler.getRootServ().sendPanic();
@@ -143,10 +182,19 @@ public class RootServ extends Service {
         
     }
     
+    /**
+     *
+     * @return
+     */
     public static HashString getPanic ( ) {
         return panic;
     }
     
+    /**
+     *
+     * @param panic
+     * @return
+     */
     public static String getPanicStr ( HashString panic ) {
         if ( panic.is(OPER) ) {
             return "OPER [only IRCops can access services]";
@@ -163,6 +211,9 @@ public class RootServ extends Service {
         
     }
     
+    /**
+     *
+     */
     public void sendPanic ( ) {
         int state;
         
@@ -179,7 +230,9 @@ public class RootServ extends Service {
         this.sendServ ( "SVSPANIC "+state );
     }
 
-    
+    /**
+     *
+     */
     public void fixMaster ( ) {
         HashString master = Proc.getConf().get(MASTER);
         NickInfo ni = NickServ.findNick ( master );
@@ -224,13 +277,26 @@ public class RootServ extends Service {
         } 
     }
     
+    /**
+     *
+     * @param state
+     */
     public static void is ( boolean state ) {
         is = state;
     }
+
+    /**
+     *
+     * @param state
+     */
     public static void setState ( boolean state ) {
         is = state;
     }
 
+    /**
+     *
+     * @return
+     */
     public static boolean isUp ( ) { 
         return is;
     }

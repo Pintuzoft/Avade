@@ -26,6 +26,12 @@ public class OSSnoopLogEvent {
     private String body;
     private String stamp;
     
+    /**
+     *
+     * @param target
+     * @param body
+     * @param stamp
+     */
     public OSSnoopLogEvent ( String target, String body, String stamp ) {
         this.target = target;
         this.body = body;
@@ -33,14 +39,26 @@ public class OSSnoopLogEvent {
         printThis();
     }
 
+    /**
+     *
+     * @return
+     */
     public String getTarget() {
         return this.target;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getBody() {
         return this.body;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getStamp() {
         return this.stamp;
     }

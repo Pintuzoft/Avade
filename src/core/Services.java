@@ -30,12 +30,20 @@ public class Services extends HashNumeric {
     private HashString          stats;
     private SExecutor           executor;
     
+    /**
+     *
+     */
     public Services ( )  {  
         this.name       = Proc.getConf().get ( NAME );
         this.stats      = Proc.getConf().get ( STATS );
         this.executor   = new SExecutor ( this ); 
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         try {
             HashString nameStr = new HashString ( cmd[1] );
@@ -51,6 +59,11 @@ public class Services extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param varStr
+     * @return
+     */
     public HashString getString ( HashString varStr )  {
         if ( varStr.is(NAME) ) {
             return this.name;
@@ -59,18 +72,39 @@ public class Services extends HashNumeric {
         }
         return null;
     }
+
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) {
         return this.name;
     }
  
+    /**
+     *
+     * @param u
+     * @param numeric
+     * @param msg
+     */
     public void sendServicesCMD ( User u, int numeric, String msg )  {
         this.sendRaw ( ":"+this.name+" "+numeric+" "+u.getString ( NAME ) +" :"+msg );
     }
 
+    /**
+     *
+     * @param u
+     * @param numeric
+     * @param msg
+     */
     public void sendStatsCMD ( User u, int numeric, String msg )  {
         this.sendRaw ( ":"+this.stats+" "+numeric+" "+u.getString ( NAME ) +" :"+msg );
     }
 
+    /**
+     *
+     * @param cmd
+     */
     public void sendRaw ( String cmd )  {
         try {
             ServSock.sendCmd ( cmd );

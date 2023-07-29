@@ -37,15 +37,34 @@ import nickserv.NickServ;
  * @author DreamHealer
  */
 public class Database extends HashNumeric { 
+
+    /**
+     *
+     */
     protected static Connection sql;
+
+    /**
+     *
+     */
     protected static long lastUsed;
+
+    /**
+     *
+     */
     protected static boolean debug = false;
+
+    /**
+     *
+     */
     public static PreparedStatement ps;
     private static long lastConnectAttempt;
     private static long lastGlobops;
     private static int attempts;
     private static ResultSet res;
 
+    /**
+     *
+     */
     public Database ( )  {
         try {
             if ( sql != null )  {
@@ -56,6 +75,9 @@ public class Database extends HashNumeric {
         } 
     }
 
+    /**
+     *
+     */
     protected static void runMaintenance ( )  {
         /* Are we not connected? then reconnect */
         if ( ! checkConn ( ) ) {
@@ -63,6 +85,9 @@ public class Database extends HashNumeric {
         }
     }
 
+    /**
+     *
+     */
     protected static void connect ( )  {
         try {
             if ( ( sql == null || ! sql.isValid ( 1 ) ) &&
@@ -96,6 +121,11 @@ public class Database extends HashNumeric {
             lastConnectAttempt = System.currentTimeMillis();
         }
     }
+
+    /**
+     *
+     * @return
+     */
     protected static String getServiceStats ( ) {
         int chanRegs = Handler.getChanServ().getChanRegStats ( );
         int chanChanges = Handler.getChanServ().getChangesStats ( );
@@ -104,6 +134,10 @@ public class Database extends HashNumeric {
         return "(new/changed): Channels:"+chanRegs+"/"+chanChanges+" Nicks:"+nickRegs+"/"+nickChanges;
     }
     
+    /**
+     *
+     * @param where
+     */
     protected static void idleUpdate ( String where )  {
         if ( debug )  {
             System.out.println ( "DEBUG: "+where );
@@ -113,26 +147,88 @@ public class Database extends HashNumeric {
    
     
    /* STATIC INT */
+
+    /**
+     *
+     */
+
     public final static int SERVER          = 1;
+
+    /**
+     *
+     */
     public final static int MODE            = 2; 
     
+    /**
+     *
+     */
     public final static int REGISTERED      = 11;
+
+    /**
+     *
+     */
     public final static int REGONLY         = 12;
+
+    /**
+     *
+     */
     public final static int TOPICLIMIT      = 13;
+
+    /**
+     *
+     */
     public final static int NOPRIVMSG       = 14;
+
+    /**
+     *
+     */
     public final static int INVITEONLY      = 15;
+
+    /**
+     *
+     */
     public final static int KEY             = 16;
+
+    /**
+     *
+     */
     public final static int SECRET          = 17;
+
+    /**
+     *
+     */
     public final static int MODREG          = 19;
+
+    /**
+     *
+     */
     public final static int LIMIT           = 20;
+
+    /**
+     *
+     */
     public final static int JOINRATE        = 21;
+
+    /**
+     *
+     */
     public final static int NOCTRL          = 22;
+
+    /**
+     *
+     */
     public final static int OPERONLY        = 23;
+
+    /**
+     *
+     */
     public final static int MODERATED       = 24;
     
     private final static int MODE_COUNT     = 24;
     
-     
+    /**
+     *
+     */
     protected static void disconnect ( )  {
         try {
             if ( sql != null )  {
@@ -144,6 +240,10 @@ public class Database extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @return
+     */
     public static boolean activateConnection ( )  {
         if ( ! checkConn ( )  )  { 
             connect ( ); 
@@ -151,6 +251,10 @@ public class Database extends HashNumeric {
         return checkConn ( );
     }
     
+    /**
+     *
+     * @return
+     */
     public static boolean checkConn ( )  {
         try {
             return ! ( sql == null || ! sql.isValid ( 1 ) );
@@ -180,6 +284,13 @@ public class Database extends HashNumeric {
         4 rows in set  ( 0.00 sec ) */
     
     /* LOGGING */
+
+    /**
+     *
+     * @param target
+     * @param body
+     */
+
     public static void log ( String target, String body ) {
         if ( ! activateConnection ( ) ) {
             /* No SQL connection */ 
@@ -202,6 +313,11 @@ public class Database extends HashNumeric {
         } 
     }
     
+    /**
+     *
+     * @param log
+     * @return
+     */
     public static boolean SnoopLog ( SnoopLog log ) {
         if ( ! activateConnection ( ) ) {
             /* No SQL connection */ 
@@ -231,6 +347,14 @@ public class Database extends HashNumeric {
     
     
     /* LOG EVENT */
+
+    /**
+     *
+     * @param table
+     * @param log
+     * @return
+     */
+
     static public int logEvent ( String table, LogEvent log ) {
         int id = 0;
         String query;
@@ -279,6 +403,11 @@ public class Database extends HashNumeric {
         return id;
     }
 
+    /**
+     *
+     * @param table
+     * @param id
+     */
     static public void delLogEvent ( String table, int id ) {
         if ( ! activateConnection ( )  )  {
             return;
@@ -296,6 +425,11 @@ public class Database extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param sid
+     * @return
+     */
     public static boolean updateServicesID ( ServicesID sid ) {
         if ( ! activateConnection() || sid == null ) {
             return false;
@@ -322,6 +456,10 @@ public class Database extends HashNumeric {
         }
         return true;             
     }
+
+    /**
+     *
+     */
     public static void loadSIDs() {
         if ( ! activateConnection() ) {
             return;

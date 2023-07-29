@@ -28,15 +28,37 @@ import user.User;
  */
 public class NSLogEvent extends LogEvent {
     
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     * @param stamp
+     */
     public NSLogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         super ( name, flag, mask, oper, stamp );
     }
     
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param user
+     * @param oper
+     */
     public NSLogEvent ( HashString name, HashString flag, User user, NickInfo oper ) {
         super ( name, user.getFullMask(), (oper == null ? "" : oper.getNameStr() ) );
         this.setFlag ( flag );
     }
     
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     */
     public NSLogEvent ( HashString name, HashString flag, String mask, String oper ) {
         super ( name, mask, oper );
         this.setFlag ( flag );

@@ -65,6 +65,9 @@ public class NickServ extends Service {
     private static ArrayList<NickInfo>      deleteList = new ArrayList<>();
     private static ArrayList<NSLogEvent>    logs = new ArrayList<>();
 
+    /**
+     *
+     */
     public NickServ ( )  {
         super ( "NickServ" );
         initNickServ ( );    
@@ -88,6 +91,9 @@ public class NickServ extends Service {
        
     }
 
+    /**
+     *
+     */
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
         cmdList.add ( new CommandInfo ( "HELP",     0,   "Show help information" )                          );
@@ -108,13 +114,31 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Get nick email" )              );
     }
     
+    /**
+     *
+     * @param access
+     * @return
+     */
     public static ArrayList<CommandInfo> getCMDList ( HashString access ) {
         return Handler.getNickServ().getCommandList ( access );
     }
+
+    /**
+     *
+     * @param user
+     * @param hashName
+     * @return
+     */
     public static boolean enoughAccess ( User user, HashString hashName ) {
         return Handler.getNickServ().checkAccess ( user, hashName );
     }
     
+    /**
+     *
+     * @param user
+     * @param hashName
+     * @return
+     */
     public boolean checkAccess ( User user, HashString hashName )  {
         int access              = user.getAccess ( );
         CommandInfo cmdInfo     = this.findCommandInfo ( hashName );
@@ -129,6 +153,11 @@ public class NickServ extends Service {
         return true;
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
@@ -148,6 +177,13 @@ public class NickServ extends Service {
     }
       
     /* Registered entities */
+
+    /**
+     *
+     * @param source
+     * @return
+     */
+
     public static NickInfo findNick ( String source )  {
         HashString name;
         NickInfo ni;
@@ -161,6 +197,13 @@ public class NickServ extends Service {
     }
     
     /* Registered entities */
+
+    /**
+     *
+     * @param name
+     * @return
+     */
+
     public static NickInfo findNick ( HashString name )  {
         return niList.get(name.getCode());
     }
@@ -177,6 +220,10 @@ public class NickServ extends Service {
         return nicks;
     }
     
+    /**
+     *
+     * @param ni
+     */
     public static void addNick ( NickInfo ni ) { 
         if ( ! is ) {
             return;
@@ -184,6 +231,9 @@ public class NickServ extends Service {
         niList.put ( ni.getName().getCode(), ni ); 
     }
 
+    /**
+     *
+     */
     public static void listNicks ( ) {
         if ( ! is ) {
             return;
@@ -194,6 +244,13 @@ public class NickServ extends Service {
     }
  
     /* Ownership messages */
+
+    /**
+     *
+     * @param ni
+     * @param message
+     */
+
     public static void notifyIdentifiedUsers ( NickInfo ni, String message ) {
         if ( ni == null ) {
             return;
@@ -231,6 +288,10 @@ public class NickServ extends Service {
         }
     }
     
+    /**
+     *
+     * @return
+     */
     public static int secMaintenance ( ) {
         NickInfo ni = null;
         for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
@@ -245,6 +306,10 @@ public class NickServ extends Service {
         return 0;
     }
     
+    /**
+     *
+     * @return
+     */
     public static int maintenance ( ) {
         int todoAmount = 0;
         todoAmount += writeLogs ( );
@@ -349,6 +414,11 @@ public class NickServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param list
+     * @param ni
+     */
     public static void addToWorkList ( HashString list, NickInfo ni ) {
         for ( NickInfo ni2 : getWorkList ( list ) ) {
             if ( ni2.is(ni) ) {
@@ -359,6 +429,12 @@ public class NickServ extends Service {
     }
   
     /* Handle LOGS */ 
+
+    /**
+     *
+     * @param log
+     */
+ 
     public static void addLog ( NSLogEvent log ) {
         logs.add ( log );
     }
@@ -370,6 +446,11 @@ public class NickServ extends Service {
         newFullAuthList.add ( mail );
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void snoopAndLog ( User user, String[] cmd )  {
         try { 
             this.accessDenied ( user );
@@ -379,6 +460,12 @@ public class NickServ extends Service {
     }
 
     /* Send advertisement for this unregged nick */
+
+    /**
+     *
+     * @param u
+     */
+
     public void adNick ( User u )  {
         this.sendMsg ( 
             u, 
@@ -387,23 +474,51 @@ public class NickServ extends Service {
     }
     
     /* Send statement to identify nickname */
+
+    /**
+     *
+     * @param u
+     */
+
     
     public static void adRegNick ( User u )  {
         Handler.getNickServ().sendMsg ( u, "The nick "+f.b ( ) +u.getString ( NAME ) +f.b ( ) +" is already registered" );
         Handler.getNickServ().sendMsg ( u, "You now have 60 seconds to identify as the owner of nickname "+f.b ( ) +u.getString ( NAME ) +f.b ( )  );
     }
+
+    /**
+     *
+     * @param state
+     */
     public static void is ( boolean state ) { 
         is = state; 
     }
+
+    /**
+     *
+     * @param state
+     */
     public static void setState ( boolean state ) { 
         is = state; 
     }
 
+    /**
+     *
+     * @return
+     */
     public static boolean isUp ( ) {
         return is; 
     }
     
     /* auth a nick and send message to all identified nicks currently online */
+
+    /**
+     *
+     * @param ni
+     * @param command
+     * @return
+     */
+
     public boolean authorizeMail ( NickInfo ni, Command command )  {
         User user;
         
@@ -421,6 +536,14 @@ public class NickServ extends Service {
     }
  
     /* auth a nick and send message to all identified nicks currently online */
+
+    /**
+     *
+     * @param ni
+     * @param command
+     * @return
+     */
+
     public boolean authorizePass ( NickInfo ni, Command command )  {
         if ( ni == null || command == null ) {
             return false;
@@ -432,6 +555,10 @@ public class NickServ extends Service {
         return false;
     }
     
+    /**
+     *
+     * @param ni
+     */
     public static void deleteNick ( NickInfo ni )  {
         NickInfo target = null;
         NickInfo nBuf = null;
@@ -446,6 +573,10 @@ public class NickServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param u
+     */
     public static void fixIdentState ( User u )  {
         NickInfo ni;
 
@@ -487,6 +618,10 @@ public class NickServ extends Service {
      
     }
     
+    /**
+     *
+     * @param ni
+     */
     public void dropNick ( NickInfo ni ) {
         /* Message all currently idented users then unident them */
         ArrayList<User> uList = Handler.findUsersByNick ( ni );
@@ -534,10 +669,18 @@ public class NickServ extends Service {
         NickServ.addToWorkList ( DELETE, ni );
     }    
 
+    /**
+     *
+     * @return
+     */
     public int getNickRegStats ( ) {
         return regList.size ( );
     }
 
+    /**
+     *
+     * @return
+     */
     public int getChangesStats ( ) {
         return changeList.size ( );
     }

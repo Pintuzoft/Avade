@@ -30,11 +30,32 @@ import java.util.Date;
  * @author fredde
  */
 public class SnoopLog extends HashNumeric {
+
+    /**
+     *
+     */
     protected HashString target;
+
+    /**
+     *
+     */
     protected String message;
+
+    /**
+     *
+     */
     protected String stamp;
+
+    /**
+     *
+     */
     protected DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     *
+     * @param target
+     * @param message
+     */
     public SnoopLog ( HashString target, String message ) {
         this.target = target;
         this.message = message;
@@ -42,14 +63,26 @@ public class SnoopLog extends HashNumeric {
         this.stamp = dateFormat.format ( dateBuf );
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getTarget() {
         return this.target;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getMessage() {
         return this.message;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getStamp() {
         return this.stamp;
     }

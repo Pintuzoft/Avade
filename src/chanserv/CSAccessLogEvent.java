@@ -27,6 +27,10 @@ import user.User;
  * @author fredde
  */
 public class CSAccessLogEvent extends HashNumeric {
+
+    /**
+     *
+     */
     public static String wildUserHost = "!*@*.*";
     /**
      *

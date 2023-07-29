@@ -15,6 +15,10 @@ import java.util.ArrayList;
 public class DBChanges extends HashNumeric {
     private Version version;
     
+    /**
+     *
+     * @param version
+     */
     public DBChanges ( Version version ) {
         this.version = version;
         this.init ( );

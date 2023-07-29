@@ -153,6 +153,11 @@ public class ChanServ extends Service {
         CSDatabase.loadAllChanAccess();
     }
     
+    /**
+     *
+     * @param name
+     * @param settings
+     */
     public static void attachSettings ( HashString name, ChanSetting settings ) {
         ciList.get(name.getCode()).setSettings ( settings );
     }
@@ -226,7 +231,7 @@ public class ChanServ extends Service {
     }   
     /**
      *
-     * @param ci
+     * @param c
      */
     public void checkAllUsers ( Chan c )  {
         if ( c != null ) {
@@ -416,6 +421,7 @@ public class ChanServ extends Service {
      *
      * @param c
      * @param user
+     * @param reason
      */
     public void kickUser ( Chan c, User user, String reason )  {
         // :Pintuz MODE #avade 0 +o Pintuz
@@ -654,6 +660,11 @@ public class ChanServ extends Service {
         checkUserList ( );
         return todoAmount;
     }
+
+    /**
+     *
+     * @return
+     */
     public static int maintenance ( )  {
         int todoAmount = 0;
         

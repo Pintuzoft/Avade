@@ -41,6 +41,9 @@ public class ServicesID extends HashNumeric {
     private Timer                   timer;
     private Timer                   adTimer;
     
+    /**
+     *
+     */
     public ServicesID ( )  {
         this.rand       = new Random ( );
         this.id         = this.getUniqueID ( );
@@ -51,6 +54,10 @@ public class ServicesID extends HashNumeric {
         this.code       = buf.getCode ( );
     }
 
+    /**
+     *
+     * @param id
+     */
     public ServicesID ( long id )  {
         this.rand       = new Random ( );
         this.id         = id;
@@ -79,14 +86,25 @@ public class ServicesID extends HashNumeric {
         return true;
     }
     
+    /**
+     *
+     * @return
+     */
     public BigInteger getCode ( ) {
         return this.code;
     }
     
+    /**
+     *
+     */
     public void updateStamp ( ) {
         this.stamp =  ( System.currentTimeMillis ( ) /1000 );
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean hasExpired ( )  {
         long dayAgo =  ( long ) ( System.currentTimeMillis ( ) /1000 ) - ( 60*60*24 );
         if ( this.user == null && this.stamp < dayAgo ) {
@@ -95,6 +113,10 @@ public class ServicesID extends HashNumeric {
         return false; 
     }
     
+    /**
+     *
+     * @param ni
+     */
     public void add ( NickInfo ni )  {
         if ( ni == null ) {
             return;
@@ -107,6 +129,10 @@ public class ServicesID extends HashNumeric {
         this.niList.add ( ni );
     }
       
+    /**
+     *
+     * @param ni
+     */
     public void del ( NickInfo ni )  {
         NickInfo ni2 = null;
         if ( ni == null ) {
@@ -123,6 +149,10 @@ public class ServicesID extends HashNumeric {
         } 
     }
      
+    /**
+     *
+     * @param ci
+     */
     public void add ( ChanInfo ci )  {
         if ( ci == null ) {
             return;
@@ -137,6 +167,11 @@ public class ServicesID extends HashNumeric {
         this.printSID ( );
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean isIdentified ( NickInfo ni )  {
         if ( ni == null ) {
             return false;
@@ -149,6 +184,11 @@ public class ServicesID extends HashNumeric {
         return false;  
     }
     
+    /**
+     *
+     * @param ci
+     * @return
+     */
     public boolean isIdentified ( ChanInfo ci )  {
         for ( ChanInfo chan : this.ciList )  {
             if ( chan.is(ci) ) {
@@ -158,33 +198,66 @@ public class ServicesID extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param user
+     */
     public void addUser ( User user ) { 
         this.user = user; 
         this.updateStamp ( ); 
     }
     
+    /**
+     *
+     */
     public void remUser ( ) { 
         this.user = null; 
         this.updateStamp ( ); 
     }
     
+    /**
+     *
+     * @return
+     */
     public long getID ( ) {
         return this.id;
     }
+
+    /**
+     *
+     * @return
+     */
     public ArrayList<NickInfo> getNiList ( ) { 
         return this.niList;
     }
+
+    /**
+     *
+     * @return
+     */
     public ArrayList<ChanInfo> getCiList ( ) { 
         return this.ciList;
     }  
 
+    /**
+     *
+     * @param niList
+     */
     public void setNiList ( ArrayList<NickInfo> niList ) { 
         this.niList = niList;
     }
+
+    /**
+     *
+     * @param ciList
+     */
     public void setCiList ( ArrayList<ChanInfo> ciList ) { 
         this.ciList = ciList;
     }  
 
+    /**
+     *
+     */
     public void printSID ( )  {
         System.out.println ( "ServicesID ( "+this.id+" )  {" );
         System.out.println ( "    niList ( "+this.niList.size ( ) +" ) " );
@@ -197,6 +270,10 @@ public class ServicesID extends HashNumeric {
         System.out.println ( "}" );
     }
     
+    /**
+     *
+     * @return
+     */
     public Oper getOper ( )  { 
         Oper oper = null;
         for ( NickInfo ni : this.niList )  {
@@ -213,13 +290,25 @@ public class ServicesID extends HashNumeric {
         return oper;
     }
     
+    /**
+     *
+     * @param timer
+     */
     public void addTimer ( Timer timer ) { 
         this.timer = timer;
     }
+
+    /**
+     *
+     * @param timer
+     */
     public void addAdTimer ( Timer timer ) { 
         this.adTimer = timer;
     }
      
+    /**
+     *
+     */
     public void resetTimers ( ) {
         if ( this.timer != null ) {
             this.timer.cancel ( );
@@ -234,6 +323,10 @@ public class ServicesID extends HashNumeric {
         return this.user;
     }
 
+    /**
+     *
+     * @return
+     */
     public NickInfo getTopOperNick ( ) {
         NickInfo top = null;
         for ( NickInfo ni : this.niList ) {
@@ -246,6 +339,10 @@ public class ServicesID extends HashNumeric {
         return top;
     }
  
+    /**
+     *
+     * @return
+     */
     public int getAccess ( ) {
         if ( this.niList.size() > 0 &&
              this.getOper ( ) != null ) {
@@ -254,10 +351,18 @@ public class ServicesID extends HashNumeric {
         return 0;
     }
 
+    /**
+     *
+     * @param ci
+     */
     public void unIdentify ( ChanInfo ci ) {
         ciList.remove ( ci );
     }
 
+    /**
+     *
+     * @param ni
+     */
     public void unIdentify ( NickInfo ni ) {
         niList.remove ( ni );
         Handler.addUpdateSID ( this );
@@ -269,6 +374,12 @@ public class ServicesID extends HashNumeric {
 //    }
 
     /* Return true if expire time hasAccess in the past */
+
+    /**
+     *
+     * @return
+     */
+
     public boolean timeToExpire() {
         return this.hasExpired();
 //        System.out.println("timeToExpire: now:"+System.currentTimeMillis()+", splitExpire:"+this.splitExpire);

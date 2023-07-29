@@ -28,13 +28,45 @@ import java.util.Date;
  * @author fredde
  */
 public abstract class LogEvent extends HashNumeric {
+
+    /**
+     *
+     */
     protected HashString name;
+
+    /**
+     *
+     */
     protected HashString flag;
+
+    /**
+     *
+     */
     protected String mask;
+
+    /**
+     *
+     */
     protected String oper;
+
+    /**
+     *
+     */
     protected String stamp;
+
+    /**
+     *
+     */
     protected DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     *
+     * @param name
+     * @param flag
+     * @param mask
+     * @param oper
+     * @param stamp
+     */
     protected LogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         this.name = name;
         this.flag = flag;
@@ -43,6 +75,12 @@ public abstract class LogEvent extends HashNumeric {
         this.stamp = stamp.substring ( 0, 19 );
     }
 
+    /**
+     *
+     * @param name
+     * @param mask
+     * @param oper
+     */
     protected LogEvent ( HashString name, String mask, String oper ) {
         this.name = name;
         this.mask = mask;
@@ -50,10 +88,19 @@ public abstract class LogEvent extends HashNumeric {
         this.stamp = dateFormat.format( new Date ( ) );
     }
 
+    /**
+     *
+     * @param stamp
+     */
     public void setStamp ( String stamp ) {
         this.stamp = stamp;
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static String getNickFlagByHash ( HashString hash ) {
         if      ( hash.is(AUTHMAIL) )       { return "Am";  }
         else if ( hash.is(AUTHPASS) )       { return "Ap";  }
@@ -79,6 +126,11 @@ public abstract class LogEvent extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static String getChanFlagByHash ( HashString hash ) {
         if      ( hash.is(AUDITORIUM) )     { return "A+";  }
         else if ( hash.is(UNAUDITORIUM) )   { return "A-";  }
@@ -112,6 +164,11 @@ public abstract class LogEvent extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static String getOperFlagByHash ( HashString hash ) {
         if      ( hash.is(ADDMASTER) )      { return "Master+";     }
         else if ( hash.is(DELMASTER) )      { return "Master-";     }
@@ -130,26 +187,50 @@ public abstract class LogEvent extends HashNumeric {
         }
     }
       
+    /**
+     *
+     * @return
+     */
     public HashString getName ( ) {
         return name;
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getFlag ( ) {
         return flag;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getMask ( ) {
         return mask;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getOper ( ) {
         return oper;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getStamp ( ) {
         return stamp;
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean isOper ( ) {
         return ( oper != null );
     }

@@ -22,7 +22,7 @@ import security.Hash;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class NSAuth {
     private HashString type;
@@ -31,6 +31,12 @@ public class NSAuth {
     private String auth;
     private String stamp;
     
+    /**
+     *
+     * @param type
+     * @param nick
+     * @param value
+     */
     public NSAuth ( HashString type, HashString nick, String value ) {
         this.type = type;
         this.nick = nick;
@@ -38,6 +44,14 @@ public class NSAuth {
         this.hash();
     }
     
+    /**
+     *
+     * @param type
+     * @param nick
+     * @param value
+     * @param auth
+     * @param stamp
+     */
     public NSAuth ( HashString type, HashString nick, String value, String auth, String stamp ) {
         this.type = type;
         this.nick = nick;
@@ -45,6 +59,15 @@ public class NSAuth {
         this.auth = auth;
         this.stamp = stamp;
     }
+
+    /**
+     *
+     * @param type
+     * @param nick
+     * @param value
+     * @param auth
+     * @param stamp
+     */
     public NSAuth ( HashString type, String nick, String value, String auth, String stamp ) {
         this.type = type;
         this.nick = new HashString ( nick );
@@ -53,33 +76,67 @@ public class NSAuth {
         this.stamp = stamp;
     }
     
+    /**
+     *
+     */
     public void hash ( ) {
         String buf = this.nick+this.value+System.currentTimeMillis()+( Hash.md5 ( ""+System.nanoTime() ) );
         this.auth = Hash.md5 ( buf );
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getType ( ) {
         return this.type;
     }
+
+    /**
+     *
+     * @return
+     */
     public String getValue ( ) {
         return this.value;
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getNick ( ) {
         return this.nick;
     }
+
+    /**
+     *
+     * @return
+     */
     public String getNickStr ( ) {
         return this.nick.getString();
     }
 
+    /**
+     *
+     * @return
+     */
     public String getAuth ( ) {
         return this.auth;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getStamp ( ) {
         return this.stamp;
     }
     
+    /**
+     *
+     * @param it
+     * @return
+     */
     public boolean is ( HashString it ) {
         return it.is(type);
     }

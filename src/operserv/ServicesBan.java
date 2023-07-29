@@ -51,7 +51,17 @@ public class ServicesBan extends HashNumeric {
     private CIDRUtils       cidr;
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
     
-    
+    /**
+     *
+     * @param type
+     * @param id
+     * @param readyID
+     * @param mask
+     * @param reason
+     * @param instater
+     * @param timeStr
+     * @param expireStr
+     */
     public ServicesBan ( HashString type, HashString id, boolean readyID, HashString mask, String reason, String instater, String timeStr, String expireStr ) {
         this.type = type;
         if ( ! readyID ) {
@@ -120,6 +130,9 @@ public class ServicesBan extends HashNumeric {
 
     }
 
+    /**
+     *
+     */
     public void printData() {
         System.out.println("BAN: nick:"+this.nick);
         System.out.println("BAN: user:"+this.user);
@@ -145,16 +158,29 @@ public class ServicesBan extends HashNumeric {
         }
    }
     
-    
+    /**
+     *
+     * @param fullmask
+     * @return
+     */
     public boolean match ( String fullmask )  {
         return StringMatch.maskWild ( fullmask, this.mask.getString() );
     }
     
+    /**
+     *
+     * @param fullmask
+     * @return
+     */
     public boolean matchNoWild ( String fullmask )  {
         HashString it = new HashString ( fullmask );
         return it.is(this.mask);
     }
     
+    /**
+     *
+     * @return
+     */
     public String getListName ( ) {
         if      ( type.is(AKILL) )      { return "akill";           }
         else if ( type.is(IGNORE) )     { return "ignorelist";      }
@@ -166,6 +192,11 @@ public class ServicesBan extends HashNumeric {
         } 
     }
      
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static String getCommandByHash ( HashString hash ) {
         if ( hash.is(AKILL) )           { return "AKILL";           }
         else if ( hash.is(IGNORE) )     { return "IGNORE";          }
@@ -176,50 +207,98 @@ public class ServicesBan extends HashNumeric {
         } 
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getType ( ) { 
         return this.type;
     }
       
+    /**
+     *
+     * @return
+     */
     public HashString getID ( ) { 
         return this.id;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getMask ( ) { 
         return this.mask;
     }
     
+    /**
+     *
+     * @return
+     */
     public CIDRUtils getCidr ( ) {
         return this.cidr;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getInstater ( ) { 
         return this.instater;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getReason ( ) { 
         return this.reason;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getTime ( ) { 
         return dateFormat.format ( this.time );
     }
     
+    /**
+     *
+     * @return
+     */
     public String getExpire ( ) { 
         return dateFormat.format ( this.expire );
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getHost ( ) { 
         return this.host;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getUser ( ) { 
         return this.user;
     }
  
+    /**
+     *
+     * @param id
+     */
     public void setId ( HashString id ) { 
         this.id = id;
     }
     
+    /**
+     *
+     * @param time
+     */
     public void setTime ( String time ) {
         try {
             this.time = dateFormat.parse ( time );
@@ -237,10 +316,18 @@ public class ServicesBan extends HashNumeric {
         this.setExpireStamp ( );
     }
 
+    /**
+     *
+     * @return
+     */
     public long getExpireStamp() {
         return this.expireStamp;
     }
     
+    /**
+     *
+     * @return
+     */
     public long getExpireSec() {
         return this.expireSec;
     }
@@ -258,10 +345,20 @@ public class ServicesBan extends HashNumeric {
             return "AK";
         }
     }
+
+    /**
+     *
+     * @return
+     */
     public boolean hasExpired ( ) {
         System.out.println(this.expireStamp+":"+System.currentTimeMillis());
         return this.expireStamp < System.currentTimeMillis();
     }
+
+    /**
+     *
+     * @return
+     */
     public String getBanTypeStr ( ) {
         if      ( type.is(AKILL) )          { return "AutoKill"; }
         else if ( type.is(SQLINE) )         { return "AutoKill"; }
@@ -270,12 +367,30 @@ public class ServicesBan extends HashNumeric {
             return "Unknown";
         }
     }
+
+    /**
+     *
+     * @param type
+     * @return
+     */
     public boolean is ( HashString type ) {
         return this.type.is(type);
     }
+
+    /**
+     *
+     * @param ban
+     * @return
+     */
     public boolean is ( ServicesBan ban ) {
         return this.getID().is(ban.getID());
     }
+
+    /**
+     *
+     * @param mask
+     * @return
+     */
     public boolean isMask ( HashString mask ) {
         return this.mask.is(mask);
     }

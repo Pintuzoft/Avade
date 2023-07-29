@@ -56,6 +56,10 @@ public class Proc extends HashNumeric {
     private String                      read; 
     private static Config               config;
     
+    /**
+     *
+     * @throws IOException
+     */
     public Proc ( )  throws IOException {
         loadConf ( );
         logger                  = new Log ( );
@@ -167,10 +171,17 @@ public class Proc extends HashNumeric {
         System.exit ( 0 );
     }
 
+    /**
+     *
+     */
     public static void stopServices ( ) {
         run = false;
     }
     
+    /**
+     *
+     * @return
+     */
     public static long getStartTime ( ) {
         return start;
     }
@@ -183,6 +194,9 @@ public class Proc extends HashNumeric {
         } 
     }
 
+    /**
+     *
+     */
     public static void reConnect ( ) {
         try { 
             Handler.unloadServices();
@@ -201,6 +215,12 @@ public class Proc extends HashNumeric {
             Logger.getLogger ( Proc.class.getName ( )  ) .log ( Level.SEVERE, null, ex ); 
         } 
     }
+
+    /**
+     *
+     * @param user
+     * @return
+     */
     public static boolean rehashConf ( User user )  {
         Config conf = new Config ( );
         
@@ -227,10 +247,18 @@ public class Proc extends HashNumeric {
         return false;
     }
      
+    /**
+     *
+     * @return
+     */
     public static Config getConf ( )  { 
         return config; 
     }
  
+    /**
+     *
+     * @return
+     */
     public static String getUptime ( )  {
         try {
             long duration   =  ( System.currentTimeMillis ( )  - Proc.servicesStart ) /1000;
@@ -283,6 +311,11 @@ public class Proc extends HashNumeric {
         return "";
     }
     
+    /**
+     *
+     * @param className
+     * @param e
+     */
     public static void log ( String className, Exception e )  {
         Logger.getLogger(className).log ( Level.SEVERE, null, e );
         if ( e instanceof SQLException ) {
@@ -299,7 +332,16 @@ public class Proc extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param message
+     */
     public static void log ( String message )   { logger.out ( message );   }
+
+    /**
+     *
+     * @return
+     */
     public static Version getVersion ( )        { return version;           }
     
     

@@ -15,15 +15,28 @@ public class UserCheck {
     private User user;
     private Chan chan;
     
+    /**
+     *
+     * @param chan
+     * @param user
+     */
     public UserCheck ( Chan chan, User user ) {
         this.chan = chan;
         this.user = user;
     }
 
+    /**
+     *
+     * @return
+     */
     public User getUser ( ) {
         return user;
     }
 
+    /**
+     *
+     * @return
+     */
     public Chan getChan ( ) {
         return chan;
     }

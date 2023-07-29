@@ -78,7 +78,9 @@ public class OperServ extends Service {
 
     private static ArrayList<Timer> timerList = new ArrayList<>();
     
-    
+    /**
+     *
+     */
     public OperServ ( )  {
         super ( "OperServ" );
         this.initOperServ ( );
@@ -99,6 +101,9 @@ public class OperServ extends Service {
         setCommands ( );
     }
 
+    /**
+     *
+     */
     public void setCommands ( )  {
         cmdList = new ArrayList<> ( );
         cmdList.add ( new CommandInfo ( "HELP",      1,                         "Show help information" )                       );
@@ -128,14 +133,31 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }
    
+    /**
+     *
+     * @param command
+     * @return
+     */
     public static ArrayList<CommandInfo> getCMDList ( HashString command ) {
         return Handler.getOperServ().getCommandList ( command );
     }
     
+    /**
+     *
+     * @param user
+     * @param hashName
+     * @return
+     */
     public static boolean enoughAccess ( User user, HashString hashName ) {
         return Handler.getOperServ().checkAccess ( user, hashName );
     }
     
+    /**
+     *
+     * @param user
+     * @param hashName
+     * @return
+     */
     public boolean checkAccess ( User user, HashString hashName ) {
         int access = user.getAccess ( );
         if ( hashName.is(AUTOKILL) ) {
@@ -148,9 +170,17 @@ public class OperServ extends Service {
         return false;
     }
      
+    /**
+     *
+     */
     public void hourMaintenance ( ) {
         /* nothingness */
     }
+
+    /**
+     *
+     * @return
+     */
     public int secMaintenance ( ) {
         int todoAmount = 0;
         this.checkUserList ( );
@@ -168,13 +198,20 @@ public class OperServ extends Service {
         return todoAmount;
     }
     
+    /**
+     *
+     * @return
+     */
     public int minMaintenance ( ) {
         int todoAmount = 0;
         this.expireBans ( );
         return todoAmount;
     }
     
-  
+    /**
+     *
+     * @return
+     */
     public int checkAddServicesBans ( ) {
         if ( addServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
             return addServicesBans.size();
@@ -191,6 +228,10 @@ public class OperServ extends Service {
         return addServicesBans.size();
     }
     
+    /**
+     *
+     * @return
+     */
     public int checkRemServicesBans ( ) {
         if ( remServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
             return remServicesBans.size();
@@ -207,6 +248,10 @@ public class OperServ extends Service {
         return remServicesBans.size();
     }
     
+    /**
+     *
+     * @return
+     */
     public int checkAddSpamFilters ( ) {
         if ( addSpamFilters.isEmpty() || ! OSDatabase.checkConn() ) {
             return addSpamFilters.size();
@@ -223,6 +268,10 @@ public class OperServ extends Service {
         return addSpamFilters.size();
     }
     
+    /**
+     *
+     * @return
+     */
     public int checkRemSpamFilters ( ) {
         if ( remSpamFilters.isEmpty() || ! OSDatabase.checkConn() ) {
             return remSpamFilters.size();
@@ -239,6 +288,10 @@ public class OperServ extends Service {
         return remSpamFilters.size();
     }
     
+    /**
+     *
+     * @return
+     */
     public int checkRemServers ( ) {
         if ( remServers.isEmpty() || ! OSDatabase.checkConn() ) {
             return remServers.size();
@@ -255,6 +308,10 @@ public class OperServ extends Service {
         return remServers.size();
     }
     
+    /**
+     *
+     * @return
+     */
     public int checkAddServers ( ) {
         if ( addServers.isEmpty() || ! OSDatabase.checkConn() ) {
             return addServers.size();
@@ -271,6 +328,10 @@ public class OperServ extends Service {
         return addServers.size();
     }
 
+    /**
+     *
+     * @return
+     */
     public int checkUpdServers ( ) {
         if ( updServers.isEmpty() || ! OSDatabase.checkConn() ) {
             return updServers.size();
@@ -287,6 +348,10 @@ public class OperServ extends Service {
         return updServers.size();
     }
     
+    /**
+     *
+     * @return
+     */
     public int checkAddStaff ( ) {
         if ( addStaff.isEmpty() || ! OSDatabase.checkConn() ) {
             return addStaff.size();
@@ -303,6 +368,10 @@ public class OperServ extends Service {
         return addStaff.size();
     }
        
+    /**
+     *
+     * @return
+     */
     public int checkRemStaff ( ) {
         if ( remStaff.isEmpty() || ! OSDatabase.checkConn() ) {
             return remStaff.size();
@@ -319,6 +388,10 @@ public class OperServ extends Service {
         return remStaff.size();
     }
           
+    /**
+     *
+     * @return
+     */
     public int checkLogEvents ( ) {
         if ( logs.isEmpty() || ! OSDatabase.checkConn() ) {
             return logs.size();
@@ -465,6 +538,11 @@ public class OperServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         user.getUserFlood().incCounter ( this );
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
@@ -494,12 +572,21 @@ public class OperServ extends Service {
     }
      // public void sendSnoop ( String msg )  { this.snoop.msg ( msg ); }
  
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> findRootAdmins ( )  {
         if ( ! is ) {
             return null;
         }
         return getRootAdmins ( );
     }
+
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> findCSOps ( )  {
         if ( ! is ) {
             return null;
@@ -507,6 +594,10 @@ public class OperServ extends Service {
         return getCSops ( );
     }
     
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> findServicesAdmins ( )  {
         if ( ! is )  {
             return null;
@@ -526,6 +617,13 @@ public class OperServ extends Service {
         return false;
     }
  */   
+
+    /**
+     *
+     * @param user
+     * @param ban
+     */
+   
     public void ban ( User user, ServicesBan ban )  {
         if ( ban.is(AKILL) ) {
             this.unBan ( ban );
@@ -562,7 +660,11 @@ public class OperServ extends Service {
          
     }
     
-   
+    /**
+     *
+     * @param command
+     * @return
+     */
     public static ArrayList<ServicesBan> getListByCommand ( HashString command ) {
         if ( command.is(AKILL) )                { return akills;    }
         else if ( command.is(IGNORE) )          { return ignores;   }
@@ -586,6 +688,10 @@ public class OperServ extends Service {
         return 0;
     }
   
+    /**
+     *
+     * @param ban
+     */
     public void sendServicesBan ( ServicesBan ban )  {
         User u = null;   
         if ( ban != null )  {
@@ -648,25 +754,57 @@ public class OperServ extends Service {
                 return new ArrayList<>();
         }
     }*/
+
+    /**
+     *
+     * @param state
+     */
+
       
     public static void is ( boolean state ) { 
         is = state; 
     }
+
+    /**
+     *
+     * @param state
+     */
     public static void setState ( boolean state ) { 
         is = state;
     }
 
+    /**
+     *
+     * @return
+     */
     public static boolean isUp ( ) { 
         return is; 
     }
 
+    /**
+     *
+     * @param user
+     */
     public void checkUser ( User user ) {
         this.chList.add ( user );
     }
     
+    /**
+     *
+     * @param command
+     * @param banId
+     * @return
+     */
     public static ServicesBan findBanByID ( HashString command, String banId ) {
         return findBanByID ( command, new HashString ( banId ) );
     }
+
+    /**
+     *
+     * @param command
+     * @param banId
+     * @return
+     */
     public static ServicesBan findBanByID ( HashString command, HashString banId ) {
         if ( banId == null ) {
             return null;
@@ -679,7 +817,12 @@ public class OperServ extends Service {
         return null;
     }
     
-    
+    /**
+     *
+     * @param command
+     * @param pattern
+     * @return
+     */
     public static ArrayList<ServicesBan> findBansByPattern ( HashString command, String pattern )  {
         ArrayList<ServicesBan> bList = new ArrayList<>();
         
@@ -714,6 +857,12 @@ public class OperServ extends Service {
         return bList;
     }
     
+    /**
+     *
+     * @param command
+     * @param usermask
+     * @return
+     */
     public static ServicesBan findBan ( HashString command, String usermask )  {
         if ( command.is(AKILL) ) {
             for ( ServicesBan a : akills )  {
@@ -759,15 +908,30 @@ public class OperServ extends Service {
     private static final int AKILL_EXPIRE           = 1001;
     private static final int AKILL_FAIL_EXPIRE      = 1002;
 */
+
+    /**
+     *
+     * @return
+     */
+
     
     public int getAkillCount() {
         return akills.size();
     }
 
+    /**
+     *
+     * @return
+     */
     public int getIgnoreCount() {
         return ignores.size();
     }
 
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isIgnored(User user) {
         if ( user == null ) {
             return false;
@@ -779,9 +943,20 @@ public class OperServ extends Service {
         return false;
     }
 
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static NetServer getServer ( String name ) {
         return getServer ( new HashString ( name ) );
     }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static NetServer getServer ( HashString name ) {
         for ( NetServer server : servers ) {
             if ( server.is(name) ) {
@@ -791,6 +966,12 @@ public class OperServ extends Service {
         return null;
     }
     
+    /**
+     *
+     * @param type
+     * @param missing
+     * @return
+     */
     public static ArrayList<NetServer> getServers ( HashString type, boolean missing ) {
         ArrayList<NetServer> sList = new ArrayList<>();
         
@@ -833,6 +1014,11 @@ public class OperServ extends Service {
         return sList;         
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static boolean addDelServer ( String name ) {
         HashString hash = new HashString ( name );
         NetServer rem = null;
@@ -848,6 +1034,11 @@ public class OperServ extends Service {
         }
         return false;
     }
+
+    /**
+     *
+     * @param name
+     */
     public static void addServer ( HashString name ) {
         for ( NetServer server : servers ) {
             if ( server.is(name) ) {
@@ -857,10 +1048,20 @@ public class OperServ extends Service {
         NetServer server = new NetServer ( name.getString(), null, null );
         addServers.add ( server );
     }
+
+    /**
+     *
+     * @param server
+     */
     public static void addUpdServer ( NetServer server ) {
         updServers.add ( server );
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static ArrayList<Oper> getStaffPlus ( HashString hash ) {
         ArrayList<Oper> oList = new ArrayList<> ( );
         int access = hashToAccess ( hash );
@@ -872,6 +1073,11 @@ public class OperServ extends Service {
         return oList;
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public static int hashToAccess ( HashString hash ) {
         if ( hash.is(IRCOP) ) {
             return 1;
@@ -888,6 +1094,11 @@ public class OperServ extends Service {
         }
     }
     
+    /**
+     *
+     * @param access
+     * @return
+     */
     public static ArrayList<Oper> getStaffByAccess ( int access )  {
         ArrayList<Oper> oList = new ArrayList<> ( );
         for ( Oper o : staff ) {
@@ -897,22 +1108,52 @@ public class OperServ extends Service {
         }
         return oList;
     }
+
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> getMaster ( ) {
         return getStaffByAccess ( 5 );
     }
+
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> getRootAdmins ( ) { 
         return getStaffByAccess ( 4 ); 
     }
+
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> getCSops ( ) {
         return getStaffByAccess ( 3 );
     } 
+
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> getServicesAdmins ( ) {
         return getStaffByAccess ( 2 );
     }
+
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Oper> getIRCops() {
         return getStaffByAccess ( 1 );
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static Oper getOper ( HashString name ) {
         for ( Oper oper : staff ) {
             if ( oper.is(name) ) {
@@ -922,11 +1163,20 @@ public class OperServ extends Service {
         return new Oper ( );
     }
     
+    /**
+     *
+     * @param ban
+     */
     public static void addServicesBan ( ServicesBan ban ) {
         addServicesBans.add ( ban );
         addLogServicesBans.add ( ban );
         getListByCommand(ban.getType()).add ( ban );
     }
+
+    /**
+     *
+     * @param ban
+     */
     public static void remServicesBan ( ServicesBan ban ) {
         ServicesBan rem = null;
         remServicesBans.add ( ban );
@@ -941,7 +1191,10 @@ public class OperServ extends Service {
         }
     }
 
-    
+    /**
+     *
+     * @return
+     */
     public static ArrayList<SpamFilter> getSpamFilters ( ) {
         return spamfilters;
     }
@@ -954,11 +1207,20 @@ public class OperServ extends Service {
         remSpamFilters.add ( sFilter );
     }
 
+    /**
+     *
+     */
     public void sendSpamFilter ( ) {
         for ( SpamFilter sf : spamfilters ) {
             this.sendServ ( "SF "+sf.getPattern()+" "+sf.getBitFlags()+" :"+sf.getReason() );
         }
     }
+
+    /**
+     *
+     * @param pattern
+     * @return
+     */
     public static SpamFilter findSpamFilter ( String pattern ) {
         HashString hash = new HashString(pattern);
         for ( SpamFilter sf : spamfilters ) {
@@ -969,7 +1231,10 @@ public class OperServ extends Service {
         return null;
     }
 
-      
+    /**
+     *
+     * @param data
+     */
     public void addSFAkill ( String[] data ) {
         //:testnet.avade.net OS SFAKILL fredde 1539289892 hello to you too!
         //                 0  1       2      3          4 5+
@@ -1007,10 +1272,20 @@ public class OperServ extends Service {
         );
     }
 
+    /**
+     *
+     * @param usermask
+     * @return
+     */
     public static boolean isWhiteListed ( String usermask ) {
         return isWhiteListed ( new HashString ( usermask ) );
     }
     
+    /**
+     *
+     * @param usermask
+     * @return
+     */
     public static boolean isWhiteListed ( HashString usermask ) {
         for ( Map.Entry<BigInteger,HashString> white : Proc.getConf().getWhiteList().entrySet() ) {
             if ( StringMatch.maskWild ( usermask.getString(), "*"+white.getValue() ) ) {
@@ -1036,6 +1311,10 @@ public class OperServ extends Service {
         addStaff.add ( oper );
     }
     
+    /**
+     *
+     * @param ni
+     */
     public static void delOper ( NickInfo ni ) {
         Oper remove = null;
         for ( Oper oper : staff ) {
@@ -1048,18 +1327,36 @@ public class OperServ extends Service {
             remStaff.add ( remove );
         }
     }
+
+    /**
+     *
+     * @param log
+     */
     public static void addLogEvent ( OSLogEvent log ) {
         logs.add ( log );
     }
     
+    /**
+     *
+     * @param task
+     */
     public static void addTimer ( Timer task ) {
         timerList.add ( task );
     }
     
+    /**
+     *
+     * @param task
+     */
     public static void remTimer ( Timer task ) {
         timerList.remove ( task );
     }
 
+    /**
+     *
+     * @param string
+     * @return
+     */
     public boolean isSpamFiltered(String string) {
         HashString hash = new HashString ( string );
         for ( SpamFilter sf : spamfilters ) {

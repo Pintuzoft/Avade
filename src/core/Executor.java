@@ -24,19 +24,47 @@ import user.User;
  * @author DreamHealer
  */
 public abstract class Executor extends HashNumeric {
+
+    /**
+     *
+     */
     protected Service       service;
+
+    /**
+     *
+     */
     protected boolean       found;
+
+    /**
+     *
+     */
     protected CommandInfo   cmdInfo;
     
+    /**
+     *
+     */
     protected Executor ( )  { 
         /* empty */
     } 
 
+    /**
+     *
+     * @param user
+     * @param str
+     */
     public void noMatch ( User user, String str )  { 
         this.service.sendMsg ( user, "Sorry, no such command: "+str ); 
     } 
     
     /* Return true if cmd string is shorter than minlen */
+
+    /**
+     *
+     * @param minlen
+     * @param cmd
+     * @return
+     */
+
     protected boolean isShorterThanLen ( int minlen, String[] cmd )  {
         return cmd.length < minlen;
     }

@@ -36,6 +36,9 @@ public class MemoServ extends Service {
     private MSSnoop                     snoop;          /* Object that parse and respond to help queries */
     private TextFormat                  f;
     
+    /**
+     *
+     */
     public MemoServ ( )  {
         super ( "MemoServ" );
         initMemoServ ( );    
@@ -49,6 +52,11 @@ public class MemoServ extends Service {
         this.f          = new TextFormat    ( );
     }
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
@@ -102,27 +110,58 @@ public class MemoServ extends Service {
         } 
     }
      */
+
+    /**
+     *
+     * @param stateVal
+     */
+
     
     public static void is ( boolean stateVal ) { 
         state = stateVal;
     }
+
+    /**
+     *
+     * @return
+     */
     public static boolean isUp ( ) { 
         return state;
     } 
+
+    /**
+     *
+     * @param stateVal
+     */
     public static void setState ( boolean stateVal ) {
         state = stateVal;
     }
 
-    
+    /**
+     *
+     * @param ni
+     * @param u
+     * @param count
+     */
     public void adNick ( NickInfo ni, User u, int count )  {
         this.sendMsg ( u, "You have "+f.b ( ) +count+f.b ( ) +" new memo"+ ( count==1?"":"s" ) +"." );
     }
  
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doDefault ( User user, String[] cmd )  {
         /** We are suppose to execute **/
         this.executor.parse ( user, cmd );
     } 
     
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void doOHelp ( User user, String[] cmd )  {
         if ( ! user.isOper ( )  )  {
             this.snoop.msg ( false, new HashString ( "NickServ" ),user, cmd ); 
@@ -130,7 +169,11 @@ public class MemoServ extends Service {
         }
     }
     
-    
+    /**
+     *
+     * @param ni
+     * @param u
+     */
     public void checkNick ( NickInfo ni, User u )  {
         if ( ni == null || u == null )  {
             return;
@@ -147,6 +190,10 @@ public class MemoServ extends Service {
         }  
     }
     
+    /**
+     *
+     * @param memo
+     */
     public void newMemo ( MemoInfo memo )  {
         User u = Handler.findUser ( memo.getName ( ) );
         

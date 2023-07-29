@@ -64,6 +64,20 @@ public class NickInfo extends HashNumeric {
     private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     /* DATABASE */
+
+    /**
+     *
+     * @param name
+     * @param user
+     * @param host
+     * @param pass
+     * @param mail
+     * @param regStamp
+     * @param lastSeen
+     * @param settings
+     * @param exp
+     */
+
     public NickInfo ( String name, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
         this.name       = new HashString ( name );
         this.hashMask   = new HashString ( user+"@"+host );
@@ -83,6 +97,13 @@ public class NickInfo extends HashNumeric {
      }
 
     /* REGISTER */
+
+    /**
+     *
+     * @param user
+     * @param pass
+     */
+
     public NickInfo ( User user, String pass )  {
         /* Register nickname */ 
         this.name       = new HashString ( user.getString ( NAME ) );
@@ -105,6 +126,12 @@ public class NickInfo extends HashNumeric {
     }
     
     /* Master nick */
+
+    /**
+     *
+     * @param name
+     */
+
     public NickInfo ( String name ) {
         User u          = Handler.findUser ( name );
         Random random   = new Random ( );
@@ -137,6 +164,11 @@ public class NickInfo extends HashNumeric {
     //private void attachMemos ( )  {
     //    this.mList = MSDatabase.getMemosByNick ( this.name );
     //}
+
+    /**
+     *
+     * @param user
+     */
     
     public void setUserMask ( User user )  {
         this.user       = new HashString ( user.getString ( USER ) );
@@ -155,9 +187,23 @@ public class NickInfo extends HashNumeric {
         user.getSID().add ( this ); 
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getName ( )       { return this.name;                                 }
+
+    /**
+     *
+     * @return
+     */
     public String getNameStr ( )        { return this.name.getString();                     }
     
+    /**
+     *
+     * @param it
+     * @return
+     */
     public String getString ( HashString it )  {
         if      ( it.is(NAME) )         { return this.name.getString();                     }
         else if ( it.is(USER) )         { return this.user.getString();                     }
@@ -172,6 +218,11 @@ public class NickInfo extends HashNumeric {
         }
     }
  
+    /**
+     *
+     * @param it
+     * @return
+     */
     public boolean isState ( HashString it )  {
         if ( it.is(AUTHED) ) {
             return this.settings.is ( AUTH );
@@ -182,24 +233,50 @@ public class NickInfo extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @return
+     */
     public Expire getExp ( )  { return this.exp; }
     
+    /**
+     *
+     * @return
+     */
     public boolean shouldExpire ( )  {
         return this.exp.shouldExpire ( );
     }
     
     /* Returns true if nick hasAccess older than expiretime */
+
+    /**
+     *
+     * @return
+     */
+
     public boolean olderThanExpireTime ( )  {
         return false;
    //     return  ( ( System.currentTimeMillis ( ) /1000 - this.lastUsed )  > Handler.expireToTime ( Proc.getConf ( ) .get ( EXPIRE ) ) );
     }
     
     /* Return true if last mail was sent more than a day ago */
+
+    /**
+     *
+     * @return
+     */
+
   
     public boolean getAuth ( ) { 
         return this.settings.getAuth ( ); 
     }
      
+    /**
+     *
+     * @param user
+     * @param pass
+     * @return
+     */
     public boolean identify ( User user, String pass )  {
         if ( pass == null || user == null ) {
             return false;
@@ -213,22 +290,48 @@ public class NickInfo extends HashNumeric {
     }
     
     /* hasAccess commands */
+
+    /**
+     *
+     * @param name
+     * @return
+     */
+
     public boolean is ( HashString name ) {
         return this.name.is ( name );
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public boolean is ( NickInfo ni ) {
         return this.name.is ( ni.getName() );
     }
     
+    /**
+     *
+     * @param setting
+     * @return
+     */
     public boolean isSet ( HashString setting ) {
         return this.settings.is ( setting );
     }
     
+    /**
+     *
+     * @param newPass
+     */
     public void setPass ( String newPass ) {
         this.pass = newPass;
     }
       
+    /**
+     *
+     * @param pass
+     * @return
+     */
     public boolean isPass ( String pass )  {
         if ( pass == null ) {
             return false;
@@ -236,35 +339,76 @@ public class NickInfo extends HashNumeric {
         return ( this.pass.compareTo ( pass ) == 0 );
     }
  
+    /**
+     *
+     * @return
+     */
     public String getPass ( )  {
         return this.pass;
     }
+
+    /**
+     *
+     * @return
+     */
     public String getEmail ( )  {
         return this.mail;
     }
+
+    /**
+     *
+     * @return
+     */
     public NickSetting getSettings ( )  {
         return this.settings;
     }
     
+    /**
+     *
+     * @return
+     */
     public Expire getNickExp ( ) {
         return this.exp;
     }
      
+    /**
+     *
+     * @return
+     */
     public Oper getOper ( ) {
         return this.oper;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getIDOper ( ) {
         return  ( this.oper != null ) ? this.oper.getString ( NAME ) : null;
     }
 
+    /**
+     *
+     * @return
+     */
     public ArrayList<MemoInfo> getMemos ( ) {
         return this.mList; 
     }
+
+    /**
+     *
+     * @param memo
+     */
     public void addMemo ( MemoInfo memo ) {
         this.mList.add ( memo ); 
         Handler.getMemoServ().newMemo ( memo ); 
     }
+
+    /**
+     *
+     * @param num
+     * @return
+     */
     public MemoInfo getMemo ( int num )  { 
         if ( num > 0 && num <= this.mList.size ( ) ) {
             return this.mList.get ( num-1 );
@@ -272,10 +416,19 @@ public class NickInfo extends HashNumeric {
         return null;
     }
 
+    /**
+     *
+     * @param memo
+     */
     public void delMemo ( MemoInfo memo )  {
         this.mList.remove ( memo );
     } 
     
+    /**
+     *
+     * @param access
+     * @return
+     */
     public boolean isAtleast ( HashString access ) {
         if ( this.oper == null ) {
             return false;
@@ -292,24 +445,43 @@ public class NickInfo extends HashNumeric {
         return ( this.oper.getAccess ( ) >= acc );       
     }
 
+    /**
+     *
+     * @param oper
+     */
     public void setOper ( Oper oper ) {
         this.oper = oper;
     }
     
+    /**
+     *
+     * @param setting
+     * @return
+     */
     public boolean isSetting ( HashString setting ) {
         return this.settings.is ( setting );
     }
 
+    /**
+     *
+     * @return
+     */
     public int getAccess ( ) {
         return this.oper.getAccess ( );
     }
     
+    /**
+     *
+     * @param mail
+     */
     public void setEmail ( String mail ) {
         this.mail = mail;
         this.settings.set ( AUTH, true );
     }
     
-    /*** AOP/SOP/FOUNDER LISTS ***/
+    /*** AOP/SOP/FOUNDER LISTS
+     * @param it
+     * @return  ***/
     
     public ArrayList<ChanInfo> getChanAccess ( HashString it ) {
         if      ( it.is(FOUNDER) )          { return founderList;               }
@@ -321,10 +493,20 @@ public class NickInfo extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param list
+     * @param ci
+     */
     public void addToAccessList ( HashString list, ChanInfo ci ) {
         this.getChanAccess(list).add ( ci );
     }
     
+    /**
+     *
+     * @param list
+     * @param ci
+     */
     public void remFromAccessList ( HashString list, ChanInfo ci ) {
         ArrayList<ChanInfo> chans = new ArrayList<>();
         for ( ChanInfo ci2 : getChanAccess ( list ) ) {
@@ -345,22 +527,45 @@ public class NickInfo extends HashNumeric {
         this.changes.change ( LASTUSED );
     }
      
+    /**
+     *
+     * @return
+     */
     public NSChanges getChanges ( ) {
         return this.changes;
     }
     
+    /**
+     *
+     * @param it
+     * @return
+     */
     public boolean hasChanged ( HashString it ) {
         return this.changes.hasChanged(it);
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean is ( User user ) {
         return this.name.is(user.getName());
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isMask ( User user ) {
         return this.host.is ( user.getMask() );
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean isAuth ( ) {
         if ( this.mail == null ) {
             return false;
@@ -368,6 +573,10 @@ public class NickInfo extends HashNumeric {
         return this.mail.length() > 0;
     }
     
+    /**
+     *
+     * @return
+     */
     public Throttle getThrottle ( ) {
         return this.throttle;
     }

@@ -42,6 +42,13 @@ public class MSDatabase extends Database {
     private static PreparedStatement    ps;
 
     /* NickServ Methods */
+
+    /**
+     *
+     * @param memo
+     * @return
+     */
+
     public static MemoInfo storeMemo ( MemoInfo memo )  {
         if ( ! activateConnection ( )  )  {
             return null;
@@ -80,7 +87,11 @@ public class MSDatabase extends Database {
         return memo;
     }
      
-
+    /**
+     *
+     * @param nick
+     * @return
+     */
     public static ArrayList<MemoInfo> getMemosByNick ( HashString nick )  {
         ArrayList<MemoInfo> mList = new ArrayList<> ( );
         if ( ! activateConnection ( )  )  {
@@ -106,6 +117,9 @@ public class MSDatabase extends Database {
         return mList;
     }
     
+    /**
+     *
+     */
     public static void loadAllMemos ( )  {
         ArrayList<MemoInfo> mList = new ArrayList<> ( );
         NickInfo ni;
@@ -133,7 +147,11 @@ public class MSDatabase extends Database {
         return;
     }
 
-   
+    /**
+     *
+     * @param memo
+     * @return
+     */
     public static boolean delMemo ( MemoInfo memo )  {
         if ( ! activateConnection ( ) )  { 
             return false;
@@ -154,6 +172,11 @@ public class MSDatabase extends Database {
         return false;
     }
     
+    /**
+     *
+     * @param memo
+     * @return
+     */
     public static boolean readMemo ( MemoInfo memo )  {
         if ( memo == null || ! activateConnection ( ) )  {
             return false;

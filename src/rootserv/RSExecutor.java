@@ -34,12 +34,22 @@ import user.User;
 public class RSExecutor extends Executor {
     private RSSnoop         snoop;
     
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public RSExecutor ( RootServ service, RSSnoop snoop )  {
         super ( );
         this.service        = service;
         this.snoop          = snoop;
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         Oper oper = user.getSID().getOper ( );
   
@@ -221,6 +231,14 @@ public class RSExecutor extends Executor {
     }
     
     /* OUTPUT */
+
+    /**
+     *
+     * @param code
+     * @param args
+     * @return
+     */
+
     public String output ( HashString code, String... args )  {
         if ( code.is(ACCESS_DENIED) ) {
             return "Access denied!";

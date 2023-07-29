@@ -33,6 +33,12 @@ public class MemoInfo {
     private boolean         read;
     private String          stampString;
 
+    /**
+     *
+     * @param name
+     * @param sender
+     * @param message
+     */
     public MemoInfo ( String name, String sender, String message )  {
         this.name           = name;
         this.message        = message;
@@ -40,6 +46,15 @@ public class MemoInfo {
         this.read           = false;
     }
     
+    /**
+     *
+     * @param id
+     * @param name
+     * @param sender
+     * @param message
+     * @param stamp
+     * @param read
+     */
     public MemoInfo ( int id, String name, String sender, String message,  long stamp, boolean read )  {
         this.id             = id;
         this.name           = name;
@@ -50,44 +65,83 @@ public class MemoInfo {
 //        this.stampString    = Handler.getSdf ( ) .format ( new Date ( this.stamp*1000 )  );
     }
     
+    /**
+     *
+     * @return
+     */
     public int getID ( ) { 
         return this.id;
     } 
     
+    /**
+     *
+     * @param id
+     */
     public void setID ( int id ) { 
         this.id = id;
     } 
     
+    /**
+     *
+     * @return
+     */
     public String getName ( ) { 
         return this.name;
     } 
     
+    /**
+     *
+     * @return
+     */
     public String getMessage ( ) {
         return this.message;
     } 
     
+    /**
+     *
+     * @return
+     */
     public String getSender ( ) { 
         return this.sender;
     } 
     
+    /**
+     *
+     * @return
+     */
     public long getStamp ( ) { 
         return this.stamp;
     }
 
+    /**
+     *
+     * @param stamp
+     */
     public void setStamp ( long stamp ) { 
         Date date = new Date ( this.stamp * 1000 );
         this.stamp = stamp; 
         this.stampString = Handler.getSdf ( ) .format ( date );
     } 
   
+    /**
+     *
+     * @return
+     */
     public boolean isRead ( ) { 
         return this.read;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getStampStr ( ) { 
         return this.stampString;
     }
     
+    /**
+     *
+     */
     public void setRead ( ) { 
         this.read = true;
     }

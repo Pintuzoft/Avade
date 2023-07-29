@@ -49,12 +49,22 @@ public class OSExecutor extends Executor {
     private OSSnoop snoop;
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
+    /**
+     *
+     * @param service
+     * @param snoop
+     */
     public OSExecutor ( OperServ service, OSSnoop snoop )  {
         super ( );
         this.service        = service;
         this.snoop          = snoop; 
     }
 
+    /**
+     *
+     * @param user
+     * @param cmd
+     */
     public void parse ( User user, String[] cmd )  {
         this.found = true; /* Assume that everything will go correctly */
         HashString command = new HashString ( cmd[3] );
@@ -1450,6 +1460,12 @@ public class OSExecutor extends Executor {
         }
     }
       
+    /**
+     *
+     * @param code
+     * @param args
+     * @return
+     */
     public String output ( HashString code, String... args )  {
         if ( code.is(SYNTAX_ERROR) ) {
             return "Syntax: /OperServ "+args[0];            

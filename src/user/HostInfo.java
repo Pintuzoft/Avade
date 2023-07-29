@@ -33,6 +33,11 @@ public class HostInfo {
     private int ipHash24;
     private boolean isIPv4;
     
+    /**
+     *
+     * @param ip
+     * @param host
+     */
     public HostInfo ( long ip, String host )  {
         this.ip   = intToIP ( ip );
         this.ipHash = this.ip.hashCode();
@@ -59,30 +64,68 @@ public class HostInfo {
         return String.format ( "%d.%d.%d.%d",   ( bytes >> 24 & 0xff ) ,  ( bytes >> 16 & 0xff ) ,  ( bytes >> 8 & 0xff ) ,  ( bytes & 0xff )  );
     }
     
+    /**
+     *
+     * @return
+     */
     public String getHost ( ) { 
         return this.host;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getIp ( ) { 
         return this.ip;
     }
+
+    /**
+     *
+     * @return
+     */
     public String getRange ( ) { 
         return this.range;
     }
+
+    /**
+     *
+     * @return
+     */
     public int getIpHash ( ) { 
         return this.ipHash;
     }
+
+    /**
+     *
+     * @return
+     */
     public int getRangeHash ( ) { 
         return this.ipHash24;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getRealHost ( ) { 
         return this.realHost;
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public boolean ipMatch ( int hash ) {
         return this.ipHash == hash;
     }
+
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public boolean rangeMatch ( int hash ) {
         return this.ipHash24 == hash;
     }

@@ -91,6 +91,9 @@ public class Handler extends HashNumeric {
     private static boolean                  sanity;
     private HashString bufhash;
     
+    /**
+     *
+     */
     public Handler ( )  { 
         db              = new Database ( );
         Handler.initServices ( );
@@ -107,6 +110,9 @@ public class Handler extends HashNumeric {
         this.cmdQueue   = new Queue ( )  {};
     }
     
+    /**
+     *
+     */
     public static void initServices ( )  {
         initService ( ROOTSERV, root );
         initService ( OPERSERV, oper );
@@ -119,6 +125,9 @@ public class Handler extends HashNumeric {
         Database.activateConnection();
     }
     
+    /**
+     *
+     */
     public static void unloadServices ( ) {
         root = null;
         oper = null;
@@ -129,6 +138,11 @@ public class Handler extends HashNumeric {
         guest = null;
     }
     
+    /**
+     *
+     * @param type
+     * @param service
+     */
     public static void initService ( HashString type, Service service ) {
         if ( service == null ) {
             if ( type.is(ROOTSERV) ) {
@@ -155,6 +169,10 @@ public class Handler extends HashNumeric {
         } 
     }
     
+    /**
+     *
+     * @param read
+     */
     public void process ( String read )  {
         User uBuf;
         NickInfo nBuf;
@@ -717,6 +735,12 @@ public class Handler extends HashNumeric {
             this.forceOperModes ( user );
         }
     }
+
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static boolean isChanName ( String name ) {
         return name.substring(0,1).matches ( Pattern.quote ( "#" ) );
     }
@@ -744,6 +768,14 @@ public class Handler extends HashNumeric {
 
     /* Take array and cut it into string starting at position. Good for 
        reading in reasons, comments, messages */
+
+    /**
+     *
+     * @param data
+     * @param pos
+     * @return
+     */
+
     public static String cutArrayIntoString ( String[] data, int pos ) {
         if ( data == null || data.length < pos ) {
             return null;
@@ -753,6 +785,10 @@ public class Handler extends HashNumeric {
         return arr[pos];
     }
     
+    /**
+     *
+     * @param user
+     */
     public static void forceOperModes ( User user ) {
         if ( Proc.getConf().getBoolean ( FORCEMODES ) ) {
             if ( user.getModes().is ( OPER ) && ! user.isAtleast ( IRCOP ) ) {
@@ -785,6 +821,10 @@ public class Handler extends HashNumeric {
         } 
     }
 
+    /**
+     *
+     * @param sid
+     */
     public static void newSid ( ServicesID sid )  {
         try { 
             sidList.put ( sid.getCode(), sid ); 
@@ -793,10 +833,20 @@ public class Handler extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static User findUser ( String name ) {
         return findUser ( new HashString ( name ) );
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static User findUser ( HashString name ) {
         //for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
         //    if ( entry.getValue().is(name) )  {
@@ -809,10 +859,20 @@ public class Handler extends HashNumeric {
         return ( uList.containsKey(name.getCode()) ? uList.get(name.getCode()) : null );
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static Chan findChan ( String name ) {
         return findChan ( new HashString ( name ) );
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static Chan findChan ( HashString name )  {
         //for ( HashMap.Entry<BigInteger,Chan> entry : cList.entrySet() ) {
         //    if ( entry.getValue().is(name) )  {
@@ -824,11 +884,21 @@ public class Handler extends HashNumeric {
         return ( cList.containsKey(name.getCode()) ? cList.get(name.getCode()) : null );
     }
     
+    /**
+     *
+     * @param source
+     * @return
+     */
     public static Server findServer ( String source )  {
         HashString name = new HashString ( source );
         return findServer ( name );
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public static Server findServer ( HashString name )  {
         for ( Server server : sList )  {
             if ( server.is(name) )  {
@@ -849,6 +919,10 @@ public class Handler extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param user
+     */
     public static void squitUser ( User user )  {
         try {
             user.getSID().updateStamp();
@@ -859,6 +933,10 @@ public class Handler extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param user
+     */
     public static void removeUser ( User user ) {
         try {
             user.getSID().remUser();
@@ -868,6 +946,10 @@ public class Handler extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param user
+     */
     public static void deleteUser ( User user )  {
         try {
             user.getSID().remUser ( ); 
@@ -879,6 +961,10 @@ public class Handler extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param server
+     */
     public static void deleteServer ( Server server )  {
         try {
             sList.remove ( server ); 
@@ -887,6 +973,10 @@ public class Handler extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param u
+     */
     public void doRecursiveUList ( User u )  { 
         try {
             Server sHub = findServer ( Proc.getConf().get ( HUBNAME ) );
@@ -898,15 +988,27 @@ public class Handler extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public static Database getDB ( )  {
         return db; 
     }
 
+    /**
+     *
+     * @return
+     */
     public static SimpleDateFormat getSdf ( ) { 
         return sdf; 
     }
     
-
+    /**
+     *
+     * @param id
+     * @return
+     */
     public static ServicesID findSid ( long id )  {
         HashString target = new HashString ( ""+id );
         try {
@@ -921,6 +1023,12 @@ public class Handler extends HashNumeric {
     }
    
     /* MAINTENANCE METHODS */
+
+    /**
+     *
+     * @return
+     */
+
     public int runSecMaintenance() {
         int todoAmount = 0;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
@@ -934,6 +1042,10 @@ public class Handler extends HashNumeric {
         return todoAmount;
     }
       
+    /**
+     *
+     * @param servicesId
+     */
     public static void addUpdateSID ( ServicesID servicesId ) {
         for ( ServicesID sid : updServicesID ) {
             if ( sid.getID() == servicesId.getID() ) {
@@ -958,6 +1070,11 @@ public class Handler extends HashNumeric {
         }
         return updServicesID.size();
     }
+
+    /**
+     *
+     * @return
+     */
     public int runMinuteMaintenance ( )  {
         int todoAmount = 0;
         try {
@@ -974,6 +1091,11 @@ public class Handler extends HashNumeric {
         }
         return todoAmount;
     }
+
+    /**
+     *
+     * @return
+     */
     public int runHourMaintenance ( )  {
         int todoAmount = 0;
         try {
@@ -1059,24 +1181,58 @@ public class Handler extends HashNumeric {
         
     }
     
+    /**
+     *
+     * @return
+     */
     public static RootServ getRootServ ( ) { 
         return root;
     }
+
+    /**
+     *
+     * @return
+     */
     public static ChanServ getChanServ ( ) { 
         return chan;
     }
+
+    /**
+     *
+     * @return
+     */
     public static NickServ getNickServ ( ) { 
         return nick;
     }
+
+    /**
+     *
+     * @return
+     */
     public static MemoServ getMemoServ ( ) { 
         return memo;
     } 
+
+    /**
+     *
+     * @return
+     */
     public static GuestServ getGuestServ ( ) { 
         return guest;
     }
+
+    /**
+     *
+     * @return
+     */
     public static OperServ getOperServ ( ) { 
         return oper;
     }
+
+    /**
+     *
+     * @return
+     */
     public static Service getGlobal ( ) { 
         return global;
     }
@@ -1085,6 +1241,11 @@ public class Handler extends HashNumeric {
         ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" 371 "+user.getString ( NAME ) +" :"+name+" has been disabled, try again later." ); 
     }
      
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public static ArrayList<User> findUsersByNick ( NickInfo ni )  {
         ArrayList<User> ul = new ArrayList<> ( );
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
@@ -1095,9 +1256,20 @@ public class Handler extends HashNumeric {
         return ul;
     }
      
+    /**
+     *
+     * @param mask
+     * @return
+     */
     public static ArrayList<User> findUsersByMask ( String mask )  {
         return findUsersByMask ( new HashString ( mask ) );
     }
+
+    /**
+     *
+     * @param mask
+     * @return
+     */
     public static ArrayList<User> findUsersByMask ( HashString mask )  {
         ArrayList<User> ul = new ArrayList<> ( );
         User user = null;
@@ -1112,7 +1284,11 @@ public class Handler extends HashNumeric {
         return ul;        
     }
     
-    
+    /**
+     *
+     * @param ban
+     * @return
+     */
     public static ArrayList<User> findUsersByBan ( ServicesBan ban ) {
         ArrayList<User> ul = new ArrayList<>();
         User u = null;
@@ -1133,8 +1309,11 @@ public class Handler extends HashNumeric {
         return ul;
     }
 
-    
-   
+    /**
+     *
+     * @param nick
+     * @return
+     */
     public static ArrayList<User> findUsersByNick ( String nick ) {
         ArrayList<User> ul = new ArrayList<> ( );
         User user = null;
@@ -1147,6 +1326,11 @@ public class Handler extends HashNumeric {
         return ul;
     }
 
+    /**
+     *
+     * @param gcos
+     * @return
+     */
     public static ArrayList<User> findUsersByGcos ( String gcos ) {
         ArrayList<User> ul = new ArrayList<> ( );
         User user = null;
@@ -1159,6 +1343,11 @@ public class Handler extends HashNumeric {
         return ul;
     }
         
+    /**
+     *
+     * @param data
+     * @return
+     */
     public static String expireToTime ( String data )  {
         String          strBuf;
         String          state;
@@ -1198,6 +1387,12 @@ public class Handler extends HashNumeric {
         return  "INTERVAL "+( amount * multiply )+" "+timeUnit;
     }
  
+    /**
+     *
+     * @param date
+     * @param data
+     * @return
+     */
     public static Date expireToDate ( Date date, String data ) {
         String strBuf;
         int ms = 0;
@@ -1228,6 +1423,12 @@ public class Handler extends HashNumeric {
         return date;
     }
     
+    /**
+     *
+     * @param datetime
+     * @param data
+     * @return
+     */
     public static String expireToDateString ( String datetime, String data ) {
         int ms = 60*1000;
         int amount;
@@ -1246,6 +1447,12 @@ public class Handler extends HashNumeric {
         return dateFormat.format ( date );
     }
     
+    /**
+     *
+     * @param datetime
+     * @param data
+     * @return
+     */
     public static String expireWithCharToDateString ( String datetime, String data ) {
         String          strBuf;
         String          state;
@@ -1295,11 +1502,18 @@ public class Handler extends HashNumeric {
         oper.sendSpamFilter ( );
     }
 
-    
+    /**
+     *
+     * @return
+     */
     public static HashMap<BigInteger,User> getUserList ( ) {
         return uList;
     }
 
+    /**
+     *
+     * @return
+     */
     public static boolean sanityCheck() {
         return sanity;
     }
@@ -1341,6 +1555,10 @@ public class Handler extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public static ArrayList<Server> getServerList ( ) {
         return sList;
     }
@@ -1349,7 +1567,11 @@ public class Handler extends HashNumeric {
         Proc.reConnect();
     }
 
-    
+    /**
+     *
+     * @param ci
+     * @return
+     */
     public static ArrayList<User> findIdentifiedUsersByChan ( ChanInfo ci ) {
         ArrayList<User> iList = new ArrayList<>();
         User user = null;
@@ -1362,10 +1584,18 @@ public class Handler extends HashNumeric {
         return iList;
     }
 
+    /**
+     *
+     * @return
+     */
     public static HashMap<BigInteger, ServicesID> getSIDs ( ) {
         return sidList;
     }
 
+    /**
+     *
+     * @return
+     */
     public static HashMap<BigInteger,Chan> getChanList ( ) {
         return cList;
     }

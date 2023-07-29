@@ -51,6 +51,15 @@ public class LogAccess {
     private String stamp;
     private boolean isChan;
     
+    /**
+     *
+     * @param name
+     * @param nick
+     * @param oldaccess
+     * @param access
+     * @param instater
+     * @param stamp
+     */
     public LogAccess ( String name, String nick, String oldaccess, String access, String instater, String stamp ) {
         this.name = name;
         this.nick = nick;
@@ -62,30 +71,58 @@ public class LogAccess {
         
     }
 
+    /**
+     *
+     * @return
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getNick() {
         return nick;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getOldaccess() {
         return oldaccess;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getAccess() {
         return access;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getInstater() {
         return instater;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getStamp() {
         return stamp;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean isChan() {
         return isChan;
     }

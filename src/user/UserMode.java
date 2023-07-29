@@ -30,6 +30,9 @@ public class UserMode extends HashNumeric {
     private boolean admin;
     private boolean ident;
     
+    /**
+     *
+     */
     public UserMode ( )  {
         this.oper   = false;
         this.sadmin = false;
@@ -37,6 +40,11 @@ public class UserMode extends HashNumeric {
         this.ident  = false;
     }
 
+    /**
+     *
+     * @param type
+     * @param data
+     */
     public void set ( HashString type, String[] data )  {
         if ( type.is(SERVER) ) {
             this.setModeString ( data[4] );
@@ -45,6 +53,10 @@ public class UserMode extends HashNumeric {
         }
     }
   
+    /**
+     *
+     * @param data
+     */
     public void setModeString ( String data )  {
         boolean state = false;
         Character ch;
@@ -81,6 +93,11 @@ public class UserMode extends HashNumeric {
         debug ( );
     }
  
+    /**
+     *
+     * @param mode
+     * @param state
+     */
     public void set ( HashString mode, boolean state )  {
         if ( mode.is(OPER) ) {
             this.oper = state;
@@ -96,6 +113,11 @@ public class UserMode extends HashNumeric {
         }
     }
       
+    /**
+     *
+     * @param mode
+     * @return
+     */
     public boolean is ( HashString mode )  {
         if ( mode.is(OPER) ) {
             return this.oper;

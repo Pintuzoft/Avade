@@ -48,7 +48,10 @@ public class Chan extends HashNumeric {
     
     /* STATIC */
 
-
+    /**
+     *
+     * @param data
+     */
     public Chan ( String[] data ) {
         this.name           = new HashString ( data[3] );
         this.modes          = new ChanMode ( );
@@ -61,6 +64,10 @@ public class Chan extends HashNumeric {
         this.checkRelay();
     }
        
+    /**
+     *
+     * @param code
+     */
     public Chan ( HashString code )  {
         this.name = code;
     }
@@ -76,14 +83,27 @@ public class Chan extends HashNumeric {
         this.addUserList ( data, 6 );
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getRelay ( ) {
         return this.relay;
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean isRelay ( ) {
         return this.isRelay;
     } 
 
+    /**
+     *
+     * @param data
+     * @param offset
+     */
     public void addUserList ( String[] data, int offset )  {
         // :irc.avade.net SJOIN 1374147654 #friends +c  :@Guest33015 @DreamHealer 
         //      0           1       2       3       4  5     6+
@@ -132,6 +152,9 @@ public class Chan extends HashNumeric {
         }
     }
     
+    /**
+     *
+     */
     public void addCheckUsers ( ) {
         for ( User u : uList ) {
             ChanServ.addCheckUser ( this, u );
@@ -144,6 +167,10 @@ public class Chan extends HashNumeric {
         }
     }
     
+    /**
+     *
+     * @param cmd
+     */
     public void chMode ( String[] cmd )  {
         // :DreamHealer MODE #friends 1374147654 +oooo Guest33015 Guest33015 Guest33015 Guest33015
         //      0        1      2       3         4      5+
@@ -179,6 +206,14 @@ public class Chan extends HashNumeric {
            } 
         }
     }
+
+    /**
+     *
+     * @param user
+     * @param access
+     * @param isop
+     * @param isvoice
+     */
     public void setModeUserOP ( User user, HashString access, boolean isop, boolean isvoice ) {
         if ( access.is(OP) && ! isop )  {
             this.uList.remove ( user );
@@ -193,6 +228,14 @@ public class Chan extends HashNumeric {
             }
         }
     }
+
+    /**
+     *
+     * @param user
+     * @param access
+     * @param isop
+     * @param isvoice
+     */
     public void setModeUserVoice ( User user, HashString access, boolean isop, boolean isvoice ) {
          if ( access.is(VOICE) && ! isvoice )  {
             this.uList.remove ( user );
@@ -207,6 +250,14 @@ public class Chan extends HashNumeric {
             }
         }
     }
+
+    /**
+     *
+     * @param user
+     * @param mode
+     * @param access
+     * @param isIRCop
+     */
     public void chModeUser ( User user, HashString mode, HashString access, boolean isIRCop )  { 
         try {            
             if ( user == null )  {
@@ -231,6 +282,11 @@ public class Chan extends HashNumeric {
              Proc.log ( Chan.class.getName ( ) , e );
         }
     }
+
+    /**
+     *
+     * @param user
+     */
     public void remUser ( User user )  {
         ArrayList<User> rList = new ArrayList<>();
         for ( User o : oList ) {
@@ -256,6 +312,11 @@ public class Chan extends HashNumeric {
         }
     }
 
+    /**
+     *
+     * @param acc
+     * @param u
+     */
     public void addUser ( HashString acc, User u )  {
         if ( u == null )  {
              return;
@@ -273,8 +334,11 @@ public class Chan extends HashNumeric {
          
     }
     
-   
-    
+    /**
+     *
+     * @param type
+     * @return
+     */
     public HashString getString ( HashString type )  {
         if ( type.is(NAME) ) {
             return this.name;
@@ -284,6 +348,11 @@ public class Chan extends HashNumeric {
         }
     }
   
+    /**
+     *
+     * @param type
+     * @return
+     */
     public ArrayList<User> getList ( HashString type )  { 
         if ( type.is(OP) ) {
             return this.oList;
@@ -304,6 +373,11 @@ public class Chan extends HashNumeric {
         return new ArrayList<>( );
     }
       
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isOp ( User user )  {
         for ( User u : this.oList )  {
             if ( user.hashCode ( ) == u.hashCode ( )  )  {
@@ -313,6 +387,11 @@ public class Chan extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isVo ( User user )  {
         for ( User u : this.vList )  {
             if ( user.hashCode ( )  == u.hashCode ( )  )  {
@@ -322,6 +401,11 @@ public class Chan extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param user
+     * @return
+     */
     public boolean isUser ( User user )  {
         for ( User u : this.uList )  {
             if ( user.hashCode ( )  == u.hashCode ( )  )  {
@@ -331,10 +415,20 @@ public class Chan extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     * @param nick
+     * @return
+     */
     public boolean nickIsPresent ( String nick ) {
         return this.nickIsPresent ( new HashString(nick) );
     }
     
+    /**
+     *
+     * @param nick
+     * @return
+     */
     public boolean nickIsPresent ( HashString nick )  {
         for ( User user : this.getList ( ALL )  )  {
             if ( user.hasAccess(nick) ) {
@@ -344,14 +438,25 @@ public class Chan extends HashNumeric {
         return false;
     }
     
+    /**
+     *
+     */
     public void clearUsers ( )  {
         this.oList = new ArrayList<>( );
         this.vList = new ArrayList<>( );
         this.uList = new ArrayList<>( );
     }
     
+    /**
+     *
+     * @return
+     */
     public ChanMode getModes ( )           { return this.modes; }
     
+    /**
+     *
+     * @return
+     */
     public int size ( )    { 
         try { 
             return  ( this.uList.size ( )  + this.oList.size ( )  + this.vList.size ( )  );
@@ -360,6 +465,10 @@ public class Chan extends HashNumeric {
         }  
     }
      
+    /**
+     *
+     * @return
+     */
     public boolean empty ( ) { 
         try { 
             return  ( this.size ( ) == 0 ); 
@@ -368,38 +477,75 @@ public class Chan extends HashNumeric {
         }  
     }
   
+    /**
+     *
+     * @return
+     */
     public Topic getTopic ( ) { 
         return topic;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getName () {
         return this.name;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getNameStr () {
         return this.name.getString();
     }
     
+    /**
+     *
+     * @param topic
+     */
     public void setTopic ( Topic topic ) { 
         this.topic = topic;
     } 
     
+    /**
+     *
+     */
     public void toggleSaJoin ( ) {
         this.sajoin = ! this.sajoin;
     }
     
+    /**
+     *
+     * @return
+     */
     public boolean isSaJoin ( ) {
         return this.sajoin;
     }
     
+    /**
+     *
+     * @param name
+     * @return
+     */
     public boolean is ( HashString name ) {
         return this.name.is(name);
     }
     
+    /**
+     *
+     * @param chan
+     * @return
+     */
     public boolean is ( Chan chan ) {
         return this.name.is ( chan );
     }   
     
+    /**
+     *
+     * @return
+     */
     public Long getCreatedOn ( ) {
         return this.createdOn;
     }

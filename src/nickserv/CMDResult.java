@@ -30,47 +30,91 @@ public class CMDResult {
     private NSAuth          auth;
     private HashString      command;
 
+    /**
+     *
+     */
     public CMDResult ( )  {
         this.nick       = null;
         this.status     = new HashString ("");
     }
     
+    /**
+     *
+     * @param nick
+     */
     public void setNick ( NickInfo nick ) { 
         this.nick = nick;
     }
     
+    /**
+     *
+     * @param str
+     */
     public void setString1 ( String str ) { 
         this.str1 = str;
     }
     
+    /**
+     *
+     * @param status
+     */
     public void setStatus ( HashString status ) { 
         this.status = status;
     }    
     
+    /**
+     *
+     * @param auth
+     */
     public void setAuth ( NSAuth auth ) { 
         this.auth = auth;
     }    
     
+    /**
+     *
+     * @return
+     */
     public NickInfo getNick ( ) { 
         return this.nick;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getStatus ( ) { 
         return this.status;
     }
     
+    /**
+     *
+     * @param hash
+     * @return
+     */
     public boolean is ( HashString hash ) {
         return status.is(hash);
     }
     
+    /**
+     *
+     * @return
+     */
     public String getString1 ( ) { 
         return this.str1;
     }
     
+    /**
+     *
+     * @return
+     */
     public NSAuth getAuth ( ) { 
         return this.auth;
     }
 
+    /**
+     *
+     * @return
+     */
     public HashString getCommand ( ) {
         return this.command;
     }

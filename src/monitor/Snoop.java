@@ -29,14 +29,36 @@ import user.User;
  * @author DreamHealer
  */
 public class Snoop extends HashNumeric {
+
+    /**
+     *
+     */
     protected HashString chan;
+
+    /**
+     *
+     */
     protected Service service;
+
+    /**
+     *
+     */
     protected static ArrayList<SnoopLog> logs = new ArrayList<>();
             
+    /**
+     *
+     */
     public Snoop ( )  { 
         /* nothingness */
     }
 
+    /**
+     *
+     * @param ok
+     * @param user
+     * @param arr
+     * @return
+     */
     public String fixArray ( boolean ok, User user, String[] arr )  {
          
         String str = "";
@@ -57,6 +79,10 @@ public class Snoop extends HashNumeric {
         return str;
     }
 
+    /**
+     *
+     * @return
+     */
     public int maintenance ( ) {
         int todoAmount = 0;
         todoAmount += writeLogs ( );
@@ -78,10 +104,21 @@ public class Snoop extends HashNumeric {
         return logs.size();
     }
     
+    /**
+     *
+     * @param size
+     * @return
+     */
     protected static int getIndexFromSize ( int size ) {
         return size > 5 ? 5 : size;
     }
     
+    /**
+     *
+     * @param ok
+     * @param user
+     * @param msg
+     */
     protected void sendTo ( boolean ok, User user, String[] msg )  {
         this.service.send ( 
             Service.RAW, 
@@ -89,12 +126,28 @@ public class Snoop extends HashNumeric {
                     " PRIVMSG "+this.chan+" :"+this.fixArray ( ok, user, msg )
         );
     }
+
+    /**
+     *
+     * @param ok
+     * @param user
+     * @param msg
+     * @param error
+     */
     protected void sendTo ( boolean ok, User user, String[] msg, String error )  {
         this.service.send ( 
             Service.RAW, 
             ":"+this.service.getName()+" PRIVMSG "+this.chan+" :"+this.fixArray ( ok, user, msg )+" ["+error+"]"
         );
     }
+
+    /**
+     *
+     * @param ok
+     * @param target
+     * @param user
+     * @param message
+     */
     public void log ( boolean ok, HashString target, User user, String[] message )  {
         logs.add ( new SnoopLog ( target, this.fixArray ( ok, user, message ) ) );
     }

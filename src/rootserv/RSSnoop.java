@@ -29,6 +29,10 @@ import user.User;
  */
 public class RSSnoop extends Snoop {
 
+    /**
+     *
+     * @param service
+     */
     public RSSnoop ( Service service )  {
         super ( );
         HashString channel  = Proc.getConf().get(SNOOPROOTSERV);
@@ -36,6 +40,12 @@ public class RSSnoop extends Snoop {
         this.chan           = channel;
     }
  
+    /**
+     *
+     * @param ok
+     * @param user
+     * @param cmd
+     */
     public void msg ( boolean ok, User user, String[] cmd ) {
         this.sendTo ( ok, user, cmd );
     }

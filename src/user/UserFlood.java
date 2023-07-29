@@ -30,6 +30,10 @@ public class UserFlood extends HashNumeric {
     private int warns;
     private long lastWarn;
     
+    /**
+     *
+     * @param user
+     */
     public UserFlood ( User user ) {
         this.user = user;
         this.counter = 0;
@@ -37,6 +41,10 @@ public class UserFlood extends HashNumeric {
         this.lastWarn = System.currentTimeMillis ( );
     }
   
+    /**
+     *
+     * @param service
+     */
     public void incCounter ( Service service ) {
 
         if ( this.user.isOper() ) {
@@ -56,6 +64,9 @@ public class UserFlood extends HashNumeric {
         }
     }
     
+    /**
+     *
+     */
     public void maintenence () {
         long now = System.currentTimeMillis ( );
         

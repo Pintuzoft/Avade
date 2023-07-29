@@ -27,6 +27,13 @@ public class Mail {
     private String auth;
     private String body;
     
+    /**
+     *
+     * @param to
+     * @param subject
+     * @param auth
+     * @param body
+     */
     public Mail ( String to, String subject, String auth, String body )  {
         this.to         = to;
         this.subject    = subject;
@@ -35,15 +42,34 @@ public class Mail {
         System.out.println ( "Mail ( "+this.to+", "+this.subject+", "+this.auth+", "+this.body+" );" );
     }
     
+    /**
+     *
+     * @return
+     */
     public String getTo ( ) { 
         return this.to;
     } 
+
+    /**
+     *
+     * @return
+     */
     public String getSubject ( ) { 
         return this.subject;
     }     
+
+    /**
+     *
+     * @return
+     */
     public String getAuth ( ) { 
         return this.auth;
     } 
+
+    /**
+     *
+     * @return
+     */
     public String getBody ( ) { 
         return this.body;
     }

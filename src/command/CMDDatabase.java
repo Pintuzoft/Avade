@@ -39,6 +39,10 @@ public class CMDDatabase extends Database {
     private static ResultSet            res2;
     private static PreparedStatement    preparedStmt;
  
+    /**
+     *
+     * @return
+     */
     public static LinkedList<Command> getCommands ( )  {
         NickInfo ni;
         ChanInfo ci;
@@ -84,7 +88,10 @@ public class CMDDatabase extends Database {
         return cList;
     }
     
-      
+    /**
+     *
+     * @param id
+     */
     public static void deleteCommand ( String id )  {
         if ( ! activateConnection ( )  )  {
             return;

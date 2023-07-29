@@ -22,12 +22,23 @@ package core;
  * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class Changes extends HashNumeric {
+
+    /**
+     *
+     */
     protected boolean changed;
     
+    /**
+     *
+     */
     public Changes ( ) {
         this.changed = false;
     }
      
+    /**
+     *
+     * @return
+     */
     public boolean changed ( ) {
         return this.changed;
     }

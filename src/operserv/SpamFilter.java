@@ -23,28 +23,117 @@ public class SpamFilter extends HashNumeric {
     private String reason;
     private String stamp;
     private int bits;
+
+    /**
+     *
+     */
     public static final int SF_FLAG_NONE        = 000000;
+
+    /**
+     *
+     */
     public static final int SF_FLAG_STRIPCTRL   = 0x0001;
+
+    /**
+     *
+     */
     public static final int SF_FLAG_STRIPALL    = 0x0002;
+
+    /**
+     *
+     */
     public static final int SF_FLAG_REGEXP      = 0x0004;
+
+    /**
+     *
+     */
     public static final int SF_FLAG_BREAK       = 0x0008;   /* We dont use this */
+
+    /**
+     *
+     */
     public static final int SF_FLAG_MATCHREG    = 0x20000;
+
+    /**
+     *
+     */
     public static final int SF_CMD_PRIVMSG      = 0x0010;
+
+    /**
+     *
+     */
     public static final int SF_CMD_NOTICE       = 0x0020;
+
+    /**
+     *
+     */
     public static final int SF_CMD_KICK         = 0x0040;
+
+    /**
+     *
+     */
     public static final int SF_CMD_QUIT         = 0x0080;
+
+    /**
+     *
+     */
     public static final int SF_CMD_TOPIC        = 0x0100;
+
+    /**
+     *
+     */
     public static final int SF_CMD_AWAY         = 0x0200;
+
+    /**
+     *
+     */
     public static final int SF_CMD_PART         = 0x0400;
+
+    /**
+     *
+     */
     public static final int SF_CMD_CHANNEL      = 0x0800;
+
+    /**
+     *
+     */
     public static final int SF_ACT_WARN         = 0x1000;
+
+    /**
+     *
+     */
     public static final int SF_ACT_LAG          = 0x2000;
+
+    /**
+     *
+     */
     public static final int SF_ACT_REPORT       = 0x4000;
+
+    /**
+     *
+     */
     public static final int SF_ACT_BLOCK        = 0x8000;
+
+    /**
+     *
+     */
     public static final int SF_ACT_KILL         = 0x10000;
+
+    /**
+     *
+     */
     public static final int SF_ACT_AKILL        = 0x40000;
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
+    /**
+     *
+     * @param id
+     * @param pattern
+     * @param flags
+     * @param instater
+     * @param reason
+     * @param stamp
+     */
     public SpamFilter ( long id, String pattern, String flags, String instater, String reason, String stamp ) {
         this.id = id;
         this.pattern = new HashString ( pattern );
@@ -62,30 +151,58 @@ public class SpamFilter extends HashNumeric {
         this.flagsToBits();
     }
     
+    /**
+     *
+     * @return
+     */
     public long getID ( ) {
         return this.id;
     }
     
+    /**
+     *
+     * @return
+     */
     public HashString getPattern() {
         return this.pattern;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getFlags() {
         return this.flags;
     }
     
+    /**
+     *
+     * @return
+     */
     public int getBitFlags () {
         return this.bits;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getInstater() {
         return this.instater;
     }
     
+    /**
+     *
+     * @return
+     */
     public String getReason() {
         return this.reason;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getStamp() {
         return this.stamp;
     }

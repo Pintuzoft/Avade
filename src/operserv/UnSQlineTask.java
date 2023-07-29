@@ -14,10 +14,18 @@ import java.util.TimerTask;
  */
 public class UnSQlineTask extends TimerTask {
     private String nick;
+
+    /**
+     *
+     * @param nick
+     */
     public UnSQlineTask ( String nick ) {
         this.nick = nick;
     }
     
+    /**
+     *
+     */
     @Override
     public void run() {
         Handler.getOperServ().sendServ ( "UNSQLINE "+this.nick );

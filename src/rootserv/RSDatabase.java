@@ -48,6 +48,14 @@ public class RSDatabase extends Database {
 +-------------+--------+-------------+                                                                                                                                                                                                       
 2 rows in set  ( 0.00 sec )        
     */
+
+    /**
+     *
+     * @param sra
+     * @param target
+     * @return
+     */
+
     public static boolean addSra ( NickInfo sra, NickInfo target )  {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -75,6 +83,11 @@ public class RSDatabase extends Database {
         return true;
     }
     
+    /**
+     *
+     * @param ni
+     * @return
+     */
     public static boolean delSra ( NickInfo ni )  {
         if ( ! activateConnection ( )  )  {
             return false;

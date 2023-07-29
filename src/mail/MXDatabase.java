@@ -33,6 +33,13 @@ public class MXDatabase extends Database {
     private static ResultSet res2;
     
     /* NickServ Methods */
+
+    /**
+     *
+     * @param mail
+     * @return
+     */
+
     public static int sendMail ( Mail mail )  { 
         if ( ! activateConnection ( ) )  {
             return -2;

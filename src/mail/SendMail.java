@@ -30,11 +30,21 @@ import nickserv.NickInfo;
  */
 public class SendMail extends HashNumeric {
     
+    /**
+     *
+     */
     public SendMail ( ) {
         /* nothingness */
     }
     
     /* REGISTER MAIL */
+
+    /**
+     *
+     * @param ni
+     * @param auth
+     */
+
     public static void sendNickRegisterMail ( NickInfo ni, NSAuth auth ) {
         Mail mail = new Mail (
             ni.getString ( MAIL ), 
@@ -51,6 +61,13 @@ public class SendMail extends HashNumeric {
     }
     
     /* NEW MEMO */
+
+    /**
+     *
+     * @param ni
+     * @param mi
+     */
+
     public static void sendNewMemo ( NickInfo ni, MemoInfo mi ) {   
         Mail mail = new Mail ( 
             ni.getString ( MAIL ), 
@@ -67,6 +84,12 @@ public class SendMail extends HashNumeric {
     }
       
     /* EXPIRE NICK */
+
+    /**
+     *
+     * @param ni
+     */
+
     public static void sendExpNick ( NickInfo ni ) {   
         Mail mail = new Mail ( 
             ni.getString ( MAIL ), 

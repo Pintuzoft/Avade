@@ -28,19 +28,48 @@ import user.User;
  */
 public class NSSnoop extends Snoop {
 
+    /**
+     *
+     * @param service
+     */
     public NSSnoop ( NickServ service )  {
         super ( );
         this.service            = service;
         this.chan               = Proc.getConf().get ( SNOOPNICKSERV );
     }
  
+    /**
+     *
+     * @param ok
+     * @param target
+     * @param user
+     * @param cmd
+     */
     public void msg ( boolean ok, HashString target, User user, String[] cmd )  { 
         this.log ( ok, target, user, cmd ); 
         this.sendTo ( ok, user, cmd ); 
     }
+
+    /**
+     *
+     * @param ok
+     * @param error
+     * @param target
+     * @param user
+     * @param cmd
+     */
     public void msg ( boolean ok, HashString error, String target, User user, String[] cmd )  {
         this.msg(ok, error, new HashString(target), user, cmd);
     }
+
+    /**
+     *
+     * @param ok
+     * @param error
+     * @param target
+     * @param user
+     * @param cmd
+     */
     public void msg ( boolean ok, HashString error, HashString target, User user, String[] cmd )  {
         String errstr = err2str(error);
         if ( ok ) {
