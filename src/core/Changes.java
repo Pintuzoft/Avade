@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
+ * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer - avade.net
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,7 +19,7 @@ package core;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class Changes extends HashNumeric {
     protected boolean changed;

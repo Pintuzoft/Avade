@@ -7,7 +7,7 @@ package core;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class Trigger extends HashNumeric {
     

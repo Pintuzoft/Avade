@@ -10,7 +10,7 @@ import java.util.ArrayList;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class DBChanges extends HashNumeric {
     private Version version;

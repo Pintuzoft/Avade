@@ -13,7 +13,7 @@ import java.util.Date;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class SpamFilter extends HashNumeric {
     private long id;

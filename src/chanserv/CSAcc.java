@@ -21,7 +21,7 @@ import user.User;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class CSAcc extends HashNumeric {
     private static Pattern IPv4 = Pattern.compile ( "^(1?(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])\\.){3}(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])$", Pattern.CASE_INSENSITIVE );

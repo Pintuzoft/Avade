@@ -11,7 +11,7 @@ import core.HashString;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class CSFlag extends HashNumeric {
     private HashString name;

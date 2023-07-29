@@ -10,7 +10,7 @@ import java.util.TimerTask;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class UnSQlineTask extends TimerTask {
     private String nick;

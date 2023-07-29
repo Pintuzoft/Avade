@@ -1,5 +1,5 @@
 /* 
- * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
+ * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer - avade.net
  *
  * This program isSet free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

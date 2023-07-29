@@ -23,7 +23,7 @@ import user.User;
  * create unique re-generative hash codes to attached to almost everywhere 
  * while not adding too much of overhead.
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class HashString {
     private String string = "";

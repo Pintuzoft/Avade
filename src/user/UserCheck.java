@@ -9,7 +9,7 @@ import channel.Chan;
 
 /**
  *
- * @author Fredrik Karlsson aka DreamHealer & avade.net
+ * @author Fredrik Karlsson aka DreamHealer - avade.net
  */
 public class UserCheck {
     private User user;
