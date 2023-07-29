@@ -36,7 +36,7 @@ public class Version extends HashNumeric {
         this.generation     = 1;
         this.year           = 23;
         this.month          = 7;
-        this.build          = 8;
+        this.build          = 9;
         this.bahamut        = "bahamut-2.1.5";
     }
     
