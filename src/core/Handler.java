@@ -443,10 +443,8 @@ public class Handler extends HashNumeric {
         int rangeCount = 0;
         User u = null;
         if ( OperServ.isWhiteListed(user.getMask()) ) {
-            Proc.log("WHITELISTED!!!");
             return;
         }
-        Proc.log("NOT WHITELISTED!!!");
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             u = entry.getValue();
             if ( u.ipMatch ( user.getHostInfo().getIpHash() ) ) {

@@ -118,11 +118,10 @@ public class MSDatabase extends Database {
             res = ps.executeQuery ( );
 
             while ( res.next ( )  )  {
-                Proc.log("0:");
                 if ( (ni = NickServ.findNick(res.getString("name"))) != null ) {
-                Proc.log("1:"+res.getString("name")+":"+res.getString("message"));
-                    ni.getMemos().add ( new MemoInfo ( res.getInt ( "id" ) ,res.getString ( "name" ) ,res.getString ( "sender" ) ,res.getString ( "message" ) ,res.getLong ( "stamp" ) ,res.getBoolean ( "readflag" )  )  );
-                Proc.log("2:"+ni.getNameStr()+":"+ni.getMemos().size());
+                    ni.getMemos().add ( 
+                            new MemoInfo ( res.getInt ( "id" ) ,res.getString ( "name" ) ,res.getString ( "sender" ) ,res.getString ( "message" ) ,res.getLong ( "stamp" ) ,res.getBoolean ( "readflag" )  ) 
+                    );
                 }
             }
             res.close ( );
