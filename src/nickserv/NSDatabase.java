@@ -834,7 +834,7 @@ public class NSDatabase extends Database {
             int $count = 0;
              
             while ( res.next ( ) ) { 
-                buf = res.getString(2).split ( Pattern.quote ( "@" ) );
+                buf = res.getString("mask").split ( Pattern.quote ( "@" ) );
                 settings = new NickSetting ( );
                 exp = new Expire ( );
                 //exp = getNickExp ( res.getString ( 1 ) );
@@ -844,13 +844,13 @@ public class NSDatabase extends Database {
                 }
                  
                 ni = new NickInfo ( 
-                    res.getString ( 1 ),
+                    res.getString ( "name" ),
                     buf[0],
                     buf[1],
-                    res.getString ( 3 ),
-                    res.getString ( 4 ),
-                    res.getString ( 5 ),
-                    res.getString ( 6 ),
+                    res.getString ( "pass" ),
+                    res.getString ( "mail" ),
+                    res.getString ( "regstamp" ),
+                    res.getString ( "stamp" ),
                     settings,
                     exp
                 );
