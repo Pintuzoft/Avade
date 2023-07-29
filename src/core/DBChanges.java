@@ -216,29 +216,29 @@ public class DBChanges extends HashNumeric {
         ArrayList<String> qList = new ArrayList<>();
         HashString salt = Proc.getConf().get ( SECRETSALT );
         // Add constraints on channels
-        qList.add ( "alter table chansetting add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );
-        qList.add ( "alter table chanaccess add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );
+        //qList.add ( "alter table chansetting add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );
+        //qList.add ( "alter table chanaccess add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );
 
         // Add nick log
-        qList.add ( "create table IF NOT EXISTS nicklog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
+        //qList.add ( "create table IF NOT EXISTS nicklog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
 
         // Add chan log
-        qList.add ( "create table IF NOT EXISTS chanlog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
+        //qList.add ( "create table IF NOT EXISTS chanlog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
 
         // Clean up log
-        qList.add ( "delete from log where body like '%[SIDENTIFY]%';" );
-        qList.add ( "delete from log where body like '%[IDEN%]%';" );
-        qList.add ( "delete from log where body like '*[REGISTER]%';" );
-        qList.add ( "delete from log where body like '%[CHANLIST]%';" );
-        qList.add ( "delete from log where body like '%[AUTH]%';" );
-        qList.add ( "delete from log where body like '%[OINFO]%';" );
-        qList.add ( "delete from log where body like '%[UINFO]%';" );
-        qList.add ( "delete from log where body like '%[LOGIN]%';" );
-        qList.add ( "delete from log where body like '%[RESEND]%';" );
-        qList.add ( "delete from log where body like '%[EMAIL]%';" );
-        qList.add ( "delete from log where body like '%[VERIFY]%';" );
-        qList.add ( "delete from log where body like '%[LIST]%';" );
-        qList.add ( "delete from log where body like '%[SEND]%';" );
+        //qList.add ( "delete from log where body like '%[SIDENTIFY]%';" );
+        //qList.add ( "delete from log where body like '%[IDEN%]%';" );
+        //qList.add ( "delete from log where body like '*[REGISTER]%';" );
+        //qList.add ( "delete from log where body like '%[CHANLIST]%';" );
+        //qList.add ( "delete from log where body like '%[AUTH]%';" );
+        //qList.add ( "delete from log where body like '%[OINFO]%';" );
+        //qList.add ( "delete from log where body like '%[UINFO]%';" );
+        //qList.add ( "delete from log where body like '%[LOGIN]%';" );
+        //qList.add ( "delete from log where body like '%[RESEND]%';" );
+        //qList.add ( "delete from log where body like '%[EMAIL]%';" );
+        //qList.add ( "delete from log where body like '%[VERIFY]%';" );
+        //qList.add ( "delete from log where body like '%[LIST]%';" );
+        //qList.add ( "delete from log where body like '%[SEND]%';" );
 
 
         // Convert stamp to datetime
@@ -249,81 +249,81 @@ public class DBChanges extends HashNumeric {
 
 
         // Nick stamp
-        qList.add ( "alter table nick add stamp2 datetime;" );
-        qList.add ( "update nick set stamp2=from_unixtime(stamp);" );
-        qList.add ( "alter table nick drop stamp;" );
-        qList.add ( "alter table nick change stamp2 stamp datetime;" );
+        //qList.add ( "alter table nick add stamp2 datetime;" );
+        //qList.add ( "update nick set stamp2=from_unixtime(stamp);" );
+        //qList.add ( "alter table nick drop stamp;" );
+        //qList.add ( "alter table nick change stamp2 stamp datetime;" );
 
         // Nick regstamp
-        qList.add ( "alter table nick add stamp2 datetime;" );
-        qList.add ( "update nick set stamp2=from_unixtime(regstamp);" );
-        qList.add ( "alter table nick drop regstamp;" );
-        qList.add ( "alter table nick change stamp2 regstamp datetime;" );
+        //qList.add ( "alter table nick add stamp2 datetime;" );
+        //qList.add ( "update nick set stamp2=from_unixtime(regstamp);" );
+        //qList.add ( "alter table nick drop regstamp;" );
+        //qList.add ( "alter table nick change stamp2 regstamp datetime;" );
 
 
         // Chan stamp
-        qList.add ( "alter table chan add stamp2 datetime;" );
-        qList.add ( "update chan set stamp2=from_unixtime(stamp);" );
-        qList.add ( "alter table chan drop stamp;" );
-        qList.add ( "alter table chan change stamp2 stamp datetime;" );
+        //qList.add ( "alter table chan add stamp2 datetime;" );
+        //qList.add ( "update chan set stamp2=from_unixtime(stamp);" );
+        //qList.add ( "alter table chan drop stamp;" );
+        //qList.add ( "alter table chan change stamp2 stamp datetime;" );
 
         // Chan regstamp
-        qList.add ( "alter table chan add stamp2 datetime;" );
-        qList.add ( "update chan set stamp2=from_unixtime(regstamp);" );
-        qList.add ( "alter table chan drop regstamp;" );
-        qList.add ( "alter table chan change stamp2 regstamp datetime;" );
+        //qList.add ( "alter table chan add stamp2 datetime;" );
+        //qList.add ( "update chan set stamp2=from_unixtime(regstamp);" );
+        //qList.add ( "alter table chan drop regstamp;" );
+        //qList.add ( "alter table chan change stamp2 regstamp datetime;" );
 
         // Encrypt passwords
-        qList.add ( "update chan set pass=aes_encrypt(pass,'"+salt+"');" );
-        qList.add ( "update nick set pass=aes_encrypt(pass,'"+salt+"');" );
+        //qList.add ( "update chan set pass=aes_encrypt(pass,'"+salt+"');" );
+        //qList.add ( "update nick set pass=aes_encrypt(pass,'"+salt+"');" );
 
         // Decrypting passwords example
 
         // Encrypt emails
-        qList.add ( "update nick set mail=aes_encrypt(mail,'"+salt+"');" );
+        //qList.add ( "update nick set mail=aes_encrypt(mail,'"+salt+"');" );
 
         // Nick Expire
-        qList.add ( "create table IF NOT EXISTS nickexp (name varchar(32),lastsent int,mailcount int, primary key (name), constraint foreign key (name) references nick (name) on delete cascade on update cascade) engine=InnoDB charset=latin1;" );
+        //qList.add ( "create table IF NOT EXISTS nickexp (name varchar(32),lastsent int,mailcount int, primary key (name), constraint foreign key (name) references nick (name) on delete cascade on update cascade) engine=InnoDB charset=latin1;" );
 
         // Chanacclog
-        qList.add ( "create table IF NOT EXISTS chanacclog (id int primary key auto_increment, name varchar(32), nick varchar(32), oldaccess varchar(8) default null, access varchar(8), instater varchar(32), stamp datetime default now());" );
-        qList.add ( "insert into chanacclog (name,nick,access,instater,stamp) select c.name,c.nick,c.access,c.instater,from_unixtime(c.stamp) from chanaccess as c;" );
+        //qList.add ( "create table IF NOT EXISTS chanacclog (id int primary key auto_increment, name varchar(32), nick varchar(32), oldaccess varchar(8) default null, access varchar(8), instater varchar(32), stamp datetime default now());" );
+        //qList.add ( "insert into chanacclog (name,nick,access,instater,stamp) select c.name,c.nick,c.access,c.instater,from_unixtime(c.stamp) from chanaccess as c;" );
          
         // Cleanup access lists
-        qList.add ( "alter table chanaccess drop instater;" );
-        qList.add ( "alter table chanaccess drop stamp;" );
+        //qList.add ( "alter table chanaccess drop instater;" );
+        //qList.add ( "alter table chanaccess drop stamp;" );
 
         // Add channel registrations to the chanlog
-        qList.add ( "alter table chanlog add stamp datetime after oper;" );
-        qList.add ( "insert into chanlog (name,flag,usermask,stamp) select c.name,'R',concat(n.name,'!',n.mask),c.regstamp from chan as c join nick as n on n.name = c.founder;" );
+        //qList.add ( "alter table chanlog add stamp datetime after oper;" );
+        //qList.add ( "insert into chanlog (name,flag,usermask,stamp) select c.name,'R',concat(n.name,'!',n.mask),c.regstamp from chan as c join nick as n on n.name = c.founder;" );
 
         // Add nick registrations to the nicklog
-        qList.add ( "alter table nicklog add stamp datetime after oper;" );
-        qList.add ( "insert into nicklog (name,flag,usermask,stamp) select name,'R',concat(name,'!',mask),regstamp from nick;" );
+        //qList.add ( "alter table nicklog add stamp datetime after oper;" );
+        //qList.add ( "insert into nicklog (name,flag,usermask,stamp) select name,'R',concat(name,'!',mask),regstamp from nick;" );
 
         // Add oper log
-        qList.add ( "create table operlog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
-        qList.add ( "alter table operlog add stamp datetime after oper;" );
+        //qList.add ( "create table operlog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
+        //qList.add ( "alter table operlog add stamp datetime after oper;" );
  
         // Drop table cflags
-        qList.add ( "drop table cflags;" );
+        //qList.add ( "drop table cflags;" );
 
         // Drop table nflags
-        qList.add ( "drop table nflags;" );
+        //qList.add ( "drop table nflags;" );
 
         // Fixing chansetting
-        qList.add ( "alter table chansetting add freeze tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change keeptopic keeptopic tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change ident ident tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change opguard opguard tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change restricted restricted tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change verbose verbose tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change mailblock mailblock tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change leaveops leaveops tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change private private tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting change modelock modelock tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting add close tinyint(1) default 0;" );
-        qList.add ( "alter table chansetting add hold tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting add freeze tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change keeptopic keeptopic tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change ident ident tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change opguard opguard tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change restricted restricted tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change verbose verbose tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change mailblock mailblock tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change leaveops leaveops tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change private private tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting change modelock modelock tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting add close tinyint(1) default 0;" );
+        //qList.add ( "alter table chansetting add hold tinyint(1) default 0;" );
 
         // Fix nicksetting
         qList.add ( "alter table nicksetting drop enforce;" );
