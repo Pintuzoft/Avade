@@ -37,7 +37,7 @@ class MSSnoop extends Snoop {
 
     @Override
     public String fixArray ( boolean ok, User user, String[] arr )  {
-        String str = new String ( );
+        String str = "";
         int index = 3;
         int start = 3;
 

@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.yaml.snakeyaml.Yaml;
+
 import user.User;
 /**
  *
@@ -39,10 +40,10 @@ public class Config extends HashNumeric {
     private HashMap<BigInteger,HashString> whiteList;
     private HashMap<BigInteger,Integer> commands;
     private static final HashString[] cList = { 
-        STOP,REHASH,BAHAMUT,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,JUPE,
+        STOP,REHASH,BAHAMUT,SPAMFILTER,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,CLIST,SLIST,JUPE,
         DELETE,SQLINE,SGLINE,CLOSE,FREEZE,HOLD,MARK,NOGHOST,GETPASS,GETEMAIL,
         AKILL,MAKILL,BANLOG,GLOBAL,IGNORE,AUDIT,SERVER,CHANLIST,LIST,AUDITORIUM,
-        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG 
+        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG,SHOWCONFIG,SRA
     };
     private static final HashString[] keyStrings = {
         NAME,DOMAIN,NETNAME,STATS,MASTER,AUTHURL, LOGFILE, EXPIRE, SECRETSALT,
@@ -112,7 +113,7 @@ public class Config extends HashNumeric {
         } else if ( type.is(INTEGER) ) {
             return this.configInt;
         }
-        return null;
+        return new HashMap<>();
     }
      
     /*
@@ -128,13 +129,13 @@ public class Config extends HashNumeric {
             
             HashString[] types = { STRING, BOOLEAN, INTEGER };
             for ( HashString type : types ) {
-                //System.out.println(""+type.getString()+":");
                 HashString[] keys = this.getKeys ( type );            
                 for ( HashString key : keys ) {
-                    //System.out.println("   - "+key.getString());
                     HashString parsed = parseKey ( result, key.getString().toLowerCase() );
+                    
                     if ( type.is(BOOLEAN) ) {
-                        this.getHashMap(type).put( key.getCode(), parsed.is(YES) );
+                        System.out.println("Found: "+parsed.getString()+":(yes:"+TRUE.getCodeStr()+" -> "+parsed.getString()+":"+parsed.getCodeStr()+")" );
+                        this.getHashMap(type).put( key.getCode(), parsed.is(TRUE) );
 
                     } else if ( type.is(INTEGER) ) {
                         this.getHashMap(type).put(key.getCode(), Integer.parseInt(parsed.getString()));
@@ -158,10 +159,8 @@ public class Config extends HashNumeric {
             /* COMMANDS */
             HashString[] accesses = { SRA, CSOP, SA, IRCOP };
             for ( HashString access : accesses ) {
-                //System.out.println(""+access.getString()+":");
                 String[] cmds = fixResult ( result.get(access.getString().toLowerCase()).toString() );
                 for ( String cmd : cmds ) {
-                    //System.out.println("   - "+cmd);
                     HashString data = new HashString ( cmd );
                     this.setCommand ( data, str2acc ( access ) );
                 }
@@ -219,12 +218,18 @@ public class Config extends HashNumeric {
     
     public ArrayList<String> getConfigList ( User user ) {
         ArrayList<String> list = new ArrayList<>();
-        System.out.println("DEBUG: HERE!!");
 
         HashString[] types = { STRING,INTEGER,BOOLEAN };
         for ( HashString type : types ) {
             for ( HashString key : this.getKeys(type) ) {
-                list.add( ""+key.getString().toLowerCase()+": "+this.getHashMap(type).get(key.getCode()) );
+                if ( key.is(SECRETSALT ) ||
+                     key.is(HUBPASS) ||
+                     key.is(MYSQLUSER) ||
+                     key.is(MYSQLPASS) ) {
+                    list.add( ""+key.getString().toLowerCase()+": *****" );
+                } else {
+                    list.add( ""+key.getString().toLowerCase()+": "+this.getHashMap(type).get(key.getCode()) );
+                }
             }
         }
 
@@ -253,7 +258,6 @@ public class Config extends HashNumeric {
     }
     
     public int getCommandAccess ( HashString name ) {
-        //System.out.println("name: "+name.getString()+":"+name.getCodeStr());
         if ( name == null ) {
             System.out.println("name is null!!");
         }

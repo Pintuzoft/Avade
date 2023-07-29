@@ -46,7 +46,6 @@ class RSHelper extends Helper {
             return;
         } 
         Oper oper = user.getSID().getOper ( ); 
-        System.out.println("debug RootServ:parse()");
         if ( ! oper.isAtleast ( SRA )  )  {
             this.service.sendMsg ( user, "   RootServ is for Services Root Admins (SRA)  only .. *sigh*" );
             
@@ -59,7 +58,7 @@ class RSHelper extends Helper {
                 this.sra ( user );
             
             } else if ( command.is(SHOWCONFIG) ) {
-                this.sraw ( user );
+                this.showconfig ( user );
 
             } else if ( command.is(SRAW) ) {
                 this.sraw ( user );
@@ -140,6 +139,19 @@ class RSHelper extends Helper {
         this.service.sendMsg ( user, "   "                                                                                      );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                         );
         this.service.sendMsg ( user, "   Only load configurations you are suppose to load."                                     );
+        this.showEnd ( user );
+    }
+    /* REHASH */ 
+    public void showconfig ( User user )  { 
+        this.showStart ( user, "SHOWCONFIG" );
+        this.service.sendMsg ( user, "   "                                                                                      );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /RootServ SHOWCONFIG"+f.b ( ) +""                                      );
+        this.service.sendMsg ( user, "   "                                                                                      );
+        this.service.sendMsg ( user, "   This command makes services print the current running config, "                         );
+        this.service.sendMsg ( user, "   changing the config can only be done in the config file."                               );
+        this.service.sendMsg ( user, "   "                                                                                      );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
+        this.service.sendMsg ( user, "   Only run this in a secure client."                                                     );
         this.showEnd ( user );
     }
         /* REHASH */ 

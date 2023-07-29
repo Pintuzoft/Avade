@@ -150,7 +150,6 @@ public class RSDatabase extends Database {
             query = "UPDATE oper SET access = 4 WHERE access = 5";
             ps = sql.prepareStatement ( query );
             ps.execute ( );
-            //preparedStmt.close ( );
             
             /* Set new master */
             query = "INSERT INTO oper ( name, access ) VALUES ( ?, ? ) "+

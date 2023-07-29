@@ -113,7 +113,7 @@ public class Proc extends HashNumeric {
                 /* We didnt find any new data so lets take a nap */
                 try {
                     Thread.sleep ( sleep );          
-                } catch  ( InterruptedException ex )  {
+                } catch  ( Exception ex )  {
                     Logger.getLogger ( Proc.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
                 }
                 if ( commandChain > 0 ) {
@@ -143,7 +143,6 @@ public class Proc extends HashNumeric {
             secAgo = System.nanoTime() - this.secondDelay;
             if ( this.secMaintenance < secAgo )  {
                 todoAmount = this.handler.runSecMaintenance ( );
-                //todoAmount += this.handler.runMaintenance ( );
                 if ( Handler.sanityCheck ( ) ) {
                     Handler.initServices ( );
                 }
@@ -153,7 +152,6 @@ public class Proc extends HashNumeric {
                 commandChain++;
             }
         }
-        // System.out.println("DEBUG!!!: OUTSIDE loop!!");
         do {
             Handler.getRootServ().sendGlobOp ( "Running: handler->hourMaintenance" );
         } while ( this.handler.runHourMaintenance ( ) > 0 );
@@ -277,7 +275,7 @@ public class Proc extends HashNumeric {
                          ( days     > 0  ? days+" Day(s), "      : "" ) +
                          ( hours    > 0  ? hours+" Hour(s), "    : "" ) +
                          ( minutes  > 0  ? minutes+" Min(s), "   : "" ) +
-                         ( seconds  < 10 ? seconds+" Sec(s)" : seconds+" Sec(s)" );
+                         ( seconds  < 10 ? seconds+" Sec(s)"     : "" );
         
         } catch ( Exception e ) { 
             Proc.log ( Proc.class.getName ( ) , e ); 

@@ -43,7 +43,6 @@ public class NSSnoop extends Snoop {
     }
     public void msg ( boolean ok, HashString error, HashString target, User user, String[] cmd )  {
         String errstr = err2str(error);
-        // System.out.println("DEBUG: msg: "+errstr+" ("+error+")");
         if ( ok ) {
             this.log ( ok, target, user, cmd ); 
         }

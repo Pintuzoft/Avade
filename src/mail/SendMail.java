@@ -30,7 +30,9 @@ import nickserv.NickInfo;
  */
 public class SendMail extends HashNumeric {
     
-    public SendMail ( ) { }
+    public SendMail ( ) {
+        /* nothingness */
+    }
     
     /* REGISTER MAIL */
     public static void sendNickRegisterMail ( NickInfo ni, NSAuth auth ) {

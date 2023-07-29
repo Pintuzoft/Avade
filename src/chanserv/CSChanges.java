@@ -47,18 +47,18 @@ public class CSChanges extends Changes {
     private boolean autoakick;
     private boolean founder;
   
-    private boolean join_connect_time;
-    private boolean talk_connect_time;
-    private boolean talk_join_time;
-    private boolean max_bans;
-    private boolean no_notice;
-    private boolean no_ctcp;
-    private boolean no_part_msg;
-    private boolean exempt_opped;
-    private boolean exempt_voiced;
-    private boolean exempt_identd;
-    private boolean exempt_registered;
-    private boolean exempt_invites;
+    private boolean joinconnecttime;
+    private boolean talkconnecttime;
+    private boolean talkjointime;
+    private boolean maxbans;
+    private boolean nonotice;
+    private boolean noctcp;
+    private boolean nopartmsg;
+    private boolean exemptopped;
+    private boolean exemptvoiced;
+    private boolean exemptidentd;
+    private boolean exemptregistered;
+    private boolean exemptinvites;
     private boolean greetmsg;
     
     /**
@@ -66,13 +66,13 @@ public class CSChanges extends Changes {
      */
     public CSChanges ( ) {
         super ( );
-        clean ( );
+        this.cleanUp ( );
     }
     
     /**
      * clean
      */
-    public void clean ( ) {
+    public void cleanUp ( ) {
         this.freeze = false;
         this.mark = false;
         this.hold = false;
@@ -95,18 +95,18 @@ public class CSChanges extends Changes {
         this.autoakick = false;
         this.founder = false;
         
-        this.join_connect_time = false;
-        this.talk_connect_time = false;
-        this.talk_join_time = false;
-        this.max_bans = false;
-        this.no_notice = false;
-        this.no_ctcp = false;
-        this.no_part_msg = false;
-        this.exempt_opped = false;
-        this.exempt_voiced = false;
-        this.exempt_identd = false;
-        this.exempt_registered = false;
-        this.exempt_invites = false;
+        this.joinconnecttime = false;
+        this.talkconnecttime = false;
+        this.talkjointime = false;
+        this.maxbans = false;
+        this.nonotice = false;
+        this.noctcp = false;
+        this.nopartmsg = false;
+        this.exemptopped = false;
+        this.exemptvoiced = false;
+        this.exemptidentd = false;
+        this.exemptregistered = false;
+        this.exemptinvites = false;
         this.greetmsg = false;
     }
     
@@ -135,18 +135,18 @@ public class CSChanges extends Changes {
         else if ( setting.is(LEAVEOPS) )            { return this.leaveops;             }
         else if ( setting.is(AUTOAKICK) )           { return this.autoakick;            }
         else if ( setting.is(FOUNDER) )             { return this.founder;              }
-        else if ( setting.is(JOIN_CONNECT_TIME) )   { return this.join_connect_time;    }
-        else if ( setting.is(TALK_CONNECT_TIME) )   { return this.talk_connect_time;    }
-        else if ( setting.is(TALK_JOIN_TIME) )      { return this.talk_join_time;       }
-        else if ( setting.is(MAX_BANS) )            { return this.max_bans;             }
-        else if ( setting.is(NO_NOTICE) )           { return this.no_notice;            }
-        else if ( setting.is(NO_CTCP) )             { return this.no_ctcp;              }
-        else if ( setting.is(NO_PART_MSG) )         { return this.no_part_msg;          }
-        else if ( setting.is(EXEMPT_OPPED) )        { return this.exempt_opped;         }
-        else if ( setting.is(EXEMPT_VOICED) )       { return this.exempt_voiced;        }
-        else if ( setting.is(EXEMPT_IDENTD) )       { return this.exempt_identd;        }
-        else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exempt_registered;    }
-        else if ( setting.is(EXEMPT_INVITES) )      { return this.exempt_invites;       }
+        else if ( setting.is(JOIN_CONNECT_TIME) )   { return this.joinconnecttime;    }
+        else if ( setting.is(TALK_CONNECT_TIME) )   { return this.talkconnecttime;    }
+        else if ( setting.is(TALK_JOIN_TIME) )      { return this.talkjointime;       }
+        else if ( setting.is(MAX_BANS) )            { return this.maxbans;             }
+        else if ( setting.is(NO_NOTICE) )           { return this.nonotice;            }
+        else if ( setting.is(NO_CTCP) )             { return this.noctcp;              }
+        else if ( setting.is(NO_PART_MSG) )         { return this.nopartmsg;          }
+        else if ( setting.is(EXEMPT_OPPED) )        { return this.exemptopped;         }
+        else if ( setting.is(EXEMPT_VOICED) )       { return this.exemptvoiced;        }
+        else if ( setting.is(EXEMPT_IDENTD) )       { return this.exemptidentd;        }
+        else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exemptregistered;    }
+        else if ( setting.is(EXEMPT_INVITES) )      { return this.exemptinvites;       }
         else if ( setting.is(GREETMSG) )            { return this.greetmsg;             }
         return false;        
     }
@@ -156,7 +156,6 @@ public class CSChanges extends Changes {
      * @param setting
      */
     public void change ( HashString setting ) {
-        System.out.println("change: "+setting);
         if ( setting.is(FREEZE) ) {
             this.freeze = true;
             this.changed = true;
@@ -234,51 +233,51 @@ public class CSChanges extends Changes {
             this.changed = true;
         
         } else if ( setting.is(JOIN_CONNECT_TIME) ) {
-            this.join_connect_time = true;
+            this.joinconnecttime = true;
             this.changed = true;
         
         } else if ( setting.is(TALK_CONNECT_TIME) ) {
-            this.talk_connect_time = true;
+            this.talkconnecttime = true;
             this.changed = true;
         
         } else if ( setting.is(TALK_JOIN_TIME) ) {
-            this.talk_join_time = true;
+            this.talkjointime = true;
             this.changed = true;
         
         } else if ( setting.is(MAX_BANS) ) {
-            this.max_bans = true;
+            this.maxbans = true;
             this.changed = true;
         
         } else if ( setting.is(NO_NOTICE) ) {
-            this.no_notice = true;
+            this.nonotice = true;
             this.changed = true;
         
         } else if ( setting.is(NO_CTCP) ) {
-            this.no_ctcp = true;
+            this.noctcp = true;
             this.changed = true;
         
         } else if ( setting.is(NO_PART_MSG) ) {
-            this.no_part_msg = true;
+            this.nopartmsg = true;
             this.changed = true;
         
         } else if ( setting.is(EXEMPT_OPPED) ) {
-            this.exempt_opped = true;
+            this.exemptopped = true;
             this.changed = true;
         
         } else if ( setting.is(EXEMPT_VOICED) ) {
-            this.exempt_voiced = true;
+            this.exemptvoiced = true;
             this.changed = true;
         
         } else if ( setting.is(EXEMPT_IDENTD) ) {
-            this.exempt_identd = true;
+            this.exemptidentd = true;
             this.changed = true;
         
         } else if ( setting.is(EXEMPT_REGISTERED) ) {
-            this.exempt_registered = true;
+            this.exemptregistered = true;
             this.changed = true;
         
         } else if ( setting.is(EXEMPT_INVITES) ) {
-            this.exempt_invites = true;
+            this.exemptinvites = true;
             this.changed = true;
             
         } else if ( setting.is(GREETMSG) ) {

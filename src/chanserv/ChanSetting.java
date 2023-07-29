@@ -287,11 +287,11 @@ public class ChanSetting extends HashNumeric {
         this.leaveOps           = false;
         this.autoAkick          = false;
         /* Oper only */
-        this.mark               = new String ( );
-        this.freeze             = new String ( );
-        this.close              = new String ( );
-        this.hold               = new String ( );
-        this.auditorium         = new String ( );
+        this.mark               = "";
+        this.freeze             = "";
+        this.close              = "";
+        this.hold               = "";
+        this.auditorium         = "";
     } 
 
     boolean isTopicLock ( HashString state ) { 

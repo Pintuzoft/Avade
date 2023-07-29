@@ -44,19 +44,18 @@ class GuestTask extends TimerTask {
     @Override
     public void run ( )  {            
         User u;
-        if (  ( u = Handler.findUser ( user.getString ( User.NAME )  )  )  != null )  {
-            if ( ! u.isIdented ( NickServ.findNick ( u.getString ( User.NAME )  )  )  )  {
-                boolean search = true;
-                while ( search )  {
-                    this.index = this.rand.nextInt ( GuestServ.max ) +10000;
-                    if ( Handler.findUser ( "Guest"+this.index )  == null )  {
-                        search = false;
-                    }
+        if (  ( u = Handler.findUser ( user.getString ( User.NAME )  )  )  != null &&
+                ! u.isIdented ( NickServ.findNick ( u.getString ( User.NAME )  )  )  )  {
+            boolean search = true;
+            while ( search )  {
+                this.index = this.rand.nextInt ( GuestServ.max ) +10000;
+                if ( Handler.findUser ( "Guest"+this.index )  == null )  {
+                    search = false;
                 }
-                u.getSID().resetTimers ( );
-                ServSock.sendCmd (":"+Proc.getConf().get (HashNumeric.NAME )+" SVSNICK "+u.getString ( User.NAME )+" Guest"+this.index+" 0" );
-                u.getModes().set ( UserMode.IDENT, false );
             }
+            u.getSID().resetTimers ( );
+            ServSock.sendCmd (":"+Proc.getConf().get (HashNumeric.NAME )+" SVSNICK "+u.getString ( User.NAME )+" Guest"+this.index+" 0" );
+            u.getModes().set ( UserMode.IDENT, false );
         }
     }
 }

@@ -25,6 +25,7 @@ import nickserv.NickServ;
 import core.Executor;
 import core.Handler;
 import core.HashString;
+import core.Proc;
 import core.TextFormat;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -47,18 +48,29 @@ import user.User;
         this.f              = new TextFormat ( );
     }
 
-    public void parse ( User user, String[] cmd )  {
+    
+    public void parse ( User user, String[] cmd ) {
         HashString command;
-        try {
-            if ( cmd[3].isEmpty ( )  )  {
-                this.help ( user );
-                return; 
-            }
-        } catch ( Exception e )  {
+        if ( cmd == null || cmd[3].isEmpty ( ) ) {
             this.help ( user );
-            return;
+            return; 
         }
+        
         command = new HashString ( cmd[3] );
+
+    
+    //public void parse ( User user, String[] cmd )  {
+    //    HashString command;
+    //    try {
+    //        if ( cmd[3].isEmpty ( )  )  {
+    //            this.help ( user );
+    //            return; 
+    //        }
+    //    } catch ( Exception e )  {
+    //        this.help ( user );
+    //        return;
+    //    }
+    //    command = new HashString ( cmd[3] );
         
         if ( command.is(SEND) ) {
             this.doSend ( user, cmd );
@@ -187,7 +199,7 @@ import user.User;
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :list
         //  0           1           2                       3   = 4        
         NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
-        
+
         if ( cmd.length < 4 )  {
             this.service.sendMsg ( 
                 user, 
@@ -219,7 +231,7 @@ import user.User;
                 output ( 
                     LIST_START, 
                     ""+read, 
-                    ""+ni.getMemos ( ) .size ( ) 
+                    ""+ni.getMemos().size ( ) 
                 )
             );
             for ( MemoInfo m : ni.getMemos ( )  )  {

@@ -18,7 +18,6 @@
 package operserv;
 
 import channel.Chan;
-import chanserv.ChanInfo;
 import core.Executor;
 import core.Handler;
 import core.Proc;
@@ -37,8 +36,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Timer;
-import nickserv.NSDatabase;
-import nickserv.NSLogEvent;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import server.Server;
@@ -206,10 +203,10 @@ public class OSExecutor extends Executor {
         /* UINFO requested so lets send all we know about that user */
         Chan c;
         int counter = 0;
-        String users    = new String ( );
-        String voice    = new String ( );
-        String oped     = new String ( );
-        String modes    = new String ( );
+        String users    = "";
+        String voice    = "";
+        String oped     = "";
+        String modes    = "";
         
         if ( cmd.length < 5 )  {/* size hasAccess 5  ( 0-4 )  */
             this.service.sendMsg ( user, "Syntax: /OperServ CINFO #Chan" );
@@ -564,7 +561,7 @@ public class OSExecutor extends Executor {
         
         this.service.sendMsg ( user, "*** Comments"+( ! full ? " (1year)" : "" )+":" );
         for ( Comment comment : cList ) {
-            this.service.sendMsg ( user, output ( SHOWCOMMENT, comment.getStamp(), comment.getInstater(), comment.getComment() ) );
+            this.service.sendMsg ( user, output ( SHOWCOMMENT, comment.getStamp(), comment.getInstater(), comment.getCommentStr() ) );
         }
         this.service.sendMsg ( user, "*** End of log/comments ***" );
     }
@@ -818,10 +815,6 @@ public class OSExecutor extends Executor {
                 this.service.sendMsg (user, output (BADFLAGS, result.getString1 ( ) ) );
                 return;            
         
-        } else if ( result.is(BADTIME) ) {
-                this.service.sendMsg (user, output (BADTIME, result.getString1 ( ) ) );
-                return;            
-        
         } else if ( result.is(BADREASON) ) {
                 this.service.sendMsg ( user, output ( BADREASON, "" ) );
                 return;            
@@ -837,7 +830,7 @@ public class OSExecutor extends Executor {
         if ( result.is(SHOWLIST) ) {
                 this.service.sendMsg ( user, "*** SpamFilter LIST ***" );
                 for ( SpamFilter sf : OperServ.getSpamFilters ( ) ) {
-                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), sf.getExpire(), sf.getReason() ) );
+                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), sf.getReason() ) );
                 }
                 this.service.sendMsg ( user, "*** End of List ***" );            
         
@@ -845,6 +838,7 @@ public class OSExecutor extends Executor {
                 pattern = result.getString1();
                 if ( ( sFilter = OperServ.findSpamFilter ( pattern ) ) != null ) {
                     OperServ.remSpamFilter ( sFilter );
+                    OperServ.getSpamFilters().remove(sFilter);
                     this.service.sendServ ( "SF "+pattern+" 0" );
                     this.service.sendGlobOp ( user.getOper().getNick().getName()+" removed SpamFilter: "+pattern  );
                 }            
@@ -855,14 +849,13 @@ public class OSExecutor extends Executor {
                 String time = result.getString3();
                 String reason = result.getString4();
                 String stamp = dateFormat.format ( new Date ( ) );
-                String expire = Handler.expireToDateString ( stamp, time );
-                sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getNameStr(), reason, stamp, expire );
+                sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getNameStr(), reason, stamp );
                 
                 
-                //  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason);
+                /*  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason); */
                 OperServ.addSpamFilter ( sFilter );
                 this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );
-                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Expire: "+time+" Reason: "+reason  );            
+                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Reason: "+reason  );            
         }
         
     }
@@ -958,7 +951,6 @@ public class OSExecutor extends Executor {
                 for ( NetServer server : OperServ.getServers ( LEAF, false ) ) {
                     this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
                 }
-    //               this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
                 this.service.sendMsg ( user, "*** End of List ***");            
         
         } else if ( result.is(DEL) ) {
@@ -978,7 +970,6 @@ public class OSExecutor extends Executor {
                 for ( NetServer server : OperServ.getServers ( LEAF, true ) ) {
                     this.service.sendMsg ( user, "    "+server.getName ( )+" ---> "+server.getPrimary()+", "+server.getSecondary() );
                 }
-    //                this.service.sendMsg ( user, "(P = Primary hub, S = Secondary hub)");
                 this.service.sendMsg ( user, "*** End of List ***");            
         
         } else if ( result.is(SET) ) {
@@ -1074,13 +1065,13 @@ public class OSExecutor extends Executor {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <commit> <length> <reason>" ) );
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );            
         
-        } else if ( result.is(STATS) ) {
+        } else if ( result.is(BADTIME) ) {
                 this.service.sendMsg ( user, output ( BADTIME, "" ) );            
         
-        } else if ( result.is(STATS) ) {
+        } else if ( result.is(BADREASON) ) {
                 this.service.sendMsg ( user, output ( BADREASON, "" ) );            
         
-        } else if ( result.is(STATS) ) {
+        } else if ( result.is(ACCESS_DENIED) ) {
                 this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );            
         }
          
@@ -1100,7 +1091,6 @@ public class OSExecutor extends Executor {
                 
                 for ( String str : result.getMAkill() ) {
                     shouldAdd = true;
-                    //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
                     ban = new ServicesBan ( 
                         AKILL, 
                         new HashString ( ""+System.nanoTime() ), 
@@ -1265,9 +1255,6 @@ public class OSExecutor extends Executor {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( LIST );
                             
-                    
-                    
-                    
                 } else if ( sub.is(INFO) && isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_INFO );
 
@@ -1278,9 +1265,6 @@ public class OSExecutor extends Executor {
                 } else if ( sub.is(INFO) && ban != null ) {
                     result.setServicesBan ( ban );
                     result.setStatus ( INFO );
-                    
-                    
-                    
                     
                 } else if ( sub.is(DEL) && isShorterThanLen ( 6, cmd ) ) {
                     result.setStatus( SYNTAX_ERROR_DEL );
@@ -1299,9 +1283,6 @@ public class OSExecutor extends Executor {
                     result.setServicesBan ( ban );
                     result.setStatus ( DEL );
                 
-
-
-
                 } else if ( isShorterThanLen ( 8, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
@@ -1328,15 +1309,13 @@ public class OSExecutor extends Executor {
                 }     
         
         } else if ( command.is(SPAMFILTER) ) {
-                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SPAMFILTER add hello?hello?hello flags 1d spamming hasAccess not allowed
-                //            0       1                          2           3   4                 5     6  7       8+              = 9+
+                // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SPAMFILTER add hello?hello?hello flags spamming hasAccess not allowed
+                //            0       1                          2           3   4                 5     6        7+              = 8+
                 sub = (cmd.length > 4 ? new HashString ( cmd[4] ) : new HashString ( "0" ));
-                time = cmd.length > 7 ? cmd[7] : "30m";
                 flag = cmd.length > 6 ? cmd[6].toUpperCase().hashCode() : 0;
-                reason = cmd.length > 8 ? Handler.cutArrayIntoString ( cmd, 8 ) : "SpamFiltered"; 
+                reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : "SpamFiltered"; 
                 stamp = dateFormat.format ( new Date ( ) );
-                expire = Handler.expireToDateString ( stamp, time );
-                 
+                                 
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
                 } else if ( sub.is(LIST) ) {
@@ -1346,12 +1325,10 @@ public class OSExecutor extends Executor {
                 } else if ( sub.is(DEL) ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( DEL );
-                } else if ( isShorterThanLen ( 9, cmd ) ) {
+                } else if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
                 } else if ( ! this.isFlagsGood ( cmd[6] ) ) {
                     result.setStatus ( BADFLAGS );
-                } else if ( expire == null ) {
-                    result.setStatus ( BADTIME );
                 } else if ( reason == null ) {
                     result.setStatus ( BADREASON );
                 } else if ( OperServ.findSpamFilter ( cmd[5] ) != null ) {
@@ -1360,7 +1337,6 @@ public class OSExecutor extends Executor {
                 } else {
                     result.setString1 ( cmd[5] );
                     result.setString2 ( cmd[6] );
-                    result.setString3 ( cmd[7] );
                     result.setString4 ( reason );
                     result.setStatus ( ADD );
                 }            
@@ -1465,7 +1441,6 @@ public class OSExecutor extends Executor {
         return result;
     }
  
-    
     
     
     /* Send ban2 message to all users identified to specific nickname */
@@ -1612,7 +1587,7 @@ public class OSExecutor extends Executor {
             return "Error: There is already a spamfilter matching: "+args[0]+".";             
         
         } else if ( code.is(SPAMFILTER_LIST) ) {
-            return "  "+args[0]+": "+args[1]+" "+args[2]+" ["+args[3]+"]: "+args[4];
+            return "  "+args[0]+": "+args[1]+" ["+args[2]+"]: "+args[3];
         
         } else if ( code.is(NICK_NOT_FOUND) ) {
             return "Error: Nick "+args[0]+" was not found.";             

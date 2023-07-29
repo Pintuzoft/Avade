@@ -333,10 +333,10 @@ public abstract class HashNumeric extends TextFormat {
     public static HashString B = new HashString ( "B" );
     public static HashString K = new HashString ( "K" );
     public static HashString A = new HashString ( "A" );
-    public static HashString NUM_1 = new HashString ( "NUM_1" );
-    public static HashString NUM_2 = new HashString ( "NUM_2" );
-    public static HashString NUM_3 = new HashString ( "NUM_3" );
-    public static HashString NUM_4 = new HashString ( "NUM_4" );
+    public static HashString NUM_1 = new HashString ( "1" );
+    public static HashString NUM_2 = new HashString ( "2" );
+    public static HashString NUM_3 = new HashString ( "3" );
+    public static HashString NUM_4 = new HashString ( "4" );
 
     public static HashString RAW = new HashString ( "RAW" );
     public static HashString SYNTAX_REG_ERROR = new HashString ( "SYNTAX_REG_ERROR" );
@@ -580,7 +580,7 @@ public abstract class HashNumeric extends TextFormat {
 
     
     
-    public final static HashString YES = new HashString ( "YES" );
+    public final static HashString TRUE = new HashString ( "TRUE" );
 
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );

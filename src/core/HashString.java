@@ -26,7 +26,7 @@ import user.User;
  * @author Fredrik Karlsson aka DreamHealer & avade.net
  */
 public class HashString {
-    private String string = new String ( );
+    private String string = "";
     private BigInteger code;
     
     public HashString ( String str ) {

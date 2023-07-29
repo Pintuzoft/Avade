@@ -38,9 +38,7 @@ import java.util.Date;
     protected ArrayList<CommandInfo> cmdList;
     
     
-  //  protected static Log log;
-
-    public Service ( String name )  {
+    protected Service ( String name )  {
         this.name = new HashString ( name ); 
         this.init ( );
     }
@@ -64,13 +62,13 @@ import java.util.Date;
                 ServSock.sendCmd ( 
                     "NICK "+this.name+
                     " 1 "+
-                    Math.round ( this.date.getTime ( ) /1000 ) +
+                    Math.round ( this.date.getTime ( ) / 1000 ) +
                     " + "+
                     this.user+" "+
                     this.host+" "+
                     this.server+
                     " 0 "+
-                    Math.round ( this.date.getTime ( ) /1000 ) +
+                    Math.round ( this.date.getTime ( ) / 1000 ) +
                     " :"+this.realName 
                 ); 
             }
@@ -153,7 +151,6 @@ import java.util.Date;
     }
 
     public void sendRaw ( String command )  {
-        //System.out.println ( "Trying: "+command );
         this.send ( RAW, command );
     } 
     

@@ -53,7 +53,7 @@ public class NickInfo extends HashNumeric {
     private String                  lastUsed; 
     private Date                    date; 
     private Oper                    oper; 
-    private ArrayList<MemoInfo>     mList;
+    private ArrayList<MemoInfo>     mList = new ArrayList<>();
     private Expire                  exp;
     private NSChanges               changes;
     private Throttle                throttle;       /* throttle login attempts */
@@ -65,12 +65,10 @@ public class NickInfo extends HashNumeric {
 
     /* DATABASE */
     public NickInfo ( String name, String user, String host, String pass, String mail, String regStamp, String lastSeen, NickSetting settings, Expire exp )  {
-        // System.out.println ( "Debug: NickInfo ( "+name+" )" );
         this.name       = new HashString ( name );
         this.hashMask   = new HashString ( user+"@"+host );
         this.user       = new HashString ( user );
         this.host       = new HashString ( host );
-        //this.ip         = ip;
         this.date       = new Date ( );
         this.oper       = null; 
         this.pass       = pass;
@@ -81,7 +79,7 @@ public class NickInfo extends HashNumeric {
         this.exp        = exp;
         this.changes    = new NSChanges ( );
         this.throttle   = new Throttle ( );
-        this.attachMemos ( ); 
+        //this.attachMemos ( ); 
      }
 
     /* REGISTER */
@@ -93,7 +91,7 @@ public class NickInfo extends HashNumeric {
         this.ip         = new HashString ( user.getString ( IP ) );
         this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(IP) ); 
         this.pass       = pass;
-        this.mail       = new String(); 
+        this.mail       = ""; 
         this.settings   = new NickSetting ( );
         String date = this.dateFormat.format ( new Date ( ) );
         this.regTime    = date;
@@ -103,7 +101,7 @@ public class NickInfo extends HashNumeric {
         this.changes    = new NSChanges ( );
         this.throttle   = new Throttle ( );
         this.userIdent ( user );
-        this.attachMemos ( );
+        //this.attachMemos ( );
     }
     
     /* Master nick */
@@ -129,16 +127,16 @@ public class NickInfo extends HashNumeric {
             this.throttle   = new Throttle ( );
 
             this.userIdent ( u );
-            this.attachMemos ( );
+            //this.attachMemos ( );
             this.settings = new NickSetting ( );
 
             Handler.getRootServ().sendMsg ( u, "Nick: "+u.getString ( NAME )+" has been registered to you using password: "+passwd );
         }
     }
    
-    private void attachMemos ( )  {
-        this.mList = MSDatabase.getMemosByNick ( this.name );
-    }
+    //private void attachMemos ( )  {
+    //    this.mList = MSDatabase.getMemosByNick ( this.name );
+    //}
     
     public void setUserMask ( User user )  {
         this.user       = new HashString ( user.getString ( USER ) );
@@ -295,7 +293,6 @@ public class NickInfo extends HashNumeric {
     }
 
     public void setOper ( Oper oper ) {
-//        System.out.println("SETOPER: oper:"+oper.getName()+" access:"+oper.getAccess()+" instater:"+oper.getString(INSTATER));
         this.oper = oper;
     }
     

@@ -33,7 +33,6 @@ import user.User;
  */
 public class CSHelper extends Helper {
     private CSSnoop snoop;
-   // private boolean found;
     private TextFormat f;
   
     /**
@@ -43,7 +42,6 @@ public class CSHelper extends Helper {
      */
     public CSHelper ( ChanServ service, CSSnoop snoop )  {
         super ( service );
-//        this.service = service;
         this.snoop = snoop;
         this.f = new TextFormat ( );
     }
@@ -54,7 +52,6 @@ public class CSHelper extends Helper {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
- 
         try {
             if ( cmd[4].isEmpty ( )  )  { 
                 this.help ( user ); 

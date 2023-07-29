@@ -18,13 +18,13 @@
 package core;
 
 import chanserv.ChanInfo;
+import java.math.BigInteger;
 import nickserv.NickInfo;
 import operserv.Oper;
 import user.User;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Timer;
-import nickserv.NickServ;
 
 /**
  *
@@ -32,6 +32,7 @@ import nickserv.NickServ;
  */
 public class ServicesID extends HashNumeric {
     private long                    id;
+    private BigInteger              code;
     private ArrayList<NickInfo>     niList;    /* List of identified nicks from this serviceid */
     private ArrayList<ChanInfo>     ciList;    /* List of identified chans from this serviceid */
     private Random                  rand;
@@ -39,14 +40,15 @@ public class ServicesID extends HashNumeric {
     private long                    stamp;     /* timestamp  ( seconds )  lastseen */
     private Timer                   timer;
     private Timer                   adTimer;
-    private long                    splitExpire;
     
     public ServicesID ( )  {
         this.rand       = new Random ( );
         this.id         = this.getUniqueID ( );
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
-        this.stamp = 0;
+        this.stamp      = System.currentTimeMillis();
+        HashString buf  = new HashString ( ""+this.id );
+        this.code       = buf.getCode ( );
     }
 
     public ServicesID ( long id )  {
@@ -54,39 +56,35 @@ public class ServicesID extends HashNumeric {
         this.id         = id;
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
-        this.stamp = 0;
+        this.stamp      = System.currentTimeMillis();
+        HashString buf  = new HashString ( ""+this.id );
+        this.code       = buf.getCode ( );
     }
      
     private long getUniqueID ( ) {
-        long id;
+        long idVal;
         while ( true ) {
-            id = this.rand.nextInt ( ) + (long) ( 1L << 31 );
-            if ( this.isUnique ( id ) ) {
-                return id;
+            idVal = this.rand.nextInt ( ) + (long) ( 1L << 31 );
+            if ( this.isUnique (idVal ) ) {
+                return idVal;
             }
         }
     }
     private boolean isUnique ( long id ) {
-        for ( ServicesID sid : Handler.getSIDs ( ) ) {
-            if ( sid.getID() == id ) {
-                return false;
-            }
-        }
-        for ( ServicesID sid : Handler.getSplitSIDs ( ) ) {
-            if ( sid.getID() == id ) {
-                return false;
-            }
+        HashString target = new HashString ( ""+id );
+        ServicesID sid = Handler.getSIDs().get ( target.getCode() );
+        if ( sid != null ) {
+            return false;
         }
         return true;
     }
     
+    public BigInteger getCode ( ) {
+        return this.code;
+    }
     
     public void updateStamp ( ) {
-        if ( this.user != null ) {
-            this.stamp = 0;
-        } else {
-            this.stamp =  ( System.currentTimeMillis ( ) /1000 );
-        }
+        this.stamp =  ( System.currentTimeMillis ( ) /1000 );
     }
     
     public boolean hasExpired ( )  {
@@ -249,10 +247,9 @@ public class ServicesID extends HashNumeric {
     }
  
     public int getAccess ( ) {
-        if ( this.niList.size() > 0 ) {
-            if ( this.getOper ( ) != null ) {
-                return this.getOper().getAccess ( );
-            }
+        if ( this.niList.size() > 0 &&
+             this.getOper ( ) != null ) {
+            return this.getOper().getAccess ( );
         }
         return 0;
     }
@@ -267,13 +264,15 @@ public class ServicesID extends HashNumeric {
     }
     
     /* Set 1 hour limit */
-    public void setSplitExpire ( ) {
-        this.splitExpire = ( System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ) ) ;
-    }
+//    public void setSplitExpire ( ) {
+//        this.splitExpire = ( System.currentTimeMillis ( ) + ( 1000 * 60 * 60 ) ) ;
+//    }
 
     /* Return true if expire time hasAccess in the past */
     public boolean timeToExpire() {
-        return System.currentTimeMillis() > this.splitExpire;
+        return this.hasExpired();
+//        System.out.println("timeToExpire: now:"+System.currentTimeMillis()+", splitExpire:"+this.splitExpire);
+//        return System.currentTimeMillis() > this.splitExpire;
     }
 
 

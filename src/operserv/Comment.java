@@ -27,13 +27,13 @@ class Comment extends HashNumeric {
     private String name;
     private String instater;
     private String stamp;
-    private String comment;
+    private String commentStr;
     
     
     public Comment ( String name, String instater, String comment, String stamp ) {
         this.name = name;
         this.instater = instater;
-        this.comment = comment;
+        this.commentStr = comment;
         if ( stamp != null ) {
             this.stamp = stamp.substring ( 0, 19 );
         } else {
@@ -53,8 +53,8 @@ class Comment extends HashNumeric {
         return stamp;
     }
 
-    public String getComment() {
-        return comment;
+    public String getCommentStr() {
+        return commentStr;
     }
      
     

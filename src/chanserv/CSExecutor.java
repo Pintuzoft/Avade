@@ -19,11 +19,9 @@ package chanserv;
 
 import channel.Chan;
 import channel.Topic;
-import core.Config;
 import core.Executor;
 import core.Handler;
 import core.HashString;
-import core.Proc;
 import core.StringMatch;
 import core.TextFormat;
 import java.math.BigInteger;
@@ -35,7 +33,6 @@ import user.User;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Random;
 
 /**
  * Executing user commands
@@ -140,7 +137,7 @@ public class CSExecutor extends Executor {
         
         for ( HashString list : lists ) {
 
-            if ( ni.getChanAccess(list).size() > 0 ) {
+            if ( !ni.getChanAccess(list).isEmpty() ) {
                 if ( list == AKICK ) {
                     this.service.sendMsg ( user, " " );
                     this.service.sendMsg ( user, "--- IRCop ---" );
@@ -378,7 +375,7 @@ public class CSExecutor extends Executor {
         }
         
         Chan c = result.getChan ( );
-        ChanInfo ci = result.getChanInfo ( );
+        ChanInfo ci;
         NickInfo ni = result.getNick ( );
         String description = Handler.cutArrayIntoString ( cmd, 6 );
         Topic topic; 
@@ -583,8 +580,9 @@ public class CSExecutor extends Executor {
         /* We found the nickname */
         ChanInfo ci = result.getChanInfo ( );
         NickInfo founder = ci.getFounder ( ); 
-        if ( founder == null )
+        if ( founder == null ) {
             System.out.println("founder = null");
+        }
         
         this.showStart ( true, user, ci, f.b ( ) +"Info for: "+f.b ( )  ); 
      
@@ -598,18 +596,24 @@ public class CSExecutor extends Executor {
         this.service.sendMsg ( user, "    Time now: "+dateFormat.format ( new Date ( ) ) );
   
         if ( user.isAtleast ( IRCOP ) ) {
-            if ( ci.isSet ( FROZEN ) || ci.isSet ( MARKED ) || ci.isSet ( HELD ) || ci.isSet ( CLOSED ) || ci.isSet ( AUDITORIUM ) ) 
+            if ( ci.isSet ( FROZEN ) || ci.isSet ( MARKED ) || ci.isSet ( HELD ) || ci.isSet ( CLOSED ) || ci.isSet ( AUDITORIUM ) ) {
                 this.service.sendMsg ( user, f.b()+"   --- IRCop ---" );
-            if ( ci.isSet ( FROZEN ) )
+            }
+            if ( ci.isSet ( FROZEN ) ) {
                 this.service.sendMsg ( user, f.b()+"      FROZEN: "+ci.getSettings().getInstater ( FREEZE ) );
-            if ( ci.isSet ( MARKED ) )
+            }
+            if ( ci.isSet ( MARKED ) ) {
                 this.service.sendMsg ( user, f.b()+"      MARKED: "+ci.getSettings().getInstater ( MARK ) );
-            if ( ci.isSet ( CLOSE ) )
+            }
+            if ( ci.isSet ( CLOSE ) ) {
                 this.service.sendMsg ( user, f.b()+"      CLOSED: "+ci.getSettings().getInstater ( CLOSE ) );
-            if ( ci.isSet ( HELD ) )
+            }
+            if ( ci.isSet ( HELD ) ) {
                 this.service.sendMsg ( user, f.b()+"        HELD: "+ci.getSettings().getInstater ( HOLD ) );
-            if ( ci.isSet ( AUDITORIUM ) ) 
+            }
+            if ( ci.isSet ( AUDITORIUM ) ) {
                 this.service.sendMsg ( user, f.b()+"  AUDITORIUM: "+ci.getSettings().getInstater ( AUDITORIUM ) );
+            }
         }
         
         this.showEnd ( user, "Info" );
@@ -1247,8 +1251,6 @@ public class CSExecutor extends Executor {
         NickInfo instater;
         Chan c;
         
-        System.out.println("debug: "+command);
-        
         /* UNAUDITORIUM */
         if ( command.is(UNAUDITORIUM) ) {
             instater = NickServ.findNick ( ci.getSettings().getInstater ( flag ) );
@@ -1560,7 +1562,7 @@ public class CSExecutor extends Executor {
 
         for ( ChanInfo ci : cList ) {
             buf = f.b ( ) +"    "+ci.getName ( );
-            buf += ( ci.getTopic ( ) != null ) ? " : "+ci.getTopic().getTopic ( ) : "";
+            buf += ( ci.getTopic ( ) != null ) ? " : "+ci.getTopic().getText ( ) : "";
             this.service.sendMsg ( user, buf );
         }
         this.showEnd ( user, "Info" );
@@ -1647,7 +1649,7 @@ public class CSExecutor extends Executor {
         ArrayList<Topic> tList = CSDatabase.getTopicList ( ci );
         this.service.sendMsg(user, "*** Access Log for "+ci.getName()+":");
         for ( Topic topic : tList ) {
-            this.service.sendMsg ( user, output ( SHOWTOPICLOG, topic.getTimeStr(), topic.getSetter(), topic.getTopic() ) );
+            this.service.sendMsg ( user, output ( SHOWTOPICLOG, topic.getTimeStr(), topic.getSetter(), topic.getText() ) );
         }       
         this.service.sendMsg ( user, "*** End of Logs ***" );
         this.snoop.msg ( true, SHOWTOPICLOG, ci.getName(), user, cmd );
@@ -1751,19 +1753,19 @@ public class CSExecutor extends Executor {
         } else if ( command.is(LIST) ) {
             CSFlag cf = ci.getChanFlag ( );
             this.service.sendMsg ( user, "*** ChanFlag LIST for "+ci.getName()+" ***" );
-            this.service.sendMsg ( user, "  - JOIN_CONNECT_TIME: "+cf.getJoin_connect_time() );
-            this.service.sendMsg ( user, "  - TALK_CONNECT_TIME: "+cf.getTalk_connect_time() );
-            this.service.sendMsg ( user, "  - TALK_JOIN_TIME: "+cf.getTalk_join_time() );
-            this.service.sendMsg ( user, "  - MAX_BANS: "+cf.getMax_bans() );
-            this.service.sendMsg ( user, "  - NO_NOTICE: "+( cf.isNo_notice() ? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - NO_CTCP: "+( cf.isNo_ctcp()? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - NO_PART_MSG: "+( cf.isNo_part_msg()? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - NO_QUIT_MSG: "+( cf.isNo_quit_msg()? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - EXEMPT_OPPED: "+( cf.isExempt_opped()? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - EXEMPT_VOICED: "+( cf.isExempt_voiced()? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - EXEMPT_IDENTD: "+( cf.isExempt_identd()? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - EXEMPT_REGISTERED: "+( cf.isExempt_registered() ? "ON" : "OFF" ) );
-            this.service.sendMsg ( user, "  - EXEMPT_INVITES: "+( cf.isExempt_invites()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - JOIN_CONNECT_TIME: "+cf.getJoinconnecttime() );
+            this.service.sendMsg ( user, "  - TALK_CONNECT_TIME: "+cf.getTalkconnecttime() );
+            this.service.sendMsg ( user, "  - TALK_JOIN_TIME: "+cf.getTalkjointime() );
+            this.service.sendMsg ( user, "  - MAX_BANS: "+cf.getMaxbans() );
+            this.service.sendMsg ( user, "  - NO_NOTICE: "+( cf.isNonotice() ? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - NO_CTCP: "+( cf.isNoctcp()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - NO_PART_MSG: "+( cf.isNopartmsg()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - NO_QUIT_MSG: "+( cf.isNoquitmsg()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - EXEMPT_OPPED: "+( cf.isExemptopped()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - EXEMPT_VOICED: "+( cf.isExemptvoiced()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - EXEMPT_IDENTD: "+( cf.isExemptidentd()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - EXEMPT_REGISTERED: "+( cf.isExemptregistered() ? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - EXEMPT_INVITES: "+( cf.isExemptinvites()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
             this.service.sendMsg ( user, "*** End of List ***" );
             this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );
@@ -1841,8 +1843,8 @@ public class CSExecutor extends Executor {
         ChanInfo ci;
         NickInfo ni;
         NickInfo ni2 = null;
-        String nick = new String ( );
-        String pass = new String ( ); 
+        String nick = "";
+        String pass = ""; 
         CMDResult result = new CMDResult ( );
         User target = null;
         HashString subcommand;
@@ -1871,10 +1873,12 @@ public class CSExecutor extends Executor {
                 } else if ( ci.getSettings().is ( FROZEN ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_FROZEN );
-                } else if ( ( ni = ci.getNickByUser ( user ) ) == null && ! user.isAtleast ( SA ) ) {
+                } else if ( ( ni = ci.getNickByUser ( user ) ) == null && 
+                            ! user.isAtleast ( SA ) ) {
                     result.setString1 ( ci.getName() ); 
                     result.setStatus ( ACCESS_DENIED );
-                } else if ( ! ci.isFounder ( ni ) && ! user.isAtleast ( SA ) ) {
+                } else if ( ! ci.isFounder ( ni ) && 
+                            ! user.isAtleast ( SA ) ) {
                     result.setString1 ( ci.getName() );
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ! CSFlag.isFlag ( cmd[5] ) ) {
@@ -1904,7 +1908,8 @@ public class CSExecutor extends Executor {
                 } else if ( ( ni = ci.getNickByUser ( user ) ) == null && ! user.isAtleast ( SA ) ) {
                     result.setString1 ( ci.getName() ); 
                     result.setStatus ( ACCESS_DENIED );
-                } else if ( ! ci.isAtleastAop ( ni ) && ! user.isAtleast ( SA ) ) {
+                } else if ( ! ci.isAtleastAop ( ni ) && 
+                            ! user.isAtleast ( SA ) ) {
                     result.setString1 ( ci.getName() );
                     result.setStatus ( ACCESS_DENIED );
                 } else {
@@ -1941,7 +1946,7 @@ public class CSExecutor extends Executor {
                 if (ci != null) {
                     ni = ci.getNickByUser ( user );
                 }
-                
+                mask = "";
                 if ( cmd.length > 6 && ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
                     mask = cmd[6];
                 }
@@ -2329,7 +2334,7 @@ public class CSExecutor extends Executor {
                     command.is(HOLD) ) {
             
                 boolean remove = false;
-                String name = null;
+                String name = "";
                 if ( cmd.length > 4 ) {
                     remove = cmd[4].charAt(0) == '-';
                     if ( remove ) {

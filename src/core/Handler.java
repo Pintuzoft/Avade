@@ -65,11 +65,12 @@ public class Handler extends HashNumeric {
     private Snoop                               snoop;
     private Trigger                             trigger;
     private static HashMap<BigInteger, User>    uList = new HashMap<>();
-    private static ArrayList<ServicesID>        splitSIDs = new ArrayList<>();
+//    private static HashMap<BigInteger, ServicesID>    splitSIDs = new HashMap<>();
+//    private static ArrayList<ServicesID>        splitSIDs = new ArrayList<>();
     private static ArrayList<ServicesID>        updServicesID = new ArrayList<>();
     private static HashMap<BigInteger,Chan>     cList = new HashMap<>();
     private static ArrayList<Server>            sList = new ArrayList<>();
-    private static ArrayList<ServicesID>        sidList = new ArrayList<>();
+    private static HashMap<BigInteger, ServicesID>    sidList = new HashMap<>();
     private static Database                     db; 
     private String[]                            data; 
     private String                              source;
@@ -94,6 +95,7 @@ public class Handler extends HashNumeric {
         db              = new Database ( );
         Handler.initServices ( );
         Database.loadSIDs ( );
+ //       Handler.printSIDs();
         this.trigger    = new Trigger ( );
         this.services   = new Services ( );
         date            = new Date ( );
@@ -155,7 +157,7 @@ public class Handler extends HashNumeric {
     
     public void process ( String read )  {
         User uBuf;
-        NickInfo nBuf; 
+        NickInfo nBuf;
         this.data   = null; 
         System.out.println ( read );
         this.data   = read.split ( " " ); 
@@ -306,7 +308,7 @@ public class Handler extends HashNumeric {
     private void doChan ( boolean check ) {
         Chan c;
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
-            c.addUserList(data);
+            c.addUserList(data, 5);
         } else {
             c = new Chan ( this.data ); 
             cList.put ( c.getName().getCode(), c ); 
@@ -386,77 +388,65 @@ public class Handler extends HashNumeric {
     }
     
     
-    private static ServicesID findSplitSID ( long servicesID ) {
-        ServicesID sid = null;
-        for ( ServicesID s : splitSIDs ) {
-            if ( s.getID() == servicesID ) {
-                sid = s;
-            }
-        }
-        if ( sid != null ) {
-            splitSIDs.remove ( sid );
-        }
-        return sid;
-    }
+//    private static ServicesID findSplitSID ( long servicesID ) {
+//        HashString target = new HashString ( ""+servicesID );
+//        ServicesID sid = splitSIDs.get ( target );
+//        if ( sid != null ) {
+//            splitSIDs.remove ( sid.getCode() );
+//        }
+//        return sid;
+//    }
 
     
     /* New nick on the network */
     private void doNick ( )  {
         User u = new User ( this.data );
         ServicesID sid = null;
-        System.out.println("doNick: 0");
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
         try {
             long serviceID = Long.parseLong ( this.data[8] );
             if ( serviceID > 999 ) {
-                u.setSID ( Handler.findSplitSID ( serviceID ) );
+                u.setSID ( Handler.findSid ( serviceID ) );
             }
-        System.out.println("doNick: 1");
             
         } catch ( NumberFormatException ex ) {
             Proc.log ( Handler.class.getName ( ), ex );
-        System.out.println("doNick: 2");
         }
         
-        System.out.println("doNick: 3");
         if ( u.getSID() == null ) {
-        System.out.println("doNick: 4");
             u.setSID ( new ServicesID ( ) );
         }  
         
-        System.out.println("doNick: 5");
         NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
         
         if ( ni != null && u.getModes().is ( IDENT ) ) {
-        System.out.println("doNick: 6");
             u.getSID().add ( ni );
         } else {
-        System.out.println("doNick: 7");
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
             u.getModes().set ( IDENT, false );
         }
-        System.out.println("doNick: 8");
         
         NickServ.fixIdentState ( u );
         uList.put ( u.getName().getCode(), u );
-        System.out.println("doNick: 9");
         
         Server s = findServer ( this.data[7] );
         if ( s != null ) {
-        System.out.println("doNick: 10");
             s.addUser ( u );
         }
-        System.out.println("doNick: 11");
 
         checkTrigger ( u );
         this.oper.checkUser ( u ); /* Add user in OperServ check queue (akills etc) */
-        System.out.println("doNick: 12");
     }
     
     private static void checkTrigger ( User user ) {
         int ipCount = 0;
         int rangeCount = 0;
         User u = null;
+        if ( OperServ.isWhiteListed(user.getMask()) ) {
+            Proc.log("WHITELISTED!!!");
+            return;
+        }
+        Proc.log("NOT WHITELISTED!!!");
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             u = entry.getValue();
             if ( u.ipMatch ( user.getHostInfo().getIpHash() ) ) {
@@ -473,7 +463,6 @@ public class Handler extends HashNumeric {
             }
         }
         String reason;
-        //System.out.println("DEBUG: ipCount = "+ipCount);
         if ( Trigger.isWarn() ) {
             /* WARN */
             if ( ipCount > Trigger.getWarnIP() ) {
@@ -647,9 +636,9 @@ public class Handler extends HashNumeric {
         }
         
         if ( this.data.length >= 3 ) {
-            uList.remove(user.getName().getCode());
+            uList.remove ( user.getName().getCode() );
             user.setName ( this.data[2] );
-            uList.put(user.getName().getCode(), user);
+            uList.put ( user.getName().getCode(), user );
         }
         
         ni = NickServ.findNick ( user.getString ( NAME )  );
@@ -657,26 +646,37 @@ public class Handler extends HashNumeric {
         nick.fixIdentState ( user );
         for ( Chan c : user.getChans ( ) ) {
             ChanServ.addCheckUser ( c, user );
-//            chan.checkUser ( c, user );
         }
         this.oper.checkUser ( user ); /* Add user in OperServ check queue (akills etc) */
     }
     
     private void doSJoin ( User user )  {
         /* User joined a channel */
+        System.out.println("0:");
         Chan c = findChan ( this.data[3] );
+        System.out.println("1:");
         if ( c != null ) {
+        System.out.println("2:");
             c.addUser ( USER, user );
+        System.out.println("3:");
             user.addChan ( c );
+        System.out.println("4:");
         } else {
+        System.out.println("5:");
             this.doChan ( true );
+        System.out.println("6:");
         }
+        System.out.println("7:");
         if ( ! c.isSaJoin() ) {
+        System.out.println("8:");
             ChanServ.addCheckUser ( c, user );
-//            chan.checkUser ( c, user );
+        System.out.println("9:");
         } else {
+        System.out.println("10:");
             c.toggleSaJoin();
+        System.out.println("11:");
         }
+        System.out.println("12:");
     }
      
     private void doPart ( User user )  {
@@ -730,7 +730,6 @@ public class Handler extends HashNumeric {
         User user = Handler.findUser ( this.data[2].substring ( 1 ) );
         HashString command = new HashString ( this.data[4] );
         Chan chan = Handler.findChan(this.data[5].substring ( 1 ));
-        //String chan = this.data[5].substring ( 1 );
         String string = Handler.cutArrayIntoString ( this.data, 6 ).replace(")", "");
         
         if ( command.is(SAJOIN) ) {
@@ -790,7 +789,7 @@ public class Handler extends HashNumeric {
 
     public static void newSid ( ServicesID sid )  {
         try { 
-            sidList.add ( sid ); 
+            sidList.put ( sid.getCode(), sid ); 
         } catch ( Exception e )  {
             Proc.log ( Handler.class.getName(), e );
         }
@@ -853,24 +852,30 @@ public class Handler extends HashNumeric {
     }
 
     public static void squitUser ( User user )  {
-   //     System.out.println("squitUser("+user.getString(NAME)+");");
         try {
-            user.getSID().setSplitExpire ( );
+            user.getSID().updateStamp();
             user.partAll ( );
-            splitSIDs.add ( user.getSID ( ) );
-            uList.remove ( user );
+            removeUser ( user );
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
         }
     }
-
+    
+    public static void removeUser ( User user ) {
+        try {
+            user.getSID().remUser();
+            uList.remove ( user.getName().getCode() );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ) , e );
+        }
+    }
+    
     public static void deleteUser ( User user )  {
-     //   System.out.println("deleteUser("+user.getString(NAME)+");");
         try {
             user.getSID().remUser ( ); 
             user.partAll ( );
             user.quitServer ( );
-            uList.remove ( user );
+            removeUser ( user );
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
         }
@@ -886,7 +891,7 @@ public class Handler extends HashNumeric {
 
     public void doRecursiveUList ( User u )  { 
         try {
-            Server sHub = this.findServer ( Proc.getConf().get ( HUBNAME ) );
+            Server sHub = findServer ( Proc.getConf().get ( HUBNAME ) );
             if ( sHub != null )  {
                 sHub.recursiveUserList ( u, "" );
             }
@@ -905,22 +910,12 @@ public class Handler extends HashNumeric {
     
 
     public static ServicesID findSid ( long id )  {
+        HashString target = new HashString ( ""+id );
         try {
-            ServicesID split = null;
-            for ( ServicesID s : splitSIDs ) {
-                if ( s.getID ( ) == id ) {
-                    split = s;
-                }
+            ServicesID sid = sidList.get ( target );
+            if ( sid != null ) {
+                return sid;
             }
-            if ( split != null ) {
-                splitSIDs.remove ( split );
-                return split;
-            }
-            for ( ServicesID s : sidList )  {
-                if ( s.getID ( ) == id )  {
-                    return s;
-                }
-            } 
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
         }
@@ -937,7 +932,7 @@ public class Handler extends HashNumeric {
         todoAmount += oper.secMaintenance ( );
         todoAmount += ChanServ.secMaintenance ( );
         todoAmount += NickServ.secMaintenance ( );
-        todoAmount += updateServicesIDs();
+        todoAmount += updateServicesIDs ( );
         return todoAmount;
     }
       
@@ -973,7 +968,6 @@ public class Handler extends HashNumeric {
             db.runMaintenance ( );
             todoAmount += NickServ.maintenance ( );
             todoAmount += ChanServ.maintenance ( );
- //           this.checkNiStates ( );
             this.sidCleaner ( );
             this.cmdQueue.maintenance ( );
         
@@ -983,20 +977,11 @@ public class Handler extends HashNumeric {
         return todoAmount;
     }
     public int runHourMaintenance ( )  {
-        ArrayList<ServicesID> splitExpire = new ArrayList<>();
         int todoAmount = 0;
         try {
             initServices ( ); /* make sure everything isSet running */
             todoAmount += NickServ.maintenance ( );
             todoAmount += ChanServ.maintenance ( );
-            for ( ServicesID s : splitSIDs ) {
-                if ( s.timeToExpire ( ) ) {
-                    splitExpire.add ( s );
-                }
-            }
-            for ( ServicesID s : splitExpire ) {
-                splitSIDs.remove ( s );
-            }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
         }
@@ -1035,13 +1020,13 @@ public class Handler extends HashNumeric {
     private void sidCleaner ( )  {
         try {
             ArrayList<ServicesID> buf2 = new ArrayList<> ( );
-            for ( ServicesID s : sidList )  {
+            for ( ServicesID s : sidList.values() )  {
                 if ( s.hasExpired ( )  )  {
                     buf2.add ( s );
                 }
             }
             for ( ServicesID r : buf2 )  {
-                sidList.remove ( r );
+                sidList.remove ( r.getCode() );
             }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -1066,18 +1051,14 @@ public class Handler extends HashNumeric {
         Topic topic = new Topic ( topicData, user.getString ( FULLMASK ), Long.parseLong ( data[4] )  );
         if ( c != null )  {
             c.setTopic ( topic );
-            //chan.checkTopic ( user, c );
         }
         ChanInfo ci = ChanServ.findChan ( data[2] );
-        if ( ci != null )  {
-            /* The channel isSet registered, lets check if access isSet needed then set a new topic on it */
-              
-            /* Save topic only if its goes through the checks */
-            if ( chan.checkTopic ( user, c ) ) {
-                ci.getChanges().change ( TOPIC );
-                ChanServ.addToWorkList ( CHANGE, ci );
-            }
+        if ( ci != null &&
+            chan.checkTopic ( user, c ) ) {
+            ci.getChanges().change ( TOPIC );
+            ChanServ.addToWorkList ( CHANGE, ci );
         }
+        
     }
     
     public static RootServ getRootServ ( ) { 
@@ -1224,8 +1205,6 @@ public class Handler extends HashNumeric {
         int ms = 0;
         int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        System.out.println("debug(0): datetime:"+dateFormat.format(date)+", data:"+data);
  
         if ( data == null ) {
             data = "30";
@@ -1247,7 +1226,6 @@ public class Handler extends HashNumeric {
             return null;
         }
        
-        System.out.println("debug: amount:"+amount+", ms:"+ms);
         date.setTime ( date.getTime() + ( amount*ms ) );
         return date;
     }
@@ -1260,14 +1238,12 @@ public class Handler extends HashNumeric {
         Date date;
         try {
             date = dateFormat.parse ( datetime );
-            System.out.println("DEBUG!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: "+data );
             amount = Integer.parseInt ( data );            
         } catch ( NumberFormatException | ParseException ex ) {
             Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
         
-        System.out.println("debug: amount:"+amount+", ms:"+ms);
         date.setTime ( date.getTime() + ( amount*ms ) );
         return dateFormat.format ( date );
     }
@@ -1387,22 +1363,9 @@ public class Handler extends HashNumeric {
         }
         return iList;
     }
- 
-    public static void addSplitSID ( ServicesID sid ) {
-        splitSIDs.add ( sid );
-    }
-    
-    public static void printSIDs ( ) {
-        for ( ServicesID sid : splitSIDs ) {
-            System.out.println("splitSID: id:"+sid.getID() );
-        }
-    }
 
-    public static ArrayList<ServicesID> getSIDs ( ) {
+    public static HashMap<BigInteger, ServicesID> getSIDs ( ) {
         return sidList;
-    }
-    public static ArrayList<ServicesID> getSplitSIDs ( ) {
-        return splitSIDs;
     }
 
     public static HashMap<BigInteger,Chan> getChanList ( ) {

@@ -29,7 +29,7 @@ public class Command extends HashNumeric {
     private int         hash;
     private Object      target;
     private HashString  targetType;
-    private HashString  command;
+    private HashString  commandData;
     private String      extra;
     private String      extra2;
     
@@ -38,7 +38,7 @@ public class Command extends HashNumeric {
         this.hash = id.hashCode ( );
         this.target = target;
         this.targetType = targetType;
-        this.command = command;
+        this.commandData = command;
         this.extra = extra;
         this.extra2 = extra2;
     }
@@ -59,8 +59,8 @@ public class Command extends HashNumeric {
         return this.targetType;
     }
     
-    public HashString getCommand ( ) {
-        return this.command;
+    public HashString getCommandData ( ) {
+        return this.commandData;
     } 
 
     public String getExtra() {

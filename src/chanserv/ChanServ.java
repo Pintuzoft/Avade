@@ -146,8 +146,17 @@ public class ChanServ extends Service {
     }
      
     private void loadChans ( )  {
-        ciList = CSDatabase.getAllChans();
+        ciList = CSDatabase.getAllChans ( );
+        //CSDatabase.loadChanAccess ( SOP );
+        //CSDatabase.loadChanAccess ( AOP );
+        //CSDatabase.loadChanAccess ( AKICK );
+        CSDatabase.loadAllChanAccess();
     }
+    
+    public static void attachSettings ( HashString name, ChanSetting settings ) {
+        ciList.get(name.getCode()).setSettings ( settings );
+    }
+    
     
     /**
      *
@@ -306,7 +315,7 @@ public class ChanServ extends Service {
                 if ( ci.isSet ( TOPICLOCK )  || ci.isSet ( KEEPTOPIC ) ) {
                     if ( ci.getTopic ( ) != null ) {
                         c.setTopic ( ci.getTopic ( )  );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
+                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
                     }
                 }
                 if ( ci.isSet ( AUDITORIUM ) ) {
@@ -371,13 +380,13 @@ public class ChanServ extends Service {
                         return true;
                     } else {
                         c.setTopic ( ci.getTopic ( ) );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
+                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
                         return false;
                     }
             
                 } else {
                     c.setTopic ( ci.getTopic ( )  );
-                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getTopic ( ) );
+                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
                     return false;
                 }
             } else {
@@ -505,7 +514,6 @@ public class ChanServ extends Service {
 
     public static ChanInfo findChan ( HashString name )  {
         return ciList.get(name.getCode());
-//        return ( ciList.containsKey(name.getCode()) ? ciList.get(name.getCode()) : null );
     }
 
     /**

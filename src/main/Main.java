@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * @author DreamHealer
  */
 public class Main {
-
+    private static Proc proc;
     /**
      * @param args the command line arguments
      * @throws java.io.IOException
@@ -36,7 +36,7 @@ public class Main {
     public static void main ( String[] args )  throws IOException {
         /* run main loop */
         try {
-            Proc proc = new Proc ( );
+            proc = new Proc ( );
         } catch ( IOException e )  {
             Logger.getLogger ( Handler.class.getName ( )  ) .log ( Level.SEVERE, null, e );   
         }

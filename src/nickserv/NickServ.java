@@ -38,6 +38,7 @@ import user.User;
 import java.util.ArrayList;
 import java.util.HashMap;
 import mail.SendMail;
+import memoserv.MSDatabase;
 
 /**
  *
@@ -70,7 +71,7 @@ public class NickServ extends Service {
     }
  
     private void initNickServ ( )  {
-        is              = true;
+        setState ( true );
         this.snoop      = new NSSnoop ( this ); 
         this.executor   = new NSExecutor ( this, this.snoop );
         this.helper     = new NSHelper ( this, this.snoop );
@@ -80,7 +81,11 @@ public class NickServ extends Service {
     }
      
     private void loadNicks ( )  {
-       niList = NSDatabase.getAllNicks ( );
+       niList = NSDatabase.loadAllNicks ( );
+       NSDatabase.loadAllSettings();
+       NSDatabase.loadAllNickExp();
+       MSDatabase.loadAllMemos();
+       
     }
 
     public void setCommands ( )  {
@@ -158,7 +163,6 @@ public class NickServ extends Service {
     /* Registered entities */
     public static NickInfo findNick ( HashString name )  {
         return niList.get(name.getCode());
-//        return ( niList.containsKey(name.getCode()) ? niList.get(name.getCode()) : null );
     }
 
     static ArrayList<NickInfo> searchNicks ( String string ) {
@@ -231,12 +235,11 @@ public class NickServ extends Service {
         NickInfo ni = null;
         for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
             ni = entry.getValue();
-            if ( ni.isState ( OLD ) ) {
-                if ( ni.getExp().isTimeToSendAnotherMail ( ) ) {
-                    SendMail.sendExpNick ( ni );
-                    ni.getExp().incMailCount ( );
-                    NSDatabase.saveNickExp ( ni );
-                }
+            if ( ni.isState ( OLD ) &&
+                 ni.getExp().isTimeToSendAnotherMail ( ) ) {
+                SendMail.sendExpNick ( ni );
+                ni.getExp().incMailCount ( );
+                NSDatabase.saveNickExp ( ni );
             }
         }
         return 0;
@@ -276,14 +279,9 @@ public class NickServ extends Service {
         if ( NSDatabase.activateConnection() && newAuthList.size() > 0 ) {
             ArrayList<NSAuth> auths = new ArrayList<>();
             for ( NSAuth auth : newAuthList ) {
-                if ( auth.is(MAIL) ) {
-                    if ( NSDatabase.addMail ( auth ) ) {
-                        auths.add ( auth );
-                    }
-                } else if ( auth.is(PASS) ) {
-                    if ( NSDatabase.addPass ( auth ) ) {
-                        auths.add ( auth );
-                    }
+                if ( ( auth.is(MAIL) && NSDatabase.addMail ( auth ) ) ||
+                       auth.is(PASS) && NSDatabase.addPass ( auth ) ) {
+                    auths.add ( auth );
                 }
             }
             for ( NSAuth auth : auths ) {
@@ -333,7 +331,6 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || deleteList.isEmpty() ) {
             return deleteList.size();
         }
-        System.out.println("DEBUG: deleteList size: "+deleteList.size());
         NickInfo ni = deleteList.get(0);
         if ( NSDatabase.deleteNick ( ni ) ) {
             deleteList.remove ( ni );
@@ -398,8 +395,8 @@ public class NickServ extends Service {
     public static void is ( boolean state ) { 
         is = state; 
     }
-    public void setState ( boolean state ) { 
-        NickServ.is = state; 
+    public static void setState ( boolean state ) { 
+        is = state; 
     }
 
     public static boolean isUp ( ) {

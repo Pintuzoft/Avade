@@ -23,10 +23,9 @@ import core.Proc;
 import core.HashNumeric;
 import core.HashString;
 import core.StringMatch;
-import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.Arrays;
 
 /**
  *
@@ -36,7 +35,6 @@ public class Chan extends HashNumeric {
     private HashString          name;
     private Topic               topic;
     
-   // private String modes;
     private long                createdOn;
     private ArrayList<User>     oList;
     private ArrayList<User>     vList;
@@ -49,21 +47,18 @@ public class Chan extends HashNumeric {
     private HashString          relay;
     
     /* STATIC */
-    //public static Comparator<Chan>      comparator =  ( Chan c1, Chan c2 )  -> { return c1.hashCode ( )  - c2.hashCode ( ); };
 
 
     public Chan ( String[] data ) {
         this.name           = new HashString ( data[3] );
-        this.createdOn      = Long.parseLong ( data[2] );
         this.modes          = new ChanMode ( );
+        this.createdOn      = Long.parseLong ( data[2] );
         this.oList          = new ArrayList<>( );    /* oplist */
         this.vList          = new ArrayList<>( );    /* voicelist */
         this.uList          = new ArrayList<>( );    /* userlist */
         this.modes.set ( ChanMode.SERVER, data );
-        this.addUserList ( data );
+        this.init ( data );
         this.checkRelay();
-        //System.out.println ( "IN CHAN..." );
-
     }
        
     public Chan ( HashString code )  {
@@ -77,6 +72,10 @@ public class Chan extends HashNumeric {
         }
     }
     
+    private void init ( String[] data ) {
+        this.addUserList ( data, 6 );
+    }
+    
     public HashString getRelay ( ) {
         return this.relay;
     }
@@ -85,48 +84,49 @@ public class Chan extends HashNumeric {
         return this.isRelay;
     } 
 
-    public void addUserList ( String[] data )  {
+    public void addUserList ( String[] data, int offset )  {
         // :irc.avade.net SJOIN 1374147654 #friends +c  :@Guest33015 @DreamHealer 
+        //      0           1       2       3       4  5     6+
+        // :irc.avade.net SJOIN 1374147654 #friends +c :@Guest33015 @DreamHealer 
         //      0           1       2       3       4       5+
         User u;
-        boolean op, vo;
-        String buf;
-         
-        try {
-            String out = new String ( );
-            this.modes.setModeString ( data[4] );
-            int i = 0;
-            for ( String nick : data )  {
-                if ( ++i > 5 )  {
-                    if ( ! nick.isEmpty ( )  )  {
-                        op = false;
-                        vo = false;
-                        nick = nick.replaceAll ( Pattern.quote ( ":" ) , "" );
-                        
-                        if ( nick.contains ( "@" )  )  {
-                            nick = nick.replaceAll ( "@", "" );
-                            op = true;
-                        }
-                        if ( nick.contains ( "+" )  )  {
-                            nick = nick.replaceAll ( "\\+", "" );
-                            vo = true;
-                        }
+        boolean op;
+        boolean vo;
 
-                        if ( ( u = Handler.findUser ( nick ) ) != null ) {
-                            if ( op ) { 
-                                this.addUser ( OP, u );
-                            } else if ( vo ) {
-                                this.addUser ( VOICE, u );
-                            } else {
-                                this.addUser ( USER, u );
-                            }
-                            u.addChan ( this );
-                            ChanServ.addCheckUser ( this, u );
-                        } 
-                    }
+        try {
+
+            this.modes.setModeString ( data[4] );
+            String[] nicks = Arrays.copyOfRange(data, offset, data.length);
+            
+            for ( String nick : nicks ) {
+                String nickStr = nick.replace (  ":", "" );
+                op = false;
+                vo = false;
+                
+                if ( nickStr.contains("@") ) {
+                    nickStr = nickStr.replace ( "@", "" );
+                    op = true;
                 }
+                if ( nick.contains("+") ) {
+                    nickStr = nickStr.replace ( "+", "" );
+                    vo = true;
+                }
+                
+                if ( ( u = Handler.findUser ( nickStr ) ) != null ) {
+                    if ( op && vo ) { 
+                        this.addUser (OP, u );
+                        this.addUser (VOICE, u );
+                    } else if ( op ) { 
+                        this.addUser ( OP, u );
+                    } else if ( vo ) {
+                        this.addUser ( VOICE, u );
+                    } else {
+                        this.addUser ( USER, u );
+                    }
+                    u.addChan ( this );
+                    ChanServ.addCheckUser ( this, u );
+                }  
             }
-    
         } catch ( Exception e )  { 
             Proc.log ( Chan.class.getName ( ) , e ); 
         }
@@ -149,10 +149,11 @@ public class Chan extends HashNumeric {
         //      0        1      2       3         4      5+
         boolean state = false;
         User u;
+        int m=1;
         if ( cmd.length < 6 ) {
             return;
         } 
-        for ( int i=0, m=1; i < cmd[4].length ( ); i++ ) {
+        for ( int i=0; i < cmd[4].length ( ); i++ ) {
             u = Handler.findUser ( cmd[4+m] );
             switch ( ( ""+cmd[4].charAt(i)).hashCode ( ) ) {
                case MODE_PLUS :
@@ -178,6 +179,34 @@ public class Chan extends HashNumeric {
            } 
         }
     }
+    public void setModeUserOP ( User user, HashString access, boolean isop, boolean isvoice ) {
+        if ( access.is(OP) && ! isop )  {
+            this.uList.remove ( user );
+            this.oList.add ( user );
+
+        } else {
+            if ( isop )  {
+                if ( ! isvoice )  {
+                    this.uList.add ( user );
+                }
+                this.oList.remove ( user );
+            }
+        }
+    }
+    public void setModeUserVoice ( User user, HashString access, boolean isop, boolean isvoice ) {
+         if ( access.is(VOICE) && ! isvoice )  {
+            this.uList.remove ( user );
+            this.vList.add ( user );
+
+        } else {
+            if ( isvoice )  {
+                if ( ! isop )  {
+                    this.uList.add ( user );
+                }
+                this.vList.remove ( user );
+            }
+        }
+    }
     public void chModeUser ( User user, HashString mode, HashString access, boolean isIRCop )  { 
         try {            
             if ( user == null )  {
@@ -185,38 +214,15 @@ public class Chan extends HashNumeric {
             }
             boolean isop        = this.isOp ( user );
             boolean isvoice     = this.isVo ( user );
-            boolean isuser      = this.isUser ( user );
             
             /* if we want to change OP */
+                       
             if ( mode.is(OP) )  {
-                if ( access.is(OP) ) {
-                    if ( ! isop )  {
-                        this.uList.remove ( user );
-                        this.oList.add ( user );
-                    }
-                } else {
-                    if ( isop )  {
-                        if ( ! isvoice )  {
-                            this.uList.add ( user );
-                        }
-                        this.oList.remove ( user );
-                    }
-                }
+                setModeUserOP ( user, access, isop, isvoice );
 
             } else if ( mode.is(VOICE) ) {
-                if ( access.is(VOICE) ) {
-                    if ( ! isvoice )  {
-                        this.uList.remove ( user );
-                        this.vList.add ( user );
-                    } 
-                } else {
-                    if ( isvoice )  {
-                        if ( ! isop )  {
-                            this.uList.add ( user );
-                        }
-                        this.vList.remove ( user );
-                    }
-                }
+                setModeUserVoice ( user, access, isop, isvoice );
+
             } 
             if ( this.isOp ( user ) && ! isIRCop )  {
                  Handler.getChanServ().checkUser ( this, user );
@@ -255,13 +261,13 @@ public class Chan extends HashNumeric {
              return;
         } 
         
-        if ( acc.is(OP) ) {
+        if ( acc.is (OP) && !this.oList.contains(u)) {
             this.oList.add ( u );
             
-        } else if ( acc.is(VOICE) ) {
+        } else if ( acc.is (VOICE) && !this.vList.contains(u) ) {
             this.vList.add ( u );
         
-        } else if ( acc.is(USER) ) {
+        } else if ( acc.is ( USER ) && !this.uList.contains(u) ) {
             this.uList.add ( u );
         }
          
@@ -392,5 +398,9 @@ public class Chan extends HashNumeric {
     
     public boolean is ( Chan chan ) {
         return this.name.is ( chan );
+    }   
+    
+    public Long getCreatedOn ( ) {
+        return this.createdOn;
     }
 }

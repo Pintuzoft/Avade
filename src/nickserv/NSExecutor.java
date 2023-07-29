@@ -229,7 +229,7 @@ import java.util.regex.Pattern;
         ni.setLastUsed();
         ni.getChanges().hasChanged ( LASTUSED );
         NickServ.addToWorkList ( CHANGE, ni );
-        Database.updateServicesID ( user.getSID() );
+        Handler.addUpdateSID ( user.getSID() );
         this.snoop.msg ( true, IDENTIFY, ni.getName(), user, cmd );
     }
  
@@ -408,7 +408,7 @@ import java.util.regex.Pattern;
         // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :ghost dreamhealer pass  
         //            0       1                          2      3           4    5  = 6
         NickInfo ni;
-        String nick = new String ( );
+        String nick = "";
         
         CMDResult result = this.validateCommandData ( user, GHOST, cmd );
  

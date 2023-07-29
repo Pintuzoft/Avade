@@ -137,7 +137,7 @@ public class NickSetting extends HashNumeric {
      
     
     public String getInfoStr ( )  {
-        String buf = new String ( );
+        String buf = "";
         boolean first = true;         
         HashString[] sList = { 
             NOOP, NEVEROP, MAILBLOCKED, 
@@ -165,10 +165,10 @@ public class NickSetting extends HashNumeric {
         this.showEmail  = false;
         this.showHost   = false;
         this.auth       = false;
-        this.mark       = new String ( );
-        this.freeze     = new String ( );
-        this.hold       = new String ( );
-        this.noghost    = new String ( );
+        this.mark       = "";
+        this.freeze     = "";
+        this.hold       = "";
+        this.noghost    = "";
     }
 
     public boolean getAuth ( )  {

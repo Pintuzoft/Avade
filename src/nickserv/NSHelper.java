@@ -33,12 +33,10 @@ import user.User;
  */
 public class NSHelper extends Helper {
     private NSSnoop         snoop;
-   // private boolean found;
     private TextFormat      f;
   
     public NSHelper ( NickServ service, NSSnoop snoop )  {
         super ( service );
-//        this.service = service;
         this.snoop          = snoop;
         this.f              = new TextFormat ( );
     }
@@ -410,7 +408,9 @@ public class NSHelper extends Helper {
      
     
     
-    /*** OPER COMMANDS ***/
+    /*** OPER COMMANDS
+     * @param user
+     * @param cmd ***/
     
     public void delete ( User user, String[] cmd )  { 
         Oper oper = user.getSID().getOper ( );

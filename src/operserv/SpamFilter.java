@@ -5,15 +5,11 @@
  */
 package operserv;
 
-import core.Handler;
 import core.HashNumeric;
 import core.HashString;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -26,8 +22,6 @@ public class SpamFilter extends HashNumeric {
     private String instater;
     private String reason;
     private String stamp;
-    private String expire;
-    private long expireStamp;
     private int bits;
     public static final int SF_FLAG_NONE        = 000000;
     public static final int SF_FLAG_STRIPCTRL   = 0x0001;
@@ -51,30 +45,20 @@ public class SpamFilter extends HashNumeric {
     public static final int SF_ACT_AKILL        = 0x40000;
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
-    public SpamFilter ( long id, String pattern, String flags, String instater, String reason, String stamp, String expire ) {
+    public SpamFilter ( long id, String pattern, String flags, String instater, String reason, String stamp ) {
         this.id = id;
         this.pattern = new HashString ( pattern );
         this.flags = flags;
         this.instater = instater;
         this.reason = reason;
         this.stamp = stamp;
-        this.expire = expire;
         
         /* Add proper time and expire if time is null */
         if ( stamp == null ) {
             this.stamp = dateFormat.format ( new Date ( ) );
-            this.expire = Handler.expireToDateString ( this.stamp, expire );
         } else {
             this.stamp = stamp;
-            this.expire = expire;
-            
         }
-        try {
-            this.expireStamp = dateFormat.parse(this.expire).getTime();
-        } catch (ParseException ex) {
-            Logger.getLogger(SpamFilter.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        System.out.println("expireStamp: "+this.stamp+":"+this.expireStamp);
         this.flagsToBits();
     }
     
@@ -106,10 +90,6 @@ public class SpamFilter extends HashNumeric {
         return this.stamp;
     }
 
-    public String getExpire() {
-        return this.expire;
-    }
-    
     private void flagsToBits ( ) {
         HashString ch;
         this.bits = 0;
@@ -206,11 +186,5 @@ public class SpamFilter extends HashNumeric {
             }
              
         }
-    }
-
-    public boolean hasExpired ( ) {
-        System.out.println(this.expireStamp+":"+System.currentTimeMillis());
-        return this.expireStamp < System.currentTimeMillis();
-    }
-    
+    }    
 }

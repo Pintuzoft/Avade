@@ -222,12 +222,12 @@ public class ChanInfo extends HashNumeric {
      */
     public String getString ( HashString it )  {
         if ( it.is(TOPICNICK) ) { 
-            if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
+            if  ( this.topic != null && this.topic.getText ( ) != null )  {
                 return this.topic.getSetter();
             } 
         } else if ( it.is(TOPIC) ) {
-            if  ( this.topic != null && this.topic.getTopic ( ) != null )  {
-                return this.topic.getTopic ( );
+            if  ( this.topic != null && this.topic.getText ( ) != null )  {
+                return this.topic.getText ( );
             } 
         } 
         else if ( it.is(NAME) )             { return this.name.getString();     }
@@ -244,11 +244,7 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public boolean identify ( User user, String pass )  {
-        if ( this.pass.compareTo ( pass )  == 0 )  {
-            /* matches passwords */
-            return true;
-        }
-        return false;
+        return ( this.pass.compareTo ( pass )  == 0 );
     }
 
     /**
@@ -679,8 +675,7 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public String getAccessString ( HashString access ) {
-        String buf = new String ( );
-//        ArrayList<CSAcc> list = this.getAccessList ( access );
+        String buf = "";
         for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
             CSAcc acc = entry.getValue();
         
@@ -745,7 +740,6 @@ public class ChanInfo extends HashNumeric {
      */
     public CSAcc getAccess ( HashString subcommand, NickInfo ni2 ) {
         CSAcc acc = null;
-        //System.out.println("---- getAccess(ni)");
         if ( ni2 == null ) {
             return null;
         }
@@ -767,7 +761,6 @@ public class ChanInfo extends HashNumeric {
      */
     public CSAcc getAccess ( HashString subcommand, String mask ) {
         CSAcc acc = null;
-        //System.out.println("---- getAccess(mask)");
         if ( mask == null ) {
             return null;
         }
@@ -830,8 +823,11 @@ public class ChanInfo extends HashNumeric {
      */
 
     public String getIsAccess ( HashString access, User user )  {
-        NickInfo ni = this.getNickByUser ( user );
-        if ( this.getAccessList(access).get(ni.getName().getCode()) != null ) {
+        NickInfo ni;
+        if ( (ni = this.getNickByUser(user)) == null ) {
+            return null;
+          
+        } else if ( this.getAccessList(access).get(ni.getName().getCode()) != null ) {
             return ni.getNameStr();
             
         } else {
@@ -1071,6 +1067,9 @@ public class ChanInfo extends HashNumeric {
     }
 
     private void checkRelay() {
+        if ( this.settings == null ) {
+            return;
+        }
         if ( this.settings.is(AUDITORIUM) ) {
             this.relayed = true;
         } else {

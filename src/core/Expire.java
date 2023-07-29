@@ -24,7 +24,7 @@ package core;
 public class Expire {
     private long lastSent;
     private int mailCount;
-    private final int maxMail = 5;
+    private static int maxMailCount = 5;
     
     public Expire ( ) {
         this.lastSent = 0;
@@ -55,13 +55,13 @@ public class Expire {
     /* Return true if its time to send another mail and we havent sent too many  ( 5 )  */
     public boolean isTimeToSendAnotherMail ( ) {
         long lastMail = ( System.currentTimeMillis ( ) / 1000 - this.getLastSent ( ) );
-        long maxTime  = 60 * 60 * 24; /* Wait 24 hours between mails */
-        return  ( this.mailCount <= this.maxMail && lastMail > maxTime );
+        long maxTime  = ( 60 * 60 * 24 ); /* Wait 24 hours between mails */
+        return  ( this.mailCount <= maxMailCount && lastMail > maxTime );
     }
     
     public boolean shouldExpire ( ) {
         long lastMail = ( System.currentTimeMillis ( ) / 1000 - this.getLastSent ( ) );
-        long maxTime  = 60 * 60 * 24 * 2; /* Wait 2 days after last mail */
-        return ( this.mailCount > this.maxMail && lastMail > maxTime );
+        long maxTime  = ( 60 * 60 * 24 * 2 ); /* Wait 2 days after last mail */
+        return ( this.mailCount > maxMailCount && lastMail > maxTime );
     }
 }

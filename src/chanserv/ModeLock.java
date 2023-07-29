@@ -44,7 +44,7 @@ class ModeLock extends HashNumeric {
     }
     
     private void init ( )  {
-        this.modes = new String ( );
+        this.modes = "";
         this.m_registered   = 1;
         this.m_modregjoin   = 0;
         this.m_topic        = 0;
@@ -64,7 +64,6 @@ class ModeLock extends HashNumeric {
         this.init ( );
         this.modes = data;
         for ( int index = 0; index < data.length ( ); index++ ) {
-//            System.out.println("Parsing mlock: "+data.charAt(index));
             switch ( ( ""+data.charAt ( index ) ).hashCode ( ) ) {
                case MODE_PLUS :
                    state = 1;
@@ -136,45 +135,63 @@ class ModeLock extends HashNumeric {
  
         // Enable
         missing = "+";
-        if ( this.m_invite == 1 && ! modes.is ( MODE_i ) ) 
+        if ( this.m_invite == 1 && ! modes.is ( MODE_i ) ) {
             missing += "i";
-        if ( this.m_moderate == 1 && ! modes.is ( MODE_m ) ) 
+        }
+        if ( this.m_moderate == 1 && ! modes.is ( MODE_m ) ) {
             missing += "m";
-        if ( this.m_modregchat == 1 && ! modes.is ( MODE_M ) ) 
+        }
+        if ( this.m_modregchat == 1 && ! modes.is ( MODE_M ) ) {
             missing += "M";
-        if ( this.m_modregjoin == 1 && ! modes.is ( MODE_R ) ) 
+        }
+        if ( this.m_modregjoin == 1 && ! modes.is ( MODE_R ) ) {
             missing += "R";
-        if ( this.m_noctrl == 1 && ! modes.is ( MODE_c ) ) 
+        }
+        if ( this.m_noctrl == 1 && ! modes.is ( MODE_c ) ) {
             missing += "c";
-        if ( this.m_noprivmsgs == 1 && ! modes.is ( MODE_n ) ) 
+        }
+        if ( this.m_noprivmsgs == 1 && ! modes.is ( MODE_n ) ) {
             missing += "n";
-        if ( this.m_private == 1 && ! modes.is ( MODE_p ) ) 
+        }
+        if ( this.m_private == 1 && ! modes.is ( MODE_p ) ) {
             missing += "p";
-        if ( this.m_secret == 1 && ! modes.is ( MODE_s ) ) 
+        }
+        if ( this.m_secret == 1 && ! modes.is ( MODE_s ) ) {
             missing += "s";
-        if ( this.m_topic == 1 && ! modes.is ( MODE_t ) ) 
+        }
+        if ( this.m_topic == 1 && ! modes.is ( MODE_t ) ) {
             missing += "t";
+        }
         
         // Disable
         missing += "-";
-        if ( this.m_invite == -1 && modes.is ( MODE_i ) )
+        if ( this.m_invite == -1 && modes.is ( MODE_i ) ) {
             missing += "i";
-        if ( this.m_moderate == -1 && modes.is ( MODE_m ) )
+        }
+        if ( this.m_moderate == -1 && modes.is ( MODE_m ) ) {
             missing += "m";
-        if ( this.m_modregchat == -1 && modes.is ( MODE_M ) )
+        }
+        if ( this.m_modregchat == -1 && modes.is ( MODE_M ) ) {
             missing += "M";
-        if ( this.m_modregjoin == -1 && modes.is ( MODE_R ) )
+        }
+        if ( this.m_modregjoin == -1 && modes.is ( MODE_R ) ) {
             missing += "R";
-        if ( this.m_noctrl == -1 && modes.is ( MODE_c ) )
+        }
+        if ( this.m_noctrl == -1 && modes.is ( MODE_c ) ) {
             missing += "c";
-        if ( this.m_noprivmsgs == -1 && modes.is ( MODE_n ) )
+        }
+        if ( this.m_noprivmsgs == -1 && modes.is ( MODE_n ) ) {
             missing += "n";
-        if ( this.m_private == -1 && modes.is ( MODE_p ) )
+        }
+        if ( this.m_private == -1 && modes.is ( MODE_p ) ) {
             missing += "p";
-        if ( this.m_secret == -1 && modes.is ( MODE_s ) )
+        }
+        if ( this.m_secret == -1 && modes.is ( MODE_s ) ) {
             missing += "s";
-        if ( this.m_topic == -1 && modes.is ( MODE_t ) )
+        }
+        if ( this.m_topic == -1 && modes.is ( MODE_t ) ) {
             missing += "t";
+        }
         
         return missing;
     }

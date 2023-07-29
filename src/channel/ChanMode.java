@@ -17,7 +17,6 @@
  */
 package channel;
 
-import core.Proc;
 import core.HashNumeric;
 import core.HashString;
 
@@ -49,10 +48,8 @@ public class ChanMode extends HashNumeric {
     }
 
     public void set ( HashString type, String[] data )  {
-        if ( type.is(SERVER) ) {
-            this.setModeString ( data[4] );
-        
-        } else if ( type.is(MODE) ) {
+        if ( type.is(SERVER) ||
+             type.is(MODE) ) {
             this.setModeString ( data[4] ); 
         }
         
@@ -250,9 +247,8 @@ public class ChanMode extends HashNumeric {
         }
     } 
     
-    public String getModes ( )  {
-        String buf = new String ( );
-        buf += "+";
+    public String getModes ( ) {
+        String buf = "+";
         buf += this.is ( MODE_r ) ? "r" : "";
         buf += this.is ( MODE_R ) ? "R" : "";
         buf += this.is ( MODE_t ) ? "t" : "";

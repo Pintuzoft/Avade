@@ -31,7 +31,6 @@ import java.util.logging.Logger;
 import monitor.SnoopLog;
 import nickserv.NickInfo;
 import nickserv.NickServ;
-import operserv.OSLogEvent;
 
 /**
  *
@@ -39,7 +38,6 @@ import operserv.OSLogEvent;
  */
 public class Database extends HashNumeric { 
     protected static Connection sql;
- //   private static boolean connected;    
     protected static long lastUsed;
     protected static boolean debug = false;
     public static PreparedStatement ps;
@@ -51,11 +49,10 @@ public class Database extends HashNumeric {
     public Database ( )  {
         try {
             if ( sql != null )  {
-                Class.forName ( "com.mysql.jdbc.Driver" ) .newInstance ( );
                 connect ( ); 
             }
-        } catch  ( ClassNotFoundException | IllegalAccessException | InstantiationException ex )  {
-            Proc.log ( Database.class.getName ( ) , ex );
+        } catch ( Exception e )  {
+            // discard
         } 
     }
 
@@ -68,8 +65,8 @@ public class Database extends HashNumeric {
 
     protected static void connect ( )  {
         try {
-            if ( sql == null || ! sql.isValid ( 1 )  )  {
-                if ( System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
+            if ( ( sql == null || ! sql.isValid ( 1 ) ) &&
+                System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
                     sql = DriverManager.getConnection ( 
                             "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString(), 
                             Proc.getConf().get(MYSQLUSER).getString(), 
@@ -80,15 +77,19 @@ public class Database extends HashNumeric {
                         Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
                     }
                 } 
-            }
+       
         } catch  ( SQLException | NumberFormatException ex )  {
             sql = null;
             attempts++;
             if ( System.currentTimeMillis() - lastGlobops >= 10000 ) {
                 if ( attempts == 1 ) {
-                    Handler.getOperServ().sendGlobOp ( "Database connection lost." );
+                    if ( Handler.getOperServ() != null ) {
+                        Handler.getOperServ().sendGlobOp ( "Database connection lost." );
+                    }
                 } else {
-                    Handler.getOperServ().sendGlobOp ( "Database re-connection attempt failed - "+getServiceStats ( ) );
+                    if ( Handler.getOperServ() != null ) {
+                        Handler.getOperServ().sendGlobOp ( "Database re-connection attempt failed - "+getServiceStats ( ) );
+                    }
                 }
                 lastGlobops = System.currentTimeMillis();
             }
@@ -316,7 +317,7 @@ public class Database extends HashNumeric {
             ps.execute ( );
             ps.close ( ); 
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             return false;
         }
         return true;             
@@ -336,19 +337,20 @@ public class Database extends HashNumeric {
             res = ps.executeQuery ( );
             while ( res.next() ) {
                 sid = new ServicesID ( res.getLong("id") );
+                sid.updateStamp();
                 if ( res.getString("nicks") != null ) {
                     nList = stringToNicks ( res.getString("nicks") );
                     sid.setNiList ( nList );
                 }
-                if ( res.getString("nicks") != null ) {
+                if ( res.getString("chans") != null ) {
                     cList = stringToChans ( res.getString("chans") );
                     sid.setCiList ( cList );
                 }
-                Handler.addSplitSID ( sid );
+                Handler.newSid ( sid );
             }
             ps.close ( );
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( Database.class.getName ( ) , ex );
 
         }
@@ -374,8 +376,8 @@ public class Database extends HashNumeric {
             ps.close ( );
             
         } catch ( SQLException ex ) {
-            //Proc.log ( Database.class.getName ( ) , ex );
-            return "1.1701-1"; /* Base version */
+            Proc.log ( Database.class.getName ( ) , ex );
+            version = "1.1701-1"; /* Base version */
         }
         return version;
     }

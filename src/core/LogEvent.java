@@ -35,7 +35,7 @@ public abstract class LogEvent extends HashNumeric {
     protected String stamp;
     protected DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-    public LogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
+    protected LogEvent ( HashString name, HashString flag, String mask, String oper, String stamp ) {
         this.name = name;
         this.flag = flag;
         this.mask = mask;
@@ -43,7 +43,7 @@ public abstract class LogEvent extends HashNumeric {
         this.stamp = stamp.substring ( 0, 19 );
     }
 
-    public LogEvent ( HashString name, String mask, String oper ) {
+    protected LogEvent ( HashString name, String mask, String oper ) {
         this.name = name;
         this.mask = mask;
         this.oper = oper;
@@ -54,7 +54,7 @@ public abstract class LogEvent extends HashNumeric {
         this.stamp = stamp;
     }
     
-    static public String getNickFlagByHash ( HashString hash ) {
+    public static String getNickFlagByHash ( HashString hash ) {
         if      ( hash.is(AUTHMAIL) )       { return "Am";  }
         else if ( hash.is(AUTHPASS) )       { return "Ap";  }
         else if ( hash.is(DROP) )           { return "D";   }
@@ -79,7 +79,7 @@ public abstract class LogEvent extends HashNumeric {
         }
     }
     
-    static public String getChanFlagByHash ( HashString hash ) {
+    public static String getChanFlagByHash ( HashString hash ) {
         if      ( hash.is(AUDITORIUM) )     { return "A+";  }
         else if ( hash.is(UNAUDITORIUM) )   { return "A-";  }
         else if ( hash.is(CLOSE) )          { return "C+";  }
@@ -112,7 +112,7 @@ public abstract class LogEvent extends HashNumeric {
         }
     }
     
-    static public String getOperFlagByHash ( HashString hash ) {
+    public static String getOperFlagByHash ( HashString hash ) {
         if      ( hash.is(ADDMASTER) )      { return "Master+";     }
         else if ( hash.is(DELMASTER) )      { return "Master-";     }
         else if ( hash.is(ADDSRA) )         { return "SRA+";        }

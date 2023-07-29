@@ -152,17 +152,6 @@ public class CMDResult {
         this.str1 = str;
     }
     
-  /*  public void setString1 ( HashString str ) {
-        String buf = this.str1.getString();
-        if ( buf.length() > 0 ) {
-            buf += ", "+str.getString();
-            this.str1 = new HashString ( buf );
-        } else {
-            this.str1 = str;
-        }
-    }
-    */
-
     /**
      * Return the stored Chan
      * @return

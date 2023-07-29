@@ -21,6 +21,7 @@ import command.Command;
 import core.Config;
 import core.Expire;
 import core.Database;
+import core.Handler;
 import core.HashString;
 import core.LogEvent;
 import core.Proc;
@@ -419,41 +420,60 @@ public class NSDatabase extends Database {
         return nExp;
     }
     
-    
-    private static NickSetting getSettings ( String nick )  {
-        NickSetting settings;
-        settings = new NickSetting ( );
-
-        if ( ! activateConnection ( ) ) {
-            return settings;
+    public static void loadAllNickExp ( )  {
+        NickInfo ni;
+        if  ( ! activateConnection ( ) ) {
+            return;
         }
         try {
-            String query = "select noop,neverop,mailblock,showemail,showhost,mark,freeze,hold,noghost "
-                         + "from nicksetting "
-                         + "where name = ? "
-                         + "limit 1";
+            String query = "select name,lastsent,mailcount from nickexp;";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, nick );
             res2 = ps.executeQuery ( );
 
-            if ( res2.next ( )  )  {
-                if ( res2.getBoolean ( "noop" )  )           { settings.set ( NOOP, true );            }
-                if ( res2.getBoolean ( "neverop" )  )        { settings.set ( NEVEROP, true );         }
-                if ( res2.getBoolean ( "mailblock" )  )      { settings.set ( MAILBLOCK, true );       }
-                if ( res2.getBoolean ( "showemail" )  )      { settings.set ( SHOWEMAIL, true );       }
-                if ( res2.getBoolean ( "showhost" )  )       { settings.set ( SHOWHOST, true );        }
-                settings.set ( MARK, res2.getString ( "mark" ) );
-                settings.set ( FREEZE, res2.getString ( "freeze" ) );
-                settings.set ( HOLD, res2.getString ( "hold" ) );
-                settings.set ( NOGHOST, res2.getString ( "noghost" ) );
+            if  ( res2.next ( ) )  {
+                if ( (ni = NickServ.findNick(res2.getString("name"))) != null ) {
+                    ni.getExp().setLastSent ( Long.parseLong ( res2.getString ( "lastsent" )  )  );
+                    ni.getExp().setMailCount ( res2.getInt ( "mailcount" )  );
+                }
+            }
+        } catch ( NumberFormatException | SQLException ex )  {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+        }
+        return;
+    }
+
+    
+    public static void loadAllSettings ( )  {
+        NickInfo ni;
+
+        if ( ! activateConnection ( ) ) {
+            return;
+        }
+        try {
+            String query = "select name,noop,neverop,mailblock,showemail,showhost,mark,freeze,hold,noghost from nicksetting";
+            ps = sql.prepareStatement ( query );
+            res2 = ps.executeQuery ( );
+
+            while ( res2.next ( ) ) {
+                if ( ( ni = NickServ.findNick(res2.getString("name")) ) != null ) {
+                    if ( res2.getBoolean ( "noop" )  )           { ni.getSettings().set ( NOOP, true );            }
+                    if ( res2.getBoolean ( "neverop" )  )        { ni.getSettings().set ( NEVEROP, true );         }
+                    if ( res2.getBoolean ( "mailblock" )  )      { ni.getSettings().set ( MAILBLOCK, true );       }
+                    if ( res2.getBoolean ( "showemail" )  )      { ni.getSettings().set ( SHOWEMAIL, true );       }
+                    if ( res2.getBoolean ( "showhost" )  )       { ni.getSettings().set ( SHOWHOST, true );        }
+                    ni.getSettings().set ( MARK, res2.getString ( "mark" ) );
+                    ni.getSettings().set ( FREEZE, res2.getString ( "freeze" ) );
+                    ni.getSettings().set ( HOLD, res2.getString ( "hold" ) );
+                    ni.getSettings().set ( NOGHOST, res2.getString ( "noghost" ) );
+                }
             } 
             res2.close ( );
             ps.close ( );
-            idleUpdate ( "getSettings ( ) " );
+            idleUpdate ( "loadAllSettings ( ) " );
         } catch  ( SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ), ex );
         } 
-        return settings;
+        return;
     }
   
     public static boolean authMail ( NickInfo ni, Command command )  {
@@ -724,7 +744,7 @@ public class NSDatabase extends Database {
         return true;
     }
     
-    static HashMap<BigInteger,NickInfo> getAllNicks ( )  {
+    static HashMap<BigInteger,NickInfo> loadAllNicks ( )  {
         HashMap<BigInteger,NickInfo> nList = new HashMap<>();
         NickInfo ni;
         String[] buf;
@@ -760,9 +780,10 @@ public class NSDatabase extends Database {
              
             while ( res.next ( ) ) { 
                 buf = res.getString(2).split ( Pattern.quote ( "@" ) );
-                settings = getSettings ( res.getString ( 1 ) );
-                exp = getNickExp ( res.getString ( 1 ) );
-                exp = ( exp != null ? exp : new Expire ( ) );
+                settings = new NickSetting ( );
+                exp = new Expire ( );
+                //exp = getNickExp ( res.getString ( 1 ) );
+                //exp = ( exp != null ? exp : new Expire ( ) );
                 if ( buf[1] == null ) {
                     buf[1] = "Unknown";
                 }

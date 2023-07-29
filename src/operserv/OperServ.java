@@ -149,6 +149,7 @@ public class OperServ extends Service {
     }
      
     public void hourMaintenance ( ) {
+        /* nothingness */
     }
     public int secMaintenance ( ) {
         int todoAmount = 0;
@@ -169,27 +170,11 @@ public class OperServ extends Service {
     
     public int minMaintenance ( ) {
         int todoAmount = 0;
-        todoAmount += this.expireSpamFilter ( );
         this.expireBans ( );
         return todoAmount;
     }
     
-    public int expireSpamFilter ( ) {
-        ArrayList<SpamFilter> remList = new ArrayList<>();
-        for ( SpamFilter sf : spamfilters ) {
-            if ( sf.hasExpired ( ) ) {
-                this.sendServ ( "SF "+sf.getPattern()+" 0" );
-                this.sendGlobOp ( "SpamFilter expired for "+sf.getPattern()+" (Instated by: "+sf.getInstater()+" on: "+sf.getStamp()+" reason: "+sf.getReason()+")" );
-                remList.add ( sf );
-                remSpamFilters.add ( sf );              
-            }
-        }
-        for ( SpamFilter sf : remList ) {
-            spamfilters.remove ( sf );
-        }
-        return spamfilters.size();
-    }
-    
+  
     public int checkAddServicesBans ( ) {
         if ( addServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
             return addServicesBans.size();
@@ -667,8 +652,8 @@ public class OperServ extends Service {
     public static void is ( boolean state ) { 
         is = state; 
     }
-    public void setState ( boolean state ) { 
-        OperServ.is = state;
+    public static void setState ( boolean state ) { 
+        is = state;
     }
 
     public static boolean isUp ( ) { 

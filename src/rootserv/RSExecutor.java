@@ -17,7 +17,6 @@
  */
 package rootserv;
 
-import core.Config;
 import core.Executor;
 import core.Handler;
 import core.HashString;
@@ -95,7 +94,7 @@ public class RSExecutor extends Executor {
  
     
     private void sraw ( User user, String[] cmd )  {
-        String buf = new String ( );
+        String buf = "";
         for ( int i = 4; i < cmd.length; i++ )  {
             if ( buf.length() > 0 ) {
                 buf += " ";
@@ -174,8 +173,6 @@ public class RSExecutor extends Executor {
     }
      
     private void doListSra ( User user )  {
-        System.out.println ( "debug ( doListSra );" );
-
         this.service.sendMsg ( user, "Services Root Admin list:" );
         for ( Oper sra : OperServ.getRootAdmins() ) {
             this.service.sendMsg ( user, "    "+sra.getString ( NAME ) +"  ( Instated by: "+sra.getString ( INSTATER ) +" ) " );
@@ -190,7 +187,6 @@ public class RSExecutor extends Executor {
         // :DreamHea1er PRIVMSG RootServ@services.sshd.biz :PANIC OPER
         //  0           1       2                           3     4   5       = 6
         NickInfo sra;
-        System.out.println ( "debug ( doPanic );" );
         HashString state;
         String panic;
         

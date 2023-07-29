@@ -19,7 +19,6 @@ package rootserv;
 
 import core.Proc;
 import core.Service;
-import core.HashNumeric;
 import core.HashString;
 import monitor.Snoop;
 import user.User;

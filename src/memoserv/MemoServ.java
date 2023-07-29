@@ -30,7 +30,7 @@ import user.User;
  * @author DreamHealer
  */
 public class MemoServ extends Service {
-    private static boolean              is = false; 
+    private static boolean              state = false; 
     private MSExecutor                  executor;       /* Object that parse and execute commands */
     private MSHelper                    helper;         /* Object that parse and respond to help queries */
     private MSSnoop                     snoop;          /* Object that parse and respond to help queries */
@@ -40,9 +40,9 @@ public class MemoServ extends Service {
         super ( "MemoServ" );
         initMemoServ ( );    
     }
- 
+
     private void initMemoServ ( )  {
-        is              = true;
+        setState ( true );
         this.snoop      = new MSSnoop       ( this ); 
         this.executor   = new MSExecutor    ( this, this.snoop );
         this.helper     = new MSHelper      ( this, this.snoop ); 
@@ -50,6 +50,28 @@ public class MemoServ extends Service {
     }
     
     public void parse ( User user, String[] cmd )  {
+        //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
+        if ( cmd == null || cmd[3].isEmpty ( )  )  { 
+            return; 
+        }
+        
+        //user.getUserFlood().incCounter ( this );
+        
+        cmd[3] = cmd[3].substring ( 1 );
+        HashString command = new HashString ( cmd[3] );
+        if ( command.is(OHELP) ) {
+            this.doOHelp ( user, cmd );
+        
+        } else if ( command.is(HELP) ) {
+            this.helper.parse ( user, cmd );
+        
+        } else {
+            this.doDefault ( user, cmd );
+        } 
+         
+    }
+    
+    /*public void parse ( User user, String[] cmd )  {
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         HashString command;
         try {
@@ -79,16 +101,16 @@ public class MemoServ extends Service {
             this.doDefault ( user, cmd );
         } 
     }
-     
+     */
     
-    public static void is ( boolean state ) { 
-        is = state;
+    public static void is ( boolean stateVal ) { 
+        state = stateVal;
     }
     public static boolean isUp ( ) { 
-        return is;
+        return state;
     } 
-    public void setState ( boolean state ) {
-        MemoServ.is = state;
+    public static void setState ( boolean stateVal ) {
+        state = stateVal;
     }
 
     

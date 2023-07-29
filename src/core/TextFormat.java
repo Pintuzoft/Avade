@@ -28,7 +28,7 @@ public class TextFormat extends Numeric {
     public char         underline  = 0x1f;
     public char         reversed   = 0x16;
     public TextFormat ( )  {
-
+        /* nothingness */
     }
 
     public char b ( ) { 

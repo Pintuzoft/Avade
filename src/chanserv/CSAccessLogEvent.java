@@ -27,7 +27,7 @@ import user.User;
  * @author fredde
  */
 public class CSAccessLogEvent extends HashNumeric {
-
+    public static String wildUserHost = "!*@*.*";
     /**
      *
      */
@@ -89,7 +89,7 @@ public class CSAccessLogEvent extends HashNumeric {
         this.target = target;
         if ( fullmask == null || fullmask.length() == 0 ) {
             this.instater = target;
-            this.usermask = target+"!*@*.*";
+            this.usermask = target+wildUserHost;
         } else {
             this.instater = fullmask.substring(0, fullmask.indexOf("!") );
             this.usermask = fullmask;
@@ -109,7 +109,7 @@ public class CSAccessLogEvent extends HashNumeric {
         this.target = target;
         if ( user == null ) {
             this.instater = target;
-            this.usermask = target+"!*@*.*";
+            this.usermask = target+wildUserHost;
         } else {
             this.instater = user.getString ( NAME );
             this.usermask = user.getString ( FULLMASK );
@@ -127,7 +127,7 @@ public class CSAccessLogEvent extends HashNumeric {
         this.flag = flag;
         this.target = target;
         this.instater = target;
-        this.usermask = target+"!*@*.*";
+        this.usermask = target+wildUserHost;
     }
  
     /**

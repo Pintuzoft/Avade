@@ -172,7 +172,6 @@ public class OSDatabase extends Database {
             ps.execute ( );
             ps.close ( );
 
-            System.out.println ( "debug ( delServicesBan ( "+ban.getID ( ) +" )  ) " ); 
             idleUpdate ( "delServicesBan ( ) " );
             return true;
           
@@ -225,7 +224,7 @@ public class OSDatabase extends Database {
             return sfList;
         }
         try {
-            query = "select id,pattern,flags,instater,reason,stamp,expire "+
+            query = "select id,pattern,flags,instater,reason,stamp "+
                     "from spamfilter "+
                     "order by pattern asc";
             ps = sql.prepareStatement ( query );
@@ -239,8 +238,7 @@ public class OSDatabase extends Database {
                         res2.getString ( "flags" ),
                         res2.getString ( "instater" ),
                         res2.getString ( "reason" ),
-                        res2.getString ( "stamp" ),
-                        res2.getString ( "expire" )
+                        res2.getString ( "stamp" )
                     )
                 );
             }
@@ -470,8 +468,7 @@ public class OSDatabase extends Database {
             return false;
         }
          
-        String query = "delete from server "+
-                       "where name = ?";
+        String query = "delete from server where name = ?";
         try {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, server.getNameStr() );
@@ -507,7 +504,6 @@ public class OSDatabase extends Database {
             return true;
             
         } catch ( SQLException ex ) {
-//            Proc.log ( OSDatabase.class.getName ( ) , ex );
             return false;
         }
     }
@@ -532,7 +528,6 @@ public class OSDatabase extends Database {
             return true;
             
         } catch ( SQLException ex ) {
-//            Proc.log ( OSDatabase.class.getName ( ) , ex );
             return false;
         }
     }
@@ -557,7 +552,7 @@ public class OSDatabase extends Database {
             res2.close ( );
             ps.close ( );
             
-        } catch ( Exception ex ) {
+        } catch ( SQLException ex ) {
             Proc.log ( OSDatabase.class.getName ( ) , ex );
             found = false;
         }
@@ -713,7 +708,7 @@ public class OSDatabase extends Database {
         return lsList;
     }
 
-    static public boolean addStaff ( Oper oper ) {
+    public static boolean addStaff ( Oper oper ) {
         if ( ! activateConnection ( ) ) {
             return false;
         }
@@ -769,7 +764,7 @@ public class OSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, comment.getName ( ) );
             ps.setString   ( 2, comment.getInstater ( ) );
-            ps.setString   ( 3, comment.getComment ( ) );
+            ps.setString   ( 3, comment.getCommentStr ( ) );
             ps.execute ( );
             ps.close ( );
         } catch ( SQLException ex ) {
@@ -798,8 +793,8 @@ public class OSDatabase extends Database {
             return false;
         }
         query = "insert into spamfilter "+
-                "(id,pattern,flags,instater,reason,stamp,expire) "+
-                "values (?,?,?,?,?,?,?)";
+                "(id,pattern,flags,instater,reason,stamp) "+
+                "values (?,?,?,?,?,?)";
         
         try {
             ps = sql.prepareStatement ( query );
@@ -809,7 +804,6 @@ public class OSDatabase extends Database {
             ps.setString   ( 4, sf.getInstater ( ) );
             ps.setString   ( 5, sf.getReason ( ) );
             ps.setString   ( 6, sf.getStamp ( ) );
-            ps.setString   ( 7, sf.getExpire ( ) );
             ps.execute ( );
             ps.close ( );
             
@@ -863,11 +857,11 @@ public class OSDatabase extends Database {
   */   
   
     /* LOG EVENT */
-    static public int logEvent ( OSLogEvent log ) {
+    public static int logEvent ( OSLogEvent log ) {
         int id = Database.logEvent( "operlog", log );
         return id;
     }
-    static public void delLogEvent ( int id ) {
+    public static void delLogEvent ( int id ) {
         Database.delLogEvent( "operlog", id );
     }
 

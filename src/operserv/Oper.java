@@ -17,7 +17,6 @@
  */
 package operserv;
 
-import core.Proc;
 import core.HashNumeric;
 import core.HashString;
 import java.sql.ResultSet;
@@ -150,7 +149,7 @@ public class Oper extends HashNumeric {
         
     }
     
-    static public int hashToAccess ( HashString hash ) {
+    public static int hashToAccess ( HashString hash ) {
         if ( hash.is(MASTER) ) {
             return 5;
             

@@ -28,7 +28,6 @@ import user.User;
  */
 public class MSHelper extends Helper {
     private MSSnoop         snoop;
-   // private boolean found;
     private TextFormat      f;
   
     public MSHelper ( MemoServ service, MSSnoop snoop )  {

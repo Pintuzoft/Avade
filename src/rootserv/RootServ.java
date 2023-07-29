@@ -23,6 +23,7 @@ import core.HashString;
 import core.Proc;
 import core.Service;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import nickserv.NSDatabase;
@@ -76,7 +77,7 @@ public class RootServ extends Service {
     
     
     /* Returns the list of added commands with its access and info */
-    public static ArrayList<CommandInfo> getCMDList ( HashString access ) {
+    public static List<CommandInfo> getCMDList ( HashString access ) {
         return Handler.getRootServ().getCommandList ( access );
     }
      
@@ -226,8 +227,8 @@ public class RootServ extends Service {
     public static void is ( boolean state ) {
         is = state;
     }
-    public void setState ( boolean state ) {
-        RootServ.is = state;
+    public static void setState ( boolean state ) {
+        is = state;
     }
 
     public static boolean isUp ( ) { 

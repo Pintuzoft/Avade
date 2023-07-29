@@ -39,7 +39,6 @@ public class Queue extends HashNumeric {
     
     public void maintenance ( ) {
         if ( time < ( System.currentTimeMillis ( ) ) ) {
-            //System.out.println ( "Queue: "+time+" < "+System.currentTimeMillis ( ) );
             this.retrieve ( );
             this.next ( );
             time = System.currentTimeMillis ( ) + ( 5000 );
@@ -72,11 +71,9 @@ public class Queue extends HashNumeric {
     
     public void next ( )  {
         Command command;
-        if ( ! cList.isEmpty ( ) ) {
-            /* Something is in queue */
-            if (  ( command = this.cList.pop ( ) ) != null ) {
-                this.execute ( command );
-            }
+        if ( ! cList.isEmpty ( ) &&
+            ( command = this.cList.pop ( ) ) != null ) {
+            this.execute ( command );
         }
     }
 
@@ -85,7 +82,7 @@ public class Queue extends HashNumeric {
         if ( command.getTargetType().is(NICKINFO) )  {
             /* Target is a nickname */ 
             NickInfo ni =  ( NickInfo )  command.getTarget ( );
-            HashString cmd = command.getCommand();
+            HashString cmd = command.getCommandData();
             
             if ( cmd.is(AUTH) ) {
                 res = Handler.getNickServ().authorizeMail ( ni, command );

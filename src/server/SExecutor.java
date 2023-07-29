@@ -25,7 +25,6 @@ import operserv.Oper;
 import operserv.OperServ;
 import user.User;
 import java.util.ArrayList;
-import operserv.OSDatabase;
 
 /**
  *
@@ -152,7 +151,7 @@ public class SExecutor extends Executor {
 
         /* CSOP */
         this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "     "+b ( ) +"ChanServ Operators (CSop)"+b ( )                        );
-        String opers = new String ( );
+        String opers = "";
         for ( Oper oper : OperServ.getStaffPlus ( CSOP ) )  {
             if ( opers.length ( ) > 60 )  {
                 this.services.sendServicesCMD ( user, Numeric.RPL_MOTD,       "      "+opers                                                          );

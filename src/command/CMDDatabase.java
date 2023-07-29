@@ -56,27 +56,23 @@ public class CMDDatabase extends Database {
             res = preparedStmt.executeQuery ( );
 
             while ( res.next ( ) ) {
-                try {
-                    HashString type = new HashString ( res.getString(3) ); 
-                    
-                    if ( type.is(NICKINFO) ) {
-                        if ( ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
-                            cList.add ( 
-                                new Command ( 
-                                    res.getString ( 1 ), 
-                                    ni, 
-                                    type, 
-                                    new HashString ( res.getString(4) ), 
-                                    res.getString(5),
-                                    res.getString(6)
-                                )
-                            );
-                        }
-                    }
-                     
-                } catch ( SQLException e ) {
-                    Proc.log ( CMDDatabase.class.getName(), e );
-                }    
+               
+                HashString type = new HashString ( res.getString(3) ); 
+
+                if ( type.is(NICKINFO) &&
+                     ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
+                        cList.add ( 
+                        new Command ( 
+                            res.getString ( 1 ), 
+                            ni, 
+                            type, 
+                            new HashString ( res.getString(4) ), 
+                            res.getString(5),
+                            res.getString(6)
+                        )
+                    );
+                }
+                
             }  
             res.close ( );
             preparedStmt.close ( ); 

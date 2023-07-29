@@ -28,7 +28,9 @@ public abstract class Executor extends HashNumeric {
     protected boolean       found;
     protected CommandInfo   cmdInfo;
     
-    public Executor ( )  {  } 
+    protected Executor ( )  { 
+        /* empty */
+    } 
 
     public void noMatch ( User user, String str )  { 
         this.service.sendMsg ( user, "Sorry, no such command: "+str ); 

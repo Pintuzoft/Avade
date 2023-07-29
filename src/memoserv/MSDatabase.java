@@ -18,8 +18,10 @@
 package memoserv;
 
 import nickserv.NSDatabase;
+import nickserv.NickServ;
 import nickserv.NickInfo;
 import core.Database;
+import core.Handler;
 import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
@@ -69,7 +71,6 @@ public class MSDatabase extends Database {
             }
             res.close ( );
             ps.close ( );
-            //select id,stamp from memo where id=last_insert_id ( );
             idleUpdate ( "storeMemo ( ) " );
         } catch  ( SQLException ex )  {
             /* Nick already exists? return -1 */
@@ -103,6 +104,34 @@ public class MSDatabase extends Database {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
         }
         return mList;
+    }
+    
+    public static void loadAllMemos ( )  {
+        ArrayList<MemoInfo> mList = new ArrayList<> ( );
+        NickInfo ni;
+        if ( ! activateConnection ( )  )  {
+            return;
+        }
+        try {
+            String query = "SELECT id,name,sender,message,stamp,readflag FROM memo order by stamp;";
+            ps = sql.prepareStatement ( query );
+            res = ps.executeQuery ( );
+
+            while ( res.next ( )  )  {
+                Proc.log("0:");
+                if ( (ni = NickServ.findNick(res.getString("name"))) != null ) {
+                Proc.log("1:"+res.getString("name")+":"+res.getString("message"));
+                    ni.getMemos().add ( new MemoInfo ( res.getInt ( "id" ) ,res.getString ( "name" ) ,res.getString ( "sender" ) ,res.getString ( "message" ) ,res.getLong ( "stamp" ) ,res.getBoolean ( "readflag" )  )  );
+                Proc.log("2:"+ni.getNameStr()+":"+ni.getMemos().size());
+                }
+            }
+            res.close ( );
+            ps.close ( );
+            idleUpdate ( "getMemosByNick ( ) " );
+        } catch  ( SQLException ex )  {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+        }
+        return;
     }
 
    

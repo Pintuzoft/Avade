@@ -19,7 +19,6 @@ package server;
 
 import core.Proc;
 import core.HashNumeric;
-import core.HashString;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

@@ -26,29 +26,31 @@ import java.util.Date;
  * @author DreamHealer
  */
 public class Topic {
-    private String topic;
+    private String text;
     private String setter;
     private String timeStr;
     private long stamp;
-    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private DateFormat dateFormat = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss" );
     
     public Topic ( String topic, String setter, long stamp )  {
-        topic = topic.replaceAll("^:", "");
-        this.topic = topic;
+        this.text = topic.replace ("^:", "");
         this.setter = setter;
         this.stamp = stamp;
         this.timeStr = dateFormat.format ( new Date ( ) );
     }
     public Topic ( String topic, String setter, long stamp, String timeStr )  {
-        topic = topic.replaceAll("^:", "");
-        this.topic = topic;
+        if ( topic != null ) {
+            this.text = topic.replace ("^:", "" );
+        }
         this.setter = setter;
         this.stamp = stamp;
-        this.timeStr = timeStr.substring(0,19);
+        if ( timeStr != null ) {
+            this.timeStr = timeStr.substring (0,19 );
+        }
     }
  
-    public String getTopic ( ) { 
-        return topic;
+    public String getText ( ) { 
+        return text;
     } 
     
     public String getSetter ( ) { 
@@ -63,9 +65,8 @@ public class Topic {
         return this.timeStr;
     } 
 
-    public void setTopic ( String topic ) { 
-        topic = topic.replaceAll("^:", "");
-        this.topic = topic;
+    public void setText ( String topic ) { 
+        this.text = topic.replace ("^:", "");
     } 
     
     public void setSetter ( String setter ) { 

@@ -20,8 +20,6 @@ package monitor;
 import core.Database;
 import core.HashNumeric;
 import core.HashString;
-import core.Log;
-import core.LogEvent;
 import core.Service;
 import java.util.ArrayList;
 import user.User;
@@ -35,11 +33,13 @@ public class Snoop extends HashNumeric {
     protected Service service;
     protected static ArrayList<SnoopLog> logs = new ArrayList<>();
             
-    public Snoop ( )  { }
+    public Snoop ( )  { 
+        /* nothingness */
+    }
 
     public String fixArray ( boolean ok, User user, String[] arr )  {
          
-        String str = new String ( );
+        String str = "";
         int index = 3;
         int start = 3;
 
@@ -64,7 +64,7 @@ public class Snoop extends HashNumeric {
     }
     
     private static int writeLogs ( ) {
-        if ( Database.activateConnection ( ) && logs.size() > 0 ) {
+        if ( Database.activateConnection ( ) && !logs.isEmpty() ) {
             ArrayList<SnoopLog> eLogs = new ArrayList<>();
             for ( SnoopLog log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
                 if ( Database.SnoopLog ( log ) ) {

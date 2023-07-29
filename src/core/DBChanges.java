@@ -58,7 +58,6 @@ public class DBChanges extends HashNumeric {
             current = this.convertVersion ( generation, year, month, build++ );
         }
    
-        //System.exit ( 1 );
  
     }
         
@@ -69,7 +68,6 @@ public class DBChanges extends HashNumeric {
     private boolean applyChanges ( int target ) {
         int counter = 0;
         ArrayList<String> qList = new ArrayList<>();
-        //System.out.println("debug: applyChanges ( "+target+" )");
         switch ( target ) {
             case 117021 :
                 qList.add ( "to: v1.1702-1 (Initial version)");
@@ -149,6 +147,16 @@ public class DBChanges extends HashNumeric {
                 qList.add ( "to: v1.2011-1");
                 qList.addAll ( this.db120111 ( ) );
                 qList.add ( "update settings set value = '1.2011-1' where name = 'version'" );
+            
+            case 123071 :
+                qList.add ( "to: v1.2307-1");
+                qList.addAll ( this.db123071 ( ) );
+                qList.add ( "update settings set value = '1.2307-1' where name = 'version'" );
+                
+            case 123072 :
+                qList.add ( "to: v1.2307-2");
+                qList.addAll ( this.db123072 ( ) );
+                qList.add ( "update settings set value = '1.2307-2' where name = 'version'" );
 
                 break;
                 
@@ -266,7 +274,6 @@ public class DBChanges extends HashNumeric {
         qList.add ( "update nick set pass=aes_encrypt(pass,'"+salt+"');" );
 
         // Decrypting passwords example
-        // select name,aes_decrypt(pass,'') as pass from nick;" );
 
         // Encrypt emails
         qList.add ( "update nick set mail=aes_encrypt(mail,'"+salt+"');" );
@@ -534,6 +541,17 @@ public class DBChanges extends HashNumeric {
     private ArrayList<String> db120111 ( ) {
         ArrayList<String> qList = new ArrayList<>();
         qList.add("create table exception (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);");
+        return qList;
+    }
+    private ArrayList<String> db123071 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add("drop table exception;");
+        return qList;
+    }
+        
+    private ArrayList<String> db123072 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add("alter table spamfilter drop column expire;");
         return qList;
     }
         

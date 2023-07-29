@@ -69,7 +69,7 @@ public class User extends HashNumeric {
         this.cList      = new ArrayList<> ( );
         
         data[10] = data[10].substring(1);
-        String buf = new String ( );
+        String buf = "";
         for ( int index=10;  index < data.length; index++ )  {
             if ( buf.isEmpty ( )  )  {
                 buf = data[index];
@@ -158,11 +158,11 @@ public class User extends HashNumeric {
     }
 
     public void setName ( String in ) {
-        HashString name = new HashString ( in );
-        if ( ! this.name.is(name) ) {
+        HashString nameHash = new HashString ( in );
+        if ( ! this.name.is(nameHash) ) {
             this.getSID().resetTimers ( );
         }
-        this.name = name;
+        this.name = nameHash;
     } /* /nick */
      
     public void setMode ( String[] data ) { 
@@ -184,7 +184,7 @@ public class User extends HashNumeric {
   
     public void partAll ( )  {
         /* We have to flush the user out from all channels */
-        if ( this.cList.size ( ) > 0 )  {
+        if ( !this.cList.isEmpty() )  {
             for ( Chan c : this.cList )  {
                 c.remUser ( this );
             }
@@ -215,7 +215,7 @@ public class User extends HashNumeric {
     }
 
     public String getIDNicks ( )  {
-        String buf = new String ( );
+        String buf = "";
         buf = "";
  
         if ( this.sid == null )  {
@@ -229,7 +229,7 @@ public class User extends HashNumeric {
     }
     
     public String getIDChans ( )  {
-        String buf = new String ( );
+        String buf = "";
         buf = ""; 
         if ( this.sid == null )  {
             this.sid = new ServicesID ( );
@@ -265,7 +265,6 @@ public class User extends HashNumeric {
     
     /* Return sid */
     public ServicesID getSID ( )  { 
-  //      this.fixSID ( );
         return this.sid; 
     }
     

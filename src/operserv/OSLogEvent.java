@@ -47,7 +47,6 @@ public class OSLogEvent extends LogEvent {
  
     private void setFlag ( HashString flag ) {
         this.flag = new HashString ( getOperFlagByHash ( flag ) );
-        //this.flagInt = flag;
     }
     
     public void setID ( int id ) {

@@ -27,9 +27,9 @@ package core;
 public class Throttle {
     protected long lastHit;
     protected int hits;
-    static protected int maxhits    = 3;      /* max hits until throttle kicks in */
-    static protected int range      = 5;      /* seconds until out of range */
-    static protected int maxtime    = 300;    /* seconds until throttle is removed */
+    protected static int maxhits    = 3;      /* max hits until throttle kicks in */
+    protected static int range      = 5;      /* seconds until out of range */
+    protected static int maxtime    = 300;    /* seconds until throttle is removed */
     
     public Throttle ( ) { 
         this.lastHit = System.currentTimeMillis();

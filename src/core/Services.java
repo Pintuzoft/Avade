@@ -38,8 +38,8 @@ public class Services extends HashNumeric {
 
     public void parse ( User user, String[] cmd )  {
         try {
-            HashString name = new HashString ( cmd[1] );
-            if ( name.is(STATS) ) {
+            HashString nameStr = new HashString ( cmd[1] );
+            if ( nameStr.is(STATS) ) {
                 cmd[3] = cmd[3].substring ( 1 );
             } else {
                 cmd[2] = cmd[2].substring ( 1 );
@@ -51,10 +51,10 @@ public class Services extends HashNumeric {
         }
     }
 
-    public HashString getString ( HashString var )  {
-        if ( var.is(NAME) ) {
+    public HashString getString ( HashString varStr )  {
+        if ( varStr.is(NAME) ) {
             return this.name;
-        } else if ( var.is(STATS) ) {
+        } else if ( varStr.is(STATS) ) {
             return this.stats;
         }
         return null;

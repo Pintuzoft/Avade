@@ -18,7 +18,6 @@
 package nickserv;
 
 import core.HashString;
-import user.User;
 
 /**
  *

@@ -82,9 +82,7 @@ public class CSAcc extends HashNumeric {
         this.nick = parts[0];
         this.user = parts[1];
         this.host = parts[2];
-     //   System.out.println("CSAcc: nick: "+this.nick);
-     //   System.out.println("CSAcc: user: "+this.user);
-     //   System.out.println("CSAcc: host: "+this.host);
+      
         this.access = access;
         if ( lastOped != null ) {
             this.lastOped = lastOped.substring(0,19);
@@ -96,7 +94,7 @@ public class CSAcc extends HashNumeric {
                 this.cidr = Integer.parseInt ( parts[3] );
             }
         } catch ( NumberFormatException ex ) {
-            
+            /* do nothing */
         }
         this.parseMask ( );
     }
@@ -151,40 +149,24 @@ public class CSAcc extends HashNumeric {
      
     private void parseNick ( ) {
         String pattern = this.parsePattern ( this.nick );
-    //    System.out.println("userpattern: "+pattern);
         this.nickPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private void parseUser ( ) {
         String pattern = this.parsePattern ( this.user );
-    //    System.out.println("userpattern: "+pattern);
         this.userPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private void parseHost ( ) {
         String pattern = this.parsePattern ( this.host );
-    //    System.out.println("hostpattern: "+pattern);
         this.hostPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
     private String parsePattern ( String pattern ) {
-        String buf = "^";
-        
-        for ( int i = 0; i < pattern.length(); i++ ) {
-            switch ( pattern.charAt(i) ) {
-                case '*' : 
-                    buf += "(.*)";
-                    break;
-                
-                case '?' : 
-                    buf += "(.?)";
-                    break;
-                    
-                default :
-                    buf += pattern.charAt(i);
-            }
-        } 
-        buf += "$";
+        String buf = "";
+        buf = "^"+pattern+"$";
+        buf = buf.replace("*","(.*)");
+        buf = buf.replace("?","(.?)");
         return buf;
     }
     
@@ -275,26 +257,26 @@ public class CSAcc extends HashNumeric {
     
     /**
      *
-     * @param mask
+     * @param in
      * @return
      */
     public boolean matchMask ( String in ) {
-        HashString mask = new HashString(in);
+        HashString maskVal = new HashString(in);
         if ( this.mask != null ) {
-            return this.mask.is(mask);
+            return this.mask.is(maskVal);
         }
         return false;
     }
     
     /**
      *
-     * @param mask
+     * @param in
      * @return
      */
     public boolean matchHashMask ( String in ) {
-        HashString mask = new HashString ( in );
+        HashString maskVal = new HashString ( in );
         if ( this.mask != null ) {
-            return this.mask.is(mask);
+            return this.mask.is(maskVal);
         }
         return false;
     }
@@ -336,6 +318,7 @@ public class CSAcc extends HashNumeric {
     
     /**
      * isNick
+     * @return 
      */
     public boolean isNick ( ) {
         return this.ni != null;
