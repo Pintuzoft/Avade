@@ -1,5 +1,7 @@
 #!/bin/bash                                                                                                                               
-                                                                                                                                          
+          
+export JAVA_HOME=/usr/lib/jvm/java17
+                                                                                                                                
 MISSING="";                                                                                                                               
 
 # Functions
@@ -31,24 +33,24 @@ fi
 
 # Dependencies
 
-DEPENDENCIES="java:java javac:openjdk-devel ant:ant";
-IFS=':' read -ra DATA <<< "$SOFTWARE";
-for SOFTWARE in $DEPENDENCIES; do
-   FILE=${DATA[0]};
-   RPM=${DATA[1]};
-   echo -n "Checking for ${FILE^} - ";
-   FILEINFO=$(which ${FILE} 2>&1 | cut -d ' ' -f 1);
-   if [ -f "$FILEINFO" ]; then
-      echo "OK!";
-   else
-      echo "Fail!";
-      addMissing $RPM;
-   fi
-done
+#DEPENDENCIES="java:java javac:openjdk-devel ant:ant";
+#IFS=':' read -ra DATA <<< "$SOFTWARE";
+#for SOFTWARE in $DEPENDENCIES; do
+#   FILE=${DATA[0]};
+#   RPM=${DATA[1]};
+#   echo -n "Checking for ${FILE^} - ";
+#   FILEINFO=$(which ${FILE} 2>&1 | cut -d ' ' -f 1);
+#   if [ -f "$FILEINFO" ]; then
+#      echo "OK!";
+#   else
+#      echo "Fail!";
+#      addMissing $RPM;
+#   fi
+#done
 
-if [ "$MISSING" != "" ]; then
-  sendError
-fi
+#if [ "$MISSING" != "" ]; then
+#  sendError
+#fi
 
 
 # Compile / Install

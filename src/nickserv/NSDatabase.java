@@ -839,7 +839,7 @@ public class NSDatabase extends Database {
                 exp = new Expire ( );
                 //exp = getNickExp ( res.getString ( 1 ) );
                 //exp = ( exp != null ? exp : new Expire ( ) );
-                if ( buf[1] == null ) {
+                if ( buf.length > 1 && buf[1] == null ) {
                     buf[1] = "Unknown";
                 }
                  
