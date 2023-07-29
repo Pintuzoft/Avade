@@ -134,7 +134,6 @@ public class Config extends HashNumeric {
                     HashString parsed = parseKey ( result, key.getString().toLowerCase() );
                     
                     if ( type.is(BOOLEAN) ) {
-                        System.out.println("Found: "+parsed.getString()+":(yes:"+TRUE.getCodeStr()+" -> "+parsed.getString()+":"+parsed.getCodeStr()+")" );
                         this.getHashMap(type).put( key.getCode(), parsed.is(TRUE) );
 
                     } else if ( type.is(INTEGER) ) {
