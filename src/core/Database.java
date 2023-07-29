@@ -266,6 +266,7 @@ public class Database extends HashNumeric {
 
     /* Database changes */
     static boolean change ( String query ) throws SQLException {
+        System.out.println("Applying db-change: "+query);
         ps = sql.prepareStatement ( query );
         ps.execute ( );
         ps.close ( );     
