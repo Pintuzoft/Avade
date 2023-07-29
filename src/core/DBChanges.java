@@ -193,22 +193,22 @@ public class DBChanges extends HashNumeric {
      
     private ArrayList<String> db117021 ( ) {
         ArrayList<String> qList = new ArrayList<>();
-        qList.add ( "CREATE TABLE akill (id int(11) NOT NULL AUTO_INCREMENT, mask varchar(64) DEFAULT NULL, reason varchar(256) DEFAULT NULL, instater varchar(33) DEFAULT NULL, stamp int(11) DEFAULT NULL, expire int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=313 DEFAULT CHARSET=latin1;");
-        qList.add ( "CREATE TABLE cflags (name varchar(33) DEFAULT NULL, type varchar(16) DEFAULT NULL, reason varchar(256) DEFAULT NULL, instater varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, expire int(11) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
-        qList.add ( "CREATE TABLE chan ( name varchar(33) NOT NULL DEFAULT '', founder varchar(32) DEFAULT NULL, pass varchar(32) DEFAULT NULL, description varchar(128) DEFAULT NULL, regstamp int(11) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE chanaccess ( name varchar(33) NOT NULL DEFAULT '', access varchar(12) DEFAULT NULL, nick varchar(160) NOT NULL DEFAULT '', instater varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (name,nick)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE chansetting (name varchar(33) NOT NULL DEFAULT '', keeptopic tinyint(1) DEFAULT NULL, topiclock varchar(16) DEFAULT 'OFF', ident tinyint(1) DEFAULT NULL, opguard tinyint(1) DEFAULT NULL, restricted tinyint(1) DEFAULT NULL, verbose tinyint(1) DEFAULT NULL,  mailblock tinyint(1) DEFAULT NULL,  leaveops tinyint(1) DEFAULT NULL,  private tinyint(1) DEFAULT NULL,  modelock varchar(16) DEFAULT NULL,  PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE chantopic ( name varchar(33) NOT NULL DEFAULT '', setter varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, topic varchar(512) DEFAULT NULL, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" ); 
-        qList.add ( "CREATE TABLE command (id int(11) NOT NULL AUTO_INCREMENT, target varchar(33) DEFAULT NULL, targettype varchar(32) DEFAULT NULL, command varchar(32) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE host (ip varchar(64) NOT NULL DEFAULT '', host varchar(128) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (ip)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" ); 
-        qList.add ( "CREATE TABLE log (id int(11) NOT NULL AUTO_INCREMENT, target varchar(33) DEFAULT NULL, body text, stamp int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=1261 DEFAULT CHARSET=latin1;" ); 
-        qList.add ( "CREATE TABLE mailbox (id int(11) NOT NULL AUTO_INCREMENT, mail varchar(64) DEFAULT NULL, subject varchar(64) DEFAULT NULL, body text, stamp int(11) DEFAULT NULL, status int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE memo (id int(11) NOT NULL AUTO_INCREMENT, name varchar(33) DEFAULT NULL, sender varchar(33) DEFAULT NULL, message varchar(256) DEFAULT NULL, readflag tinyint(1) DEFAULT '0', stamp int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE nick (name varchar(32) NOT NULL DEFAULT '', hashcode int(11) DEFAULT NULL, mask varchar(128) DEFAULT NULL, pass varchar(32) DEFAULT NULL, mail varchar(64) DEFAULT NULL, auth varchar(32) DEFAULT NULL, regstamp int(11) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE nflags (name varchar(32) NOT NULL DEFAULT '', type varchar(16) NOT NULL DEFAULT '', reason varchar(256) DEFAULT NULL, instater varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, expire int(11) DEFAULT NULL,  PRIMARY KEY (name,type),  CONSTRAINT nflags_ibfk_1 FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE nicksetting (name varchar(32) NOT NULL DEFAULT '', enforce tinyint(1) NOT NULL DEFAULT '0', secure tinyint(1) NOT NULL DEFAULT '0', private tinyint(1) NOT NULL DEFAULT '0', noop tinyint(1) NOT NULL DEFAULT '0', neverop tinyint(1) NOT NULL DEFAULT '0', mailblock tinyint(1) NOT NULL DEFAULT '0', showemail tinyint(1) NOT NULL DEFAULT '0', showhost tinyint(1) NOT NULL DEFAULT '0', auth tinyint(1) DEFAULT '0', PRIMARY KEY (name), CONSTRAINT nicksetting_ibfk_1 FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE oper (name varchar(32) NOT NULL DEFAULT '', access int(11) DEFAULT NULL, instater varchar(32) DEFAULT NULL, PRIMARY KEY (name), CONSTRAINT oper_ibfk_1 FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
-        qList.add ( "CREATE TABLE settings (name varchar(32) NOT NULL,value varchar(64) DEFAULT NULL,PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS akill (id int(11) NOT NULL AUTO_INCREMENT, mask varchar(64) DEFAULT NULL, reason varchar(256) DEFAULT NULL, instater varchar(33) DEFAULT NULL, stamp int(11) DEFAULT NULL, expire int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=313 DEFAULT CHARSET=latin1;");
+        qList.add ( "CREATE TABLE IF NOT EXISTS cflags (name varchar(33) DEFAULT NULL, type varchar(16) DEFAULT NULL, reason varchar(256) DEFAULT NULL, instater varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, expire int(11) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
+        qList.add ( "CREATE TABLE IF NOT EXISTS chan ( name varchar(33) NOT NULL DEFAULT '', founder varchar(32) DEFAULT NULL, pass varchar(32) DEFAULT NULL, description varchar(128) DEFAULT NULL, regstamp int(11) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS chanaccess ( name varchar(33) NOT NULL DEFAULT '', access varchar(12) DEFAULT NULL, nick varchar(160) NOT NULL DEFAULT '', instater varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (name,nick)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS chansetting (name varchar(33) NOT NULL DEFAULT '', keeptopic tinyint(1) DEFAULT NULL, topiclock varchar(16) DEFAULT 'OFF', ident tinyint(1) DEFAULT NULL, opguard tinyint(1) DEFAULT NULL, restricted tinyint(1) DEFAULT NULL, verbose tinyint(1) DEFAULT NULL,  mailblock tinyint(1) DEFAULT NULL,  leaveops tinyint(1) DEFAULT NULL,  private tinyint(1) DEFAULT NULL,  modelock varchar(16) DEFAULT NULL,  PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS chantopic ( name varchar(33) NOT NULL DEFAULT '', setter varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, topic varchar(512) DEFAULT NULL, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" ); 
+        qList.add ( "CREATE TABLE IF NOT EXISTS command (id int(11) NOT NULL AUTO_INCREMENT, target varchar(33) DEFAULT NULL, targettype varchar(32) DEFAULT NULL, command varchar(32) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS host (ip varchar(64) NOT NULL DEFAULT '', host varchar(128) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (ip)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" ); 
+        qList.add ( "CREATE TABLE IF NOT EXISTS log (id int(11) NOT NULL AUTO_INCREMENT, target varchar(33) DEFAULT NULL, body text, stamp int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=1261 DEFAULT CHARSET=latin1;" ); 
+        qList.add ( "CREATE TABLE IF NOT EXISTS mailbox (id int(11) NOT NULL AUTO_INCREMENT, mail varchar(64) DEFAULT NULL, subject varchar(64) DEFAULT NULL, body text, stamp int(11) DEFAULT NULL, status int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS memo (id int(11) NOT NULL AUTO_INCREMENT, name varchar(33) DEFAULT NULL, sender varchar(33) DEFAULT NULL, message varchar(256) DEFAULT NULL, readflag tinyint(1) DEFAULT '0', stamp int(11) DEFAULT NULL, PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS nick (name varchar(32) NOT NULL DEFAULT '', hashcode int(11) DEFAULT NULL, mask varchar(128) DEFAULT NULL, pass varchar(32) DEFAULT NULL, mail varchar(64) DEFAULT NULL, auth varchar(32) DEFAULT NULL, regstamp int(11) DEFAULT NULL, stamp int(11) DEFAULT NULL, PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS nflags (name varchar(32) NOT NULL DEFAULT '', type varchar(16) NOT NULL DEFAULT '', reason varchar(256) DEFAULT NULL, instater varchar(32) DEFAULT NULL, stamp int(11) DEFAULT NULL, expire int(11) DEFAULT NULL,  PRIMARY KEY (name,type),  CONSTRAINT nflags_ibfk_1 FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS nicksetting (name varchar(32) NOT NULL DEFAULT '', enforce tinyint(1) NOT NULL DEFAULT '0', secure tinyint(1) NOT NULL DEFAULT '0', private tinyint(1) NOT NULL DEFAULT '0', noop tinyint(1) NOT NULL DEFAULT '0', neverop tinyint(1) NOT NULL DEFAULT '0', mailblock tinyint(1) NOT NULL DEFAULT '0', showemail tinyint(1) NOT NULL DEFAULT '0', showhost tinyint(1) NOT NULL DEFAULT '0', auth tinyint(1) DEFAULT '0', PRIMARY KEY (name), CONSTRAINT nicksetting_ibfk_1 FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS oper (name varchar(32) NOT NULL DEFAULT '', access int(11) DEFAULT NULL, instater varchar(32) DEFAULT NULL, PRIMARY KEY (name), CONSTRAINT oper_ibfk_1 FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS settings (name varchar(32) NOT NULL,value varchar(64) DEFAULT NULL,PRIMARY KEY (name)) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
         qList.add ( "insert into settings (name,value) values ( 'version', '1.1701-1' );" );
         return qList;
     }
@@ -220,10 +220,10 @@ public class DBChanges extends HashNumeric {
         qList.add ( "alter table chanaccess add constraint foreign key (name) references chan (name) on delete cascade on update cascade;" );
 
         // Add nick log
-        qList.add ( "create table nicklog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
+        qList.add ( "create table IF NOT EXISTS nicklog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
 
         // Add chan log
-        qList.add ( "create table chanlog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
+        qList.add ( "create table IF NOT EXISTS chanlog (id int primary key auto_increment, name varchar(32), flag varchar(8), usermask varchar(160), oper varchar(32));" );
 
         // Clean up log
         qList.add ( "delete from log where body like '%[SIDENTIFY]%';" );
@@ -283,10 +283,10 @@ public class DBChanges extends HashNumeric {
         qList.add ( "update nick set mail=aes_encrypt(mail,'"+salt+"');" );
 
         // Nick Expire
-        qList.add ( "create table nickexp (name varchar(32),lastsent int,mailcount int, primary key (name), constraint foreign key (name) references nick (name) on delete cascade on update cascade) engine=InnoDB charset=latin1;" );
+        qList.add ( "create table IF NOT EXISTS nickexp (name varchar(32),lastsent int,mailcount int, primary key (name), constraint foreign key (name) references nick (name) on delete cascade on update cascade) engine=InnoDB charset=latin1;" );
 
         // Chanacclog
-        qList.add ( "create table chanacclog (id int primary key auto_increment, name varchar(32), nick varchar(32), oldaccess varchar(8) default null, access varchar(8), instater varchar(32), stamp datetime default now());" );
+        qList.add ( "create table IF NOT EXISTS chanacclog (id int primary key auto_increment, name varchar(32), nick varchar(32), oldaccess varchar(8) default null, access varchar(8), instater varchar(32), stamp datetime default now());" );
         qList.add ( "insert into chanacclog (name,nick,access,instater,stamp) select c.name,c.nick,c.access,c.instater,from_unixtime(c.stamp) from chanaccess as c;" );
          
         // Cleanup access lists
@@ -334,7 +334,7 @@ public class DBChanges extends HashNumeric {
         qList.add ( "alter table nicksetting add mark tinyint(1) default 0;" );
 
         // Comment
-        qList.add ( "create table comment (id int primary key auto_increment, name varchar(33), instater varchar(32), comment varchar(512), stamp datetime);" );
+        qList.add ( "create table IF NOT EXISTS comment (id int primary key auto_increment, name varchar(33), instater varchar(32), comment varchar(512), stamp datetime);" );
 
         // Fix chanacclog
         qList.add ( "alter table chanacclog drop oldaccess;" );
@@ -366,25 +366,25 @@ public class DBChanges extends HashNumeric {
         qList.add ( "alter table chanacclog add usermask varchar(110) after instater;" );
 
         // Add globallog
-        qList.add ( "create table globallog (id int primary key, global varchar(512), constraint foreign key (id) references operlog (id) on delete cascade on update cascade);" );
+        qList.add ( "create table IF NOT EXISTS globallog (id int primary key, global varchar(512), constraint foreign key (id) references operlog (id) on delete cascade on update cascade);" );
 
         // add ignorelist
-        qList.add ( "create table ignorelist (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);" );
+        qList.add ( "create table IF NOT EXISTS ignorelist (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);" );
 
         // fix operlog
         qList.add ( "alter table operlog add data varchar(512);" );
 
         // create banlog
-        qList.add ( "CREATE TABLE banlog ( id int primary key auto_increment, ticket varchar(32), flag varchar(8), usermask varchar(110), oper varchar(32), stamp datetime, data varchar(512) );" );
+        qList.add ( "CREATE TABLE IF NOT EXISTS banlog ( id int primary key auto_increment, ticket varchar(32), flag varchar(8), usermask varchar(110), oper varchar(32), stamp datetime, data varchar(512) );" );
 
         // add sqline
-        qList.add ( "create table sqline (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);" );
+        qList.add ( "create table IF NOT EXISTS sqline (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);" );
 
         // add sgline
-        qList.add ( "create table sgline (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);" );
+        qList.add ( "create table IF NOT EXISTS sgline (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);" );
  
         // Add server
-        qList.add ( "create table server (name varchar(64) primary key,lastseen datetime);" );
+        qList.add ( "create table IF NOT EXISTS server (name varchar(64) primary key,lastseen datetime);" );
 
         // Add auditorium mode
         qList.add ( "alter table chansetting add auditorium tinyint default 0;" );
@@ -410,13 +410,13 @@ public class DBChanges extends HashNumeric {
         qList.add ( "update chansetting set freeze=NULL, hold=NULL,mark=NULL,close=NULL,auditorium=NULL;" );
 
         // Add maillog
-        qList.add ( "create table maillog ( id int primary key auto_increment, nick varchar(32), mail varchar(256), auth varchar(33), stamp datetime ) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "create table IF NOT EXISTS maillog ( id int primary key auto_increment, nick varchar(32), mail varchar(256), auth varchar(33), stamp datetime ) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
         qList.add ( "insert into maillog (nick,mail,auth,stamp) select name,mail,NULL,regstamp from nick;" );
         qList.add ( "alter table nick drop mail;" );
         qList.add ( "alter table nick drop auth;" );
 
         // Add passlog
-        qList.add ( "create table passlog ( id int primary key auto_increment, nick varchar(32), pass varchar(64), auth varchar(33), stamp datetime ) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
+        qList.add ( "create table IF NOT EXISTS passlog ( id int primary key auto_increment, nick varchar(32), pass varchar(64), auth varchar(33), stamp datetime ) ENGINE=InnoDB DEFAULT CHARSET=latin1;" );
         qList.add ( "insert into passlog (nick,pass,auth,stamp) select name,pass,NULL,regstamp from nick;" );
         qList.add ( "alter table nick drop pass;" );
 
@@ -430,12 +430,12 @@ public class DBChanges extends HashNumeric {
         qList.add ( "alter table nicksetting drop auth;" );
 
         // Add topiclog and move topics from chan
-        qList.add ( "create table topiclog (name varchar(33), setter varchar(110), stamp datetime, topic varchar(308));" );
+        qList.add ( "create table IF NOT EXISTS topiclog (name varchar(33), setter varchar(110), stamp datetime, topic varchar(308));" );
         qList.add ( "insert into topiclog (select name,setter,from_unixtime(stamp),topic from chantopic);" );
         qList.add ( "drop table chantopic;" );
  
         // Add persistent servicesID's
-        qList.add ( "create table servicesid ( id bigint primary key, stamp datetime, nicks varchar(128), chans varchar(128) );" );
+        qList.add ( "create table IF NOT EXISTS servicesid ( id bigint primary key, stamp datetime, nicks varchar(128), chans varchar(128) );" );
 
 
         // Add primary and seconday hub to server list
@@ -445,7 +445,7 @@ public class DBChanges extends HashNumeric {
 
 
         // Add chanflags table for eXtended flags
-        qList.add ( "create table chanflag (name varchar(33) not null default '', join_connect_time smallint, talk_connect_time smallint, talk_join_time smallint, max_bans smallint, no_notice tinyint(1), no_ctcp tinyint(1), no_part_msg tinyint(1), no_quit_msg tinyint(1), exempt_opped tinyint(1), exempt_voiced tinyint(1), exempt_identd tinyint(1), exempt_registered tinyint(1), exempt_invites tinyint(1), greetmsg varchar(256), primary key (name), constraint foreign key (name) references chan (name) on delete cascade on update cascade )engine=innodb charset=latin1;" );
+        qList.add ( "create table IF NOT EXISTS chanflag (name varchar(33) not null default '', join_connect_time smallint, talk_connect_time smallint, talk_join_time smallint, max_bans smallint, no_notice tinyint(1), no_ctcp tinyint(1), no_part_msg tinyint(1), no_quit_msg tinyint(1), exempt_opped tinyint(1), exempt_voiced tinyint(1), exempt_identd tinyint(1), exempt_registered tinyint(1), exempt_invites tinyint(1), greetmsg varchar(256), primary key (name), constraint foreign key (name) references chan (name) on delete cascade on update cascade )engine=innodb charset=latin1;" );
 
         // Add chanflag for all current chans
         qList.add ( "insert into chanflag (select name,0,0,0,200,0,0,0,0,0,0,0,0,0,null from chan);" );
@@ -461,7 +461,7 @@ public class DBChanges extends HashNumeric {
     
     private ArrayList<String> db118101 ( ) {
         ArrayList<String> qList = new ArrayList<>();
-        qList.add ( "create table spamfilter (id int primary key auto_increment, pattern varchar(128), flags varchar(32), reason varchar(256), instater varchar(33),stamp datetime,expire datetime);" );
+        qList.add ( "create table IF NOT EXISTS spamfilter (id int primary key auto_increment, pattern varchar(128), flags varchar(32), reason varchar(256), instater varchar(33),stamp datetime,expire datetime);" );
         return qList;
     }
     
@@ -536,7 +536,7 @@ public class DBChanges extends HashNumeric {
         
     private ArrayList<String> db120071 ( ) {
         ArrayList<String> qList = new ArrayList<>();
-        qList.add("CREATE TABLE chanaccess_mask (name varchar(33) NOT NULL, access varchar(12) NOT NULL,mask varchar(110) NOT NULL,lastoped datetime DEFAULT NULL,PRIMARY KEY (name,mask),CONSTRAINT FOREIGN KEY (name) REFERENCES chan (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1");
+        qList.add("CREATE TABLE IF NOT EXISTS chanaccess_mask (name varchar(33) NOT NULL, access varchar(12) NOT NULL,mask varchar(110) NOT NULL,lastoped datetime DEFAULT NULL,PRIMARY KEY (name,mask),CONSTRAINT FOREIGN KEY (name) REFERENCES chan (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1");
         qList.add("insert into chanaccess_mask (name,access,mask,lastoped) select name,access,nick as mask,lastoped from chanaccess where nick like '%!%' or nick like '%*%'");
         qList.add("delete from chanaccess where nick like '%!%' or nick like '%*%'");
         return qList;
@@ -544,7 +544,7 @@ public class DBChanges extends HashNumeric {
         
     private ArrayList<String> db120111 ( ) {
         ArrayList<String> qList = new ArrayList<>();
-        qList.add("create table exception (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);");
+        qList.add("create table IF NOT EXISTS exception (id int primary key auto_increment,mask varchar(110),reason varchar(256),instater varchar(33),stamp datetime,expire datetime);");
         return qList;
     }
     private ArrayList<String> db123071 ( ) {
