@@ -21,6 +21,7 @@ import core.CIDRUtils;
 import core.Handler;
 import core.HashNumeric;
 import core.HashString;
+import core.Proc;
 import core.StringMatch;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
@@ -134,9 +135,11 @@ public class ServicesBan extends HashNumeric {
      *
      */
     public void printData() {
+        System.out.println("BAN: id: "+this.id.getString());
         System.out.println("BAN: nick:"+this.nick);
         System.out.println("BAN: user:"+this.user);
         System.out.println("BAN: host:"+this.host);
+        System.out.println("BAN: mask: "+this.mask.getString());
         System.out.println("BAN: isCidr:"+(this.cidr != null?"1":"0") );
         
         if ( this.cidr != null ) {
@@ -351,7 +354,6 @@ public class ServicesBan extends HashNumeric {
      * @return
      */
     public boolean hasExpired ( ) {
-        System.out.println(this.expireStamp+":"+System.currentTimeMillis());
         return this.expireStamp < System.currentTimeMillis();
     }
 

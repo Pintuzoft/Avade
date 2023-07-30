@@ -102,7 +102,7 @@ public class OSDatabase extends Database {
         try { 
             ban.printData();
             String query = "insert into "+list+" ( id,mask,reason,instater,stamp,expire ) VALUES "
-                          +" ( ?, ?, ?, ?, ?, ? ) ";
+                          +" ( ?, ?, ?, ?, ?, ? );";
             System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ban.getID().getString() );

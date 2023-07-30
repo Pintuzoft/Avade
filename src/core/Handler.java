@@ -1395,32 +1395,35 @@ public class Handler extends HashNumeric {
      */
     public static Date expireToDate ( Date date, String data ) {
         String strBuf;
-        int ms = 0;
+        Date expire = new Date();
+        int ms = 60*1000;
         int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
- 
+        Proc.log("expireToDate: date:"+date);
+        Proc.log("expireToDate: data:"+data);
         if ( data == null ) {
             data = "30";
 
         } else if ( data.contains("-") ) {
             try {
-                date = dateFormat.parse ( data );
+                expire = dateFormat.parse ( data );
             } catch ( ParseException ex ) {
                 Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
                 return null;
             }
-            return date;
+            return expire;
         }
         
         strBuf = data.substring ( 0, data.length ( ) - 1 );
+        Proc.log("expireToDate: strBuf = "+strBuf);
         try {
             amount = Integer.parseInt ( strBuf );            
         } catch ( NumberFormatException ex ) {
             return null;
         }
        
-        date.setTime ( date.getTime() + ( amount*ms ) );
-        return date;
+        expire.setTime ( expire.getTime() + ( amount*ms ) );
+        return expire;
     }
     
     /**

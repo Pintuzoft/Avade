@@ -835,6 +835,7 @@ public class OSExecutor extends Executor {
         }  
         
         String pattern;
+        
         SpamFilter sFilter;
         
         if ( result.is(SHOWLIST) ) {
@@ -854,17 +855,17 @@ public class OSExecutor extends Executor {
                 }            
         
         } else if ( result.is(ADD) ) {
+            Proc.log("0:");
                 pattern = result.getString1();
                 String flags = result.getString2();
-                String time = result.getString3();
-                String reason = result.getString4();
+                String reason = result.getString3();
                 String stamp = dateFormat.format ( new Date ( ) );
                 sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getNameStr(), reason, stamp );
                 
-                
                 /*  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason); */
                 OperServ.addSpamFilter ( sFilter );
-                this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );
+            
+                this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );                
                 this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Reason: "+reason  );            
         }
         
@@ -1347,7 +1348,7 @@ public class OSExecutor extends Executor {
                 } else {
                     result.setString1 ( cmd[5] );
                     result.setString2 ( cmd[6] );
-                    result.setString4 ( reason );
+                    result.setString3 ( reason );
                     result.setStatus ( ADD );
                 }            
         

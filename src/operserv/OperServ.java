@@ -1238,11 +1238,10 @@ public class OperServ extends Service {
     public void addSFAkill ( String[] data ) {
         //:testnet.avade.net OS SFAKILL fredde 1539289892 hello to you too!
         //                 0  1       2      3          4 5+
-
-        User user = Handler.findUser ( data[3] );
-         
+        String[] buf = data[3].split("@");
+        String host = buf[1];
         String reason = Handler.cutArrayIntoString ( data, 5 );
-        ServicesBan ban = this.findBan ( AKILL, user.getFullMask() );
+        ServicesBan ban = this.findBan ( AKILL, "*@"+host );
         
         if ( ban != null ) {
             
@@ -1257,19 +1256,18 @@ public class OperServ extends Service {
             );
             return;
         }
-        String expire = Handler.expireToTime ( "30d" );
-        this.addServicesBan ( 
-            new ServicesBan ( 
+        //String expire = Handler.expireToTime ( "30d" );
+        ban = new ServicesBan ( 
                 AKILL, 
                 new HashString ( ""+System.nanoTime() ), 
                 false,
-                new HashString ( "*!*@"+user.getString(IP) ), 
+                new HashString ( "*!*@"+host ), 
                 reason, 
                 "OperServ", 
                 null,
-                expire
-            ) 
-        );
+                "30d");
+        this.addServicesBan ( ban ); 
+        this.sendServicesBan( ban );
     }
 
     /**
