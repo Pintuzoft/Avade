@@ -126,7 +126,7 @@ public class ServicesBan extends HashNumeric {
             this.cidr = null;
         }
         
-        this.printData ( );
+     //   this.printData ( );
 
     }
 

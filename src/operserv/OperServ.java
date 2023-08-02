@@ -1243,7 +1243,6 @@ public class OperServ extends Service {
         ServicesBan ban = this.findBan ( AKILL, "*@"+host );
         
         if ( ban != null ) {
-            
             this.sendServ ( 
                 "AKILL "+
                 ban.getHost ( ) +" "+
@@ -1265,8 +1264,8 @@ public class OperServ extends Service {
                 "OperServ", 
                 null,
                 "30d");
-        this.addServicesBan ( ban ); 
-        this.sendServicesBan( ban );
+        this.addServicesBan ( ban );
+        this.sendServicesBan ( ban );
     }
 
     /**
