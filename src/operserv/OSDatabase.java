@@ -133,63 +133,44 @@ public class OSDatabase extends Database {
         if ( ! activateConnection ( ) )  {
             return false;
         }
-        Proc.log("0:");
         if ( ban.getType().is(AKILL) ) {
-        Proc.log("1:");
                 id = "AK"+ban.getID ( );
                 flag = ( command.is(DEL) ? "AK-" : "AK+" );            
         
         } else if ( ban.getType().is(IGNORE) ) {
-        Proc.log("2:");
                 id = "IG"+ban.getID ( );
                 flag = ( command.is(DEL) ? "IG-" : "IG+" );            
         
         } else if ( ban.getType().is(SQLINE) ) {
-        Proc.log("3:");
                 id = "SQ"+ban.getID ( );
                 flag = ( command.is(DEL) ? "SQ-" : "SQ+" );            
         
         } else if ( ban.getType().is(SGLINE) ) {
-        Proc.log("4:");
                 id = "SQ"+ban.getID ( );
                 flag = ( command.is(DEL) ? "SG-" : "SG+" );            
         
         } else {
-        Proc.log("5:");
             return false;
         }
         
         try {
-        Proc.log("6:");
             String query = "insert into banlog ( ticket,flag,usermask,oper,stamp,data ) VALUES "
                           +" ( ?, ?, ?, ?, now(), ?) ";
-        Proc.log("7:");
             ps = sql.prepareStatement ( query );
-        Proc.log("8:");
             ps.setString   ( 1, id );
-        Proc.log("9:");
             ps.setString   ( 2, flag );
-        Proc.log("10:");
             ps.setString   ( 3, ban.getMask().getString() );
-        Proc.log("11:");
             ps.setString   ( 4, ban.getInstater() );
-        Proc.log("12:");
             ps.setString   ( 5, ban.getReason() );
-        Proc.log("13:");
             ps.execute ( );
-        Proc.log("14:");
             ps.close ( );
-        Proc.log("15:");
  
             idleUpdate ( "addAkill ( ) " );
-        Proc.log("16:");
            
         } catch  ( SQLException ex )  {
-        Proc.log("17:");
             Proc.log ( OSDatabase.class.getName ( ) , ex );
             return false;
         } 
-        Proc.log("18:");
         return true;
     }
 
