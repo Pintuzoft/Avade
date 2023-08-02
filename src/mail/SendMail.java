@@ -47,7 +47,7 @@ public class SendMail extends HashNumeric {
 
     public static void sendNickRegisterMail ( NickInfo ni, NSAuth auth ) {
         Mail mail = new Mail (
-            ni.getString ( MAIL ), 
+            auth.getValue(), 
             mailStr ( NICKREG_SUBJECT, "" ),
             auth.getAuth(),
             mailStr ( 
