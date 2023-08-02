@@ -25,7 +25,6 @@ import chanserv.ChanInfo;
 import chanserv.ChanServ;
 import command.Command;
 import core.CommandInfo;
-import core.Database;
 import core.Handler;
 import core.HashString;
 import core.Proc;
@@ -623,6 +622,7 @@ public class NickServ extends Service {
      * @param ni
      */
     public void dropNick ( NickInfo ni ) {
+//        NickInfo ni = NickServ.findNick(in.getNameStr());
         /* Message all currently idented users then unident them */
         ArrayList<User> uList = Handler.findUsersByNick ( ni );
         ArrayList<ChanInfo> cList;
@@ -633,14 +633,13 @@ public class NickServ extends Service {
         //map.put ( AOP, "DELAOP".hashCode() );
         //map.put ( SOP, "DELSOP".hashCode() );
         //map.put ( AKICK, "DELAKICK".hashCode() );
-        
         remList.addAll ( ni.getChanAccess ( FOUNDER ) );
         for ( ChanInfo ci : remList ) {
             Handler.getChanServ().dropChan ( ci );
             CSLogEvent log = new CSLogEvent ( ci.getName(), EXPIREFOUNDER, "", "" );
             CSDatabase.logEvent ( log );
         }
-
+        
         for ( HashString list : lists ) {
             remList.addAll ( ni.getChanAccess ( list ) );
             for ( ChanInfo ci : remList ) {
@@ -663,10 +662,13 @@ public class NickServ extends Service {
         if ( ( user = Handler.findUser ( ni.getName() ) ) != null ) {
             this.sendCmd( "SVSMODE "+user.getString ( NAME )+" 0 -r" );
         }
-        niList.remove ( ni );
         
-        /* When all isSet done lets put the nick in the delete list */
+        /* Remove nick from mem */
+        niList.remove ( ni.getName().getCode() );
+
+        /* Put the nick in the delete list */
         NickServ.addToWorkList ( DELETE, ni );
+        
     }    
 
     /**

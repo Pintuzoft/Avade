@@ -18,7 +18,6 @@
 package nickserv;
 
 import command.Command;
-import core.Database;
 import core.Executor;
 import core.Handler;
 import core.Proc;
@@ -328,8 +327,8 @@ import java.util.regex.Pattern;
                 this.snoop.msg (false, IS_MARKED, result.getNick().getNameStr(), user, cmd );
                 return;
         }  
-         
-        NickInfo ni = result.getNick ( );
+        
+        NickInfo ni = result.getNick();
         Handler.getNickServ().dropNick ( ni );
         this.service.sendMsg ( user, output ( NICKDELETED, ni.getNameStr() ) );
         this.service.sendGlobOp ( "Nick "+ni.getName()+" has been DELETED by "+user.getOper().getNameStr() );
@@ -1286,6 +1285,7 @@ import java.util.regex.Pattern;
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
                 } else {
+                    Proc.log("Setting nick to: "+ni.getNameStr());
                     result.setNick ( ni );
                 }
                 
