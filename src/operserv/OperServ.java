@@ -51,6 +51,7 @@ public class OperServ extends Service {
     private static ArrayList<ServicesBan> addServicesBans = new ArrayList<>(); /* Add new services bans */
     private static ArrayList<ServicesBan> remServicesBans = new ArrayList<>(); /* Remove services bans */
     private static ArrayList<ServicesBan> addLogServicesBans = new ArrayList<>(); /* Add new services bans logs */
+    private static ArrayList<ServicesBan> delLogServicesBans = new ArrayList<>(); /* Add new services bans logs */
 
     private static ArrayList<NetServer> servers = new ArrayList<> ( );   /* Server list */
     private static ArrayList<NetServer> remServers = new ArrayList<> ( );   /* Remove Server from list */
@@ -194,6 +195,8 @@ public class OperServ extends Service {
         todoAmount += this.checkAddStaff ( );
         todoAmount += this.checkRemStaff ( );
         todoAmount += this.checkLogEvents ( );
+        todoAmount += this.checkaddLogServicesBans ( );
+        todoAmount += this.checkdelLogServicesBans ( );
          
         return todoAmount;
     }
@@ -408,6 +411,42 @@ public class OperServ extends Service {
         return logs.size();
     }
     
+       /**
+     *
+     * @return
+     */
+    public int checkaddLogServicesBans ( ) {
+        if ( addLogServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
+            return addLogServicesBans.size();
+        }
+        ArrayList<ServicesBan> bList = new ArrayList<>();
+        for ( ServicesBan ban : addLogServicesBans ) {
+            if ( OSDatabase.logServicesBan ( ADD, ban ) ) {
+                bList.add ( ban );
+            }
+        }
+        addLogServicesBans.removeAll(bList);
+        return delLogServicesBans.size();
+    }
+
+       /**
+     *
+     * @return
+     */
+    public int checkdelLogServicesBans ( ) {
+        if ( delLogServicesBans.isEmpty() || ! OSDatabase.checkConn() ) {
+            return delLogServicesBans.size();
+        }
+        ArrayList<ServicesBan> bList = new ArrayList<>();
+        for ( ServicesBan ban : delLogServicesBans ) {
+            if ( OSDatabase.logServicesBan ( DEL, ban ) ) {
+                bList.add ( ban );
+            }
+        }
+        delLogServicesBans.removeAll(bList);
+        return delLogServicesBans.size();
+    }
+
     private void checkUserList ( ) {
         int res;
         ServicesBan ban;
@@ -483,6 +522,7 @@ public class OperServ extends Service {
         for ( ServicesBan del : delList ) {
             this.unBan ( del );
             remServicesBans.add ( del );
+            delLogServicesBans.add( del );
             this.sendServ( "GLOBOPS :"+del.getBanTypeStr()+" for "+del.getMask()+" has expired. [Instated by: "+del.getInstater()+" at: "+del.getTime()+"]");
      //       this.sendGlobOp ( del.getBanTypeStr()+" for "+del.getMask()+" has expired. [Instated by: "+del.getInstater()+" at: "+del.getTime()+"]" );
             getBanList(del.getType()).remove ( del );
@@ -496,45 +536,6 @@ public class OperServ extends Service {
         else if ( name.is(SGLINE) )         { return sglines;       }
         else {
             return null;
-        }
-    }
-    private void expireBansOLD ( )  {
-        if ( ! OSDatabase.checkConn ( )  )  {
-            return;
-        }
-        HashString[] commands = { AKILL, SGLINE, SQLINE };
-        
-        ArrayList<ServicesBan> banList = new ArrayList<>( );
-        ArrayList<ServicesBan> list = null;
-        for ( HashString command : commands ) {
-            if ( command.is(AKILL) ) {
-                list = akills;
-            } else if ( command.is(SQLINE) ) {
-                list = sqlines;
-            } else if ( command.is(SGLINE) ) {
-                list = sglines;
-            } else {
-                list = null;
-            }
-              
-            if ( list != null ) {
-                for ( ServicesBan a : OSDatabase.getExpiredBans ( command )  )  {
-                    for ( ServicesBan ak : list )  {
-                        if ( a.isMask(ak.getMask() ) ) {
-                            banList.add ( ak );
-                        }
-                    }
-                }
-            }
-
-        }
-        
-        for ( ServicesBan a : banList )  {
-            if ( OSDatabase.delServicesBan ( a ) ) {
-                this.unBan ( a );
-//                this.sendGlobOp ( output ( AKILL_EXPIRE, a.getMask ( ) , ""+a.getID ( ) , a.getInstater ( )  )  );
-                list.remove(a);
-            } 
         }
     }
     
@@ -675,17 +676,15 @@ public class OperServ extends Service {
         }
     }
     
-    private int delServicesBan ( ServicesBan ban )  {
-        if ( OSDatabase.delServicesBan ( ban ) ) {
-            OSDatabase.logServicesBan ( DEL, ban );
-            if ( ban.is(SQLINE) ||
-                 ban.is(SGLINE) ||
-                 ban.is(AKILL) ) {
-                this.unBan ( ban );
-            }
-            return 1;
+    /* remove this */
+    private void delServicesBan ( ServicesBan ban )  {
+        remServicesBans.add( ban );
+        delLogServicesBans.add( ban );
+        if ( ban.is(SQLINE) ||
+             ban.is(SGLINE) ||
+             ban.is(AKILL) ) {
+            this.unBan ( ban );
         }
-        return 0;
     }
   
     /**

@@ -21,7 +21,6 @@ import core.CIDRUtils;
 import core.Handler;
 import core.HashNumeric;
 import core.HashString;
-import core.Proc;
 import core.StringMatch;
 import java.net.UnknownHostException;
 import java.text.DateFormat;
