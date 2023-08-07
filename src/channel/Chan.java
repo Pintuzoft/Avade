@@ -62,6 +62,7 @@ public class Chan extends HashNumeric {
         this.modes.set ( ChanMode.SERVER, data );
         this.init ( data );
         this.checkRelay();
+        this.topic          = new Topic ( "", "", 0 );
     }
        
     /**

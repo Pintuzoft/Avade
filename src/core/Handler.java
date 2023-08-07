@@ -325,15 +325,22 @@ public class Handler extends HashNumeric {
     
     private void doChan ( boolean check ) {
         Chan c;
+        ChanInfo ci;
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
             c.addUserList(data, 5);
         } else {
             c = new Chan ( this.data ); 
-            cList.put ( c.getName().getCode(), c ); 
+            cList.put ( c.getName().getCode(), c );
             if ( check ) {
                 chan.checkSettings ( c );
             }
+            if ( (ci = ChanServ.findChan(c.getName())) != null ) {
+                chan.sendTopic(ci);
+                c.setTopic(ci.getTopic());
+            }
+            
         }
+        
     }
     
     //     :Guest12203 PRIVMSG NickServ@services.sshd.biz :identify asd.
@@ -668,31 +675,22 @@ public class Handler extends HashNumeric {
     
     private void doSJoin ( User user )  {
         /* User joined a channel */
-        System.out.println("0:");
         Chan c = findChan ( this.data[3] );
-        System.out.println("1:");
+        ChanInfo ci = ChanServ.findChan(c.getName());
         if ( c != null ) {
-        System.out.println("2:");
             c.addUser ( USER, user );
-        System.out.println("3:");
             user.addChan ( c );
-        System.out.println("4:");
         } else {
-        System.out.println("5:");
             this.doChan ( true );
-        System.out.println("6:");
+            if ( ci != null ) {
+                chan.sendTopic(ci);
+            }
         }
-        System.out.println("7:");
         if ( ! c.isSaJoin() ) {
-        System.out.println("8:");
             ChanServ.addCheckUser ( c, user );
-        System.out.println("9:");
         } else {
-        System.out.println("10:");
             c.toggleSaJoin();
-        System.out.println("11:");
         }
-        System.out.println("12:");
     }
      
     private void doPart ( User user )  {
@@ -701,7 +699,7 @@ public class Handler extends HashNumeric {
         if ( c != null )  {
             c.remUser ( user );
             user.remChan ( c );
-            this.deleteEmpty ( c );
+            deleteEmpty ( c );
         }
     }
     
@@ -714,7 +712,7 @@ public class Handler extends HashNumeric {
             if ( target != null )  {
                 c.remUser ( target );
                 target.remChan ( c );
-                this.deleteEmpty ( c );
+                deleteEmpty ( c );
             }
         }
     }
@@ -908,11 +906,11 @@ public class Handler extends HashNumeric {
         return null;
     }
 
-    private void deleteEmpty ( Chan chan )  {
+    public static void deleteEmpty ( Chan chan )  {
         /* If the channel isSet empty lets remove it from memory */
         try {
             if ( chan.empty ( ) )  {
-                cList.remove ( chan );
+                cList.remove(chan.getName().getCode());
             }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );

@@ -19,6 +19,7 @@ package chanserv;
 
 import nickserv.NickInfo;
 import channel.Chan;
+import channel.Topic;
 import core.CommandInfo;
 import core.Handler;
 import core.HashString;
@@ -401,7 +402,14 @@ public class ChanServ extends Service {
         }
         return false;
     }
-  
+    
+    public void sendTopic ( ChanInfo ci ) {
+        Topic topic = ci.getTopic();
+        if ( topic != null ) {
+            this.sendCmd ( "TOPIC "+ci.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
+        }
+    }
+    
     /**
      *
      * @param c

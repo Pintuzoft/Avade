@@ -271,6 +271,7 @@ public class User extends HashNumeric {
         if ( !this.cList.isEmpty() )  {
             for ( Chan c : this.cList )  {
                 c.remUser ( this );
+                Handler.deleteEmpty(c);
             }
             this.cList.clear ( );
         }
