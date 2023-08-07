@@ -108,7 +108,7 @@ public class Config extends HashNumeric {
         return null;
     }
     
-    private HashMap getHashMap ( HashString type ) {
+    /*private HashMap getHashMap ( HashString type ) {
         if ( type.is(STRING) ) {
             return this.configStr;
         } else if ( type.is(BOOLEAN) ) {
@@ -117,8 +117,16 @@ public class Config extends HashNumeric {
             return this.configInt;
         }
         return new HashMap<>();
-    }
+    }*/
      
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> safelyCastToMap(Object obj) {
+        if (obj instanceof Map<?, ?>) {
+            return (Map<String, Object>) obj;
+        }
+        return new HashMap<>();  // or throw an exception if it's an unexpected scenario
+    }
+    
     /*
      * Load config and validate it at the same time
      */
@@ -128,7 +136,7 @@ public class Config extends HashNumeric {
         
         try {
             InputStream ios = new FileInputStream ( new File ( fileName ) );
-            Map<String,Object> result = ( Map<String,Object> ) yaml.load ( ios );
+            Map<String,Object> result = safelyCastToMap(yaml.load ( ios ));
             
             HashString[] types = { STRING, BOOLEAN, INTEGER };
             for ( HashString type : types ) {
@@ -137,13 +145,13 @@ public class Config extends HashNumeric {
                     HashString parsed = parseKey ( result, key.getString().toLowerCase() );
                     
                     if ( type.is(BOOLEAN) ) {
-                        this.getHashMap(type).put( key.getCode(), parsed.is(TRUE) );
+                        this.configBool.put( key.getCode(), parsed.is(TRUE) );
 
                     } else if ( type.is(INTEGER) ) {
-                        this.getHashMap(type).put(key.getCode(), Integer.parseInt(parsed.getString()));
+                        this.configInt.put( key.getCode(), Integer.parseInt(parsed.getString()));
                         
                     } else {
-                        this.getHashMap(type).put( key.getCode(), parsed );
+                        this.configStr.put( key.getCode(), parsed );
                     }
                 }
             }
@@ -173,6 +181,8 @@ public class Config extends HashNumeric {
             Logger.getLogger(Config.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+
     
     private String[] fixResult ( String result ) {
         return result.replace("{","").replace("}","").replace("[","").replace("]","").split(",");
@@ -254,7 +264,13 @@ public class Config extends HashNumeric {
                      key.is(MYSQLPASS) ) {
                     list.add( ""+key.getString().toLowerCase()+": *****" );
                 } else {
-                    list.add( ""+key.getString().toLowerCase()+": "+this.getHashMap(type).get(key.getCode()) );
+                    if ( type.is(STRING) ) {
+                        list.add( ""+key.getString().toLowerCase()+": "+this.configStr.get(key.getCode()) );
+                    } else if ( type.is(INTEGER) ) {
+                        list.add( ""+key.getString().toLowerCase()+": "+this.configInt.get(key.getCode()) );
+                    } else if ( type.is(BOOLEAN) ) {
+                        list.add( ""+key.getString().toLowerCase()+": "+this.configBool.get(key.getCode()) );
+                    }
                 }
             }
         }

@@ -55,7 +55,7 @@ public class NickServ extends Service {
     /* Oper stuff */
     private NSSnoop                         snoop;          /* Object that parse and respond to help queries */ 
     private static HashMap<BigInteger,NickInfo>      niList  = new HashMap<> ( ); /* List of focused regged nicknames */  
-    private static TextFormat               f       = new TextFormat ( );;
+    private static TextFormat               f       = new TextFormat ( );
 
     private static ArrayList<NSAuth>        newAuthList = new ArrayList<>();
     private static ArrayList<NSAuth>        newFullAuthList = new ArrayList<>();
