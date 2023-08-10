@@ -69,6 +69,7 @@ function install {
    echo "Installing to ~/avade/";
    mkdir -p ~/avade
    cp -v dist/Avade.jar ~/avade/avade.jar
+   cp -Rv dist/lib ~/avade/
    cp template.conf ~/avade/
    cp reference.conf ~/avade/
 }
