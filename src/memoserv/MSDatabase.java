@@ -121,7 +121,6 @@ public class MSDatabase extends Database {
      *
      */
     public static void loadAllMemos ( )  {
-        ArrayList<MemoInfo> mList = new ArrayList<> ( );
         NickInfo ni;
         if ( ! activateConnection ( )  )  {
             return;
@@ -134,7 +133,7 @@ public class MSDatabase extends Database {
             while ( res.next ( )  )  {
                 if ( (ni = NickServ.findNick(res.getString("name"))) != null ) {
                     ni.getMemos().add ( 
-                            new MemoInfo ( res.getInt ( "id" ) ,res.getString ( "name" ) ,res.getString ( "sender" ) ,res.getString ( "message" ) ,res.getLong ( "stamp" ) ,res.getBoolean ( "readflag" )  ) 
+                        new MemoInfo ( res.getInt ( "id" ) ,res.getString ( "name" ) ,res.getString ( "sender" ) ,res.getString ( "message" ) ,res.getLong ( "stamp" ) ,res.getBoolean ( "readflag" )  ) 
                     );
                 }
             }

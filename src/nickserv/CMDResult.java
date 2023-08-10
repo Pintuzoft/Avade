@@ -72,7 +72,7 @@ public class CMDResult {
     
     /**
      *
-     * @return
+     * @return nick
      */
     public NickInfo getNick ( ) { 
         return this.nick;
@@ -80,7 +80,7 @@ public class CMDResult {
     
     /**
      *
-     * @return
+     * @return status
      */
     public HashString getStatus ( ) { 
         return this.status;
@@ -89,7 +89,7 @@ public class CMDResult {
     /**
      *
      * @param hash
-     * @return
+     * @return true/false
      */
     public boolean is ( HashString hash ) {
         return status.is(hash);
@@ -97,7 +97,7 @@ public class CMDResult {
     
     /**
      *
-     * @return
+     * @return str1
      */
     public String getString1 ( ) { 
         return this.str1;
@@ -105,7 +105,7 @@ public class CMDResult {
     
     /**
      *
-     * @return
+     * @return auth
      */
     public NSAuth getAuth ( ) { 
         return this.auth;
@@ -113,12 +113,17 @@ public class CMDResult {
 
     /**
      *
-     * @return
+     * @return command
      */
     public HashString getCommand ( ) {
         return this.command;
     }
 
+    
+    /**
+     *
+     * @param command
+     */    
     void setCommand ( HashString command ) {
         this.command = command;
     }

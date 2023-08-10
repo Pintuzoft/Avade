@@ -896,6 +896,8 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "     TALK_CONNECT_TIME <seconds>  - User is allowed to talk X sec after connect"              );
         this.service.sendMsg ( user, "     TALK_JOIN_TIME <seconds>     - User is allowed to talk X sec after joining the chan"     );
         this.service.sendMsg ( user, "     MAX_BANS <num>               - Max amount of bans that can be placed in the chan"        );
+        this.service.sendMsg ( user, "     MAX_INVITES <num>            - Max amount of invites that can be placed in the chan"     );
+        this.service.sendMsg ( user, "     MAX_MSG_TIME <M:S>           - 0:0 - 999:999 where M:S gives Messages:Seconds"           );
         this.service.sendMsg ( user, "     NO_NOTICE <ON|OFF>           - Disable channel notices"                                  );
         this.service.sendMsg ( user, "     NO_CTCP <ON|OFF>             - Disable channel CTCP"                                     );
         this.service.sendMsg ( user, "     NO_PART_MSG <ON|OFF>         - Prevent part messages from being shown"                   );
@@ -905,6 +907,10 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "     EXEMPT_IDENTD <ON|OFF>       - Exempt users using enabled identd from ChanFlags"         );
         this.service.sendMsg ( user, "     EXEMPT_REGISTERED <ON|OFF>   - Exempt identified (+r) users from ChanFlags"              );
         this.service.sendMsg ( user, "     EXEMPT_INVITES <ON|OFF>      - Exempt users matching the invites list (+I) from ChanFlags");
+        this.service.sendMsg ( user, "     EXEMPT_WEBIRC <ON|OFF>       - Exempt webirc users"                                      );
+        this.service.sendMsg ( user, "     HIDE_MODE_LISTS <ON|OFF>     - Hide mode lists"                                          );
+        this.service.sendMsg ( user, "     NO_NICK_CHANGE <ON|OFF>      - Stop nick changes"                                        );
+        this.service.sendMsg ( user, "     NO_UTF8 <ON|OFF>             - Stop special characters"                                  );
         this.service.sendMsg ( user, "     GREETMSG <greeting>          - Set join greeting message for warning users they might"   );
         this.service.sendMsg ( user, "                                    get match by the ChanFlags."                              );
         this.service.sendMsg ( user, "     LIST                         - Will list current configuration"                          );
@@ -913,7 +919,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   but with ChanFlag command these flags get persistent just like keeptopic keeps the topic"  );
         this.service.sendMsg ( user, "   set on the channel even if the channel is recreated"                                       );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                );
         this.service.sendMsg ( user, "   Before setting any flags on your channel please observe and identify the key aspects of"   );
         this.service.sendMsg ( user, "   the issue(s) that your channel is facing and try resolve them as gently as possible. If"   );
         this.service.sendMsg ( user, "   noone is allowed to talk for the first 10000 seconds your channel might inadvertently"     );

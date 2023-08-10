@@ -8,6 +8,8 @@ package chanserv;
 import core.Handler;
 import core.HashNumeric;
 import core.HashString;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -19,6 +21,8 @@ public class CSFlag extends HashNumeric {
     private short talkconnecttime = 0;
     private short talkjointime = 0;
     private short maxbans = 200;
+    private short maxinvites = 100;
+    private String maxmsgtime = "0:0";
     private boolean nonotice = false;
     private boolean noctcp = false;
     private boolean nopartmsg = false;
@@ -28,6 +32,10 @@ public class CSFlag extends HashNumeric {
     private boolean exemptidentd = false;
     private boolean exemptregistered = false;
     private boolean exemptinvites = false;
+    private boolean exemptwebirc = false;
+    private boolean hidemodelists = false;
+    private boolean nonickchange = false;
+    private boolean noutf8 = false;
     private String greetmsg = null;
     
     /**
@@ -37,6 +45,8 @@ public class CSFlag extends HashNumeric {
      * @param talk_connect_time
      * @param talk_join_time
      * @param max_bans
+     * @param max_invites
+     * @param max_msg_time
      * @param no_notice
      * @param no_ctcp
      * @param no_part_msg
@@ -46,17 +56,41 @@ public class CSFlag extends HashNumeric {
      * @param exempt_identd
      * @param exempt_registered
      * @param exempt_invites
+     * @param exempt_webirc
+     * @param hide_mode_lists
+     * @param no_nick_change
+     * @param no_utf8
      * @param greetmsg
      */
-    public CSFlag ( HashString name, short join_connect_time, short talk_connect_time, short talk_join_time, short max_bans, 
-                    boolean no_notice, boolean no_ctcp, boolean no_part_msg, boolean no_quit_msg, boolean exempt_opped,
-                    boolean exempt_voiced, boolean exempt_identd, boolean exempt_registered, boolean exempt_invites, 
-                    String greetmsg ) {
+    public CSFlag ( 
+            HashString name, 
+            short join_connect_time, 
+            short talk_connect_time, 
+            short talk_join_time, 
+            short max_bans, 
+            short max_invites, 
+            String max_msg_time, 
+            boolean no_notice, 
+            boolean no_ctcp, 
+            boolean no_part_msg, 
+            boolean no_quit_msg, 
+            boolean exempt_opped,
+            boolean exempt_voiced, 
+            boolean exempt_identd, 
+            boolean exempt_registered, 
+            boolean exempt_invites, 
+            boolean exempt_webirc, 
+            boolean hide_mode_lists, 
+            boolean no_nick_change, 
+            boolean no_utf8, 
+            String greetmsg ) {
         this.name = name;
         this.joinconnecttime = join_connect_time;
         this.talkconnecttime = talk_connect_time;
         this.talkjointime = talk_join_time;
         this.maxbans = max_bans;
+        this.maxinvites = max_invites;
+        this.maxmsgtime = max_msg_time;
         this.nonotice = no_notice;
         this.noctcp = no_ctcp;
         this.nopartmsg = no_part_msg;
@@ -66,6 +100,10 @@ public class CSFlag extends HashNumeric {
         this.exemptidentd = exempt_identd;
         this.exemptregistered = exempt_registered;
         this.exemptinvites = exempt_invites;
+        this.exemptwebirc = exempt_webirc;
+        this.exemptwebirc = hide_mode_lists;
+        this.nonickchange = no_nick_change;
+        this.nonickchange = no_utf8;
         this.greetmsg = greetmsg;
     }
     
@@ -94,6 +132,12 @@ public class CSFlag extends HashNumeric {
         if ( this.maxbans != 200 ) {
             values = this.addToValues (values, "MAX_BANS:"+this.maxbans );
         }
+        if ( this.maxinvites != 100 ) {
+            values = this.addToValues (values, "MAX_INVITES:"+this.maxinvites );
+        }
+        if ( ! this.maxmsgtime.contentEquals("0:0") ) {
+            values = this.addToValues (values, "MAX_MSG_TIME:"+this.maxmsgtime );
+        }
         if ( this.nonotice ) {
             values = this.addToValues (values, "NO_NOTICE:"+( this.nonotice ? "ON" : "OFF" ) );
         }
@@ -121,6 +165,21 @@ public class CSFlag extends HashNumeric {
         if ( this.exemptinvites ) {
             values = this.addToValues (values, "EXEMPT_INVITES:"+( this.exemptinvites ? "ON" : "OFF" ) );
         }
+        if ( this.exemptwebirc ) {
+            values = this.addToValues (values, "EXEMPT_WEBIRC:"+( this.exemptwebirc ? "ON" : "OFF" ) );
+        }
+        
+        if ( this.hidemodelists ) {
+            values = this.addToValues (values, "HIDE_MODE_LISTS:"+( this.hidemodelists ? "ON" : "OFF" ) );
+        }
+        
+        if ( this.nonickchange ) {
+            values = this.addToValues (values, "NO_NICK_CHANGE:"+( this.nonickchange ? "ON" : "OFF" ) );
+        }
+        
+        if ( this.nonickchange ) {
+            values = this.addToValues (values, "NO_UTF8:"+( this.noutf8 ? "ON" : "OFF" ) );
+        }
         
         if ( values.length() > 0 ) {
             Handler.getChanServ().sendServ ( "SVSXCF "+this.name.getString()+" "+values );
@@ -145,7 +204,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public short getJoinconnecttime() {
-        return joinconnecttime;
+        return this.joinconnecttime;
     }
 
     /**
@@ -153,7 +212,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public short getTalkconnecttime() {
-        return talkconnecttime;
+        return this.talkconnecttime;
     }
 
     /**
@@ -161,7 +220,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public short getTalkjointime() {
-        return talkjointime;
+        return this.talkjointime;
     }
 
     /**
@@ -169,7 +228,23 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public short getMaxbans() {
-        return maxbans;
+        return this.maxbans;
+    }
+
+    /**
+     * getMax_invites
+     * @return
+     */
+    public short getMaxinvites() {
+        return this.maxinvites;
+    }
+
+    /**
+     * getMax_messages_time
+     * @return
+     */
+    public String getMaxmsgtime() {
+        return this.maxmsgtime;
     }
 
     /**
@@ -177,7 +252,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isNonotice() {
-        return nonotice;
+        return this.nonotice;
     }
 
     /**
@@ -185,7 +260,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isNoctcp() {
-        return noctcp;
+        return this.noctcp;
     }
 
     /**
@@ -193,7 +268,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isNopartmsg() {
-        return nopartmsg;
+        return this.nopartmsg;
     }
 
     /**
@@ -201,7 +276,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isNoquitmsg() {
-        return noquitmsg;
+        return this.noquitmsg;
     }
 
     /**
@@ -209,7 +284,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isExemptopped() {
-        return exemptopped;
+        return this.exemptopped;
     }
 
     /**
@@ -217,7 +292,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isExemptvoiced() {
-        return exemptvoiced;
+        return this.exemptvoiced;
     }
 
     /**
@@ -225,7 +300,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isExemptidentd() {
-        return exemptidentd;
+        return this.exemptidentd;
     }
 
     /**
@@ -233,7 +308,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isExemptregistered() {
-        return exemptregistered;
+        return this.exemptregistered;
     }
 
     /**
@@ -241,7 +316,39 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public boolean isExemptinvites() {
-        return exemptinvites;
+        return this.exemptinvites;
+    }
+
+    /**
+     * isExempt_webirc
+     * @return
+     */
+    public boolean isExemptwebirc() {
+        return this.exemptwebirc;
+    }
+
+    /**
+     * isHidemodelists
+     * @return
+     */
+    public boolean isHidemodelists() {
+        return this.hidemodelists;
+    }
+    
+    /**
+     * isNonickchange
+     * @return
+     */
+    public boolean isNonickchange() {
+        return this.nonickchange;
+    }
+
+    /**
+     * isNoutf8
+     * @return
+     */
+    public boolean isNoutf8() {
+        return this.noutf8;
     }
 
     /**
@@ -249,7 +356,7 @@ public class CSFlag extends HashNumeric {
      * @return
      */
     public String getGreetmsg() {
-        return greetmsg;
+        return this.greetmsg;
     }
 
     /**
@@ -261,7 +368,18 @@ public class CSFlag extends HashNumeric {
         if      ( flag.is(JOIN_CONNECT_TIME) )      { this.joinconnecttime = in;  }
         else if ( flag.is(TALK_CONNECT_TIME) )      { this.talkconnecttime = in;  }
         else if ( flag.is(TALK_JOIN_TIME) )         { this.talkjointime = in;     }
-        else if ( flag.is(MAX_BANS) )               { this.maxbans = in;           }
+        else if ( flag.is(MAX_BANS) )               { this.maxbans = in;          }
+        else if ( flag.is(MAX_INVITES) )            { this.maxinvites = in;       }
+    }
+
+    /**
+     * setStringFlag
+     * @param flag
+     * @param in
+     */
+    public void setStringFlag ( HashString flag, String in ) {
+        if      ( flag.is(MAX_MSG_TIME) )      { this.maxmsgtime = in;  }
+        
     }
 
     /**
@@ -279,6 +397,10 @@ public class CSFlag extends HashNumeric {
         else if ( flag.is(EXEMPT_IDENTD) )          { this.exemptidentd = in;      }
         else if ( flag.is(EXEMPT_REGISTERED) )      { this.exemptregistered = in;  }
         else if ( flag.is(EXEMPT_INVITES) )         { this.exemptinvites = in;     }
+        else if ( flag.is(EXEMPT_WEBIRC) )          { this.exemptwebirc = in;     }
+        else if ( flag.is(HIDE_MODE_LISTS) )        { this.hidemodelists = in;     }
+        else if ( flag.is(NO_NICK_CHANGE) )         { this.nonickchange = in;     }
+        else if ( flag.is(NO_UTF8) )                { this.noutf8 = in;     }
     }
 
     /**
@@ -317,6 +439,8 @@ public class CSFlag extends HashNumeric {
             flag.is(TALK_CONNECT_TIME) ||
             flag.is(TALK_JOIN_TIME) ||
             flag.is(MAX_BANS) ||
+            flag.is(MAX_INVITES) ||
+            flag.is(MAX_MSG_TIME) ||
             flag.is(NO_NOTICE) ||
             flag.is(NO_CTCP) ||
             flag.is(NO_PART_MSG) ||
@@ -326,6 +450,10 @@ public class CSFlag extends HashNumeric {
             flag.is(EXEMPT_IDENTD) ||
             flag.is(EXEMPT_REGISTERED) ||
             flag.is(EXEMPT_INVITES) ||
+            flag.is(EXEMPT_WEBIRC) ||
+            flag.is(HIDE_MODE_LISTS) ||
+            flag.is(NO_NICK_CHANGE) ||
+            flag.is(NO_UTF8) ||
             flag.is(GREETMSG) ||
             flag.is(LIST) 
         );
@@ -368,13 +496,28 @@ public class CSFlag extends HashNumeric {
         } else if ( flag.is(MAX_BANS) ) {
             try {
                 val = Integer.parseInt ( value );
-                return ( val > 199 && val < 1000 );
+                return ( val > 0 && val < 10000 );
             } catch ( NumberFormatException ex ) { 
                 /* nothingness */
             }
             return false;
         
-        } else if ( flag.is(NO_NOTICE) ||
+        } else if ( flag.is(MAX_INVITES) ) {
+            try {
+                val = Integer.parseInt ( value );
+                return ( val > 0 && val < 10000 );
+            } catch ( NumberFormatException ex ) { 
+                /* nothingness */
+            }
+            return false;
+        
+        } else if ( flag.is(MAX_MSG_TIME) ) {
+            Pattern pattern = Pattern.compile("^\\d{1,3}:\\d{1,3}$");
+            Matcher matcher = pattern.matcher(flag.getString());
+            return matcher.find();
+        
+        } else if ( 
+                flag.is(NO_NOTICE) ||
                 flag.is(NO_CTCP) ||
                 flag.is(NO_PART_MSG) ||
                 flag.is(NO_QUIT_MSG) ||
@@ -382,7 +525,12 @@ public class CSFlag extends HashNumeric {
                 flag.is(EXEMPT_VOICED) ||
                 flag.is(EXEMPT_IDENTD) ||
                 flag.is(EXEMPT_REGISTERED) ||
-                flag.is(EXEMPT_INVITES) ) {
+                flag.is(EXEMPT_INVITES) ||
+                flag.is(EXEMPT_WEBIRC) ||
+                flag.is(HIDE_MODE_LISTS) ||
+                flag.is(NO_NICK_CHANGE) ||
+                flag.is(NO_UTF8)
+                ) {
             hashVal = new HashString ( value );
             return ( hashVal.is(ON) || hashVal.is(OFF) );
         

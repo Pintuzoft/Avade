@@ -131,7 +131,6 @@ public class NickInfo extends HashNumeric {
      *
      * @param name
      */
-
     public NickInfo ( String name ) {
         User u          = Handler.findUser ( name );
         Random random   = new Random ( );
@@ -161,15 +160,10 @@ public class NickInfo extends HashNumeric {
         }
     }
    
-    //private void attachMemos ( )  {
-    //    this.mList = MSDatabase.getMemosByNick ( this.name );
-    //}
-
     /**
      *
      * @param user
-     */
-    
+     */    
     public void setUserMask ( User user )  {
         this.user       = new HashString ( user.getString ( USER ) );
         this.host       = new HashString ( user.getString ( HOST ) );
@@ -191,18 +185,22 @@ public class NickInfo extends HashNumeric {
      *
      * @return
      */
-    public HashString getName ( )       { return this.name;                                 }
+    public HashString getName ( ) {
+        return this.name;
+    }
 
     /**
      *
      * @return
      */
-    public String getNameStr ( )        { return this.name.getString();                     }
+    public String getNameStr ( ) {
+        return this.name.getString();
+    }
     
     /**
      *
      * @param it
-     * @return
+     * @return string
      */
     public String getString ( HashString it )  {
         if      ( it.is(NAME) )         { return this.name.getString();                     }
@@ -221,7 +219,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param it
-     * @return
+     * @return true/false
      */
     public boolean isState ( HashString it )  {
         if ( it.is(AUTHED) ) {
@@ -235,13 +233,15 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @return
+     * @return exp
      */
-    public Expire getExp ( )  { return this.exp; }
+    public Expire getExp ( ) {
+        return this.exp;
+    }
     
     /**
      *
-     * @return
+     * @return true/false
      */
     public boolean shouldExpire ( )  {
         return this.exp.shouldExpire ( );
@@ -251,9 +251,8 @@ public class NickInfo extends HashNumeric {
 
     /**
      *
-     * @return
+     * @return false
      */
-
     public boolean olderThanExpireTime ( )  {
         return false;
    //     return  ( ( System.currentTimeMillis ( ) /1000 - this.lastUsed )  > Handler.expireToTime ( Proc.getConf ( ) .get ( EXPIRE ) ) );
@@ -263,10 +262,8 @@ public class NickInfo extends HashNumeric {
 
     /**
      *
-     * @return
-     */
-
-  
+     * @return auth
+     */  
     public boolean getAuth ( ) { 
         return this.settings.getAuth ( ); 
     }
@@ -275,7 +272,7 @@ public class NickInfo extends HashNumeric {
      *
      * @param user
      * @param pass
-     * @return
+     * @return true/false
      */
     public boolean identify ( User user, String pass )  {
         if ( pass == null || user == null ) {
@@ -294,9 +291,8 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param name
-     * @return
+     * @return true/false
      */
-
     public boolean is ( HashString name ) {
         return this.name.is ( name );
     }
@@ -304,7 +300,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param ni
-     * @return
+     * @return true/false
      */
     public boolean is ( NickInfo ni ) {
         return this.name.is ( ni.getName() );
@@ -313,7 +309,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param setting
-     * @return
+     * @return bool
      */
     public boolean isSet ( HashString setting ) {
         return this.settings.is ( setting );
@@ -330,7 +326,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param pass
-     * @return
+     * @return bool
      */
     public boolean isPass ( String pass )  {
         if ( pass == null ) {
@@ -341,7 +337,7 @@ public class NickInfo extends HashNumeric {
  
     /**
      *
-     * @return
+     * @return pass
      */
     public String getPass ( )  {
         return this.pass;
@@ -349,7 +345,7 @@ public class NickInfo extends HashNumeric {
 
     /**
      *
-     * @return
+     * @return mail
      */
     public String getEmail ( )  {
         return this.mail;
@@ -357,7 +353,7 @@ public class NickInfo extends HashNumeric {
 
     /**
      *
-     * @return
+     * @return settings
      */
     public NickSetting getSettings ( )  {
         return this.settings;
@@ -365,7 +361,7 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @return
+     * @return exp
      */
     public Expire getNickExp ( ) {
         return this.exp;
@@ -373,7 +369,7 @@ public class NickInfo extends HashNumeric {
      
     /**
      *
-     * @return
+     * @return oper
      */
     public Oper getOper ( ) {
         return this.oper;
@@ -381,7 +377,7 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @return
+     * @return str
      */
     public String getIDOper ( ) {
         return  ( this.oper != null ) ? this.oper.getString ( NAME ) : null;
@@ -389,7 +385,7 @@ public class NickInfo extends HashNumeric {
 
     /**
      *
-     * @return
+     * @return mList
      */
     public ArrayList<MemoInfo> getMemos ( ) {
         return this.mList; 
@@ -407,7 +403,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param num
-     * @return
+     * @return memo
      */
     public MemoInfo getMemo ( int num )  { 
         if ( num > 0 && num <= this.mList.size ( ) ) {
@@ -427,7 +423,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param access
-     * @return
+     * @return bool
      */
     public boolean isAtleast ( HashString access ) {
         if ( this.oper == null ) {
@@ -456,7 +452,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param setting
-     * @return
+     * @return bool
      */
     public boolean isSetting ( HashString setting ) {
         return this.settings.is ( setting );
@@ -464,7 +460,7 @@ public class NickInfo extends HashNumeric {
 
     /**
      *
-     * @return
+     * @return access
      */
     public int getAccess ( ) {
         return this.oper.getAccess ( );
@@ -481,7 +477,8 @@ public class NickInfo extends HashNumeric {
     
     /*** AOP/SOP/FOUNDER LISTS
      * @param it
-     * @return  ***/
+     * @return list
+     ***/
     
     public ArrayList<ChanInfo> getChanAccess ( HashString it ) {
         if      ( it.is(FOUNDER) )          { return founderList;               }
@@ -529,7 +526,7 @@ public class NickInfo extends HashNumeric {
      
     /**
      *
-     * @return
+     * @return changes
      */
     public NSChanges getChanges ( ) {
         return this.changes;
@@ -538,7 +535,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param it
-     * @return
+     * @return bool
      */
     public boolean hasChanged ( HashString it ) {
         return this.changes.hasChanged(it);
@@ -547,7 +544,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param user
-     * @return
+     * @return bool
      */
     public boolean is ( User user ) {
         return this.name.is(user.getName());
@@ -556,7 +553,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param user
-     * @return
+     * @return bool
      */
     public boolean isMask ( User user ) {
         return this.host.is ( user.getMask() );
@@ -564,7 +561,7 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @return
+     * @return bool
      */
     public boolean isAuth ( ) {
         if ( this.mail == null ) {
@@ -575,7 +572,7 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @return
+     * @return throttle
      */
     public Throttle getThrottle ( ) {
         return this.throttle;

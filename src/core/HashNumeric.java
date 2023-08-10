@@ -974,6 +974,16 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString MAX_INVITES = new HashString ( "MAX_INVITES" );
+
+    /**
+     *
+     */
+    public static HashString MAX_MSG_TIME = new HashString ( "MAX_MSG_TIME" );
+
+    /**
+     *
+     */
     public static HashString NO_NOTICE = new HashString ( "NO_NOTICE" );
 
     /**
@@ -1015,6 +1025,26 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString EXEMPT_INVITES = new HashString ( "EXEMPT_INVITES" );
+
+    /**
+     *
+     */
+    public static HashString EXEMPT_WEBIRC = new HashString ( "EXEMPT_WEBIRC" );
+
+    /**
+     *
+     */
+    public static HashString HIDE_MODE_LISTS = new HashString ( "HIDE_MODE_LISTS" );
+
+    /**
+     *
+     */
+    public static HashString NO_NICK_CHANGE = new HashString ( "NO_NICK_CHANGE" );
+
+    /**
+     *
+     */
+    public static HashString NO_UTF8 = new HashString ( "NO_UTF8" );
 
     /**
      *
@@ -2732,7 +2762,7 @@ public abstract class HashNumeric extends TextFormat {
      *
      * @param str1
      * @param str2
-     * @return
+     * @return bool
      */
     public boolean iCmp ( String str1, String str2 )  {
         return  ( str1.equalsIgnoreCase ( str2 ) );

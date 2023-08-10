@@ -126,6 +126,7 @@ public class OSDatabase extends Database {
      *
      * @param command
      * @param ban
+     * @return 
      */
     public static boolean logServicesBan ( HashString command, ServicesBan ban ) {
         String id;

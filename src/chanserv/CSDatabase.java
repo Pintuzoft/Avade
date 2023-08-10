@@ -128,10 +128,10 @@ public class CSDatabase extends Database {
                  
                 query = "insert into chanflag "+
                         "(name,join_connect_time,talk_connect_time,talk_join_time,"+
-                        "max_bans,no_notice,no_ctcp,no_part_msg,no_quit_msg,"+
+                        "max_bans,max_invites,max_msg_time,no_notice,no_ctcp,no_part_msg,no_quit_msg,"+
                         "exempt_opped,exempt_voiced,exempt_identd,exempt_registered,"+
-                        "exempt_invites,greetmsg) "+
-                        "values (?,0,0,0,200,0,0,0,0,0,0,0,0,0,null)";
+                        "exempt_invites,exempt_webirc,hide_mode_lists,no_nick_change,no_utf8,greetmsg) "+
+                        "values (?,0,0,0,200,0,'0:0',0,0,0,0,0,0,0,0,0,0,0,0,0,null)";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );
@@ -224,6 +224,12 @@ public class CSDatabase extends Database {
         if ( ci.getChanges().hasChanged ( MAX_BANS ) ) {
             changes = addToQuery ( changes, "max_bans" );
         }
+        if ( ci.getChanges().hasChanged ( MAX_INVITES ) ) {
+            changes = addToQuery ( changes, "max_invites" );
+        }
+        if ( ci.getChanges().hasChanged ( MAX_MSG_TIME ) ) {
+            changes = addToQuery ( changes, "max_msg_time" );
+        }
         if ( ci.getChanges().hasChanged ( NO_NOTICE ) ) {
             changes = addToQuery ( changes, "no_notice" );
         }
@@ -247,6 +253,18 @@ public class CSDatabase extends Database {
         }
         if ( ci.getChanges().hasChanged ( EXEMPT_INVITES ) ) {
             changes = addToQuery ( changes, "exempt_invites" );
+        }
+        if ( ci.getChanges().hasChanged ( EXEMPT_WEBIRC ) ) {
+            changes = addToQuery ( changes, "exempt_webirc" );
+        }
+        if ( ci.getChanges().hasChanged ( HIDE_MODE_LISTS ) ) {
+            changes = addToQuery ( changes, "hide_mode_lists" );
+        }
+        if ( ci.getChanges().hasChanged ( NO_NICK_CHANGE ) ) {
+            changes = addToQuery ( changes, "no_nick_change" );
+        }
+        if ( ci.getChanges().hasChanged ( NO_UTF8 ) ) {
+            changes = addToQuery ( changes, "no_utf8" );
         }
         if ( ci.getChanges().hasChanged ( GREETMSG ) ) {
             changes = addToQuery ( changes, "greetmsg" );
@@ -394,6 +412,12 @@ public class CSDatabase extends Database {
             if ( ci.getChanges().hasChanged ( MAX_BANS ) ) {
                 ps.setShort ( index++, cf.getMaxbans ( ) );
             }
+            if ( ci.getChanges().hasChanged ( MAX_INVITES ) ) {
+                ps.setShort ( index++, cf.getMaxinvites ( ) );
+            }
+            if ( ci.getChanges().hasChanged ( MAX_MSG_TIME ) ) {
+                ps.setString ( index++, cf.getMaxmsgtime());
+            }
             if ( ci.getChanges().hasChanged ( NO_NOTICE ) ) {
                 ps.setBoolean ( index++, cf.isNonotice ( ) );
             }
@@ -417,6 +441,18 @@ public class CSDatabase extends Database {
             }
             if ( ci.getChanges().hasChanged ( EXEMPT_INVITES ) ) {
                 ps.setBoolean ( index++, cf.isExemptinvites ( ) );
+            }
+            if ( ci.getChanges().hasChanged ( EXEMPT_WEBIRC ) ) {
+                ps.setBoolean ( index++, cf.isExemptwebirc ( ) );
+            }
+            if ( ci.getChanges().hasChanged ( HIDE_MODE_LISTS ) ) {
+                ps.setBoolean ( index++, cf.isHidemodelists ( ) );
+            }
+            if ( ci.getChanges().hasChanged ( NO_NICK_CHANGE ) ) {
+                ps.setBoolean ( index++, cf.isNonickchange());
+            }
+            if ( ci.getChanges().hasChanged ( NO_UTF8 ) ) {
+                ps.setBoolean ( index++, cf.isNoutf8());
             }
 
             if ( ci.getChanges().hasChanged ( GREETMSG ) ) {
@@ -992,8 +1028,8 @@ public class CSDatabase extends Database {
                          + "cs.keeptopic,cs.topiclock,cs.ident,cs.opguard,cs.restricted,cs.verbose,cs.mailblock,cs.leaveops,cs.autoakick,"
                          + "cs.modelock,cs.mark,cs.freeze,cs.close,cs.hold,cs.auditorium,"
                          + "tl.topic,tl.setter,unix_timestamp(tl.stamp) as tlunixstamp,tl.stamp as tlstamp,"
-                         + "cf.join_connect_time,cf.talk_connect_time,cf.talk_join_time,cf.max_bans,cf.no_notice,cf.no_ctcp,cf.no_part_msg,cf.no_quit_msg,"
-                         + "cf.exempt_opped,cf.exempt_voiced,cf.exempt_identd,cf.exempt_registered,cf.exempt_invites,cf.greetmsg "
+                         + "cf.join_connect_time,cf.talk_connect_time,cf.talk_join_time,cf.max_bans,cf.max_invites,cf.max_msg_time,cf.no_notice,cf.no_ctcp,cf.no_part_msg,cf.no_quit_msg,"
+                         + "cf.exempt_opped,cf.exempt_voiced,cf.exempt_identd,cf.exempt_registered,cf.exempt_invites,cf.exempt_webirc,cf.hide_mode_lists,no_nick_change,cf.no_utf8,cf.greetmsg "
                          + "from chan as c "
                          + "left join (select name,setter,stamp,topic from topiclog order by stamp desc limit 1) as tl on tl.name=c.name "
                          + "left join chansetting as cs on cs.name=c.name "
@@ -1017,21 +1053,27 @@ public class CSDatabase extends Database {
                 //settings = getSettings ( res.getString ( 1 ) ); 
                 //chanFlag = getChanFlag ( new HashString ( res.getString ( 1 ) ) );
                 CSFlag flags = new CSFlag ( 
-                                        new HashString ( res.getString ( "name" ) ), 
-                                        res.getShort("join_connect_time"),
-                                        res.getShort("talk_connect_time"),
-                                        res.getShort("talk_join_time"),
-                                        res.getShort("max_bans"),
-                                        res.getBoolean("no_notice"),
-                                        res.getBoolean("no_ctcp"),
-                                        res.getBoolean("no_part_msg"),
-                                        res.getBoolean("no_quit_msg"),
-                                        res.getBoolean("exempt_opped"),
-                                        res.getBoolean("exempt_voiced"),
-                                        res.getBoolean("exempt_identd"),
-                                        res.getBoolean("exempt_registered"),
-                                        res.getBoolean("exempt_invites"),
-                                        res.getString("greetmsg") );
+                        new HashString ( res.getString ( "name" ) ), 
+                        res.getShort("join_connect_time"),
+                        res.getShort("talk_connect_time"),
+                        res.getShort("talk_join_time"),
+                        res.getShort("max_bans"),
+                        res.getShort("max_invites"),
+                        res.getString("max_msg_time"),
+                        res.getBoolean("no_notice"),
+                        res.getBoolean("no_ctcp"),
+                        res.getBoolean("no_part_msg"),
+                        res.getBoolean("no_quit_msg"),
+                        res.getBoolean("exempt_opped"),
+                        res.getBoolean("exempt_voiced"),
+                        res.getBoolean("exempt_identd"),
+                        res.getBoolean("exempt_registered"),
+                        res.getBoolean("exempt_invites"),
+                        res.getBoolean("exempt_webirc"),
+                        res.getBoolean("hide_mode_lists"),
+                        res.getBoolean("no_nick_change"),
+                        res.getBoolean("no_utf8"),
+                        res.getString("greetmsg") );
                 settings = new ChanSetting ( );
                 if ( res.getBoolean ( "keeptopic" ) == true ) {
                     settings.set ( KEEPTOPIC, true );
@@ -1274,10 +1316,11 @@ public class CSDatabase extends Database {
         CSFlag cf = null;
         String query;
         try {
-            query = "select join_connect_time, talk_connect_time, talk_join_time, max_bans,"+
+            
+            query = "select join_connect_time, talk_connect_time, talk_join_time, max_bans, max_invites, max_msg_time,"+
                            "no_notice, no_ctcp, no_part_msg, no_quit_msg, exempt_opped, "+
-                           "exempt_voiced, exempt_identd, exempt_registered, exempt_invites, "+
-                           "greetmsg "+
+                           "exempt_voiced, exempt_identd, exempt_registered, exempt_invites, exempt_webirc, hide_mode_lists,"+
+                           "no_nick_change,no_utf8,greetmsg "+
                     "from chanflag "+
                     "where name = ?";
 //            System.out.println(query);
@@ -1285,10 +1328,28 @@ public class CSDatabase extends Database {
             ps.setString  ( 1, name.getString() );
             res2 = ps.executeQuery ( );
             if ( res2.next ( ) ) {
-                cf = new CSFlag ( name, res2.getShort(1),res2.getShort(2),res2.getShort(3),res2.getShort(4),
-                                  res2.getBoolean(5),res2.getBoolean(6),res2.getBoolean(7),res2.getBoolean(8),res2.getBoolean(9),
-                                  res2.getBoolean(10),res2.getBoolean(11),res2.getBoolean(12),res2.getBoolean(13),
-                                  res2.getString(14) );
+                cf = new CSFlag ( 
+                        name,
+                        res2.getShort("join_connect_time"),
+                        res2.getShort("talk_connect_time"),
+                        res2.getShort("talk_join_time"),
+                        res2.getShort("max_bans"),
+                        res2.getShort("max_invites"),
+                        res2.getString("max_msg_time"),
+                        res2.getBoolean("no_notice"),
+                        res2.getBoolean("no_ctcp"),
+                        res2.getBoolean("no_part_msg"),
+                        res2.getBoolean("no_quit_msg"),
+                        res2.getBoolean("exempt_opped"),
+                        res2.getBoolean("exempt_voiced"),
+                        res2.getBoolean("exempt_identd"),
+                        res2.getBoolean("exempt_registered"),
+                        res2.getBoolean("exempt_invites"),
+                        res2.getBoolean("exempt_webirc"),
+                        res2.getBoolean("hide_mode_lists"),
+                        res2.getBoolean("no_nick_change"),
+                        res2.getBoolean("no_utf8"),
+                        res2.getString("greetmsg") );
             }
         } catch ( SQLException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );

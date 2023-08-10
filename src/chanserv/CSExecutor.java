@@ -1732,7 +1732,11 @@ public class CSExecutor extends Executor {
                 command.is(EXEMPT_VOICED) ||
                 command.is(EXEMPT_IDENTD) ||
                 command.is(EXEMPT_REGISTERED) ||
-                command.is(EXEMPT_INVITES) ) {
+                command.is(EXEMPT_INVITES) ||
+                command.is(EXEMPT_WEBIRC) || 
+                command.is(NO_NICK_CHANGE) || 
+                command.is(NO_UTF8) 
+                ) {
             boolean boo = ( commandVal.equalsIgnoreCase ( "ON" ) );
             ci.getChanFlag().setBooleanFlag ( command, boo );
             ci.getChanges().change ( command );
@@ -1757,6 +1761,8 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, "  - TALK_CONNECT_TIME: "+cf.getTalkconnecttime() );
             this.service.sendMsg ( user, "  - TALK_JOIN_TIME: "+cf.getTalkjointime() );
             this.service.sendMsg ( user, "  - MAX_BANS: "+cf.getMaxbans() );
+            this.service.sendMsg ( user, "  - MAX_INVITES: "+cf.getMaxinvites());
+            this.service.sendMsg ( user, "  - MAX_MSG_TIME: "+cf.getMaxmsgtime());
             this.service.sendMsg ( user, "  - NO_NOTICE: "+( cf.isNonotice() ? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - NO_CTCP: "+( cf.isNoctcp()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - NO_PART_MSG: "+( cf.isNopartmsg()? "ON" : "OFF" ) );
@@ -1766,6 +1772,9 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, "  - EXEMPT_IDENTD: "+( cf.isExemptidentd()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - EXEMPT_REGISTERED: "+( cf.isExemptregistered() ? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - EXEMPT_INVITES: "+( cf.isExemptinvites()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - EXEMPT_WEBIRC: "+( cf.isExemptwebirc()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - NO_NICK_CHANGE: "+( cf.isNonickchange()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - NO_UTF8: "+( cf.isNoutf8()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
             this.service.sendMsg ( user, "*** End of List ***" );
             this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );

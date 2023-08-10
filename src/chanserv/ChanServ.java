@@ -403,6 +403,10 @@ public class ChanServ extends Service {
         return false;
     }
     
+    /**
+     *
+     * @param ci
+     */
     public void sendTopic ( ChanInfo ci ) {
         Topic topic = ci.getTopic();
         if ( topic != null ) {

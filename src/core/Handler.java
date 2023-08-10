@@ -675,14 +675,17 @@ public class Handler extends HashNumeric {
     
     private void doSJoin ( User user )  {
         /* User joined a channel */
-        Chan c = findChan ( this.data[3] );
-        ChanInfo ci = ChanServ.findChan(c.getName());
-        if ( c != null ) {
+        Chan c;
+        ChanInfo ci;
+        
+        if ( (c = findChan ( this.data[3] )) == null ) {
+            this.doChan ( true );
+        }
+        
+        if ( (c = findChan( this.data[3] )) != null ) {
             c.addUser ( USER, user );
             user.addChan ( c );
-        } else {
-            this.doChan ( true );
-            if ( ci != null ) {
+            if ( (ci = ChanServ.findChan(c.getName())) != null ) {
                 chan.sendTopic(ci);
             }
         }
@@ -906,6 +909,10 @@ public class Handler extends HashNumeric {
         return null;
     }
 
+    /**
+     *
+     * @param chan
+     */
     public static void deleteEmpty ( Chan chan )  {
         /* If the channel isSet empty lets remove it from memory */
         try {

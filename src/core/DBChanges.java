@@ -161,6 +161,11 @@ public class DBChanges extends HashNumeric {
                 qList.add ( "to: v1.2307-2");
                 qList.addAll ( this.db123072 ( ) );
                 qList.add ( "update settings set value = '1.2307-2' where name = 'version'" );
+            
+            case 123082 :
+                qList.add ( "to: v1.2308-2");
+                qList.addAll ( this.db123082 ( ) );
+                qList.add ( "update settings set value = '1.2308-2' where name = 'version'" );
 
                 break;
                 
@@ -556,6 +561,23 @@ public class DBChanges extends HashNumeric {
     private ArrayList<String> db123072 ( ) {
         ArrayList<String> qList = new ArrayList<>();
         qList.add("alter table spamfilter drop column expire;");
+        return qList;
+    }
+    
+    private ArrayList<String> db123082 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add("alter table chanflag add max_invites smallint(6) after max_bans;");
+        qList.add("update chanflag set max_invites = 100;");
+        qList.add("alter table chanflag add max_msg_time varchar(8) after max_invites;");
+        qList.add("update chanflag set max_msg_time = '0:0';");
+        qList.add("alter table chanflag add exempt_webirc tinyint(1) after exempt_invites;");
+        qList.add("update chanflag set exempt_webirc = 0;");
+        qList.add("alter table chanflag add hide_mode_lists tinyint(1) after exempt_webirc;");
+        qList.add("update chanflag set hide_mode_lists = 0;");
+        qList.add("alter table chanflag add no_nick_change tinyint(1) after hide_mode_lists;");
+        qList.add("update chanflag set no_nick_change = 0;");
+        qList.add("alter table chanflag add no_utf8 tinyint(1) after no_nick_change;");
+        qList.add("update chanflag set no_utf8 = 0;");
         return qList;
     }
         

@@ -49,7 +49,7 @@ public class TextFormat extends Numeric {
 
     /**
      *
-     * @return
+     * @return char
      */
     public char b ( ) { 
         return this.bold;
@@ -57,7 +57,7 @@ public class TextFormat extends Numeric {
 
     /**
      *
-     * @return
+     * @return char
      */
     public char u ( ) { 
         return this.underline;
@@ -65,7 +65,7 @@ public class TextFormat extends Numeric {
 
     /**
      *
-     * @return
+     * @return char
      */
     public char r ( ) { 
         return this.reversed;
