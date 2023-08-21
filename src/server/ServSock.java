@@ -31,79 +31,79 @@ import java.net.UnknownHostException;
  * @author DreamHealer
  */
 public class ServSock extends HashNumeric {
-    private Socket                      sock;
-    private static PrintWriter          out;
-    private BufferedReader              in;
-    private BufferedReader              stdIn;
-    private String                      buf;
-    private long                        last;
-    private static long                 pingTime;
-    private static long                 lastPing;
-    private static long                 defaultPing = 120000;
-    
+
+    private Socket sock;
+    private static PrintWriter out;
+    private BufferedReader in;
+    private BufferedReader stdIn;
+    private String buf;
+    private long last;
+    private static long pingTime;
+    private static long lastPing;
+    private static long defaultPing = 120000;
+
     /**
      *
      */
-    public ServSock ( )  {
+    public ServSock() {
         last = System.currentTimeMillis();
         lastPing = this.last;
         try {
-            this.sock = new Socket ( Proc.getConf().get(HUBHOST).getString(), Integer.parseInt ( Proc.getConf().get(HUBPORT).getString() ) );
-            this.sock.setKeepAlive ( true );
-            this.sock.setSoTimeout ( 200 );
-            out = new PrintWriter ( this.sock.getOutputStream ( ) , true );
-            this.in = new BufferedReader ( new InputStreamReader ( this.sock.getInputStream ( ) ) );
+            this.sock = new Socket(Proc.getConf().get(HUBHOST).getString(), Integer.parseInt(Proc.getConf().get(HUBPORT).getString()));
+            this.sock.setKeepAlive(true);
+            this.sock.setSoTimeout(200);
+            out = new PrintWriter(this.sock.getOutputStream(), true);
+            this.in = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));
 
-        } catch  ( UnknownHostException e )  {
-            System.out.println ( "Don't know about host: "+Proc.getConf().get ( HUBNAME ) );
-            System.exit ( 1 );
+        } catch (UnknownHostException e) {
+            System.out.println("Don't know about host: " + Proc.getConf().get(HUBNAME));
+            System.exit(1);
 
-        } catch  ( IOException e )  {
-            System.out.println ( "Couldn't get I/O for the connection to: "+Proc.getConf().get ( HUBNAME )  );
-            System.exit ( 1 );
+        } catch (IOException e) {
+            System.out.println("Couldn't get I/O for the connection to: " + Proc.getConf().get(HUBNAME));
+            System.exit(1);
         }
 
-       // this.stdIn = new BufferedReader ( new InputStreamReader ( System.in )  );
-
-        this.authenticate ( );
+        // this.stdIn = new BufferedReader ( new InputStreamReader ( System.in )  );
+        this.authenticate();
     }
 
     /**
      *
      * @return
      */
-    public boolean isConnected ( )  { 
-        return this.sock.isConnected ( );
+    public boolean isConnected() {
+        return this.sock.isConnected();
     }
 
     /**
      *
      * @return
      */
-    public String readLine ( )  {
-        try { 
-            this.buf = this.in.readLine ( );
-            if ( this.buf != null && this.buf.length ( ) > 0 ) {
+    public String readLine() {
+        try {
+            this.buf = this.in.readLine();
+            if (this.buf != null && this.buf.length() > 0) {
                 this.last = System.currentTimeMillis();
             }
             return this.buf;
-            
+
         } catch (IOException ex) {
-           // Logger.getLogger(ServSock.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+            // Logger.getLogger(ServSock.class.getName()).log(Level.SEVERE, null, ex);
+        }
         return null;
     }
 
     /**
      *
      */
-    public void disconnect ( )  {
+    public void disconnect() {
         try {
-            this.sock.close ( );
-            out.close ( );
-            this.in.close ( );
-        } catch  ( IOException e )  {
-            Proc.log ( ServSock.class.getName ( ) , e );
+            this.sock.close();
+            out.close();
+            this.in.close();
+        } catch (IOException e) {
+            Proc.log(ServSock.class.getName(), e);
         }
     }
 
@@ -111,31 +111,31 @@ public class ServSock extends HashNumeric {
      *
      * @param cmd
      */
-    public static void sendCmd ( String cmd )  {
-        try {   
-            if ( ! cmd.contains ( "PONG" )  )  {
+    public static void sendCmd(String cmd) {
+        try {
+            if (!cmd.contains("PONG")) {
                 //System.out.println ( "Sending: "+cmd );
-            } 
-            out.println ( cmd ); 
-        } catch ( Exception e )  {
-            Proc.log ( ServSock.class.getName ( ) , e ); 
+            }
+            out.println (cmd);
+        } catch (Exception e) {
+            Proc.log(ServSock.class.getName(), e);
         }
     }
 
     /**
      *
      */
-    public void authenticate ( )  {
-        sendCmd ( "PASS "+Proc.getConf().get ( HUBPASS ) +" :TS.."          );
-        sendCmd ( "SERVER "+Proc.getConf().get ( NAME ) +" 1 :services"     );
-        sendCmd ( "SERVER "+Proc.getConf().get ( STATS ) +" 1 :stats"       );
+    public void authenticate() {
+        sendCmd("PASS " + Proc.getConf().get(HUBPASS) + " :TS..");
+        sendCmd("SERVER " + Proc.getConf().get(NAME) + " 1 :services");
+        sendCmd("SERVER " + Proc.getConf().get(STATS) + " 1 :stats");
     }
 
     /**
      *
      * @return
      */
-    public boolean timedOut ( ) {
+    public boolean timedOut() {
         return System.currentTimeMillis() - this.last > defaultPing;
     }
 }

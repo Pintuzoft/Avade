@@ -2005,10 +2005,17 @@ public class CSExecutor extends Executor {
                     result.setNick2 ( ni2 );
                     result.setStatus ( NICK_HAS_NOOP );
                 } else if ( subcommand.is ( ADD ) && 
-                            ( ( ni2 != null && ( acc = new CSAcc ( ni2, command, null ) ) == null ) ||
-                              ( mask != null && ( acc = new CSAcc ( mask, command, null ) ) == null ) ) ) {  
+                            ni2 == null &&
+                            mask == null  ) {  
                     result.setStatus ( XOP_ADD_FAIL );
                 } else {
+                    if ( subcommand.is(ADD)) {
+                        if ( ni2 != null ) {
+                            acc = new CSAcc ( ni2, command, null );
+                        } else {
+                            acc = new CSAcc ( mask, command, null );
+                        }
+                    }
                     result.setChanInfo ( ci );
                     result.setNick ( ni );
                     if ( ni2 != null ) {

@@ -764,10 +764,10 @@ public class ChanInfo extends HashNumeric {
         if ( mask == null ) {
             return null;
         }
-        int hash = mask.hashCode();
+        HashString hash = new HashString ( mask );
         for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(subcommand).entrySet() ) {
             CSAcc a = entry.getValue();
-            if ( a.getMask() != null && a.getMask().hashCode() == hash ) {
+            if ( a.getMask() != null && a.getMask().is(hash) ) {
                 acc = a;
             }
         }
