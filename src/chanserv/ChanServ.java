@@ -275,11 +275,6 @@ public class ChanServ extends Service {
             /* Frozen/Closed */
             if ( ci.isSet ( FROZEN ) || ci.isSet ( CLOSED ) ) {
                 return;
-                
-            /* Restricted */
-            }  else if ( ci.isSet ( RESTRICT ) ) {
-                banUser ( c, user, null );
-                kickUser ( c, user, "Restricted channel" );
             }
             
             /* User Access */
@@ -290,6 +285,10 @@ public class ChanServ extends Service {
                     opUser ( c, user );
                     ci.updateLastOped ( user );
                 }
+            /* Restricted */
+            }  else if ( ci.isSet ( RESTRICT ) ) {
+                banUser ( c, user, null );
+                kickUser ( c, user, "Restricted channel" );
             
             /* AKick */
             } else if ( ci.isAkick ( user ) ) {
