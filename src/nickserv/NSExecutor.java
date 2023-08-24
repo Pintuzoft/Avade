@@ -524,6 +524,9 @@ import java.util.regex.Pattern;
         this.service.sendMsg ( user, f.b ( ) +"  Registered: "+f.b ( ) +ni.getString ( REGTIME ) );
         this.service.sendMsg ( user, f.b ( ) +"   Last seen: "+f.b ( ) +ni.getString ( LASTUSED ) );
         this.service.sendMsg ( user, f.b ( ) +"    Time now: "+f.b ( ) +dateFormat.format ( new Date ( ) ) );
+        if ( ni.getSettings().is(SHOWEMAIL) ) {
+            this.service.sendMsg(user, f.b ( ) +"       Email: "+f.b ( ) +ni.getEmail ( ) );
+        }
         if ( ni.getSettings().getInfoStr().length() > 0 ) {
             this.service.sendMsg ( user, f.b ( ) +"    Settings: "+f.b ( ) +ni.getSettings().getInfoStr ( ) );
         }
