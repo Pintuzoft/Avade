@@ -281,10 +281,13 @@ public class ChanServ extends Service {
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
                 ci.setLastUsed ( );
-                if ( ni == null || ( ni != null && ! ni.is ( NEVEROP ) ) ) {
+                if ( ni != null && !ni.is(NEVEROP) ) {
+                    /* Dont op */
+                } else {
                     opUser ( c, user );
-                    ci.updateLastOped ( user );
+                    ci.updateLastOped ( user );                    
                 }
+
             /* Restricted */
             }  else if ( ci.isSet ( RESTRICT ) ) {
                 banUser ( c, user, null );
