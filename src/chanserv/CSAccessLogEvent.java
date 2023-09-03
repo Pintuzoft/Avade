@@ -184,6 +184,8 @@ public class CSAccessLogEvent extends HashNumeric {
         
         } else if ( hash.is(FOUNDER) ) {
             return "Founder";
+        } else {
+            System.out.println("not found: "+hash.getString());
         }
         return null;
     }

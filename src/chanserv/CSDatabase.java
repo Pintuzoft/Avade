@@ -70,6 +70,7 @@ import user.User;
 | mailblock  | tinyint ( 1 )   | YES  |     | NULL    |       |
 | leaveops   | tinyint ( 1 )   | YES  |     | NULL    |       |
 | autoakick  | tinyint ( 1 )   | YES  |     | NULL    |       |
+| dynaop     | tinyint ( 1 )   | YES  |     | NULL    |       |
 | private    | tinyint ( 1 )   | YES  |     | NULL    |       |
 +------------+-------------+------+-----+---------+-------+
 10 rows in set  ( 0.00 sec ) 
@@ -140,7 +141,7 @@ public class CSDatabase extends Database {
                 
                 
                 query = "insert into chansetting "+
-                        "values (?,1,'OFF',1,1,0,0,0,0,0,'+nt',null,null,null,null,null)";
+                        "values (?,1,'OFF',1,1,0,0,0,0,0,0,'+nt',null,null,null,null,null)";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );
@@ -185,6 +186,9 @@ public class CSDatabase extends Database {
         }
         if ( ci.getChanges().hasChanged ( AUTOAKICK ) ) {
             changes = addToQuery ( changes, "autoakick" );
+        }
+        if ( ci.getChanges().hasChanged ( DYNAOP ) ) {
+            changes = addToQuery ( changes, "dynaop" );
         }
         if ( ci.getChanges().hasChanged ( MODELOCK ) ) {
             changes = addToQuery ( changes, "modelock" );
@@ -321,6 +325,9 @@ public class CSDatabase extends Database {
             } 
             if ( ci.getChanges().hasChanged ( AUTOAKICK ) ) {
                 ps.setBoolean ( index++, ci.getSettings().is ( AUTOAKICK ) );
+            }
+            if ( ci.getChanges().hasChanged ( DYNAOP ) ) {
+                ps.setBoolean ( index++, ci.getSettings().is ( DYNAOP ) );
             }
             if ( ci.getChanges().hasChanged ( MODELOCK ) ) {
                 ps.setString ( index++, ci.getSettings().getModeLock().getModes ( ) );
@@ -547,7 +554,10 @@ public class CSDatabase extends Database {
         if ( ! activateConnection ( )  )  {
             return false;
         }
-         
+        
+        System.out.println("accesslogEvent: "+log.getNameStr());
+        
+        
         try {
             String query = "insert into chanacclog ( name, target, access, instater, usermask, stamp ) "+
                            "values ( ?, ?, ?, ?, ?, now() ) ";
@@ -928,7 +938,7 @@ public class CSDatabase extends Database {
         }
         try {
             String query = "select keeptopic,topiclock,ident,opguard,"+
-                           "restricted,verbose,mailblock,leaveops,autoakick,"+
+                           "restricted,verbose,mailblock,leaveops,autoakick,dynaop,"+
                            "modelock,mark,freeze,close,hold,auditorium "+
                            "from chansetting "+
                            "where name = ?;";
@@ -955,6 +965,7 @@ public class CSDatabase extends Database {
                 settings.set ( MAILBLOCK,   res2.getBoolean ( "mailblock" )     );
                 settings.set ( LEAVEOPS,    res2.getBoolean ( "leaveops" )      );
                 settings.set ( AUTOAKICK,   res2.getBoolean ( "autoakick" )     );
+                settings.set ( DYNAOP,      res2.getBoolean ( "dynaop" )     );
                 /* Oper only */
                 settings.set ( MARK,        res2.getString ( "mark" )           );
                 settings.set ( FREEZE,      res2.getString ( "freeze" )         );
@@ -1025,7 +1036,7 @@ public class CSDatabase extends Database {
             now = System.nanoTime();
             HashString salt = Proc.getConf().get ( SECRETSALT );
             String query = "select c.name,c.founder,AES_DECRYPT(c.pass,?) as pass,c.description,c.regstamp,c.stamp,"
-                         + "cs.keeptopic,cs.topiclock,cs.ident,cs.opguard,cs.restricted,cs.verbose,cs.mailblock,cs.leaveops,cs.autoakick,"
+                         + "cs.keeptopic,cs.topiclock,cs.ident,cs.opguard,cs.restricted,cs.verbose,cs.mailblock,cs.leaveops,cs.autoakick,cs.dynaop,"
                          + "cs.modelock,cs.mark,cs.freeze,cs.close,cs.hold,cs.auditorium,"
                          + "tl.topic,tl.setter,unix_timestamp(tl.stamp) as tlunixstamp,tl.stamp as tlstamp,"
                          + "cf.join_connect_time,cf.talk_connect_time,cf.talk_join_time,cf.max_bans,cf.max_invites,cf.max_msg_time,cf.no_notice,cf.no_ctcp,cf.no_part_msg,cf.no_quit_msg,"
@@ -1095,6 +1106,7 @@ public class CSDatabase extends Database {
                 settings.set ( MAILBLOCK,   res.getBoolean ( "mailblock" )     );
                 settings.set ( LEAVEOPS,    res.getBoolean ( "leaveops" )      );
                 settings.set ( AUTOAKICK,   res.getBoolean ( "autoakick" )     );
+                settings.set ( DYNAOP,      res.getBoolean ( "dynaop" )        );
                 /* Oper only */
                 settings.set ( MARK,        res.getString ( "mark" )           );
                 settings.set ( FREEZE,      res.getString ( "freeze" )         );

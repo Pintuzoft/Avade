@@ -50,6 +50,7 @@ public class ChanSetting extends HashNumeric {
     private boolean     mailBlock;
     private boolean     leaveOps;
     private boolean     autoAkick;
+    private boolean     dynAop;
     private ModeLock    modeLock;
 
     private String      mark;
@@ -85,6 +86,7 @@ public class ChanSetting extends HashNumeric {
         else if ( it.is(MAILBLOCKED) )  { return this.mailBlock;                }
         else if ( it.is(LEAVEOPS) )     { return this.leaveOps;                 }
         else if ( it.is(AUTOAKICK) )    { return this.autoAkick;                }
+        else if ( it.is(DYNAOP) )       { return this.dynAop;                   }
         else if ( it.is(MARKED) )       { return this.mark.length() > 0;        }
         else if ( it.is(MARK) )         { return this.mark.length() > 0;        }
         else if ( it.is(FROZEN) )       { return this.freeze.length() > 0;      }
@@ -121,6 +123,7 @@ public class ChanSetting extends HashNumeric {
         else if ( it.is(MAILBLOCKED) )  { this.mailBlock    = state;            }
         else if ( it.is(LEAVEOPS) )     { this.leaveOps     = state;            }
         else if ( it.is(AUTOAKICK) )    { this.autoAkick    = state;            }
+        else if ( it.is(DYNAOP) )       { this.dynAop       = state;            }
     }  
     
     /**
@@ -193,6 +196,7 @@ public class ChanSetting extends HashNumeric {
         else if ( it.is(MAILBLOCKED) )  { return "MailBlock";                   }
         else if ( it.is(LEAVEOPS) )     { return "LeaveOps";                    }
         else if ( it.is(AUTOAKICK) )    { return "AutoAkick";                   }
+        else if ( it.is(DYNAOP) )       { return "DynAOP";                      }
         else if ( it.is(MARKED) )       { return "Marked";                      }
         else if ( it.is(MARK) )         { return "Marked";                      }
         else if ( it.is(FROZEN) )       { return "Frozen";                      }
@@ -232,7 +236,7 @@ public class ChanSetting extends HashNumeric {
         boolean first = true;
         HashString[] sList = { KEEPTOPIC, IDENT, OPGUARD, 
                                RESTRICT, MAILBLOCKED, VERBOSE,
-                               LEAVEOPS, AUTOAKICK, MARKED,
+                               LEAVEOPS, AUTOAKICK, DYNAOP, MARKED,
                                FROZEN, CLOSED, HELD, 
                                AUDITORIUM };
         try { 
@@ -286,6 +290,7 @@ public class ChanSetting extends HashNumeric {
         this.ident              = false;
         this.leaveOps           = false;
         this.autoAkick          = false;
+        this.dynAop             = false;
         /* Oper only */
         this.mark               = "";
         this.freeze             = "";

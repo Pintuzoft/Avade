@@ -130,7 +130,7 @@ public class ChanInfo extends HashNumeric {
      *
      */
     public void maintenence ( ) {
-        this.printStats ( );
+        //this.printStats ( );
         this.updateAccessChanges ( );
         this.updateLastOpedChanges ( );
     }
@@ -143,7 +143,10 @@ public class ChanInfo extends HashNumeric {
     }
     
     private void updateAccessChanges ( ) {
-        if ( CSDatabase.checkConn() && this.addAccList.size() > 0 ) {
+        if ( ! CSDatabase.checkConn() ) {
+            return;
+        }
+        if ( this.addAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
             for ( CSAcc acc : this.addAccList ) {
                 if ( CSDatabase.addChanAccess ( this, acc ) == 1 ) {
@@ -154,7 +157,7 @@ public class ChanInfo extends HashNumeric {
                 this.addAccList.remove ( acc );
             }
         }
-        if ( CSDatabase.checkConn() && this.remAccList.size() > 0 ) {
+        if ( this.remAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
             for ( CSAcc acc : this.remAccList ) {
                 if ( CSDatabase.removeChanAccess ( this, acc ) == 1 ) {
@@ -165,7 +168,7 @@ public class ChanInfo extends HashNumeric {
                 this.remAccList.remove ( acc );
             }
         }
-        if ( CSDatabase.checkConn() && this.newLogList.size() > 0 ) {
+        if ( this.newLogList.size() > 0 ) {
             ArrayList<CSAccessLogEvent> logs = new ArrayList<>();
             for ( CSAccessLogEvent log : this.newLogList ) {
                 if ( CSDatabase.accesslogEvent ( log ) ) {
@@ -179,7 +182,7 @@ public class ChanInfo extends HashNumeric {
     }
     
     private void updateLastOpedChanges ( ) {
-        if ( CSDatabase.checkConn() && this.updAccList.size() > 0 ) {
+        if ( this.updAccList.size() > 0 ) {
             ArrayList<CSAcc> access = new ArrayList<>();
             for ( CSAcc acc : this.updAccList ) {
                 if ( CSDatabase.updateChanAccessLastOped ( this, acc ) == 1 ) {

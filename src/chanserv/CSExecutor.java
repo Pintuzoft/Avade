@@ -766,7 +766,7 @@ public class CSExecutor extends Executor {
             return "";
         }
     }    
-    private HashString getAddList ( HashString access ) {
+    public HashString getAddList ( HashString access ) {
         if      ( access.is(SOP) )      { return ADDSOP;    }
         else if ( access.is(AOP) )      { return ADDAOP;    }
         else if ( access.is(AKICK) )    { return ADDAKICK;  }
@@ -774,7 +774,7 @@ public class CSExecutor extends Executor {
             return null;
         }
     }
-    private HashString getDelList ( HashString access ) {
+    public HashString getDelList ( HashString access ) {
         if      ( access.is(SOP) )      { return DELSOP;    }
         else if ( access.is(AOP) )      { return DELAOP;    }
         else if ( access.is(AKICK) )    { return DELAKICK;  }
@@ -1161,16 +1161,22 @@ public class CSExecutor extends Executor {
                 this.snoop.msg ( true, SET_MAILBLOCK, ci.getName(), user, cmd );
         
         } else if ( command.is(LEAVEOPS) ) {
-                this.sendWillOutput ( user, flag, "leave ops ( @ )  to the first user entering the channel after its been empty.", "leave ops(@)." );
+                this.sendWillOutput ( user, flag, "leave ops ( @ ) to the first user entering the channel after its been empty.", "leave ops(@)." );
                 ci.getSettings().set ( LEAVEOPS, flag );
                 ci.changed ( LEAVEOPS );
                 this.snoop.msg ( true, SET_LEAVEOPS, ci.getName(), user, cmd );
         
         } else if ( command.is(AUTOAKICK) ) {
-                this.sendWillOutput ( user, flag, "remove matching users on akick.", "leave ops(@)." );
+                this.sendWillOutput ( user, flag, "remove matching users on akick.", "leave matching users alone." );
                 ci.getSettings().set ( AUTOAKICK, flag );
                 ci.changed ( AUTOAKICK );
                 this.snoop.msg ( true, SET_AUTOAKICK, ci.getName(), user, cmd );
+        
+        } else if ( command.is(DYNAOP) ) {
+                this.sendWillOutput ( user, flag, "dynamically populate the AOP list.", "stop autopopulating the AOP list." );
+                ci.getSettings().set ( DYNAOP, flag );
+                ci.changed ( DYNAOP );
+                this.snoop.msg ( true, SET_DYNAOP, ci.getName(), user, cmd );
         
         } else {
             this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[5] ) );

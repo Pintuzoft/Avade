@@ -49,9 +49,9 @@ public class Proc extends HashNumeric {
     private long                        minMaintenance;
     private long                        hourMaintenance;
     private long                        secMaintenance;
-    private int                         minuteDelay;
-    private int                         hourDelay; 
-    private int                         secondDelay;
+    private long                         minuteDelay;
+    private long                         hourDelay; 
+    private long                         secondDelay;
 
     private String                      read; 
     private static Config               config;
@@ -75,9 +75,9 @@ public class Proc extends HashNumeric {
         this.secMaintenance     = start;
         this.minMaintenance     = start;
         this.hourMaintenance    = start;
-        this.secondDelay        = 1000000; /* Every second */
-        this.minuteDelay        = 60 * 1000000; /* Every minute */
-        this.hourDelay          = 60 * 60 * 1000000; /* Every hour */
+        this.secondDelay        = 1_000_000_000L; /* Every second */
+        this.minuteDelay        = 60 * 1_000_000_000L; /* Every minute */
+        this.hourDelay          = 60 * 60 * 1_000_000_000L; /* Every hour */
         this.runLoop ( );
     }
     

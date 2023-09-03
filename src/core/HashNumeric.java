@@ -869,32 +869,32 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
-    public static HashString ADDAOP = new HashString ( "ADDAOP" );
+    public static HashString ADDAOP = new HashString ( "AOP+" );
 
     /**
      *
      */
-    public static HashString DELAOP = new HashString ( "DELAOP" );
+    public static HashString DELAOP = new HashString ( "AOP-" );
 
     /**
      *
      */
-    public static HashString ADDSOP = new HashString ( "ADDSOP" );
+    public static HashString ADDSOP = new HashString ( "SOP+" );
 
     /**
      *
      */
-    public static HashString DELSOP = new HashString ( "DELSOP" );
+    public static HashString DELSOP = new HashString ( "SOP-" );
 
     /**
      *
      */
-    public static HashString ADDAKICK = new HashString ( "ADDAKICK" );
+    public static HashString ADDAKICK = new HashString ( "AKICK+" );
 
     /**
      *
      */
-    public static HashString DELAKICK = new HashString ( "DELAKICK" );
+    public static HashString DELAKICK = new HashString ( "AKICK-" );
 
     /**
      *
@@ -1275,6 +1275,11 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString AUTOAKICK = new HashString ( "AUTOAKICK" );
+
+    /**
+     *
+     */
+    public static HashString DYNAOP = new HashString ( "DYNAOP" );
 
     /**
      *
@@ -2205,6 +2210,11 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString SET_AUTOAKICK = new HashString ( "SET_AUTOAKICK" );
+
+    /**
+     *
+     */
+    public static HashString SET_DYNAOP = new HashString ( "SET_DYNAOP" );
 
     /**
      *

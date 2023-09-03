@@ -176,11 +176,13 @@ public class Chan extends HashNumeric {
         // :DreamHealer MODE #friends 1374147654 +oooo Guest33015 Guest33015 Guest33015 Guest33015
         //      0        1      2       3         4      5+
         boolean state = false;
+        User setter;
         User u;
         int m=1;
         if ( cmd.length < 6 ) {
             return;
-        } 
+        }
+        setter = Handler.findUser(cmd[0].substring(1));
         for ( int i=0; i < cmd[4].length ( ); i++ ) {
             u = Handler.findUser ( cmd[4+m] );
             switch ( ( ""+cmd[4].charAt(i)).hashCode ( ) ) {
@@ -193,7 +195,15 @@ public class Chan extends HashNumeric {
                    break;
                    
                case MODE_o :
-                   this.chModeUser ( u, OP, ( state ? OP : USER ), u.isAtleast ( IRCOP ) );
+                   if ( setter != null ) {
+                        if ( state ) {
+                            Handler.getChanServ().checkDynAopAdd ( this, setter, u );
+                        } else {
+                            Handler.getChanServ().checkDynAopDel(this, setter, u);
+                        }
+                   }
+                    this.chModeUser ( u, OP, ( state ? OP : USER ), u.isAtleast ( IRCOP ) );
+
                    m++;
                    break;
                    

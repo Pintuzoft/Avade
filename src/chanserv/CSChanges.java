@@ -45,6 +45,7 @@ public class CSChanges extends Changes {
     private boolean verbose;
     private boolean leaveops;
     private boolean autoakick;
+    private boolean dynaop;
     private boolean founder;
   
     private boolean joinconnecttime;
@@ -93,6 +94,7 @@ public class CSChanges extends Changes {
         this.verbose = false;
         this.leaveops = false;
         this.autoakick = false;
+        this.dynaop = false;
         this.founder = false;
         
         this.joinconnecttime = false;
@@ -134,19 +136,20 @@ public class CSChanges extends Changes {
         else if ( setting.is(VERBOSE) )             { return this.verbose;              }
         else if ( setting.is(LEAVEOPS) )            { return this.leaveops;             }
         else if ( setting.is(AUTOAKICK) )           { return this.autoakick;            }
+        else if ( setting.is(DYNAOP) )              { return this.dynaop;               }
         else if ( setting.is(FOUNDER) )             { return this.founder;              }
-        else if ( setting.is(JOIN_CONNECT_TIME) )   { return this.joinconnecttime;    }
-        else if ( setting.is(TALK_CONNECT_TIME) )   { return this.talkconnecttime;    }
-        else if ( setting.is(TALK_JOIN_TIME) )      { return this.talkjointime;       }
-        else if ( setting.is(MAX_BANS) )            { return this.maxbans;             }
-        else if ( setting.is(NO_NOTICE) )           { return this.nonotice;            }
-        else if ( setting.is(NO_CTCP) )             { return this.noctcp;              }
-        else if ( setting.is(NO_PART_MSG) )         { return this.nopartmsg;          }
-        else if ( setting.is(EXEMPT_OPPED) )        { return this.exemptopped;         }
-        else if ( setting.is(EXEMPT_VOICED) )       { return this.exemptvoiced;        }
-        else if ( setting.is(EXEMPT_IDENTD) )       { return this.exemptidentd;        }
-        else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exemptregistered;    }
-        else if ( setting.is(EXEMPT_INVITES) )      { return this.exemptinvites;       }
+        else if ( setting.is(JOIN_CONNECT_TIME) )   { return this.joinconnecttime;      }
+        else if ( setting.is(TALK_CONNECT_TIME) )   { return this.talkconnecttime;      }
+        else if ( setting.is(TALK_JOIN_TIME) )      { return this.talkjointime;         }
+        else if ( setting.is(MAX_BANS) )            { return this.maxbans;              }
+        else if ( setting.is(NO_NOTICE) )           { return this.nonotice;             }
+        else if ( setting.is(NO_CTCP) )             { return this.noctcp;               }
+        else if ( setting.is(NO_PART_MSG) )         { return this.nopartmsg;            }
+        else if ( setting.is(EXEMPT_OPPED) )        { return this.exemptopped;          }
+        else if ( setting.is(EXEMPT_VOICED) )       { return this.exemptvoiced;         }
+        else if ( setting.is(EXEMPT_IDENTD) )       { return this.exemptidentd;         }
+        else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exemptregistered;     }
+        else if ( setting.is(EXEMPT_INVITES) )      { return this.exemptinvites;        }
         else if ( setting.is(GREETMSG) )            { return this.greetmsg;             }
         return false;        
     }
@@ -226,6 +229,10 @@ public class CSChanges extends Changes {
         
         } else if ( setting.is(AUTOAKICK) ) {
             this.autoakick = true;
+            this.changed = true;
+        
+        } else if ( setting.is(DYNAOP) ) {
+            this.dynaop = true;
             this.changed = true;
         
         } else if ( setting.is(FOUNDER) ) {
@@ -311,6 +318,7 @@ public class CSChanges extends Changes {
         if ( this.verbose )         { System.out.println("Changes: verbose!");      }
         if ( this.leaveops )        { System.out.println("Changes: leaveops!");     }
         if ( this.autoakick )       { System.out.println("Changes: autoakick!");    }
+        if ( this.dynaop )          { System.out.println("Changes: dynaop!");       }
     }
 
     

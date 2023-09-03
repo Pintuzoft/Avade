@@ -31,6 +31,7 @@ import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
 import java.util.HashMap;
+import nickserv.NickServ;
 import user.UserCheck;
 
 /**
@@ -671,6 +672,9 @@ public class ChanServ extends Service {
         todoAmount += handleRegList ( );
         todoAmount += handleUpdateList ( );
         todoAmount += handleDeleteList ( );
+        for ( ChanInfo ci : ciList.values() ) {
+            ci.maintenence();
+        }
         checkUserList ( );
         return todoAmount;
     }
@@ -681,7 +685,6 @@ public class ChanServ extends Service {
      */
     public static int maintenance ( )  {
         int todoAmount = 0;
-        
         return todoAmount;
     }
  
@@ -852,6 +855,81 @@ public class ChanServ extends Service {
         /* All initial work has been done lets remove it from the database */
         ChanServ.addToWorkList ( DELETE, ci );
         ci.getFounder().remFromAccessList ( FOUNDER, ci );
+    }
+
+    
+    
+    public void checkDynAopAdd ( Chan c, User setter, User user ) {
+        ChanInfo ci;
+        NickInfo ni;
+        NickInfo op;
+        if ( setter == null || user ==null ) {
+            return;
+        }
+        
+        if ( ( ci = ChanServ.findChan(c.getName())) == null ) {
+            return;
+            
+        } else if ( ! ci.getSettings().is(DYNAOP) ) {
+            return;
+            
+        } else if ( ( op = NickServ.findNick(setter.getName())) == null ) {
+            return;
+            
+        } else if ( ( ni = NickServ.findNick(user.getName())) == null ) {
+            return;
+            
+        } else if ( ! ci.isAtleastAop(op) ) {
+            return;
+            
+        } else if ( ci.isAtleastAop(ni) ) {
+            return;
+        }
+        
+        ci.addAccess(AOP, new CSAcc(ni, AOP, null));
+        ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), ADDAOP, "[DYNAOP]:"+ni.getNameStr(), setter) );
+     
+        if ( ci.getSettings().is ( VERBOSE ) ) {
+            this.service.sendOpMsg ( ci, ni.getNameStr()+" has been added to Aop list (DYNAOP)." );
+        }
+    }
+
+    public void checkDynAopDel ( Chan c, User setter, User user ) {
+        ChanInfo ci;
+        NickInfo ni;
+        NickInfo op;
+        CSAcc acc;
+        
+        if ( setter == null || user ==null ) {
+            return;
+        }
+        
+        if ( ( ci = ChanServ.findChan(c.getName())) == null ) {
+            return;
+            
+        } else if ( ! ci.getSettings().is(DYNAOP) ) {
+            return;
+            
+        } else if ( ( op = NickServ.findNick(setter.getName())) == null ) {
+            return;
+            
+        } else if ( ( ni = NickServ.findNick(user.getName())) == null ) {
+            return;
+            
+        } else if ( ! ci.isAtleastAop(op) ) {
+            return;
+            
+        } else if ( ci.isAtleastSop(ni) ) {
+            return;
+        } else if ( ( acc = ci.getAccess(AOP, ni) ) == null ) {
+            return;
+        }
+        
+        ci.delAccess(AOP, acc);
+        ci.addAccessLog ( new CSAccessLogEvent ( ci.getName(), DELAOP, "[DYNAOP]:"+ni.getNameStr(), setter) );
+        if ( ci.getSettings().is ( VERBOSE ) ) {
+            this.service.sendOpMsg ( ci, ni.getNameStr()+" has been remove from Aop list (DYNAOP)." );
+        }
     }
 
     /**

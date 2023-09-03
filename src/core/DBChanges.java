@@ -167,6 +167,16 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db123082 ( ) );
                 qList.add ( "update settings set value = '1.2308-2' where name = 'version'" );
 
+            case 123087 :
+                qList.add ( "to: v1.2308-7");
+                qList.addAll ( this.db123087 ( ) );
+                qList.add ( "update settings set value = '1.2308-7' where name = 'version'" );
+
+            case 123091 :
+                qList.add ( "to: v1.2309-1");
+                qList.addAll ( this.db123091 ( ) );
+                qList.add ( "update settings set value = '1.2309-1' where name = 'version'" );
+
                 break;
                 
             default :
@@ -578,6 +588,18 @@ public class DBChanges extends HashNumeric {
         qList.add("update chanflag set no_nick_change = 0;");
         qList.add("alter table chanflag add no_utf8 tinyint(1) after no_nick_change;");
         qList.add("update chanflag set no_utf8 = 0;");
+        return qList;
+    }
+        
+    private ArrayList<String> db123087 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add("alter table chansetting add dynaop tinyint(1) default 0 after autoakick;");
+        return qList;
+    }
+        
+    private ArrayList<String> db123091 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        qList.add("alter table chanacclog change instater instater varchar(64)");
         return qList;
     }
         

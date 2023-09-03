@@ -170,6 +170,7 @@ public class CSSnoop extends Snoop {
             else if ( it.is(SET_MAILBLOCK) )            { return "SET_MAILBLOCK";           } 
             else if ( it.is(SET_LEAVEOPS) )             { return "SET_LEAVEOPS";            } 
             else if ( it.is(SET_AUTOAKICK) )            { return "SET_AUTOAKICK";           }
+            else if ( it.is(SET_DYNAOP) )               { return "SET_DYNAOP";              }
             else if ( it.is(SHOW_LIST) )                { return "SHOW_LIST";               }
             else { 
                 return "UnDefined"; 
