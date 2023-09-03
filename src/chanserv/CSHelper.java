@@ -486,6 +486,7 @@ public class CSHelper extends Helper {
         else if ( command.is(LEAVEOPS) )        { this.setLeaveOps ( user );    }
         else if ( command.is(AUTOAKICK) )       { this.setAutoAKick ( user );   }
         else if ( command.is(PRIVATE) )         { this.setPrivate ( user );     }
+        else if ( command.is(DYNAOP) )          { this.setDynAOP ( user );      }
         else {
             this.setMain ( user );
         }
@@ -514,6 +515,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"MAILBLOCK"+f.b ( ) +"      Prevent services from sending password to founders mail"            );
         this.service.sendMsg ( user, "       "+f.b ( ) +"LEAVEOPS"+f.b ( ) +"       First user in will be allowed to be op(@) "                         );
         this.service.sendMsg ( user, "       "+f.b ( ) +"AUTOAKICK"+f.b ( ) +"      Have ChanServ remove all matching users when placing an akick"      );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"DYNAOP"+f.b ( ) +"         ChanServ will try automatically fill/del the AOP list upon op/deop(@)");
         this.service.sendMsg ( user, "   "                                                                                                              );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                                 );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                               );
@@ -725,6 +727,25 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                             );
         this.service.sendMsg ( user, "   To avoid the channel from being used by unwanted users and to make sure the topic"         );
         this.service.sendMsg ( user, "   is secret in the channel info its recommended. For ordinary channels its not recommended." );
+        this.showEnd ( user );  
+    }
+    /**
+     *
+     * @param user
+     */
+    public void setDynAOP ( User user )  {
+        this.showStart ( user, "Set DynAOP" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SET <#chan> DYNAOP <ON|OFF>"+f.b ( ) +""                         );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The DYNAOP option will let ChanServ automatically fill and remove AOPs. This will let any" );
+        this.service.sendMsg ( user, "   op(@) in the channel add and remove AOPs. SOP+ is immune to this."                         );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
+        this.service.sendMsg ( user, "   This greatly reduces the security of the channel by a factor of 13.37 so do not set this " );
+        this.service.sendMsg ( user, "   unless you understand the risks. ChanServ will automatically AOP anyone that was given" );
+        this.service.sendMsg ( user, "   op(@) and will let this new op give access to new users from then on."                     );
+        this.service.sendMsg ( user, "   Recommended only to those who understands and accepts the risks that comes with it." );
         this.showEnd ( user );  
     }
 
