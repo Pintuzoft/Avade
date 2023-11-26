@@ -22,6 +22,7 @@ import channel.Topic;
 import core.Executor;
 import core.Handler;
 import core.HashString;
+import core.Proc;
 import core.StringMatch;
 import core.TextFormat;
 import java.math.BigInteger;
@@ -799,7 +800,12 @@ public class CSExecutor extends Executor {
             this.service.sendMsg (user, output (NICK_NOT_REGISTERED, result.getString1().getString() ) ); 
             this.snoop.msg (false, NICK_NOT_REGISTERED, result.getString1 ( ), user, cmd );
             return; 
-            
+
+        } else if ( result.was(NICK_NOT_AUTHED) ) {
+            this.service.sendMsg (user, output (NICK_NOT_AUTHED, result.getNick2().getNameStr() ) ); 
+            this.snoop.msg (false, NICK_NOT_AUTHED, result.getNick2().getNameStr(), user, cmd );
+            return; 
+
         } else if ( result.was(CHAN_NOT_REGISTERED) ) {
             this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
             this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
@@ -1120,7 +1126,7 @@ public class CSExecutor extends Executor {
                 this.snoop.msg ( true, SET_TOPICLOCK, ci.getName(), user, cmd );
         
         } else if ( command.is(MODELOCK) ) {
-            doModeLock ( user, ci, cmd );
+                doModeLock ( user, ci, cmd );
                 ci.changed ( MODELOCK );
                 this.snoop.msg ( true, SET_MODELOCK, ci.getName(), user, cmd );
         
@@ -1911,7 +1917,6 @@ public class CSExecutor extends Executor {
                 }
                 
         } else if ( command.is(ACCESSLOG) ) {
-            
                 if ( isShorterThanLen ( 5, cmd) ) {
                     result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
@@ -1920,11 +1925,11 @@ public class CSExecutor extends Executor {
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
-                } else if ( ( ni = ci.getNickByUser ( user ) ) == null && ! user.isAtleast ( SA ) ) {
+                } else if ( ( ni = NickServ.findNick(user.getName()) ) == null ) {
                     result.setString1 ( ci.getName() ); 
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ! ci.isAtleastAop ( ni ) && 
-                            ! user.isAtleast ( SA ) ) {
+                            ! ni.isAtleast ( SA ) ) {
                     result.setString1 ( ci.getName() );
                     result.setStatus ( ACCESS_DENIED );
                 } else {

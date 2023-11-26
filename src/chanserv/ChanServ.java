@@ -163,8 +163,7 @@ public class ChanServ extends Service {
     public static void attachSettings ( HashString name, ChanSetting settings ) {
         ciList.get(name.getCode()).setSettings ( settings );
     }
-    
-    
+        
     /**
      *
      * @param user
@@ -282,7 +281,7 @@ public class ChanServ extends Service {
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
                 ci.setLastUsed ( );
-                if ( ni != null && !ni.is(NEVEROP) ) {
+                if ( ni != null && ni.is(NEVEROP) ) {
                     /* Dont op */
                 } else {
                     opUser ( c, user );

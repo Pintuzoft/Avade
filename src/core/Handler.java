@@ -329,7 +329,8 @@ public class Handler extends HashNumeric {
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
             c.addUserList(data, 5);
         } else {
-            c = new Chan ( this.data ); 
+            c = new Chan ( this.data );
+            c.addUserList(data, 5);
             cList.put ( c.getName().getCode(), c );
             if ( check ) {
                 chan.checkSettings ( c );
@@ -663,7 +664,6 @@ public class Handler extends HashNumeric {
             user.setName ( this.data[2] );
             uList.put ( user.getName().getCode(), user );
         }
-        
         ni = NickServ.findNick ( user.getString ( NAME )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );
