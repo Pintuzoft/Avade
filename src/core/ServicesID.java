@@ -326,12 +326,16 @@ public class ServicesID extends HashNumeric {
      *
      * @return
      */
+    private static int operAccess ( NickInfo ni ) {
+        return ( ni.getOper ( ) != null ? ni.getOper().getAccess ( ) : 0 );
+    }
+
     public NickInfo getTopOperNick ( ) {
         NickInfo top = null;
         for ( NickInfo ni : this.niList ) {
             if ( top == null ) {
                 top = ni;
-            } else if ( ni.getOper().getAccess ( ) > top.getOper().getAccess ( ) ) {
+            } else if ( operAccess ( ni ) > operAccess ( top ) ) {
                 top = ni;
             }
         }

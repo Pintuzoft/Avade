@@ -370,7 +370,7 @@ public class OSExecutor extends Executor {
         
         System.out.println("Bans: "+Handler.getOperServ().getAkillCount()+":"+Handler.getOperServ().getIgnoreCount());
         
-        if ( cmd.length > 4 && cmd[4].charAt(0) == '-' ) {
+        if ( cmd.length > 4 && cmd[4].startsWith ( "-" ) ) {
             String[] buf = new String[6];
             buf[0] = cmd[0];
             buf[1] = cmd[1];
@@ -758,7 +758,7 @@ public class OSExecutor extends Executor {
                 this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1 ( ) ) );
                 return;            
         
-        } else if ( result.is(STATS) ) {
+        } else if ( result.is(SHOWLIST) ) {
                 ArrayList<Oper> sraList = OperServ.getRootAdmins();
                 ArrayList<Oper> csopList = OperServ.getCSops();
                 ArrayList<Oper> saList = OperServ.getServicesAdmins();
@@ -1378,13 +1378,13 @@ public class OSExecutor extends Executor {
                     result.setStatus ( SHOWLIST );
                 } else if ( isShorterThanLen ( 7, cmd) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( sub != SRA && sub != CSOP && sub != SA && sub != IRCOP ) {
+                } else if ( ! sub.is(SRA) && ! sub.is(CSOP) && ! sub.is(SA) && ! sub.is(IRCOP) ) {
                     result.setSub ( sub );
                     result.setStatus ( SUB_SYNTAX_ERROR );
-                } else if ( (sub2 = new HashString(cmd[5])).is(ADD) && ! sub2.is(DEL) ) {
+                } else if ( ! (sub2 = new HashString(cmd[5])).is(ADD) && ! sub2.is(DEL) ) {
                     result.setStatus ( SUB2_SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[6] ) ) == null ) {
-                    result.setString1 ( user.getString ( NAME ) );
+                    result.setString1 ( cmd[6] );
                     result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( user.getAccess() <= ni.getAccess() ) {
                     result.setStatus ( ACCESS_DENIED );

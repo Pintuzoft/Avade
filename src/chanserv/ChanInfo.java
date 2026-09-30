@@ -687,7 +687,7 @@ public class ChanInfo extends HashNumeric {
                     return;
                 }
             } else if ( acc.getMask() != null && a.getMask() != null ) {
-                if ( acc.getMask() == a.getMask() ) {
+                if ( acc.getMask().is ( a.getMask() ) ) {
                     return;
                 }
             }
@@ -900,23 +900,14 @@ public class ChanInfo extends HashNumeric {
      * @param access
      */
     public void wipeAccessList ( HashString access )  {
-        if ( access.is(SOP) ) {
-            this.slist.clear ( ); 
-            this.slist.clear ( );
-        
-        } else if ( access.is(AOP) ) {
-            this.alist.clear ( ); 
-        
-        } else if ( access.is(HOP) ) {
-            this.hlist.clear ( ); 
-        
-        } else if ( access.is(VOP) ) {
-            this.vlist.clear ( ); 
-        
-        } else if ( access.is(AKICK) ) {
-            this.klist.clear ( ); 
-            this.klist.clear ( );
+        HashMap<BigInteger,CSAcc> list = this.getAccessList ( access );
+        /* Nicks keep a list of their channels (CHANLIST), update it too */
+        for ( CSAcc acc : list.values ( ) ) {
+            if ( acc.getNick ( ) != null ) {
+                acc.getNick().remFromAccessList ( access, this );
+            }
         }
+        list.clear ( );
     }
     
     /**

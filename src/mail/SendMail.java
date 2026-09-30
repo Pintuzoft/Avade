@@ -75,7 +75,6 @@ public class SendMail extends HashNumeric {
             null,
             mailStr ( 
                 NEWMEMO_BODY,
-                null,
                 ni.getName().getString(), 
                 mi.getSender()
             )  
@@ -93,8 +92,8 @@ public class SendMail extends HashNumeric {
     public static void sendExpNick ( NickInfo ni ) {   
         Mail mail = new Mail ( 
             ni.getString ( MAIL ), 
-            null,
             mailStr ( EXPNICK_SUBJECT, "" ), 
+            null,
             mailStr ( EXPNICK_BODY, ni.getName().getString() )  
         );
         MXDatabase.sendMail ( mail );
@@ -114,7 +113,7 @@ public class SendMail extends HashNumeric {
         
         } else if ( it.is(NEWMEMO_BODY) ) {
             return  "Hello "+args[0]+"\n\nYou have recieved a new memo "+
-                    "from "+args[0]+".\nTo read the memo please connect, "+
+                    "from "+args[1]+".\nTo read the memo please connect, "+
                     "identify to your nickname and type:\n\n"+
                     "/MemoServ LIST and /MemoServ READ <#num>\n\n"+
                     "Regards\n\n"+
@@ -126,7 +125,7 @@ public class SendMail extends HashNumeric {
         } else if ( it.is(EXPNICK_BODY) ) {
             return  "Hello "+args[0]+"\n\nYour nickname "+args[0]+" "+
                     "is about to expire.\nTo avoid getting your nick "+
-                    "expired please reconnect to The Avade IRC Network "+
+                    "expired please reconnect to "+Proc.getConf().get ( NETNAME )+" "+
                     "and identify to your nickname.\n\nRegards\n\n"+
                     "/"+Proc.getConf().get ( NETNAME );
         

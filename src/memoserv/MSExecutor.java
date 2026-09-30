@@ -154,6 +154,11 @@ import user.User;
         String message = Handler.cutArrayIntoString ( cmd, 5 );
         MemoInfo memo = new MemoInfo ( to.getNameStr(), from.getNameStr(), message );
         memo = MSDatabase.storeMemo ( memo );
+        if ( memo == null ) {
+            /* Memos are stored in the database, nothing we can do without it */
+            this.service.sendMsg ( user, "Error: Memo to "+to.getNameStr()+" could not be sent, database not available. Try again later." );
+            return;
+        }
         this.service.sendMsg ( user, output ( MEMO_SENT, to.getNameStr() ) );
         to.addMemo ( memo );
         SendMail.sendNewMemo ( to, memo );

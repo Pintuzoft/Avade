@@ -729,14 +729,6 @@ public class ChanServ extends Service {
     
     /**
      *
-     * @param c
-     */
-    public static void kickAll ( Chan c )  { 
-        ChanServ.kickAll ( c );
-    }
-    
-    /**
-     *
      * @return
      */
     public static int secMaintenance ( )  {
@@ -947,7 +939,17 @@ public class ChanServ extends Service {
         for ( User user : uList ) {
             this.sendMsg ( user, "Channel "+ci.getName()+" which you have been found to be associated with has now been dropped");
         }
-        ciList.remove ( ci );
+        ciList.remove ( ci.getName().getCode() );
+        
+        /* Nicks with access keep a list of their channels (CHANLIST) */
+        HashString[] lists = { SOP, AOP, HOP, VOP, AKICK };
+        for ( HashString list : lists ) {
+            for ( CSAcc acc : ci.getAccessList ( list ).values ( ) ) {
+                if ( acc.getNick ( ) != null ) {
+                    acc.getNick().remFromAccessList ( list, ci );
+                }
+            }
+        }
         
         /* All initial work has been done lets remove it from the database */
         ChanServ.addToWorkList ( DELETE, ci );

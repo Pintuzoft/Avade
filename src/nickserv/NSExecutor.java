@@ -660,7 +660,7 @@ import java.util.regex.Pattern;
              command.is(UNHOLD) ) {
                 NickInfo instater = NickServ.findNick ( ni.getSettings().getInstater ( flag ) );
                 if ( ! user.isIdented ( instater ) && ! user.isAtleast ( SRA ) ) {
-                    this.service.sendMsg ( user, "Error: flag can only be removed by: "+instater.getName()+" or a SRA+." );
+                    this.service.sendMsg ( user, "Error: flag can only be removed by: "+( instater != null ? instater.getName() : "its instater (nick no longer registered)" )+" or a SRA+." );
                     return;
                 }
                 ni.getSettings().set ( flag, "" );
@@ -1161,7 +1161,7 @@ import java.util.regex.Pattern;
                 }            
         
         } else if ( command.is(INFO) ) {
-                if ( isShorterThanLen ( 4, cmd )  )  {
+                if ( isShorterThanLen ( 5, cmd )  )  {
                     result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setStatus ( NICK_NOT_REGGED );
@@ -1193,7 +1193,7 @@ import java.util.regex.Pattern;
                 boolean remove = false;
                 String name = null;
                 if ( cmd.length > 4 ) {
-                    remove = cmd[4].charAt(0) == '-';
+                    remove = cmd[4].startsWith ( "-" );
                     if ( remove ) {
                         name = cmd[4].substring ( 1 );
                     } else {

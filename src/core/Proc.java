@@ -255,13 +255,10 @@ public class Proc extends HashNumeric {
                 Handler.getOperServ().setCommands();
             }
             if ( ChanServ.isUp ( ) ) {
-                Handler.getOperServ().setCommands();
+                Handler.getChanServ().setCommands();
             }
             if ( NickServ.isUp ( ) ) {
-                Handler.getOperServ().setCommands();
-            }
-            if ( MemoServ.isUp ( ) ) {
-                Handler.getOperServ().setCommands();
+                Handler.getNickServ().setCommands();
             }
            
             return true;
@@ -325,7 +322,7 @@ public class Proc extends HashNumeric {
                          ( days     > 0  ? days+" Day(s), "      : "" ) +
                          ( hours    > 0  ? hours+" Hour(s), "    : "" ) +
                          ( minutes  > 0  ? minutes+" Min(s), "   : "" ) +
-                         ( seconds  < 10 ? seconds+" Sec(s)"     : "" );
+                         seconds+" Sec(s)";
         
         } catch ( Exception e ) { 
             Proc.log ( Proc.class.getName ( ) , e ); 

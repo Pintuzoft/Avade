@@ -92,7 +92,7 @@ public class HashString {
      * @return
      */
     public boolean is ( NickInfo ni ) {
-        return this.code == ni.getName().getCode();
+        return this.code.equals ( ni.getName().getCode() );
     }
      
     /**
@@ -101,7 +101,7 @@ public class HashString {
      * @return
      */
     public boolean is ( ChanInfo ci ) {
-        return this.code == ci.getName().getCode();
+        return this.code.equals ( ci.getName().getCode() );
     }
     
     /**
@@ -110,7 +110,7 @@ public class HashString {
      * @return
      */
     public boolean is ( User user ) {
-        return this.code == user.getName().getCode();
+        return this.code.equals ( user.getName().getCode() );
     }
     
     /**
@@ -119,7 +119,7 @@ public class HashString {
      * @return
      */
     public boolean is ( Chan chan ) {
-        return this.code == chan.getName().getCode();
+        return this.code.equals ( chan.getName().getCode() );
     }
     
     /**

@@ -357,7 +357,7 @@ public class CSDatabase extends Database {
                     ps.setString ( index++, ci.getSettings().getInstater ( CLOSE ) );
                 }
             }
-            if ( ci.getChanges().hasChanged ( HELD ) ) {
+            if ( ci.getChanges().hasChanged ( HOLD ) ) {
                 if ( ! ci.getSettings().is ( HELD ) ) {
                     ps.setNull ( index++, Types.VARCHAR );
                 } else {

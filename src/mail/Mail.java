@@ -39,7 +39,6 @@ public class Mail {
         this.subject    = subject;
         this.auth       = auth;
         this.body       = body;
-        System.out.println ( "Mail ( "+this.to+", "+this.subject+", "+this.auth+", "+this.body+" );" );
     }
     
     /**
