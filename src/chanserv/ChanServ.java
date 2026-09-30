@@ -52,6 +52,7 @@ public class ChanServ extends Service {
     private static ArrayList<ChanInfo> deleteList = new ArrayList<>();
     
     private static HashMap<BigInteger,ChanInfo> ciList = new HashMap<>(); /* List of regged channels */
+    private static boolean                      loaded = false;
 
     private static ArrayList<UserCheck> chUserCheckList = new ArrayList<>();
     
@@ -151,11 +152,38 @@ public class ChanServ extends Service {
     }
      
     private void loadChans ( )  {
-        ciList = CSDatabase.getAllChans ( );
-        //CSDatabase.loadChanAccess ( SOP );
-        //CSDatabase.loadChanAccess ( AOP );
-        //CSDatabase.loadChanAccess ( AKICK );
-        CSDatabase.loadAllChanAccess();
+        loaded = false;
+        if ( ! NickServ.isLoaded ( ) ) {
+            /* Founders and access lists point at nicks */
+            return;
+        }
+        HashMap<BigInteger,ChanInfo> chans = CSDatabase.getAllChans ( );
+        if ( chans == null ) {
+            Proc.log ( "ChanServ: could not load the channels from the database" );
+            return;
+        }
+        ciList = chans;
+        if ( ! CSDatabase.loadAllChanAccess() ) {
+            Proc.log ( "ChanServ: could not load the channel access lists from the database" );
+            return;
+        }
+        loaded = true;
+    }
+
+    /**
+     * @return true when all channels and access lists are loaded
+     */
+    public static boolean isLoaded ( ) {
+        return loaded;
+    }
+
+    /**
+     * Try to load the channels again
+     * @return
+     */
+    public boolean retryLoad ( ) {
+        this.loadChans ( );
+        return loaded;
     }
     
     /**
@@ -173,6 +201,10 @@ public class ChanServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            this.sendMsg ( user, "Services are loading the nick and channel database, please try again in a moment." );
+            return;
+        }
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         try {
             if ( cmd[3].isEmpty ( ) ) { 
@@ -254,6 +286,11 @@ public class ChanServ extends Service {
         ChanInfo ci;
         NickInfo ni;
         CSAcc acc;
+        
+        if ( ! Handler.isDataLoaded ( ) ) {
+            /* Never op/deop/kick before we know the registered channels */
+            return;
+        }
         
         /* Relay channel */
         if ( c.isRelay() ) {
@@ -338,7 +375,7 @@ public class ChanServ extends Service {
      */
     public void checkSettings ( Chan c )  {
         ChanInfo ci;
-        if ( c == null ) {
+        if ( c == null || ! Handler.isDataLoaded ( ) ) {
             return;
         }
         if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {
@@ -370,7 +407,7 @@ public class ChanServ extends Service {
      * @param ci
      */
     public void checkModes ( Chan c, ChanInfo ci )  {
-        if ( ci == null || c == null || ci.getSettings() == null || ci.getSettings().getModeLock() == null ) {
+        if ( ! Handler.isDataLoaded ( ) || ci == null || c == null || ci.getSettings() == null || ci.getSettings().getModeLock() == null ) {
             return;
         }
         String missing = null;
@@ -390,7 +427,7 @@ public class ChanServ extends Service {
         ChanInfo ci;
         NickInfo ni;
         boolean updTopic = false;
-        if ( c == null ) {
+        if ( c == null || ! Handler.isDataLoaded ( ) ) {
             return false;
         }
 
@@ -435,7 +472,7 @@ public class ChanServ extends Service {
     public void checkServerTopic ( Chan c ) {
         ChanInfo ci;
         Topic topic;
-        if ( c == null || ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) == null ) {
+        if ( c == null || ! Handler.isDataLoaded ( ) || ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) == null ) {
             return;
         }
         topic = c.getTopic ( );
@@ -959,6 +996,9 @@ public class ChanServ extends Service {
     
     
     public void checkDynAopAdd ( Chan c, User setter, User user ) {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            return;
+        }
         ChanInfo ci;
         NickInfo ni;
         NickInfo op;
@@ -1002,6 +1042,9 @@ public class ChanServ extends Service {
     }
 
     public void checkDynAopDel ( Chan c, User setter, User user ) {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            return;
+        }
         ChanInfo ci;
         NickInfo ni;
         NickInfo op;

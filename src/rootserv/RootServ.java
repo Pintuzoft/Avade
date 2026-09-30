@@ -236,12 +236,21 @@ public class RootServ extends Service {
         User user;
         boolean newNick = false;
         
+        if ( ! Handler.isDataLoaded ( ) ) {
+            /* The master nick would look unregistered and be created again */
+            return;
+        }
+        
         if ( master == null ) {
             System.out.println ( "Couldnt find Master nickname in configuration file." );
             System.exit ( 1 );
         }
         user = Handler.findUser ( master );
         
+        if ( ni == null && user == null ) {
+            /* Master nick not registered and not online, nothing to do yet */
+            return;
+        }
         if ( ni == null ) {
             ni = new NickInfo ( master.getString() );
             NSDatabase.createNick ( ni );

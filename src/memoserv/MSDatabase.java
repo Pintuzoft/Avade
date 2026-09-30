@@ -120,10 +120,10 @@ public class MSDatabase extends Database {
     /**
      *
      */
-    public static void loadAllMemos ( )  {
+    public static boolean loadAllMemos ( )  {
         NickInfo ni;
         if ( ! activateConnection ( )  )  {
-            return;
+            return false;
         }
         try {
             String query = "SELECT id,name,sender,message,stamp,readflag FROM memo order by stamp;";
@@ -142,8 +142,9 @@ public class MSDatabase extends Database {
             idleUpdate ( "getMemosByNick ( ) " );
         } catch  ( SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
         }
-        return;
+        return true;
     }
 
     /**

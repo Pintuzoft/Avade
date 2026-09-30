@@ -40,6 +40,7 @@ public class Proc extends HashNumeric {
    // private ServSock                    conn;
     private static ServSock             conn;
     private static long                 lastConnectAttempt = 0;
+    private static long                 stopDeadline = Long.MAX_VALUE; /* when STOP gives up on pending work */
     private static final long           RECONNECT_DELAY = 30000; /* ms between attempts to relink */
 
     private Handler                     handler;
@@ -96,7 +97,7 @@ public class Proc extends HashNumeric {
         int sleepStep = 100;
         int commandChain = 0;
          
-        while ( run || todoAmount > 0 )  {
+        while ( run || ( todoAmount > 0 && System.currentTimeMillis ( ) < stopDeadline ) )  {
             /* Proc loop */
             
             /* Dynamic Sleep */
@@ -164,18 +165,32 @@ public class Proc extends HashNumeric {
                 commandChain++;
             }
         }
-        do {
-            Handler.getRootServ().sendGlobOp ( "Running: handler->hourMaintenance" );
-        } while ( this.handler.runHourMaintenance ( ) > 0 );
-        do {
-            Handler.getRootServ().sendGlobOp ( "Running: handler->minMaintenance" );
-        } while ( this.handler.runMinuteMaintenance ( ) > 0 );
-        do {
-            Handler.getRootServ().sendGlobOp ( "Running: handler->secMaintenance" );
-        } while ( this.handler.runSecMaintenance ( ) > 0 );
+        /* Write everything that is pending, but never wait forever (the
+           database could be down) */
+        Handler.getRootServ().sendGlobOp ( "Writing pending changes to the database.." );
+        int left = 0;
+        while ( System.currentTimeMillis ( ) < stopDeadline + 30000 ) {
+            left = this.handler.runHourMaintenance ( ) + 
+                   this.handler.runMinuteMaintenance ( ) + 
+                   this.handler.runSecMaintenance ( );
+            if ( left == 0 ) {
+                break;
+            }
+            try {
+                Thread.sleep ( 200 );
+            } catch ( InterruptedException ex ) {
+                break;
+            }
+        }
+        if ( left > 0 ) {
+            Proc.log ( "Stopping with "+left+" changes that could not be written to the database" );
+            Handler.getRootServ().sendGlobOp ( "WARNING: "+left+" changes could not be written to the database" );
+        }
         
         Handler.getRootServ().sendGlobOp ( "SERVICES IS NOW STOPPED!..." );
-        Proc.conn.disconnect();
+        if ( Proc.conn != null ) {
+            Proc.conn.disconnect();
+        }
         System.exit ( 0 );
     }
 
@@ -184,6 +199,7 @@ public class Proc extends HashNumeric {
      */
     public static void stopServices ( ) {
         run = false;
+        stopDeadline = System.currentTimeMillis ( ) + 30000;
     }
     
     /**
@@ -378,6 +394,17 @@ public class Proc extends HashNumeric {
     }
 
     private void checkVersion() {
+        /* Without the database we know no registered nicks or channels and
+           would unidentify everyone, so wait for it before linking */
+        while ( ! Database.activateConnection ( ) ) {
+            Proc.log ( "Database not available, waiting for it before linking to the hub" );
+            try {
+                Thread.sleep ( 10000 );
+            } catch ( InterruptedException ex ) {
+                Thread.currentThread().interrupt ( );
+                return;
+            }
+        }
         DBChanges changes = new DBChanges ( Proc.version );
         
     }

@@ -456,10 +456,10 @@ public class NSDatabase extends Database {
     /**
      *
      */
-    public static void loadAllNickExp ( )  {
+    public static boolean loadAllNickExp ( )  {
         NickInfo ni;
         if  ( ! activateConnection ( ) ) {
-            return;
+            return false;
         }
         try {
             String query = "select name,lastsent,mailcount from nickexp;";
@@ -474,18 +474,19 @@ public class NSDatabase extends Database {
             }
         } catch ( NumberFormatException | SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
         }
-        return;
+        return true;
     }
 
     /**
      *
      */
-    public static void loadAllSettings ( )  {
+    public static boolean loadAllSettings ( )  {
         NickInfo ni;
 
         if ( ! activateConnection ( ) ) {
-            return;
+            return false;
         }
         try {
             String query = "select name,noop,neverop,mailblock,showemail,showhost,mark,freeze,hold,noghost from nicksetting";
@@ -510,8 +511,9 @@ public class NSDatabase extends Database {
             idleUpdate ( "loadAllSettings ( ) " );
         } catch  ( SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ), ex );
+            return false;
         } 
-        return;
+        return true;
     }
   
     /**
@@ -809,7 +811,7 @@ public class NSDatabase extends Database {
         long now2;
 
         if ( ! activateConnection ( ) ) {
-            return nList;
+            return null;
         }
         
         try {
@@ -873,6 +875,7 @@ public class NSDatabase extends Database {
             ps.close ( );
         } catch ( SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return null;
         }
         return nList;
     }

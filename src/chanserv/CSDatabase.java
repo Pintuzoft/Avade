@@ -1031,7 +1031,7 @@ public class CSDatabase extends Database {
         long now2;
         int index = 1;
         if ( ! activateConnection ( )  )  {
-            return cList;
+            return null;
         }
         try { 
             now = System.nanoTime();
@@ -1148,7 +1148,8 @@ public class CSDatabase extends Database {
             idleUpdate ( "getAllChans ( ) " );
             
         } catch  ( SQLException | NumberFormatException ex )  {
-            Proc.log ( CSDatabase.class.getName ( ) , ex );    
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+            return null;    
         } 
         System.out.println(index);
         return cList;
@@ -1182,6 +1183,9 @@ public class CSDatabase extends Database {
             while ( res.next ( ) )  {
                 ni = NickServ.findNick ( res.getString ( "nick" ) );
                 ci = ChanServ.findChan ( res.getString ( "name" ) );
+                if ( ci == null || ni == null ) {
+                    continue;
+                }
                 acc = new CSAcc ( ni, access, res.getString ( "lastoped" ) );
                 ci.addAccess ( access, acc );
                 $count++;
@@ -1198,6 +1202,9 @@ public class CSDatabase extends Database {
             while ( res.next ( ) )  {
                 mask = res.getString ( "mask" );
                 ci = ChanServ.findChan ( res.getString ( "name" ) );
+                if ( ci == null ) {
+                    continue;
+                }
                 acc = new CSAcc ( mask, access, res.getString ( "lastoped" ) );
                 ci.addAccess ( access, acc );
                 $count++;
@@ -1215,7 +1222,7 @@ public class CSDatabase extends Database {
     /**
      *
      */
-    public static void loadAllChanAccess ( )  {
+    public static boolean loadAllChanAccess ( )  {
         long now;
         long now2;
         NickInfo ni;
@@ -1263,7 +1270,9 @@ public class CSDatabase extends Database {
 
         } catch ( Exception ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
+            return false;
         }
+        return true;
     }
   
     

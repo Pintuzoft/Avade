@@ -58,6 +58,10 @@ public class MemoServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            this.sendMsg ( user, "Services are loading the nick and channel database, please try again in a moment." );
+            return;
+        }
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
             return; 

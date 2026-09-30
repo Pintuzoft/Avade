@@ -55,7 +55,8 @@ public class NickServ extends Service {
     
     /* Oper stuff */
     private NSSnoop                         snoop;          /* Object that parse and respond to help queries */ 
-    private static HashMap<BigInteger,NickInfo>      niList  = new HashMap<> ( ); /* List of focused regged nicknames */  
+    private static HashMap<BigInteger,NickInfo>      niList  = new HashMap<> ( ); /* List of focused regged nicknames */
+    private static boolean                          loaded  = false;  
     private static TextFormat               f       = new TextFormat ( );
 
     private static ArrayList<NSAuth>        newAuthList = new ArrayList<>();
@@ -84,11 +85,37 @@ public class NickServ extends Service {
     }
      
     private void loadNicks ( )  {
-       niList = NSDatabase.loadAllNicks ( );
-       NSDatabase.loadAllSettings();
-       NSDatabase.loadAllNickExp();
-       MSDatabase.loadAllMemos();
-       
+        loaded = false;
+        HashMap<BigInteger,NickInfo> nicks = NSDatabase.loadAllNicks ( );
+        if ( nicks == null ) {
+            Proc.log ( "NickServ: could not load the nicks from the database" );
+            return;
+        }
+        niList = nicks;
+        if ( ! NSDatabase.loadAllSettings() ||
+             ! NSDatabase.loadAllNickExp() ||
+             ! MSDatabase.loadAllMemos() ) {
+            Proc.log ( "NickServ: could not load nick settings/memos from the database" );
+            return;
+        }
+        loaded = true;
+    }
+
+    /**
+     * @return true when all nicks are loaded from the database. Until then
+     *         services must not touch anyone's identification or access.
+     */
+    public static boolean isLoaded ( ) {
+        return loaded;
+    }
+
+    /**
+     * Try to load the nicks again
+     * @return
+     */
+    public boolean retryLoad ( ) {
+        this.loadNicks ( );
+        return loaded;
     }
 
     /**
@@ -159,6 +186,10 @@ public class NickServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            this.sendMsg ( user, "Services are loading the nick and channel database, please try again in a moment." );
+            return;
+        }
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
             return; 
@@ -598,7 +629,8 @@ public class NickServ extends Service {
     public static void fixIdentState ( User u )  {
         NickInfo ni;
 
-        if ( u == null ) {
+        if ( u == null || ! Handler.isDataLoaded ( ) ) {
+            /* Never unidentify anyone before we know the registered nicks */
             return;
         }
         

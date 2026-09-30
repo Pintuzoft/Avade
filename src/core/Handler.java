@@ -99,7 +99,9 @@ public class Handler extends HashNumeric {
     public Handler ( )  { 
         db              = new Database ( );
         Handler.initServices ( );
-        Database.loadSIDs ( );
+        if ( Handler.isDataLoaded ( ) ) {
+            Database.loadSIDs ( );
+        }
  //       Handler.printSIDs();
         this.trigger    = new Trigger ( );
         this.services   = new Services ( );
@@ -138,6 +140,59 @@ public class Handler extends HashNumeric {
         /* A SERVER line we could not parse has no name */
         if ( server.getName ( ) != null ) {
             sList.add ( server );
+        }
+    }
+
+    /**
+     * @return true when all registered nicks and channels are loaded. Until
+     *         then services must not touch anyone's identification or access.
+     */
+    public static boolean isDataLoaded ( ) {
+        return NickServ.isLoaded ( ) && ChanServ.isLoaded ( );
+    }
+
+    private static long lastLoadAttempt = 0;
+
+    /* Nicks or channels failed to load at start, try again every 30 seconds */
+    private void retryLoadIfNeeded ( ) {
+        if ( isDataLoaded ( ) || nick == null || chan == null ||
+             System.currentTimeMillis ( ) - lastLoadAttempt < 30000 ) {
+            return;
+        }
+        lastLoadAttempt = System.currentTimeMillis ( );
+        if ( ! NickServ.isLoaded ( ) ) {
+            nick.retryLoad ( );
+        }
+        if ( NickServ.isLoaded ( ) && ! ChanServ.isLoaded ( ) ) {
+            chan.retryLoad ( );
+        }
+        if ( isDataLoaded ( ) ) {
+            this.onDataLoaded ( );
+        }
+    }
+
+    /* Everything we held back while the data was missing */
+    private void onDataLoaded ( ) {
+        Proc.log ( "Nicks and channels loaded, checking all users" );
+        oper.sendGlobOp ( "Nicks and channels loaded from the database, checking all users" );
+        Database.loadSIDs ( );
+        for ( User u : new ArrayList<> ( uList.values ( ) ) ) {
+            ServicesID sid;
+            if ( u.getServiceStamp ( ) > 999 && ( sid = findSid ( u.getServiceStamp ( ) ) ) != null ) {
+                u.setSID ( sid );
+                sid.addUser ( u );
+            }
+            NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
+            if ( ni != null && u.getModes().is ( IDENT ) ) {
+                u.getSID().add ( ni );
+            }
+            NickServ.fixIdentState ( u );
+        }
+        for ( Chan c : new ArrayList<> ( cList.values ( ) ) ) {
+            c.addCheckUsers ( );
+        }
+        if ( isSynced ( ) ) {
+            root.fixMaster ( );
         }
     }
 
@@ -535,7 +590,8 @@ public class Handler extends HashNumeric {
         /* Only services can set +r, so trust it for the current nick */
         if ( ni != null && ( u.getModes().is ( IDENT ) || u.getSID().isIdentified ( ni ) ) ) {
             u.getSID().add ( ni );
-        } else {
+        } else if ( Handler.isDataLoaded ( ) ) {
+            /* (without the registered nicks we can't tell, leave +r alone) */
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
             u.getModes().set ( IDENT, false );
         }
@@ -1140,6 +1196,7 @@ public class Handler extends HashNumeric {
 
     public int runSecMaintenance() {
         int todoAmount = 0;
+        this.retryLoadIfNeeded ( );
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             entry.getValue().secMaintenence ( );
         }

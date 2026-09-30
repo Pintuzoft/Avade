@@ -46,6 +46,7 @@ public class User extends HashNumeric {
     private UserMode                    modes; 
     private ArrayList<Chan>             cList;
     private ServicesID                  sid;
+    private long            serviceStamp;
     private HostInfo                    hi;
     
     private UserFlood                   flood;
@@ -67,6 +68,7 @@ public class User extends HashNumeric {
         this.date       = new Date ( );
         this.state      = 0; 
         sidBuf          = Long.parseLong ( data[8] ); /* buffer */ 
+        this.serviceStamp = sidBuf;
         this.signOn     = Long.parseLong ( data[3] ); 
         this.modes      = new UserMode ( );
         this.modes.set ( SERVER, data );
@@ -547,6 +549,13 @@ public class User extends HashNumeric {
      *
      * @param sid
      */
+    /**
+     * @return the services ID the ircd told us the user has (NICK line)
+     */
+    public long getServiceStamp ( ) {
+        return this.serviceStamp;
+    }
+
     public void setSID ( ServicesID sid ) {
         this.sid = sid;
     }
