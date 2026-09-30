@@ -39,6 +39,8 @@ public class Proc extends HashNumeric {
  
    // private ServSock                    conn;
     private static ServSock             conn;
+    private static long                 lastConnectAttempt = 0;
+    private static final long           RECONNECT_DELAY = 30000; /* ms between attempts to relink */
 
     private Handler                     handler;
     private static boolean              run; 
@@ -106,7 +108,7 @@ public class Proc extends HashNumeric {
                 sleep = 0;
             }
             
-            this.read = Proc.conn.readLine();
+            this.read = ( Proc.conn != null ? Proc.conn.readLine() : null );
              
             if ( this.read != null )  {
                 /* We found some new data, send it to the handler */ 
@@ -135,17 +137,18 @@ public class Proc extends HashNumeric {
             minAgo = System.nanoTime ( ) - this.minuteDelay;
             if ( this.minMaintenance < minAgo )  {
                 this.handler.runMinuteMaintenance ( );
-                if ( Proc.conn.timedOut() ) { /* Did we time out? */
+                if ( Proc.conn != null && Proc.conn.timedOut() ) { /* Did we time out? */
+                    Proc.log ( "Link to hub timed out, reconnecting" );
                     Proc.conn.disconnect();
-                    this.connect();
-                    Handler.unloadServices ( );
-                    Handler.initServices ( );
                 }
                 this.minMaintenance = System.nanoTime ( );
             }
             /* SECOND */
             secAgo = System.nanoTime() - this.secondDelay;
             if ( this.secMaintenance < secAgo )  {
+                if ( Proc.conn == null || Proc.conn.isClosed() ) {
+                    this.reconnectIfDue ( );
+                }
                 todoAmount = this.handler.runSecMaintenance ( );
                 if ( Handler.sanityCheck ( ) ) {
                     Handler.initServices ( );
@@ -187,24 +190,38 @@ public class Proc extends HashNumeric {
     }
     
     private void connect ( ) {
+        lastConnectAttempt = System.currentTimeMillis ( );
         try { 
             conn = new ServSock ( );
         } catch ( Exception e ) {
-            Proc.log ( Proc.class.getName ( ) , e ); 
+            conn = null;
+            Proc.log ( "Could not connect to the hub, retrying in "+( RECONNECT_DELAY / 1000 )+" seconds" );
         } 
     }
 
+    /* Relink to the hub when the link is gone, without hammering it */
+    private void reconnectIfDue ( ) {
+        if ( System.currentTimeMillis ( ) - lastConnectAttempt < RECONNECT_DELAY ) {
+            return;
+        }
+        Proc.log ( "Link to hub lost, reconnecting" );
+        this.connect ( );
+        if ( conn != null ) {
+            /* New link: forget the old network state before the new burst is
+               read and introduce the services again. The services stay loaded
+               (with all registered nicks and chans) the whole time */
+            Handler.resetNetwork ( );
+            Handler.reintroduceServices ( );
+        }
+    }
+
     /**
-     *
+     * Drop the link to the hub, the main loop reconnects
      */
     public static void reConnect ( ) {
-        try { 
-            Handler.unloadServices();
-            conn = new ServSock ( );
-            Handler.initServices();
-        } catch ( Exception e ) {
-            Proc.log ( Proc.class.getName ( ) , e ); 
-        } 
+        if ( conn != null ) {
+            conn.disconnect ( );
+        }
     }
 
 

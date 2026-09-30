@@ -130,6 +130,39 @@ public class Handler extends HashNumeric {
     /**
      *
      */
+    /**
+     * Forget everything we know about the network (users, channels and
+     * servers), used before we relink to the hub and get a new burst
+     */
+    public static void resetNetwork ( ) {
+        for ( User u : uList.values ( ) ) {
+            if ( u.getSID ( ) != null ) {
+                u.getSID().remUser ( );
+            }
+        }
+        uList.clear ( );
+        cList.clear ( );
+        sList.clear ( );
+        ChanServ.clearCheckUsers ( );
+        resetSync ( );
+    }
+
+    /**
+     * Introduce the loaded services on the network again after a relink.
+     * Registered nicks and channels stay loaded, reloading them would give
+     * new objects that identified users and services IDs don't point at.
+     */
+    public static void reintroduceServices ( ) {
+        Service[] services = { root, oper, nick, chan, memo, guest, global };
+        for ( Service s : services ) {
+            if ( s != null ) {
+                s.introduce ( );
+            }
+        }
+        /* Load anything that was never loaded */
+        Handler.initServices ( );
+    }
+
     public static void unloadServices ( ) {
         root = null;
         oper = null;
@@ -220,6 +253,23 @@ public class Handler extends HashNumeric {
 
                     } else if ( command.is(OS) ) {
                         doOS ( this.data );
+
+                    } else if ( command.is(SQUIT) ) {
+                        /* :hub SQUIT leaf :reason */
+                        this.doSquit ( this.data[2] );
+
+                    } else if ( command.is(KILL) ) {
+                        /* :server KILL nick :reason (collisions, opers) */
+                        User u;
+                        if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
+                            deleteUser ( u );
+                        }
+
+                    } else if ( command.is(KICK) ) {
+                        doKick ( null );
+
+                    } else if ( command.is(MODE) && isChanName ( this.data[2] ) ) {
+                        doMode ( null );
                     }
                     
                 } else {
@@ -301,7 +351,7 @@ public class Handler extends HashNumeric {
                     this.doChan ( false );
                 
                 } else if ( this.command.is(SQUIT) ) {
-                    this.doSquit ( );
+                    this.doSquit ( this.data[1] );
                 
                 } else if ( this.command.is(SVINFO) ) {
                     this.doSVInfo ( );
@@ -397,8 +447,8 @@ public class Handler extends HashNumeric {
         }
     }
     
-    private void doSquit ( )  {
-        Server s = findServer ( this.data[1] );
+    private void doSquit ( String name )  {
+        Server s = findServer ( name );
         if ( s != null )  {
             if ( s.getLink ( )  != null )  {
                 s.getLink().remServer ( s ); /* remove server from leaf list on hub */
@@ -1603,13 +1653,9 @@ public class Handler extends HashNumeric {
     }
 
     private void doError ( ) {
-        HashString sub1 = new HashString ( this.data[1].replace(":", "") );
-        HashString sub2 = new HashString ( this.data[2].replace(":", "") );
-        
-        if ( sub1 == CLOSING && 
-             sub2 == LINK ) {
-            this.reInitServices ( );
-        }
+        /* The hub only sends ERROR right before it closes the link */
+        Proc.log ( "Hub sent: "+String.join ( " ", this.data ) );
+        this.reInitServices ( );
     }
 
     /**

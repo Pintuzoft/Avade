@@ -78,6 +78,13 @@ import java.util.Date;
         this.init ( );
     }
     
+    /**
+     * Introduce this service on the network again, used after a relink
+     */
+    public void introduce ( )  {
+        this.send ( NICK, this.name.getString() );
+    }
+    
     private void init ( )  {
         this.date       = new Date ( );
         this.user       = Proc.getConf().get ( SERVICEUSER );

@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -52,15 +53,17 @@ public class ServSock extends HashNumeric {
     private static long pingTime;
     private static long lastPing;
     private static long defaultPing = 120000;
+    private volatile boolean closed = false;
 
     /**
      *
      */
-    public ServSock() {
+    public ServSock() throws IOException {
         last = System.currentTimeMillis();
         lastPing = this.last;
         try {
-            this.sock = new Socket(Proc.getConf().get(HUBHOST).getString(), Integer.parseInt(Proc.getConf().get(HUBPORT).getString()));
+            this.sock = new Socket();
+            this.sock.connect(new InetSocketAddress(Proc.getConf().get(HUBHOST).getString(), Integer.parseInt(Proc.getConf().get(HUBPORT).getString())), 10000);
             this.sock.setKeepAlive(true);
             this.sock.setSoTimeout(200);
             out = new PrintWriter(new OutputStreamWriter(this.sock.getOutputStream(), StandardCharsets.UTF_8), true);
@@ -68,11 +71,11 @@ public class ServSock extends HashNumeric {
 
         } catch (UnknownHostException e) {
             System.out.println("Don't know about host: " + Proc.getConf().get(HUBNAME));
-            System.exit(1);
+            throw e;
 
         } catch (IOException e) {
             System.out.println("Couldn't get I/O for the connection to: " + Proc.getConf().get(HUBNAME));
-            System.exit(1);
+            throw e;
         }
 
         // this.stdIn = new BufferedReader ( new InputStreamReader ( System.in )  );
@@ -88,12 +91,22 @@ public class ServSock extends HashNumeric {
     }
 
     /**
+     * @return true when the link to the hub is gone
+     */
+    public boolean isClosed() {
+        return this.closed;
+    }
+
+    /**
      *
      * @return
      */
     public String readLine() {
         try {
             int b;
+            if (this.closed) {
+                return null;
+            }
             while ((b = this.in.read()) != -1) {
                 if (b == '\n') {
                     this.buf = decode(this.lineBuf.toByteArray());
@@ -106,10 +119,12 @@ public class ServSock extends HashNumeric {
                     this.lineBuf.write(b);
                 }
             }
+            /* End of stream, the hub closed the link */
+            this.closed = true;
         } catch (SocketTimeoutException ex) {
             /* Nothing more to read right now, keep any partial line for the next call */
         } catch (IOException ex) {
-            // Logger.getLogger(ServSock.class.getName()).log(Level.SEVERE, null, ex);
+            this.closed = true;
         }
         return null;
     }
@@ -136,6 +151,7 @@ public class ServSock extends HashNumeric {
      *
      */
     public void disconnect() {
+        this.closed = true;
         try {
             this.sock.close();
             out.close();
@@ -154,7 +170,9 @@ public class ServSock extends HashNumeric {
             if (!cmd.contains("PONG")) {
                 //System.out.println ( "Sending: "+cmd );
             }
-            out.println (cmd);
+            if (out != null) {
+                out.println (cmd);
+            }
         } catch (Exception e) {
             Proc.log(ServSock.class.getName(), e);
         }

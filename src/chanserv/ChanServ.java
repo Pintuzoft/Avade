@@ -762,6 +762,13 @@ public class ChanServ extends Service {
         return todoAmount;
     }
  
+    /**
+     * Drop pending user checks, used when we relink to the hub
+     */
+    public static void clearCheckUsers ( ) {
+        chUserCheckList.clear ( );
+    }
+
     private static void checkUserList ( ) {
         ArrayList<UserCheck> checked = new ArrayList<>();
         for ( UserCheck uc : chUserCheckList ) {
