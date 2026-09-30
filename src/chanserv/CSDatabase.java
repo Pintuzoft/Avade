@@ -132,7 +132,7 @@ public class CSDatabase extends Database {
                         "max_bans,max_invites,max_msg_time,no_notice,no_ctcp,no_part_msg,no_quit_msg,"+
                         "exempt_opped,exempt_voiced,exempt_identd,exempt_registered,"+
                         "exempt_invites,exempt_webirc,hide_mode_lists,no_nick_change,no_utf8,greetmsg) "+
-                        "values (?,0,0,0,200,0,'0:0',0,0,0,0,0,0,0,0,0,0,0,0,0,null)";
+                        "values (?,0,0,0,200,100,'0:0',0,0,0,0,0,0,0,0,0,0,0,0,0,null)";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );
@@ -243,6 +243,9 @@ public class CSDatabase extends Database {
         if ( ci.getChanges().hasChanged ( NO_PART_MSG ) ) {
             changes = addToQuery ( changes, "no_part_msg" );
         }
+        if ( ci.getChanges().hasChanged ( NO_QUIT_MSG ) ) {
+            changes = addToQuery ( changes, "no_quit_msg" );
+        }
         if ( ci.getChanges().hasChanged ( EXEMPT_OPPED ) ) {
             changes = addToQuery ( changes, "exempt_opped" );
         }
@@ -269,6 +272,12 @@ public class CSDatabase extends Database {
         }
         if ( ci.getChanges().hasChanged ( NO_UTF8 ) ) {
             changes = addToQuery ( changes, "no_utf8" );
+        }
+        if ( ci.getChanges().hasChanged ( USER_VERBOSE ) ) {
+            changes = addToQuery ( changes, "user_verbose" );
+        }
+        if ( ci.getChanges().hasChanged ( OPER_VERBOSE ) ) {
+            changes = addToQuery ( changes, "oper_verbose" );
         }
         if ( ci.getChanges().hasChanged ( GREETMSG ) ) {
             changes = addToQuery ( changes, "greetmsg" );
@@ -434,6 +443,9 @@ public class CSDatabase extends Database {
             if ( ci.getChanges().hasChanged ( NO_PART_MSG ) ) {
                 ps.setBoolean ( index++, cf.isNopartmsg ( ) );
             }
+            if ( ci.getChanges().hasChanged ( NO_QUIT_MSG ) ) {
+                ps.setBoolean ( index++, cf.isNoquitmsg ( ) );
+            }
             if ( ci.getChanges().hasChanged ( EXEMPT_OPPED ) ) {
                 ps.setBoolean ( index++, cf.isExemptopped ( ) );
             }
@@ -460,6 +472,12 @@ public class CSDatabase extends Database {
             }
             if ( ci.getChanges().hasChanged ( NO_UTF8 ) ) {
                 ps.setBoolean ( index++, cf.isNoutf8());
+            }
+            if ( ci.getChanges().hasChanged ( USER_VERBOSE ) ) {
+                ps.setBoolean ( index++, cf.isUserverbose());
+            }
+            if ( ci.getChanges().hasChanged ( OPER_VERBOSE ) ) {
+                ps.setBoolean ( index++, cf.isOperverbose());
             }
 
             if ( ci.getChanges().hasChanged ( GREETMSG ) ) {
@@ -1041,7 +1059,7 @@ public class CSDatabase extends Database {
                          + "cs.modelock,cs.mark,cs.freeze,cs.close,cs.hold,cs.auditorium,"
                          + "tl.topic,tl.setter,unix_timestamp(tl.stamp) as tlunixstamp,tl.stamp as tlstamp,"
                          + "cf.join_connect_time,cf.talk_connect_time,cf.talk_join_time,cf.max_bans,cf.max_invites,cf.max_msg_time,cf.no_notice,cf.no_ctcp,cf.no_part_msg,cf.no_quit_msg,"
-                         + "cf.exempt_opped,cf.exempt_voiced,cf.exempt_identd,cf.exempt_registered,cf.exempt_invites,cf.exempt_webirc,cf.hide_mode_lists,no_nick_change,cf.no_utf8,cf.greetmsg "
+                         + "cf.exempt_opped,cf.exempt_voiced,cf.exempt_identd,cf.exempt_registered,cf.exempt_invites,cf.exempt_webirc,cf.hide_mode_lists,no_nick_change,cf.no_utf8,cf.user_verbose,cf.oper_verbose,cf.greetmsg "
                          + "from chan as c "
                          + "left join (select t.name,t.setter,t.stamp,t.topic from topiclog as t "
                          + "join (select name,max(stamp) as mstamp from topiclog group by name) as m on m.name=t.name and m.mstamp=t.stamp) as tl on tl.name=c.name "
@@ -1087,6 +1105,7 @@ public class CSDatabase extends Database {
                         res.getBoolean("no_nick_change"),
                         res.getBoolean("no_utf8"),
                         res.getString("greetmsg") );
+                flags.setVerbose ( res.getBoolean ( "user_verbose" ), res.getBoolean ( "oper_verbose" ) );
                 settings = new ChanSetting ( );
                 if ( res.getBoolean ( "keeptopic" ) == true ) {
                     settings.set ( KEEPTOPIC, true );
@@ -1348,7 +1367,7 @@ public class CSDatabase extends Database {
             query = "select join_connect_time, talk_connect_time, talk_join_time, max_bans, max_invites, max_msg_time,"+
                            "no_notice, no_ctcp, no_part_msg, no_quit_msg, exempt_opped, "+
                            "exempt_voiced, exempt_identd, exempt_registered, exempt_invites, exempt_webirc, hide_mode_lists,"+
-                           "no_nick_change,no_utf8,greetmsg "+
+                           "no_nick_change,no_utf8,user_verbose,oper_verbose,greetmsg "+
                     "from chanflag "+
                     "where name = ?";
 //            System.out.println(query);
@@ -1378,6 +1397,7 @@ public class CSDatabase extends Database {
                         res2.getBoolean("no_nick_change"),
                         res2.getBoolean("no_utf8"),
                         res2.getString("greetmsg") );
+                cf.setVerbose ( res2.getBoolean ( "user_verbose" ), res2.getBoolean ( "oper_verbose" ) );
             }
         } catch ( SQLException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );

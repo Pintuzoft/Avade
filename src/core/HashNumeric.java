@@ -789,6 +789,16 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString USER_VERBOSE = new HashString ( "USER_VERBOSE" );
+
+    /**
+     *
+     */
+    public static HashString OPER_VERBOSE = new HashString ( "OPER_VERBOSE" );
+
+    /**
+     *
+     */
     public static HashString ALL = new HashString ( "ALL" );
 
     /**

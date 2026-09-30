@@ -1766,7 +1766,8 @@ public class CSExecutor extends Executor {
         if ( command.is(JOIN_CONNECT_TIME) ||
              command.is(TALK_CONNECT_TIME) ||
              command.is(TALK_JOIN_TIME) ||
-             command.is(MAX_BANS) ) {
+             command.is(MAX_BANS) ||
+             command.is(MAX_INVITES) ) {
             short sho;
             if ( commandVal == null ) 
                 commandVal = "0";
@@ -1777,6 +1778,15 @@ public class CSExecutor extends Executor {
                 return;
             }
             ci.getChanFlag().setShortFlag ( command, sho );
+            ci.getChanges().change ( command );
+            ci.changed(command);
+            this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
+            this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+            this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
+        
+        } else if ( command.is(MAX_MSG_TIME) ) {
+            /* <messages>:<seconds> */
+            ci.getChanFlag().setStringFlag ( command, commandVal );
             ci.getChanges().change ( command );
             ci.changed(command);
             this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
@@ -1794,7 +1804,10 @@ public class CSExecutor extends Executor {
                 command.is(EXEMPT_INVITES) ||
                 command.is(EXEMPT_WEBIRC) || 
                 command.is(NO_NICK_CHANGE) || 
-                command.is(NO_UTF8) 
+                command.is(NO_UTF8) ||
+                command.is(HIDE_MODE_LISTS) ||
+                command.is(USER_VERBOSE) ||
+                command.is(OPER_VERBOSE)
                 ) {
             boolean boo = ( commandVal.equalsIgnoreCase ( "ON" ) );
             ci.getChanFlag().setBooleanFlag ( command, boo );
@@ -1833,7 +1846,10 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, "  - EXEMPT_INVITES: "+( cf.isExemptinvites()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - EXEMPT_WEBIRC: "+( cf.isExemptwebirc()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - NO_NICK_CHANGE: "+( cf.isNonickchange()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - HIDE_MODE_LISTS: "+( cf.isHidemodelists()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - NO_UTF8: "+( cf.isNoutf8()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - USER_VERBOSE: "+( cf.isUserverbose()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - OPER_VERBOSE: "+( cf.isOperverbose()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
             this.service.sendMsg ( user, "*** End of List ***" );
             this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );
@@ -1952,6 +1968,10 @@ public class CSExecutor extends Executor {
                 } else if ( ! CSFlag.isFlag ( cmd[5] ) ) {
                     result.setString1 ( new HashString ( cmd[5] ) );
                     result.setStatus ( NO_SUCH_CHANFLAG );
+                } else if ( new HashString ( cmd[5] ).is(OPER_VERBOSE) && ! user.isAtleast ( SA ) ) {
+                    /* Sends notices to opers, not for channel founders to decide */
+                    result.setString1 ( ci.getName() );
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( ! CSFlag.isOkValue ( cmd[5], ( cmd.length > 6 ? cmd[6] : "" ) ) ) {
                     result.setStatus ( BAD_CHANFLAG_VALUE );
                 } else {

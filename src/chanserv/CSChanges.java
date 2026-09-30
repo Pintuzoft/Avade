@@ -61,6 +61,7 @@ public class CSChanges extends Changes {
     private boolean exemptregistered;
     private boolean exemptinvites;
     private boolean greetmsg;
+    private final java.util.HashSet<java.math.BigInteger> other = new java.util.HashSet<>();
     
     /**
      * CSChanges
@@ -110,6 +111,7 @@ public class CSChanges extends Changes {
         this.exemptregistered = false;
         this.exemptinvites = false;
         this.greetmsg = false;
+        this.other.clear ( );
     }
     
     /**
@@ -151,7 +153,7 @@ public class CSChanges extends Changes {
         else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exemptregistered;     }
         else if ( setting.is(EXEMPT_INVITES) )      { return this.exemptinvites;        }
         else if ( setting.is(GREETMSG) )            { return this.greetmsg;             }
-        return false;        
+        return this.other.contains ( setting.getCode() );        
     }
     
     /**
@@ -289,6 +291,11 @@ public class CSChanges extends Changes {
             
         } else if ( setting.is(GREETMSG) ) {
             this.greetmsg = true;
+            this.changed = true;
+        
+        } else {
+            /* Settings without a field of their own (the newer chanflags) */
+            this.other.add ( setting.getCode() );
             this.changed = true;
         }  
     }

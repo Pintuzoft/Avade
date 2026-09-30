@@ -197,6 +197,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126094 ( ) );
                 qList.add ( "update settings set value = '1.2609-4' where name = 'version'" );
 
+            case 126095 :
+                qList.add ( "to: v1.2609-5");
+                qList.addAll ( this.db126095 ( ) );
+                qList.add ( "update settings set value = '1.2609-5' where name = 'version'" );
+
                 break;
                 
             default :
@@ -653,6 +658,17 @@ public class DBChanges extends HashNumeric {
         }
         qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
         qList.add("SET FOREIGN_KEY_CHECKS=1");
+        return qList;
+    }
+
+    private ArrayList<String> db126095 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Chanflags USER_VERBOSE and OPER_VERBOSE */
+        qList.add("alter table chanflag add user_verbose tinyint(1) default 0 after no_utf8");
+        qList.add("alter table chanflag add oper_verbose tinyint(1) default 0 after user_verbose");
+        /* Channels were registered with max_invites 0, which after a restart
+           was sent to the ircd and disabled the +I list */
+        qList.add("update chanflag set max_invites = 100 where max_invites = 0");
         return qList;
     }
 
