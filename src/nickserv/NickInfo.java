@@ -279,10 +279,15 @@ public class NickInfo extends HashNumeric {
             return false;
         }
         
+        if ( this.throttle.isThrottled ( ) ) {
+            return false;
+        }
         if ( this.pass.compareTo ( pass ) == 0 )  {
+            this.throttle.reset ( );
             this.changes.hasChanged ( LASTUSED );
             return true;
         }
+        this.throttle.hit ( );
         return false;
     }
     

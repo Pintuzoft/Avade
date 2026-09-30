@@ -247,7 +247,15 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public boolean identify ( User user, String pass )  {
-        return ( this.pass.compareTo ( pass )  == 0 );
+        if ( pass == null || this.throttle.isThrottled ( ) ) {
+            return false;
+        }
+        if ( this.pass.compareTo ( pass ) == 0 ) {
+            this.throttle.reset ( );
+            return true;
+        }
+        this.throttle.hit ( );
+        return false;
     }
 
     /**
@@ -669,6 +677,9 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public boolean isAccess ( HashString access, NickInfo ni )  {
+        if ( ni == null ) {
+            return false;
+        }
         return ( getAccessList(access).get(ni.getName().getCode()) != null );
     }
 

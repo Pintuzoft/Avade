@@ -177,8 +177,11 @@ public class Handler extends HashNumeric {
         User uBuf;
         NickInfo nBuf;
         this.data   = null; 
-        System.out.println ( read );
         this.data   = read.split ( " " ); 
+        /* Never echo private messages, they carry passwords for the services */
+        if ( this.data.length < 2 || ! this.data[1].equalsIgnoreCase ( "PRIVMSG" ) ) {
+            System.out.println ( read );
+        }
          
         try { 
             if ( this.data[0].isEmpty ( ) ) { 

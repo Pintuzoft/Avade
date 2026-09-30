@@ -61,6 +61,7 @@ public class Snoop extends HashNumeric {
      */
     public String fixArray ( boolean ok, User user, String[] arr )  {
          
+        arr = this.redact ( arr );
         String str = "";
         int index = 3;
         int start = 3;
@@ -83,6 +84,45 @@ public class Snoop extends HashNumeric {
      *
      * @return
      */
+    /**
+     * Mask secrets (passwords, auth codes) in a command before it is
+     * sent to the snoop channel or written to the snoop log.
+     * Subclasses override this for their own commands.
+     * @param arr
+     * @return
+     */
+    protected String[] redact ( String[] arr ) {
+        return arr;
+    }
+
+    /**
+     * Returns a copy of arr where the given indexes are masked
+     * @param arr
+     * @param indexes
+     * @return
+     */
+    protected static String[] mask ( String[] arr, int... indexes ) {
+        String[] copy = arr.clone ( );
+        for ( int index : indexes ) {
+            if ( index > 3 && index < copy.length ) {
+                copy[index] = "<redacted>";
+            }
+        }
+        return copy;
+    }
+
+    /**
+     * Returns the command name (arr[3] without the leading ':') in upper case
+     * @param arr
+     * @return
+     */
+    protected static String commandOf ( String[] arr ) {
+        if ( arr == null || arr.length < 4 ) {
+            return "";
+        }
+        return arr[3].replaceFirst ( "^:", "" ).toUpperCase ( );
+    }
+
     public int maintenance ( ) {
         int todoAmount = 0;
         todoAmount += writeLogs ( );

@@ -281,7 +281,7 @@ public class ChanServ extends Service {
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
                 ci.setLastUsed ( );
-                if ( ni != null && ni.is(NEVEROP) ) {
+                if ( ni != null && ni.isSet(NEVEROP) ) {
                     /* Dont op */
                 } else {
                     opUser ( c, user );
@@ -872,16 +872,24 @@ public class ChanServ extends Service {
         } else if ( ! ci.getSettings().is(DYNAOP) ) {
             return;
             
-        } else if ( ( op = NickServ.findNick(setter.getName())) == null ) {
+        } else if ( ( op = ci.getNickByUser ( setter ) ) == null ) {
             return;
             
         } else if ( ( ni = NickServ.findNick(user.getName())) == null ) {
+            return;
+            
+        } else if ( user.getSID() == null || ! user.getSID().isIdentified ( ni ) ) {
+            /* Only add nicks the opped user is identified to */
             return;
             
         } else if ( ! ci.isAtleastAop(op) ) {
             return;
             
         } else if ( ci.isAtleastAop(ni) ) {
+            return;
+            
+        } else if ( ni.isSet ( NOOP ) || ci.isAccess ( AKICK, ni ) ) {
+            /* Respect NOOP and never silently remove an AKICK entry */
             return;
         }
         
@@ -909,7 +917,7 @@ public class ChanServ extends Service {
         } else if ( ! ci.getSettings().is(DYNAOP) ) {
             return;
             
-        } else if ( ( op = NickServ.findNick(setter.getName())) == null ) {
+        } else if ( ( op = ci.getNickByUser ( setter ) ) == null ) {
             return;
             
         } else if ( ( ni = NickServ.findNick(user.getName())) == null ) {
@@ -918,7 +926,8 @@ public class ChanServ extends Service {
         } else if ( ! ci.isAtleastAop(op) ) {
             return;
             
-        } else if ( ci.isAtleastSop(ni) ) {
+        } else if ( ci.getAccessByNick ( op ) <= ci.getAccessByNick ( ni ) ) {
+            /* Only remove nicks with lower access than the setter */
             return;
         } else if ( ( acc = ci.getAccess(AOP, ni) ) == null ) {
             return;

@@ -176,4 +176,23 @@ public class CSSnoop extends Snoop {
                 return "UnDefined"; 
             }
     } 
+
+    @Override
+    protected String[] redact ( String[] arr ) {
+        // :nick PRIVMSG ChanServ@services :CMD #chan arg2 arg3 ..
+        //   0      1          2            3    4     5    6
+        switch ( commandOf ( arr ) ) {
+            case "REGISTER" :
+            case "IDENTIFY" :
+            case "DROP" :
+                return mask ( arr, 5 );
+            case "SET" :
+                if ( arr.length > 5 && arr[5].toUpperCase().startsWith ( "PASS" ) ) {
+                    return mask ( arr, 6, 7 );
+                }
+                return arr;
+            default :
+                return arr;
+        }
+    }
 }

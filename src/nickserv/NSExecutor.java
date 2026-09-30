@@ -484,6 +484,11 @@ import java.util.regex.Pattern;
                 this.service.sendGlobOp (output (GLOB_IS_NOGHOST, user.getFullMask(), result.getNick().getNameStr() ) );
                 this.snoop.msg (false, IS_NOGHOST, result.getNick().getNameStr(), user, cmd );
                 return;            
+        
+        } else if ( result.is(IS_THROTTLED) ) {
+                this.service.sendMsg (user, output (IS_THROTTLED, result.getNick().getNameStr() ) );
+                this.snoop.msg (false, IS_THROTTLED, result.getNick().getNameStr(), user, cmd );
+                return;            
         }  
          
         ni = result.getNick ( );
@@ -1096,6 +1101,9 @@ import java.util.regex.Pattern;
                 } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
+                } else if ( command.is(DROP) && ni.isSet ( MARKED ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
                 } else if ( ! ni.is(user) && ni.getThrottle().isThrottled() ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_THROTTLED );
@@ -1143,6 +1151,9 @@ import java.util.regex.Pattern;
                 } else if ( ni.isSet ( NOGHOST ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_NOGHOST ); 
+                } else if ( ni.getThrottle().isThrottled() ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_THROTTLED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
                     result.setStatus ( IDENTIFY_FAIL );
                 } else {

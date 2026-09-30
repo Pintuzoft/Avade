@@ -296,6 +296,11 @@ public class CSExecutor extends Executor {
             this.service.sendMsg (user, output (NICK_NOT_PRESENT, result.getString1().getString() ) ); 
             this.snoop.msg (false, NICK_NOT_PRESENT, result.getString1 ( ), user, cmd );
             return;
+
+        } else if ( result.was(NOT_ENOUGH_ACCESS) ) {
+            this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1().getString() ) ); 
+            this.snoop.msg (false, NOT_ENOUGH_ACCESS, result.getString1 ( ), user, cmd );
+            return;
         }        
          
         Chan c = result.getChan ( );
@@ -659,21 +664,22 @@ public class CSExecutor extends Executor {
             /* too short or wrong*/
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "AKICK <#chan> <ADD|DEL|LIST> [<nick|#NUM>]" )  );
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-        } 
-        
+            return;
+        }
+
         ci = ChanServ.findChan ( cmd[4] );
-        ni = ci.getNickByUser ( user );
-       
-        if ( ni == null )  {
+        ni = ( ci != null ? ci.getNickByUser ( user ) : null );
+
+        if ( ci == null )  {
+            /* no channel */
+            this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] ) );
+            this.snoop.msg ( false, CHAN_NOT_REGISTERED, new HashString ( cmd[4] ), user, cmd );
+
+        } else if ( ni == null )  {
             /* no nick with access */
             this.service.sendMsg ( user, output ( ACCESS_DENIED, "NickServ" ) );
             this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
 
-        } else if ( ci == null )  {
-            /* no channel */
-            this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] ) );
-            this.snoop.msg ( false, CHAN_NOT_REGISTERED, new HashString ( cmd[4] ), user, cmd );
-        
         } else if ( ! ci.isFounder ( ni )  )  {
             /* does not have access */
             this.service.sendMsg ( user, output ( ACCESS_DENIED, ci.getNameStr ( ) ) );
@@ -1636,14 +1642,20 @@ public class CSExecutor extends Executor {
         // 0            1       2                          3          4       = 5
         if ( ! CSDatabase.checkConn() ) {
             this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
         }
         CMDResult result = this.validateCommandData ( user, TOPICLOG, cmd );
 
         if ( result.was(SYNTAX_ERROR) ) {
-            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "ACCESSLOG <chan>" ) ); 
-            this.snoop.msg (false, SYNTAX_ERROR, result.getChanInfo().getName(), user, cmd );
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "TOPICLOG <chan>" ) );
+            this.snoop.msg (false, SYNTAX_ERROR, user.getName(), user, cmd );
             return;
-            
+
+        } else if ( result.was(ACCESS_DENIED) ) {
+            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
+            return;
+
         } else if ( result.was(CHAN_NOT_REGISTERED) ) {
             this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) );
             this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1(), user, cmd );
@@ -1659,7 +1671,7 @@ public class CSExecutor extends Executor {
         NickInfo ni = result.getNick ( );
         ChanInfo ci = result.getChanInfo ( );
         ArrayList<Topic> tList = CSDatabase.getTopicList ( ci );
-        this.service.sendMsg(user, "*** Access Log for "+ci.getName()+":");
+        this.service.sendMsg(user, "*** Topic Log for "+ci.getName()+":");
         for ( Topic topic : tList ) {
             this.service.sendMsg ( user, output ( SHOWTOPICLOG, topic.getTimeStr(), topic.getSetter(), topic.getText() ) );
         }       
@@ -1925,22 +1937,22 @@ public class CSExecutor extends Executor {
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
-                } else if ( ( ni = NickServ.findNick(user.getName()) ) == null ) {
-                    result.setString1 ( ci.getName() ); 
-                    result.setStatus ( ACCESS_DENIED );
-                } else if ( ! ci.isAtleastAop ( ni ) && 
-                            ! ni.isAtleast ( SA ) ) {
+                } else if ( ! ci.isAtleastAop ( ci.getNickByUser ( user ) ) &&
+                            ! user.isAtleast ( SA ) ) {
+                    /* Requires an identified nick with AOP+ access, or services admin */
                     result.setString1 ( ci.getName() );
                     result.setStatus ( ACCESS_DENIED );
                 } else {
                     result.setChanInfo ( ci );
-                    result.setNick ( ni );
+                    result.setNick ( ci.getNickByUser ( user ) );
                 }
-        
+
         } else if ( command.is(TOPICLOG) ) {
-                
+
                 if ( isShorterThanLen ( 5, cmd) ) {
                     result.setStatus ( SYNTAX_ERROR );
+                } else if ( ! ChanServ.enoughAccess ( user, TOPICLOG ) ) {
+                    result.setStatus ( ACCESS_DENIED );
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
                     result.setString1 ( new HashString ( cmd[4] ) );
                     result.setStatus ( CHAN_NOT_REGISTERED );
@@ -1958,22 +1970,32 @@ public class CSExecutor extends Executor {
             
             //:DreamHealer PRIVMSG ChanServ@services.avade.net :akick #friends add *!*@10.0.1/24
                 //       0       1                           2      3        4   5             6
-                if ( isShorterThanLen ( 6, cmd ) ) {
+                if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } 
+                    return result;
+                }
                 ci = ChanServ.findChan ( cmd[4] );
                 ni = null;
                 if (ci != null) {
                     ni = ci.getNickByUser ( user );
                 }
                 mask = "";
-                if ( cmd.length > 6 && ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
+                if ( ( ni2 = NickServ.findNick ( cmd[6] ) ) == null ) {
                     mask = cmd[6];
                 }
-                
+
                 subcommand = new HashString ( cmd[5] );
-                
-                if ( ! subcommand.is(ADD) && 
+
+                /* A user may only remove their own nick from the AOP/SOP list, never
+                   add or promote it, and never touch the AKICK list for themselves */
+                boolean selfDel = ( ni != null &&
+                                    ni2 != null &&
+                                    ni.is(ni2) &&
+                                    subcommand.is(DEL) &&
+                                    ! command.is(AKICK) &&
+                                    ci.isAtleastAop ( ni ) );
+
+                if ( ! subcommand.is(ADD) &&
                      ! subcommand.is(DEL) ) {
                     result.setStatus ( SYNTAX_ERROR );
 
@@ -1989,15 +2011,15 @@ public class CSExecutor extends Executor {
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
-                } else if ( ni == null || ( ! ci.isAtleastSop ( ni ) && ! ni.is(ni2) ) ) {
+                } else if ( ni == null || ( ! ci.isAtleastSop ( ni ) && ! selfDel ) ) {
                     result.setString1 ( user.getName() );
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ni2 != null && ! ni2.isAuth ( ) ) {
                     result.setNick2 ( ni2 );
                     result.setStatus ( NICK_NOT_AUTHED );
-                } else if ( ni2 != null && 
-                            ( ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) &&
-                              ! ni.is(ni2) ) ) {
+                } else if ( ni2 != null &&
+                            ! selfDel &&
+                            ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
                     result.setStatus ( NOT_ENOUGH_ACCESS );
                 } else if ( ( acc = getAcc ( command, ci, ni2 ) ) == null && 
                             ( acc = getAcc ( command, ci, mask ) ) == null &&
@@ -2298,7 +2320,16 @@ public class CSExecutor extends Executor {
                     result.setStatus ( ACCESS_DENIED );                
                 } else if ( cmd.length > 5 && ( ( target = Handler.findUser ( cmd[5] ) ) == null || ! c.nickIsPresent ( cmd[5] ) ) ) {
                     result.setChan ( c );
+                    result.setString1 ( cmd[5] );
                     result.setStatus ( NICK_NOT_PRESENT );
+                } else if ( command.is(DEOP) && 
+                            target != null && 
+                            target != user && 
+                            target.getSID() != null &&
+                            ci.getAccessByNick ( ci.getTopNickByUser ( target ) ) >= ci.getAccessByNick ( ni ) ) {
+                    /* Cannot deop someone with same or higher channel access */
+                    result.setString1 ( target.getName() );
+                    result.setStatus ( NOT_ENOUGH_ACCESS );
                 } else {
                     result.setChan ( c );
                     result.setChanInfo ( ci );

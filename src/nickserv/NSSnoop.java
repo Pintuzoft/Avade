@@ -110,4 +110,28 @@ public class NSSnoop extends Snoop {
             return "UnDefined";
         }
     }
-} 
+
+    @Override
+    protected String[] redact ( String[] arr ) {
+        // :nick PRIVMSG NickServ@services :CMD arg1 arg2 ..
+        //   0      1          2            3    4    5
+        switch ( commandOf ( arr ) ) {
+            case "IDENTIFY" :
+                return ( arr.length > 5 ? mask ( arr, 5 ) : mask ( arr, 4 ) );
+            case "REGISTER" :
+                return mask ( arr, 4, 5 );
+            case "DROP" :
+            case "AUTH" :
+                return mask ( arr, 4, 5 );
+            case "GHOST" :
+                return mask ( arr, 5 );
+            case "SET" :
+                if ( arr.length > 4 && arr[4].toUpperCase().startsWith ( "PASS" ) ) {
+                    return mask ( arr, 5, 6 );
+                }
+                return arr;
+            default :
+                return arr;
+        }
+    }
+}

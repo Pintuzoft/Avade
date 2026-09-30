@@ -62,6 +62,13 @@ public class RSExecutor extends Executor {
 
         HashString command = new HashString ( cmd[3] );
         
+        /* Enforce the command access levels from the config */
+        if ( this.service.findCommandInfo ( command ) != null &&
+             ! RootServ.enoughAccess ( user, command ) ) {
+            this.snoop.msg ( false, user, cmd );
+            return;
+        }
+        
         if ( command.is(STOP) ) {
             this.stop ( user, cmd );
         
@@ -149,6 +156,17 @@ public class RSExecutor extends Executor {
             return;
         }
          
+        if ( cmd.length < 6 ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" ) );
+            return;
+        }
+        
+        /* Only the services master may maintain the SRA list */
+        if ( ! user.isAtleast ( MASTER ) ) {
+            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" )  );
+            return;
+        }
+        
         sra     = NickServ.findNick ( user.getSID().getOper().getString ( NAME ) );
         target  = NickServ.findNick ( cmd[5] );
         
