@@ -535,8 +535,12 @@ public class NSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, command.getExtra ( ) );
-            ps.executeUpdate ( );
+            int updated = ps.executeUpdate ( );
             ps.close ( );
+            if ( updated == 0 ) {
+                /* Wrong or already used auth code */
+                return false;
+            }
 
             idleUpdate ( "authMail ( )" );
             return true;
@@ -565,8 +569,12 @@ public class NSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, command.getExtra ( ) );
-            ps.executeUpdate ( );
+            int updated = ps.executeUpdate ( );
             ps.close ( );
+            if ( updated == 0 ) {
+                /* Wrong or already used auth code */
+                return false;
+            }
 
             idleUpdate ( "authMail ( ) " );
             return true;

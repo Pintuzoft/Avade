@@ -8,6 +8,7 @@ package core;
 import channel.Chan;
 import chanserv.ChanInfo;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
@@ -53,7 +54,7 @@ public class HashString {
             String hex;
             MessageDigest crypt = MessageDigest.getInstance ( "SHA-256" );
             crypt.reset ( );
-            crypt.update ( this.string.toUpperCase().getBytes ( ) );
+            crypt.update ( asciiUpper ( this.string ).getBytes ( StandardCharsets.UTF_8 ) );
             hex = String.format ( "%064x", new BigInteger ( 1, crypt.digest ( ) ) );
             this.code = new BigInteger ( hex, 16 );
         } catch ( NoSuchAlgorithmException ex ) {
@@ -65,6 +66,18 @@ public class HashString {
      *
      * @return
      */
+    /* Same case folding as bahamut (CASEMAPPING=ascii): only a-z, never
+       depending on the locale, other characters are kept as they are */
+    private static String asciiUpper ( String str ) {
+        char[] chars = str.toCharArray ( );
+        for ( int i = 0; i < chars.length; i++ ) {
+            if ( chars[i] >= 'a' && chars[i] <= 'z' ) {
+                chars[i] = (char) ( chars[i] - 32 );
+            }
+        }
+        return new String ( chars );
+    }
+    
     public BigInteger getCode ( ) {
         return this.code;
     }

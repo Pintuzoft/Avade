@@ -17,6 +17,7 @@
  */
 package core;
 
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 
 /**
@@ -29,6 +30,7 @@ import java.util.IdentityHashMap;
 public class WorkGuard {
     private static final int MAX_FAILURES = 5;
     private static final IdentityHashMap<Object,Integer> failures = new IdentityHashMap<>();
+    private static final HashMap<String,Integer> keyFailures = new HashMap<>();
 
     /**
      * Call when an item was written
@@ -36,6 +38,34 @@ public class WorkGuard {
      */
     public static void done ( Object item ) {
         failures.remove ( item );
+    }
+
+    /**
+     * Same as failed(), for items that are loaded again as new objects
+     * every time (identified by a key such as a database id)
+     * @param key
+     * @param what
+     * @return true if the item should be given up on
+     */
+    public static boolean failedKey ( String key, String what ) {
+        if ( ! Database.checkConn ( ) ) {
+            return false;
+        }
+        int count = keyFailures.getOrDefault ( key, 0 ) + 1;
+        if ( count >= MAX_FAILURES ) {
+            keyFailures.remove ( key );
+            Proc.log ( "Database: giving up on "+what+" after "+count+" failed attempts" );
+            return true;
+        }
+        keyFailures.put ( key, count );
+        return false;
+    }
+
+    /**
+     * @param key
+     */
+    public static void doneKey ( String key ) {
+        keyFailures.remove ( key );
     }
 
     /**

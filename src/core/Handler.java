@@ -1197,6 +1197,7 @@ public class Handler extends HashNumeric {
     public int runSecMaintenance() {
         int todoAmount = 0;
         this.retryLoadIfNeeded ( );
+        this.cmdQueue.maintenance ( );  /* throttles itself to every 5 seconds */
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             entry.getValue().secMaintenence ( );
         }
@@ -1250,7 +1251,6 @@ public class Handler extends HashNumeric {
             todoAmount += NickServ.maintenance ( );
             todoAmount += ChanServ.maintenance ( );
             this.sidCleaner ( );
-            this.cmdQueue.maintenance ( );
         
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
