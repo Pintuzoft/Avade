@@ -60,7 +60,7 @@ public class User extends HashNumeric {
         long sidBuf;
         this.name       = new HashString ( data[1] );
         this.user       = new HashString ( data[5] ); 
-        this.hi         = new HostInfo ( Long.parseLong ( data[9] ), data[6] ); 
+        this.hi         = new HostInfo ( data[9], data[6] ); 
         
         this.mask       = new HashString ( this.user+"@"+this.getHost ( ) ); 
         this.server     = Handler.findServer ( data[7] );

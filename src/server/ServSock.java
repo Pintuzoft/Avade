@@ -166,6 +166,8 @@ public class ServSock extends HashNumeric {
     public void authenticate() {
         Handler.resetSync();
         sendCmd("PASS " + Proc.getConf().get(HUBPASS) + " :TS..");
+        /* NICKIPSTR: get the IP of users as a string, needed for IPv6 */
+        sendCmd("CAPAB NICKIPSTR");
         sendCmd("SERVER " + Proc.getConf().get(NAME) + " 1 :services");
         sendCmd("SERVER " + Proc.getConf().get(STATS) + " 1 :stats");
     }

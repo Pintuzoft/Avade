@@ -490,6 +490,10 @@ public class Handler extends HashNumeric {
         if ( OperServ.isWhiteListed(user.getMask()) ) {
             return;
         }
+        if ( user.getHostInfo().isUnknown ( ) ) {
+            /* No IP from the ircd, counting would lump all such users together */
+            return;
+        }
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             u = entry.getValue();
             if ( u.ipMatch ( user.getHostInfo().getIpHash() ) ) {
