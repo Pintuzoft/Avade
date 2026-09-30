@@ -384,12 +384,12 @@ public class CSDatabase extends Database {
     }
     
     private static int addTopicLog ( ChanInfo ci ) {
-        String query = "insert into topiclog ( name,setter,stamp,topic ) values ( ?, ?, ?, ? )";
+        String query = "insert into topiclog ( name,setter,stamp,topic ) values ( ?, ?, from_unixtime(?), ? )";
         try {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ci.getName().getString() );
             ps.setString ( 2, ci.getTopic().getSetter ( ) );
-            ps.setString ( 3, ci.getTopic().getTimeStr ( ) );
+            ps.setLong ( 3, ci.getTopic().getStamp ( ) );
             ps.setString ( 4, ci.getTopic().getText ( ) );
             ps.execute ( );
             ps.close ( );
@@ -807,7 +807,7 @@ public class CSDatabase extends Database {
         
         String query;
         try {
-            query = "select topic,setter,unix_timestamp(stamp),stamp from topiclog where name = ? order by stamp asc limit 100";
+            query = "select * from (select topic,setter,unix_timestamp(stamp) as ustamp,stamp from topiclog where name = ? order by stamp desc limit 100) as tl order by stamp asc";
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ci.getName().getString() );
             res3 = ps.executeQuery ( );
@@ -1042,7 +1042,8 @@ public class CSDatabase extends Database {
                          + "cf.join_connect_time,cf.talk_connect_time,cf.talk_join_time,cf.max_bans,cf.max_invites,cf.max_msg_time,cf.no_notice,cf.no_ctcp,cf.no_part_msg,cf.no_quit_msg,"
                          + "cf.exempt_opped,cf.exempt_voiced,cf.exempt_identd,cf.exempt_registered,cf.exempt_invites,cf.exempt_webirc,cf.hide_mode_lists,no_nick_change,cf.no_utf8,cf.greetmsg "
                          + "from chan as c "
-                         + "left join (select name,setter,stamp,topic from topiclog order by stamp desc limit 1) as tl on tl.name=c.name "
+                         + "left join (select t.name,t.setter,t.stamp,t.topic from topiclog as t "
+                         + "join (select name,max(stamp) as mstamp from topiclog group by name) as m on m.name=t.name and m.mstamp=t.stamp) as tl on tl.name=c.name "
                          + "left join chansetting as cs on cs.name=c.name "
                          + "left join chanflag as cf on cf.name=c.name ";
                         
@@ -1132,6 +1133,9 @@ public class CSDatabase extends Database {
                 //ci.setAccessList ( SOP, getChanAccess ( ci, SOP ) );
                 //ci.setAccessList ( AOP, getChanAccess ( ci, AOP ) );
                 //ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK ) );
+                if ( cList.containsKey ( ci.getName().getCode() ) ) {
+                    continue;
+                }
                 ci.getFounder().addToAccessList ( FOUNDER, ci );
                 cList.put ( ci.getName().getCode(), ci );
                 $count++;

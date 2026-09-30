@@ -17,6 +17,7 @@
  */
 package server;
 
+import core.Handler;
 import core.Proc;
 import core.HashNumeric;
 import java.io.BufferedReader;
@@ -126,6 +127,7 @@ public class ServSock extends HashNumeric {
      *
      */
     public void authenticate() {
+        Handler.resetSync();
         sendCmd("PASS " + Proc.getConf().get(HUBPASS) + " :TS..");
         sendCmd("SERVER " + Proc.getConf().get(NAME) + " 1 :services");
         sendCmd("SERVER " + Proc.getConf().get(STATS) + " 1 :stats");

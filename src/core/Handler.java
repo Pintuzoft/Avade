@@ -89,6 +89,7 @@ public class Handler extends HashNumeric {
     private String                          buf; 
     private Queue                           cmdQueue;
     private static boolean                  sanity;
+    private static int                      burstPings; /* PINGs seen since link, burst ends after the 2nd */
     private HashString bufhash;
     
     /**
@@ -338,10 +339,6 @@ public class Handler extends HashNumeric {
             if ( check ) {
                 chan.checkSettings ( c );
             }
-            if ( (ci = ChanServ.findChan(c.getName())) != null ) {
-                chan.sendTopic(ci);
-                c.setTopic(ci.getTopic());
-            }
             
         }
         
@@ -414,6 +411,25 @@ public class Handler extends HashNumeric {
     }
     private void doPing ( )  {
         this.pong ( this.data[1] );
+        /* bahamut ends the user/channel burst with a PING, then sends the
+           topic burst followed by another PING. After the 2nd we are synced */
+        if ( burstPings < 2 ) {
+            burstPings++;
+        }
+    }
+
+    /**
+     * Called when we (re)link to the hub
+     */
+    public static void resetSync ( ) {
+        burstPings = 0;
+    }
+
+    /**
+     * @return true when the hub has finished bursting users, channels and topics
+     */
+    public static boolean isSynced ( ) {
+        return burstPings >= 2;
     }
     
     
@@ -688,9 +704,6 @@ public class Handler extends HashNumeric {
         if ( (c = findChan( this.data[3] )) != null ) {
             c.addUser ( USER, user );
             user.addChan ( c );
-            if ( (ci = ChanServ.findChan(c.getName())) != null ) {
-                chan.sendTopic(ci);
-            }
         }
         if ( ! c.isSaJoin() ) {
             ChanServ.addCheckUser ( c, user );
@@ -1169,6 +1182,7 @@ public class Handler extends HashNumeric {
         Topic topic = new Topic ( topicData, data[3], Long.parseLong ( data[4] )  );
         if ( c != null )  {
             c.setTopic ( topic );
+            chan.checkServerTopic ( c );
         }  
     }
     private void doTopic ( User user, String[] data )  {
@@ -1176,7 +1190,7 @@ public class Handler extends HashNumeric {
         //     0   1      2      3                             4        5  =6
         Chan c = findChan ( data[2] );
         String topicData = Handler.cutArrayIntoString ( data, 5 );
-        Topic topic = new Topic ( topicData, user.getString ( FULLMASK ), Long.parseLong ( data[4] )  );
+        Topic topic = new Topic ( topicData, data[3], Long.parseLong ( data[4] )  );
         if ( c != null )  {
             c.setTopic ( topic );
         }

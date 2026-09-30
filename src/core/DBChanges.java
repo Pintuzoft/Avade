@@ -177,6 +177,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db123091 ( ) );
                 qList.add ( "update settings set value = '1.2309-1' where name = 'version'" );
 
+            case 126091 :
+                qList.add ( "to: v1.2609-1");
+                qList.addAll ( this.db126091 ( ) );
+                qList.add ( "update settings set value = '1.2609-1' where name = 'version'" );
+
                 break;
                 
             default :
@@ -600,6 +605,15 @@ public class DBChanges extends HashNumeric {
     private ArrayList<String> db123091 ( ) {
         ArrayList<String> qList = new ArrayList<>();
         qList.add("alter table chanacclog change instater instater varchar(64)");
+        return qList;
+    }
+
+    private ArrayList<String> db126091 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Topics were stored with the leading ':' of the IRC trailing parameter */
+        qList.add("update topiclog set topic = substring(topic, 2) where topic like ':%'");
+        /* Used when loading the latest topic per channel */
+        qList.add("alter table topiclog add index topiclog_name_stamp (name, stamp)");
         return qList;
     }
         

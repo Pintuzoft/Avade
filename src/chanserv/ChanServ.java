@@ -320,11 +320,15 @@ public class ChanServ extends Service {
                 ci.kickAll ( "Channel is CLOSED" );
             } else {
                 ci.getChanFlag().syncChangedValuesWithNetwork();
-                if ( ci.isSet ( TOPICLOCK )  || ci.isSet ( KEEPTOPIC ) ) {
-                    if ( ci.getTopic ( ) != null ) {
-                        c.setTopic ( ci.getTopic ( )  );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
-                    }
+                /* Restore the topic of a newly created channel. During the burst the
+                   channel already exists on the network and its topic follows in the
+                   topic burst, so only do this once we are synced */
+                if ( Handler.isSynced ( ) &&
+                     ( ci.isSet ( TOPICLOCK ) || ci.isSet ( KEEPTOPIC ) ) &&
+                     ci.getTopic ( ) != null && 
+                     ci.getTopic().hasText ( ) ) {
+                    c.setTopic ( ci.getTopic ( ) );
+                    this.sendTopic ( ci );
                 }
                 if ( ci.isSet ( AUDITORIUM ) ) {
                     this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :+A" );
@@ -380,39 +384,59 @@ public class ChanServ extends Service {
                             updTopic = true; 
                         }
                     }
-               
-                    if ( updTopic )  {
-                        if ( c.getTopic().getStamp ( )  != ci.getTopic().getStamp ( ) ) {
-                            ci.setTopic ( c.getTopic ( ) );
-                        }
-                        return true;
-                    } else {
+                }
+                
+                if ( ! updTopic )  {
+                    /* Not allowed, put the locked topic back */
+                    if ( ci.getTopic ( ) != null ) {
                         c.setTopic ( ci.getTopic ( ) );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
-                        return false;
+                        this.sendTopic ( ci );
                     }
-            
-                } else {
-                    c.setTopic ( ci.getTopic ( )  );
-                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
                     return false;
                 }
-            } else {
-                ci.setTopic ( c.getTopic ( ) );
             }
+            ci.setTopic ( c.getTopic ( ) );
             return true;
         }
         return false;
     }
     
     /**
-     *
+     * A topic was set by a server (topic burst or netjoin). Keep the stored
+     * topic up to date, or enforce it if the channel has TOPICLOCK.
+     * @param c
+     */
+    public void checkServerTopic ( Chan c ) {
+        ChanInfo ci;
+        Topic topic;
+        if ( c == null || ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) == null ) {
+            return;
+        }
+        topic = c.getTopic ( );
+        if ( topic == null || topic.isSame ( ci.getTopic ( ) ) ) {
+            return;
+        }
+        if ( ci.isSet ( TOPICLOCK ) && ci.getTopic ( ) != null && ci.getTopic().hasText ( ) ) {
+            c.setTopic ( ci.getTopic ( ) );
+            this.sendTopic ( ci );
+        
+        } else if ( ci.getTopic ( ) == null || topic.getStamp ( ) >= ci.getTopic().getStamp ( ) ) {
+            ci.setTopic ( topic );
+            ci.getChanges().change ( TOPIC );
+            ChanServ.addToWorkList ( CHANGE, ci );
+        }
+    }
+    
+    /**
+     * Send the stored topic of a channel to the network, keeping the
+     * original setter and time
      * @param ci
      */
     public void sendTopic ( ChanInfo ci ) {
         Topic topic = ci.getTopic();
         if ( topic != null ) {
-            this.sendCmd ( "TOPIC "+ci.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
+            String setter = topic.getSetter().isEmpty() ? this.getName().getString() : topic.getSetter();
+            this.sendCmd ( "TOPIC "+ci.getString ( NAME ) +" "+setter+" "+topic.getStamp ( ) +" :"+topic.getText ( ) );
         }
     }
     
