@@ -535,6 +535,16 @@ public class CSDatabase extends Database {
             return data+key+" = ?";
         }
     }
+    /* The value stored in chanaccess.access / chanaccess_mask.access */
+    private static String accessToDbString ( HashString access ) {
+        if      ( access.is(AKICK) )        { return "akick";                   }
+        else if ( access.is(SOP) )          { return "sop";                     }
+        else if ( access.is(AOP) )          { return "aop";                     }
+        else if ( access.is(HOP) )          { return "hop";                     }
+        else if ( access.is(VOP) )          { return "vop";                     }
+        return "";
+    }
+
     private static String hashToTopiclockString ( HashString it ) {
         if      ( it.is(FOUNDER) )          { return "founder";                 }
         else if ( it.is(SOP) )              { return "sop";                     }
@@ -640,14 +650,7 @@ public class CSDatabase extends Database {
             /* Try add the chan */          
             try {                     
           
-                String acc = "";
-                if ( access.is(AKICK) ) {
-                    acc = "akick";
-                } else if ( access.is(SOP) ) {
-                    acc = "sop";
-                } else if ( access.is(AOP) ) {
-                    acc = "aop";
-                }
+                String acc = accessToDbString ( access );
                  
                 String query;
                 String target;
@@ -848,13 +851,7 @@ public class CSDatabase extends Database {
         CSAcc chanOp;
         String acc = "";
 
-        if ( access.is(AKICK) ) {
-            acc = "akick";
-        } else if ( access.is(SOP) ) {
-            acc = "sop";
-        } else if ( access.is(AOP) ) {
-            acc = "aop";
-        }
+        acc = accessToDbString ( access );
 
         String query = "select nick,lastoped from chanaccess where name = ? and access = ? union all select mask,lastoped from chanaccess_mask where name = ? and access = ?";
         try {
@@ -990,16 +987,20 @@ public class CSDatabase extends Database {
             return false;
         }
         try {
-            String acc = "";
-            if ( access.is(SOP) ) { 
-                acc = "sop";
-            } else if ( access.is(AOP) ) {
-                acc = "aop";
-            }
+            String acc = accessToDbString ( access );
  
             String query = "delete from chanaccess "
                          + "where name = ? "
                          + "and access = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName().getString() );
+            ps.setString  ( 2, acc );
+            ps.execute ( );
+            ps.close ( );
+
+            query = "delete from chanaccess_mask "
+                  + "where name = ? "
+                  + "and access = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getName().getString() );
             ps.setString  ( 2, acc );
@@ -1310,6 +1311,8 @@ public class CSDatabase extends Database {
                                     res.getString ( 6 ) , settings );
                 ci.setAccessList ( SOP, getChanAccess ( ci, SOP ) );
                 ci.setAccessList ( AOP, getChanAccess ( ci, AOP ) );
+                ci.setAccessList ( HOP, getChanAccess ( ci, HOP ) );
+                ci.setAccessList ( VOP, getChanAccess ( ci, VOP ) );
                 ci.setAccessList ( AKICK, getChanAccess ( ci, AKICK ) );
                 ci.getFounder().addToAccessList ( FOUNDER, ci );
                 if ( chanFlag != null ) {

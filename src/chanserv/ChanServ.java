@@ -88,6 +88,8 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "INFO",         0,                          "Show information about a channel" )    );
         cmdList.add ( new CommandInfo ( "AOP",          0,                          "Manage the AOP list" )                 );
         cmdList.add ( new CommandInfo ( "SOP",          0,                          "Manage the SOP list" )                 );
+        cmdList.add ( new CommandInfo ( "HOP",          0,                          "Manage the HOP (halfop) list" )        );
+        cmdList.add ( new CommandInfo ( "VOP",          0,                          "Manage the VOP (voice) list" )         );
         cmdList.add ( new CommandInfo ( "AKICK",        0,                          "Manage the AKick list" )               );
         cmdList.add ( new CommandInfo ( "OP",           0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "DEOP",         0,                          null )                                  );
@@ -98,7 +100,7 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "MDEOP",        0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "MKICK",        0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "DROP",         0,                          null )                                  );
-        cmdList.add ( new CommandInfo ( "ACCESSLOG",    0,                          "View the AOP/SOP/AKICK logs" )         );
+        cmdList.add ( new CommandInfo ( "ACCESSLOG",    0,                          "View the access list logs" )         );
         cmdList.add ( new CommandInfo ( "LISTOPS",      0,                          "View the AOP/SOP/AKICK lists" )         );
         cmdList.add ( new CommandInfo ( "TOPICLOG",     CMDAccess ( TOPICLOG ),     "View the topic logs" )         );
         cmdList.add ( new CommandInfo ( "LIST",         CMDAccess ( LIST ),         "List registered channels" )            );
@@ -287,6 +289,29 @@ public class ChanServ extends Service {
                     opUser ( c, user );
                     ci.updateLastOped ( user );                    
                 }
+
+            /* Halfop access */
+            } else if ( ci.isAtleastHop ( user ) ) {
+                ni = ci.getNickByUser ( user );
+                ci.setLastUsed ( );
+                if ( c.isOp ( user ) && ci.isSet ( OPGUARD ) ) {
+                    this.deOpUser ( c, user );
+                }
+                if ( ni != null && ni.isSet(NEVEROP) ) {
+                    /* Dont halfop */
+                } else {
+                    hopUser ( c, user );
+                    ci.updateLastOped ( user );
+                }
+
+            /* Voice access */
+            } else if ( ci.isAtleastVop ( user ) ) {
+                ci.setLastUsed ( );
+                if ( c.isOp ( user ) && ci.isSet ( OPGUARD ) ) {
+                    this.deOpUser ( c, user );
+                }
+                voiceUser ( c, user );
+                ci.updateLastOped ( user );
 
             /* Restricted */
             }  else if ( ci.isSet ( RESTRICT ) ) {
@@ -487,6 +512,32 @@ public class ChanServ extends Service {
                 ci.setLastUsed();
                 ci.changed(LASTUSED);
             }
+        }
+    }
+    
+    /**
+     *
+     * @param c
+     * @param user
+     */
+    public void hopUser ( Chan c, User user )  {
+        // :ChanServ MODE #avade +h Pintuz
+        if ( ! c.isHop ( user )  )  {
+            this.sendCmd ( "MODE "+c.getString ( NAME )+" +h "+user.getString ( NAME )  );
+            c.chModeUser ( user, HALFOP, HALFOP, false );
+        }
+    }
+    
+    /**
+     *
+     * @param c
+     * @param user
+     */
+    public void voiceUser ( Chan c, User user )  {
+        // :ChanServ MODE #avade +v Pintuz
+        if ( ! c.isVo ( user )  )  {
+            this.sendCmd ( "MODE "+c.getString ( NAME )+" +v "+user.getString ( NAME )  );
+            c.chModeUser ( user, VOICE, VOICE, false );
         }
     }
     

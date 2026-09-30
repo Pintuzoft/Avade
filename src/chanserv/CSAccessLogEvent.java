@@ -182,6 +182,18 @@ public class CSAccessLogEvent extends HashNumeric {
         } else if ( hash.is(DELAKICK) ) {
             return "AKICK-";
         
+        } else if ( hash.is(ADDHOP) ) {
+            return "HOP+";
+        
+        } else if ( hash.is(DELHOP) ) {
+            return "HOP-";
+        
+        } else if ( hash.is(ADDVOP) ) {
+            return "VOP+";
+        
+        } else if ( hash.is(DELVOP) ) {
+            return "VOP-";
+        
         } else if ( hash.is(FOUNDER) ) {
             return "Founder";
         } else {

@@ -59,6 +59,8 @@ public class NickInfo extends HashNumeric {
     private Throttle                throttle;       /* throttle login attempts */
     private ArrayList<ChanInfo>     akickList = new ArrayList<>();
     private ArrayList<ChanInfo>     aopList = new ArrayList<>();
+    private ArrayList<ChanInfo>     hopList = new ArrayList<>();
+    private ArrayList<ChanInfo>     vopList = new ArrayList<>();
     private ArrayList<ChanInfo>     sopList = new ArrayList<>();
     private ArrayList<ChanInfo>     founderList = new ArrayList<>();
     private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -489,6 +491,8 @@ public class NickInfo extends HashNumeric {
         if      ( it.is(FOUNDER) )          { return founderList;               }
         else if ( it.is(SOP) )              { return sopList;                   }
         else if ( it.is(AOP) )              { return aopList;                   }
+        else if ( it.is(HOP) )              { return hopList;                   }
+        else if ( it.is(VOP) )              { return vopList;                   }
         else if ( it.is(AKICK) )            { return akickList;                 }
         else {
             return new ArrayList<>();

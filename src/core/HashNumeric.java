@@ -769,6 +769,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString HALFOP = new HashString ( "HALFOP" );
+
+    /**
+     *
+     */
     public static HashString ALL = new HashString ( "ALL" );
 
     /**
@@ -785,6 +790,16 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString AOP = new HashString ( "AOP" );
+
+    /**
+     *
+     */
+    public static HashString HOP = new HashString ( "HOP" );
+
+    /**
+     *
+     */
+    public static HashString VOP = new HashString ( "VOP" );
 
     /**
      *
@@ -895,6 +910,26 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString DELAKICK = new HashString ( "AKICK-" );
+
+    /**
+     *
+     */
+    public static HashString ADDHOP = new HashString ( "HOP+" );
+
+    /**
+     *
+     */
+    public static HashString DELHOP = new HashString ( "HOP-" );
+
+    /**
+     *
+     */
+    public static HashString ADDVOP = new HashString ( "VOP+" );
+
+    /**
+     *
+     */
+    public static HashString DELVOP = new HashString ( "VOP-" );
 
     /**
      *

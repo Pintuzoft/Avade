@@ -70,6 +70,8 @@ public class CSHelper extends Helper {
         else if ( command.is(INFO) )            { this.info ( user );       }
         else if ( command.is(SOP) )             { this.sop ( user );        }
         else if ( command.is(AOP) )             { this.aop ( user );        }
+        else if ( command.is(HOP) )             { this.hop ( user );        }
+        else if ( command.is(VOP) )             { this.vop ( user );        }
         else if ( command.is(AKICK) )           { this.akick ( user );      }
         else if ( command.is(OP) )              { this.op ( user );         }
         else if ( command.is(DEOP) )            { this.deOp ( user );       }
@@ -283,11 +285,45 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AOP <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Add, delete or list AutoOps in the channel."                                               );
+        this.service.sendMsg ( user, "   Add, delete or list AutoOps in the channel. AOPs can also manage the"                      );
+        this.service.sendMsg ( user, "   HOP and VOP lists."                                                                        );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
         this.service.sendMsg ( user, "   Make sure you can trust the users who you give Aop access as these users can kick/ban"     );
         this.service.sendMsg ( user, "   any user from the channel."                                                                );
+        this.showEnd ( user );
+    }
+    
+    /**
+     *
+     * @param user
+     */
+    public void hop ( User user )  {
+        this.showStart ( user, "Hop" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ HOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Add, delete or list HalfOps in the channel. Users on the list are given"                   );
+        this.service.sendMsg ( user, "   halfop (+h) when they join. Halfops can kick users and change the topic"                   );
+        this.service.sendMsg ( user, "   when the channel is +t."                                                                   );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The HOP list can be managed by AOPs and above."                                            );
+        this.showEnd ( user );
+    }
+    
+    /**
+     *
+     * @param user
+     */
+    public void vop ( User user )  {
+        this.showStart ( user, "Vop" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ VOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Add, delete or list Voices in the channel. Users on the list are given"                    );
+        this.service.sendMsg ( user, "   voice (+v) when they join."                                                                );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The VOP list can be managed by AOPs and above."                                            );
         this.showEnd ( user );
     }
     

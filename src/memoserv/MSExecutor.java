@@ -201,10 +201,14 @@ import user.User;
                 this.sendToNick ( user, ni, ci.getFounder ( ), cmd );
                 
                 for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(SOP).entrySet() ) {
-                    this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    if ( entry.getValue().getNick ( ) != null ) {   /* skip mask entries */
+                        this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    }
                 }
                 for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(AOP).entrySet() ) {
-                    this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    if ( entry.getValue().getNick ( ) != null ) {   /* skip mask entries */
+                        this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    }
                 }
                 
             } else {

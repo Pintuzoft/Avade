@@ -628,7 +628,7 @@ public class NickServ extends Service {
         ArrayList<ChanInfo> cList;
         ArrayList<ChanInfo> remList = new ArrayList<>();
         CSAcc acc = null;
-        HashString[] lists = { SOP, AOP, AKICK };
+        HashString[] lists = { SOP, AOP, HOP, VOP, AKICK };
         //HashMap<Integer,Integer> map = new HashMap ( );
         //map.put ( AOP, "DELAOP".hashCode() );
         //map.put ( SOP, "DELSOP".hashCode() );

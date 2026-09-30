@@ -55,6 +55,8 @@ public class ChanInfo extends HashNumeric {
     private HashMap<BigInteger,CSAcc> klist;
     private HashMap<BigInteger,CSAcc> slist;
     private HashMap<BigInteger,CSAcc> alist;
+    private HashMap<BigInteger,CSAcc> hlist;
+    private HashMap<BigInteger,CSAcc> vlist;
     
     private ArrayList<CSAcc> addAccList;
     private ArrayList<CSAcc> remAccList;
@@ -89,6 +91,8 @@ public class ChanInfo extends HashNumeric {
         this.klist      = new HashMap<>();
         this.slist      = new HashMap<>();
         this.alist      = new HashMap<>();
+        this.hlist      = new HashMap<>();
+        this.vlist      = new HashMap<>();
         this.addAccList = new ArrayList<>();
         this.remAccList = new ArrayList<>();
         this.updAccList = new ArrayList<>();
@@ -119,6 +123,8 @@ public class ChanInfo extends HashNumeric {
         this.klist      = new HashMap<>();
         this.slist      = new HashMap<>();
         this.alist      = new HashMap<>();
+        this.hlist      = new HashMap<>();
+        this.vlist      = new HashMap<>();
         this.addAccList = new ArrayList<>();
         this.remAccList = new ArrayList<>();
         this.updAccList = new ArrayList<>();
@@ -353,6 +359,8 @@ public class ChanInfo extends HashNumeric {
     public NickInfo getNickByUser ( User user )  {
         NickInfo sop = null;
         NickInfo aop = null;
+        NickInfo hop = null;
+        NickInfo vop = null;
         NickInfo akick = null;
         
         if ( user == null || user.getSID ( )  == null )  {
@@ -368,6 +376,10 @@ public class ChanInfo extends HashNumeric {
                 sop = ni;
             } else if ( this.alist.get(ni.getName().getCode()) != null ) {
                 aop = ni;
+            } else if ( this.hlist.get(ni.getName().getCode()) != null ) {
+                hop = ni;
+            } else if ( this.vlist.get(ni.getName().getCode()) != null ) {
+                vop = ni;
             } else if ( this.klist.get(ni.getName().getCode()) != null ) {
                 akick = ni;
             }
@@ -377,6 +389,10 @@ public class ChanInfo extends HashNumeric {
             return sop;
         } else if ( aop != null ) {
             return aop;
+        } else if ( hop != null ) {
+            return hop;
+        } else if ( vop != null ) {
+            return vop;
         } else if ( akick != null ) {
             return akick;
         }
@@ -394,11 +410,16 @@ public class ChanInfo extends HashNumeric {
             return 0; 
         }
         
+        /* Same order as the privileges in the ircd */
         if ( ni.is(this.founder) ) {
-            return 3;
+            return 5;
         } else if ( this.isAccess ( SOP, ni ) ) {
-            return 2;
+            return 4;
         } else if ( this.isAccess ( AOP, ni ) ) {
+            return 3;
+        } else if ( this.isAccess ( HOP, ni ) ) {
+            return 2;
+        } else if ( this.isAccess ( VOP, ni ) ) {
             return 1;
         } else if ( this.isAccess ( AKICK, ni ) ) {
             return -1;
@@ -553,6 +574,8 @@ public class ChanInfo extends HashNumeric {
     public HashMap<BigInteger,CSAcc> getAccessList ( HashString access ) {
         if      ( access.is(SOP) )          { return this.slist;                }
         else if ( access.is(AOP) )          { return this.alist;                }
+        else if ( access.is(HOP) )          { return this.hlist;                }
+        else if ( access.is(VOP) )          { return this.vlist;                }
         else if ( access.is(AKICK) )        { return this.klist;                }
         else {
             return new HashMap<>();
@@ -572,6 +595,8 @@ public class ChanInfo extends HashNumeric {
         this.removeFromAll ( acc );
         if      ( access.is(SOP) )          { this.slist.put ( code, acc );           }
         else if ( access.is(AOP) )          { this.alist.put ( code, acc );           }
+        else if ( access.is(HOP) )          { this.hlist.put ( code, acc );           }
+        else if ( access.is(VOP) )          { this.vlist.put ( code, acc );           }
         else if ( access.is(AKICK) )        { this.klist.put ( code, acc );           }
         
         this.addAccList.add ( acc );
@@ -629,7 +654,7 @@ public class ChanInfo extends HashNumeric {
      * @param user
      */
     public void updateLastOped ( User user ) {
-        HashString[] types = { AOP, SOP };
+        HashString[] types = { VOP, HOP, AOP, SOP };
         for ( HashString type : types ) {
             for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(type).entrySet() ) {
                 CSAcc acc = entry.getValue();
@@ -804,7 +829,7 @@ public class ChanInfo extends HashNumeric {
      * @param acc
      */
     public void removeFromAll ( CSAcc acc ) {
-        HashString[] accessList = { SOP, AOP, AKICK };
+        HashString[] accessList = { SOP, AOP, HOP, VOP, AKICK };
         for ( HashString access : accessList ) {
             if ( acc.isNick() ) {
                 this.getAccessList(access).remove ( acc.getNick().getName().getCode() );
@@ -820,7 +845,7 @@ public class ChanInfo extends HashNumeric {
      * @param ni
      */
     public void removeFromAll ( NickInfo ni ) {
-        HashString[] accessList = { SOP, AOP, AKICK };
+        HashString[] accessList = { SOP, AOP, HOP, VOP, AKICK };
         for ( HashString access : accessList ) {
             this.getAccessList(access).remove ( ni.getName().getCode() );
             ni.remFromAccessList ( access, this );
@@ -881,7 +906,12 @@ public class ChanInfo extends HashNumeric {
         
         } else if ( access.is(AOP) ) {
             this.alist.clear ( ); 
-            this.alist.clear ( );
+        
+        } else if ( access.is(HOP) ) {
+            this.hlist.clear ( ); 
+        
+        } else if ( access.is(VOP) ) {
+            this.vlist.clear ( ); 
         
         } else if ( access.is(AKICK) ) {
             this.klist.clear ( ); 
@@ -911,6 +941,10 @@ public class ChanInfo extends HashNumeric {
             access = "Sop";
         } else if ( this.isAccess ( AOP, user ) ) {
             access = "Aop";
+        } else if ( this.isAccess ( HOP, user ) ) {
+            access = "Hop";
+        } else if ( this.isAccess ( VOP, user ) ) {
+            access = "Vop";
         } else if ( this.isAkick ( user ) ) {
             access = "AKick";
         } else {
@@ -929,6 +963,8 @@ public class ChanInfo extends HashNumeric {
         if ( ( holder = this.getIsFounder ( user ) ) != null ) {
         } else if ( ( holder = this.getIsAccess ( SOP, user ) ) != null ) {
         } else if ( ( holder = this.getIsAccess ( AOP, user ) ) != null ) {
+        } else if ( ( holder = this.getIsAccess ( HOP, user ) ) != null ) {
+        } else if ( ( holder = this.getIsAccess ( VOP, user ) ) != null ) {
         } else if ( ( holder = this.getIsAccess ( AKICK, user ) ) != null ) {
         } 
         return holder;
@@ -966,6 +1002,42 @@ public class ChanInfo extends HashNumeric {
     public boolean isAtleastAop ( NickInfo ni ) {
         return ( this.isFounder ( ni ) || this.isAccess ( SOP, ni ) || this.isAccess ( AOP, ni ) );
     } 
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
+    public boolean isAtleastHop ( NickInfo ni ) {
+        return ( this.isAtleastAop ( ni ) || this.isAccess ( HOP, ni ) );
+    } 
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
+    public boolean isAtleastVop ( NickInfo ni ) {
+        return ( this.isAtleastHop ( ni ) || this.isAccess ( VOP, ni ) );
+    } 
+
+    /**
+     *
+     * @param user
+     * @return
+     */
+    public boolean isAtleastHop ( User user ) {
+        return this.isAtleastAop ( user ) || this.isAccess ( HOP, user );
+    }
+
+    /**
+     *
+     * @param user
+     * @return
+     */
+    public boolean isAtleastVop ( User user ) {
+        return this.isAtleastHop ( user ) || this.isAccess ( VOP, user );
+    }
 
     /* For Transparancy */
 

@@ -243,6 +243,23 @@ public class OSExecutor extends Executor {
             }
             this.service.sendMsg ( user, "      Op: "+oped                      );
 
+            /* GET HALFOP LIST */
+            counter = 0;
+            String halfop = "";
+            for ( User cu : c.getList ( HALFOP )  )  {
+                if ( halfop.isEmpty ( )  )  {
+                    halfop = cu.getString ( NAME );
+                } else {
+                    halfop += " "+cu.getString ( NAME );
+                }
+                if ( ++counter > 10 ) {
+                    this.service.sendMsg ( user, "  HalfOp: "+halfop                     );
+                    counter = 0;
+                    halfop = "";
+                }
+            }
+            this.service.sendMsg ( user, "  HalfOp: "+halfop                     );
+
             /* GET VOICE LIST */
             counter = 0;
             for ( User cu : c.getList ( VOICE )  )  {

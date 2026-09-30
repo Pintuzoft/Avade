@@ -83,6 +83,8 @@ public class CSExecutor extends Executor {
         else if ( command.is(INFO) )        { this.info ( user, cmd );                      }
         else if ( command.is(SOP) )         { this.access ( SOP, user, cmd );               }
         else if ( command.is(AOP) )         { this.access ( AOP, user, cmd );               }
+        else if ( command.is(HOP) )         { this.access ( HOP, user, cmd );               }
+        else if ( command.is(VOP) )         { this.access ( VOP, user, cmd );               }
         else if ( command.is(AKICK) )       { this.access ( AKICK, user, cmd );             }
         else if ( command.is(OP) )          { this.op ( user, cmd );                        }
         else if ( command.is(DEOP) )        { this.deop ( user, cmd );                      }
@@ -121,6 +123,8 @@ public class CSExecutor extends Executor {
         lists.add ( new HashString ( "Founder" ) );
         lists.add ( new HashString ( "Sop" ) );
         lists.add ( new HashString ( "Aop" ) );
+        lists.add ( new HashString ( "Hop" ) );
+        lists.add ( new HashString ( "Vop" ) );
         
         if ( cmd.length == 5 && user.isAtleast ( CSOP ) ) {
             if  ( ( ni = NickServ.findNick ( cmd[4] ) ) != null ) {
@@ -139,7 +143,7 @@ public class CSExecutor extends Executor {
         for ( HashString list : lists ) {
 
             if ( !ni.getChanAccess(list).isEmpty() ) {
-                if ( list == AKICK ) {
+                if ( list.is(AKICK) ) {
                     this.service.sendMsg ( user, " " );
                     this.service.sendMsg ( user, "--- IRCop ---" );
                 }
@@ -628,7 +632,7 @@ public class CSExecutor extends Executor {
 
     private void access ( HashString access, User user, String[] cmd ) {
         if ( isShorterThanLen ( 6, cmd ) ) {
-            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "<AOP|SOP> <#chan> <ADD|DEL|LIST> [<nick|#NUM>]" ) );
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "<VOP|HOP|AOP|SOP> <#chan> <ADD|DEL|LIST|WIPE> [<nick|mask>]" ) );
             return;
         }
         HashString command = new HashString ( cmd[5] );
@@ -660,7 +664,7 @@ public class CSExecutor extends Executor {
             return;
         }
         
-        if ( cmd.length < 6 || ! ( access == AOP || access == SOP || access == AKICK )  )  {
+        if ( cmd.length < 6 || ! ( access.is(VOP) || access.is(HOP) || access.is(AOP) || access.is(SOP) || access.is(AKICK) )  )  {
             /* too short or wrong*/
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "AKICK <#chan> <ADD|DEL|LIST> [<nick|#NUM>]" )  );
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
@@ -765,9 +769,26 @@ public class CSExecutor extends Executor {
         this.snoop.msg ( true, ACCESS_LIST, ci.getName ( ), user, cmd );
     }
 
+    /**
+     * Who may add and delete entries on a channel access list
+     * SOP, AOP and AKICK: SOP and founder. HOP and VOP: AOP and above.
+     * @param ci
+     * @param ni
+     * @param list
+     * @return
+     */
+    public static boolean canManageList ( ChanInfo ci, NickInfo ni, HashString list ) {
+        if ( list.is(HOP) || list.is(VOP) ) {
+            return ci.isAtleastAop ( ni );
+        }
+        return ci.isAtleastSop ( ni );
+    }
+
     private String getListName ( HashString access ) {
         if      ( access.is(SOP) )      { return "Sop";     }
         else if ( access.is(AOP) )      { return "Aop";     }
+        else if ( access.is(HOP) )      { return "Hop";     }
+        else if ( access.is(VOP) )      { return "Vop";     }
         else if ( access.is(AKICK) )    { return "AKick";   }
         else {
             return "";
@@ -776,6 +797,8 @@ public class CSExecutor extends Executor {
     public HashString getAddList ( HashString access ) {
         if      ( access.is(SOP) )      { return ADDSOP;    }
         else if ( access.is(AOP) )      { return ADDAOP;    }
+        else if ( access.is(HOP) )      { return ADDHOP;    }
+        else if ( access.is(VOP) )      { return ADDVOP;    }
         else if ( access.is(AKICK) )    { return ADDAKICK;  }
         else {
             return null;
@@ -784,6 +807,8 @@ public class CSExecutor extends Executor {
     public HashString getDelList ( HashString access ) {
         if      ( access.is(SOP) )      { return DELSOP;    }
         else if ( access.is(AOP) )      { return DELAOP;    }
+        else if ( access.is(HOP) )      { return DELHOP;    }
+        else if ( access.is(VOP) )      { return DELVOP;    }
         else if ( access.is(AKICK) )    { return DELAKICK;  }
         else {
             return null;
@@ -1426,6 +1451,12 @@ public class CSExecutor extends Executor {
 
         } else if ( access.is(AOP) ) {
             return "aop";
+
+        } else if ( access.is(HOP) ) {
+            return "hop";
+
+        } else if ( access.is(VOP) ) {
+            return "vop";
         }
         return "";
     }
@@ -1966,6 +1997,8 @@ public class CSExecutor extends Executor {
             
         } else if ( command.is(SOP) ||
                     command.is(AOP) ||
+                    command.is(HOP) ||
+                    command.is(VOP) ||
                     command.is(AKICK) ) {
             
             //:DreamHealer PRIVMSG ChanServ@services.avade.net :akick #friends add *!*@10.0.1/24
@@ -1993,7 +2026,13 @@ public class CSExecutor extends Executor {
                                     ni.is(ni2) &&
                                     subcommand.is(DEL) &&
                                     ! command.is(AKICK) &&
-                                    ci.isAtleastAop ( ni ) );
+                                    ci.isAtleastVop ( ni ) );
+
+                /* Only SOP+ may touch the AKICK list, also indirectly by adding an
+                   akicked nick or mask to another list (which removes the akick) */
+                boolean targetAkicked = ( ci != null &&
+                                          ci.getAccessList(AKICK).containsKey (
+                                              ni2 != null ? ni2.getName().getCode() : new HashString ( mask ).getCode() ) );
 
                 if ( ! subcommand.is(ADD) &&
                      ! subcommand.is(DEL) ) {
@@ -2011,9 +2050,11 @@ public class CSExecutor extends Executor {
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
-                } else if ( ni == null || ( ! ci.isAtleastSop ( ni ) && ! selfDel ) ) {
+                } else if ( ni == null || ( ! canManageList ( ci, ni, command ) && ! selfDel ) ) {
                     result.setString1 ( user.getName() );
                     result.setStatus ( ACCESS_DENIED );
+                } else if ( targetAkicked && ! ci.isAtleastSop ( ni ) ) {
+                    result.setStatus ( NOT_ENOUGH_ACCESS );
                 } else if ( ni2 != null && ! ni2.isAuth ( ) ) {
                     result.setNick2 ( ni2 );
                     result.setStatus ( NICK_NOT_AUTHED );
@@ -2142,7 +2183,8 @@ public class CSExecutor extends Executor {
                 } else if ( ( target = Handler.findUser ( cmd[5] ) ) == null ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( NICK_NOT_EXIST );
-                } else if ( ( ni = ci.getNickByUser ( user ) ) == null && ! user.isAtleast ( IRCOP )) {
+                } else if ( ! ci.isAtleastVop ( ni = ci.getNickByUser ( user ) ) && ! user.isAtleast ( IRCOP )) {
+                    /* VOP+, an akicked nick must not count as access */
                     result.setChanInfo ( ci );
                     result.setStatus ( ACCESS_DENIED );
                 } else {
@@ -2172,7 +2214,8 @@ public class CSExecutor extends Executor {
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( CHAN_NOT_REGISTERED );
-                } else if ( ( ni = ci.getNickByUser ( user ) ) == null ) {
+                } else if ( ! ci.isAtleastAop ( ni = ci.getNickByUser ( user ) ) ) {
+                    /* AOP+ like in the ircd, an akicked nick must not count as access */
                     result.setChanInfo ( ci );
                     result.setStatus ( NICK_ACCESS_DENIED ); 
                 } else if ( ci.getSettings().is ( FROZEN ) ) {
@@ -2196,7 +2239,8 @@ public class CSExecutor extends Executor {
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
                     result.setStatus ( CHAN_NOT_REGISTERED );
-                } else if ( ( ni = ci.getNickByUser ( user ) ) == null ) {
+                } else if ( ! ci.isAtleastAop ( ni = ci.getNickByUser ( user ) ) ) {
+                    /* AOP+ like in the ircd, an akicked nick must not count as access */
                     result.setChanInfo ( ci );
                     result.setStatus ( NICK_ACCESS_DENIED ); 
                 } else if ( ci.getSettings().is ( FROZEN ) ) {
@@ -2315,7 +2359,7 @@ public class CSExecutor extends Executor {
                 } else if ( ci.getSettings().is ( CLOSED ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
-                } else if ( ( ni = ci.getTopNickByUser ( user ) ) == null ) {
+                } else if ( ! ci.isAtleastAop ( ni = ci.getTopNickByUser ( user ) ) ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( ACCESS_DENIED );                
                 } else if ( cmd.length > 5 && ( ( target = Handler.findUser ( cmd[5] ) ) == null || ! c.nickIsPresent ( cmd[5] ) ) ) {
@@ -2480,6 +2524,10 @@ public class CSExecutor extends Executor {
             return "SOP";
         } else if ( command.is(AOP) ) {
             return "AOP";
+        } else if ( command.is(HOP) ) {
+            return "HOP";
+        } else if ( command.is(VOP) ) {
+            return "VOP";
         } else if ( command.is(AKICK) ) {
             return "AKick";
         } else {
