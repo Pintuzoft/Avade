@@ -48,6 +48,8 @@ public class NickInfo extends HashNumeric {
     private HashString              hashMask;       /* Integer representation of user@mask */ 
     private String                  pass;
     private String                  mail; 
+    private String                  vhost;              /* host shown instead of the real one */
+    private long                    vhostChanged = 0;   /* ms, when the user last changed it */
     private NickSetting             settings;
     private String                  regTime;
     private String                  lastUsed; 
@@ -477,6 +479,34 @@ public class NickInfo extends HashNumeric {
      *
      * @param mail
      */
+    /**
+     * @return the vhost of the nick or null
+     */
+    public String getVhost ( ) {
+        return this.vhost;
+    }
+
+    /**
+     * @param vhost the vhost or null to remove it
+     */
+    public void setVhost ( String vhost ) {
+        this.vhost = vhost;
+    }
+
+    /**
+     * @return when the vhost was last changed by the user (ms)
+     */
+    public long getVhostChanged ( ) {
+        return this.vhostChanged;
+    }
+
+    /**
+     *
+     */
+    public void vhostChanged ( ) {
+        this.vhostChanged = System.currentTimeMillis ( );
+    }
+
     public void setEmail ( String mail ) {
         this.mail = mail;
         this.settings.set ( AUTH, true );

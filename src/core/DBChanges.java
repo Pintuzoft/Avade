@@ -187,6 +187,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126092 ( ) );
                 qList.add ( "update settings set value = '1.2609-2' where name = 'version'" );
 
+            case 126093 :
+                qList.add ( "to: v1.2609-3");
+                qList.addAll ( this.db126093 ( ) );
+                qList.add ( "update settings set value = '1.2609-3' where name = 'version'" );
+
                 break;
                 
             default :
@@ -643,6 +648,13 @@ public class DBChanges extends HashNumeric {
         }
         qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
         qList.add("SET FOREIGN_KEY_CHECKS=1");
+        return qList;
+    }
+
+    private ArrayList<String> db126093 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Vhosts: host shown instead of the real one (SVSHOST) */
+        qList.add("CREATE TABLE IF NOT EXISTS vhost (name varchar(32) NOT NULL, host varchar(64) NOT NULL, instater varchar(33) DEFAULT NULL, stamp datetime DEFAULT NULL, PRIMARY KEY (name), CONSTRAINT vhost_nick FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_swedish_ci");
         return qList;
     }
         

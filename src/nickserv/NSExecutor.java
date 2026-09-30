@@ -532,6 +532,9 @@ import java.util.regex.Pattern;
         if ( ni.getSettings().is(SHOWEMAIL) ) {
             this.service.sendMsg(user, f.b ( ) +"       Email: "+f.b ( ) +ni.getEmail ( ) );
         }
+        if ( ni.getVhost ( ) != null ) {
+            this.service.sendMsg ( user, f.b ( ) +"       Vhost: "+f.b ( ) +ni.getVhost ( ) );
+        }
         if ( ni.getSettings().getInfoStr().length() > 0 ) {
             this.service.sendMsg ( user, f.b ( ) +"    Settings: "+f.b ( ) +ni.getSettings().getInfoStr ( ) );
         }
@@ -610,12 +613,71 @@ import java.util.regex.Pattern;
                 doSetString ( SETEMAIL, user, cmd );
             } else if ( command.is(PASSWD) ) {
                 doSetString ( SETPASSWD, user, cmd );
+            } else if ( command.is(VHOST) ) {
+                doSetVhost ( user, ni, cmd );
             } else {
                 this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
                 this.snoop.msg ( false, SET, ni.getName(), user, cmd );
             }  
              
         }
+    }
+    
+    /* SET VHOST <host|OFF> */
+    private void doSetVhost ( User user, NickInfo ni, String[] cmd ) {
+        String host = cmd[5];
+        boolean isCurrentNick = user.getName().is ( ni.getName() );
+        
+        if ( ! ni.isAuth ( ) ) {
+            this.service.sendMsg ( user, "Error: you need to confirm the email of your nick before you can use a vhost." );
+            this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            return;
+        }
+        if ( System.currentTimeMillis ( ) - ni.getVhostChanged ( ) < 10 * 60 * 1000L ) {
+            this.service.sendMsg ( user, "Error: you can only change your vhost once every 10 minutes." );
+            this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            return;
+        }
+        
+        if ( host.equalsIgnoreCase ( "OFF" ) ) {
+            if ( ni.getVhost ( ) == null ) {
+                this.service.sendMsg ( user, "Error: "+ni.getNameStr()+" has no vhost." );
+                return;
+            }
+            if ( ! NSDatabase.saveVhost ( ni, null, null ) ) {
+                this.service.sendMsg ( user, "Error: Database not available, try again later." );
+                return;
+            }
+            ni.setVhost ( null );
+            ni.vhostChanged ( );
+            if ( isCurrentNick && ! NickServ.resetHost ( user ) ) {
+                this.service.sendMsg ( user, "The vhost of "+ni.getNameStr()+" has been removed, reconnect to get your normal host back." );
+            } else {
+                this.service.sendMsg ( user, "The vhost of "+ni.getNameStr()+" has been removed." );
+            }
+            NickServ.addLog ( new NSLogEvent ( ni.getName(), VHOST, user, null ) );
+            this.snoop.msg ( true, SET, ni.getName(), user, cmd );
+            return;
+        }
+        
+        String reason = NickServ.checkVhost ( host );
+        if ( reason != null ) {
+            this.service.sendMsg ( user, "Error: "+reason+"." );
+            this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            return;
+        }
+        if ( ! NSDatabase.saveVhost ( ni, host, ni.getNameStr ( ) ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        ni.setVhost ( host );
+        ni.vhostChanged ( );
+        if ( isCurrentNick ) {
+            NickServ.applyVhost ( user, ni );
+        }
+        this.service.sendMsg ( user, "The vhost of "+ni.getNameStr()+" is now: "+host );
+        NickServ.addLog ( new NSLogEvent ( ni.getName(), VHOST, user, null ) );
+        this.snoop.msg ( true, SET, ni.getName(), user, cmd );
     }
     
     private void changeFlag ( HashString flag, User user, String[] cmd ) {

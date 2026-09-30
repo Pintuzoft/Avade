@@ -456,6 +456,67 @@ public class NSDatabase extends Database {
     /**
      *
      */
+    /**
+     * Load the vhosts of all nicks
+     * @return false if they could not be loaded
+     */
+    public static boolean loadAllVhosts ( )  {
+        NickInfo ni;
+        if  ( ! activateConnection ( ) ) {
+            return false;
+        }
+        try {
+            String query = "select name,host from vhost";
+            ps = sql.prepareStatement ( query );
+            res2 = ps.executeQuery ( );
+            while ( res2.next ( ) )  {
+                if ( ( ni = NickServ.findNick ( res2.getString ( "name" ) ) ) != null ) {
+                    ni.setVhost ( res2.getString ( "host" ) );
+                }
+            }
+            res2.close ( );
+            ps.close ( );
+        } catch ( SQLException ex )  {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Store or remove the vhost of a nick
+     * @param ni
+     * @param host the vhost, or null to remove it
+     * @param instater nick that set it
+     * @return false if it could not be written
+     */
+    public static boolean saveVhost ( NickInfo ni, String host, String instater )  {
+        if  ( ! activateConnection ( ) ) {
+            return false;
+        }
+        try {
+            if ( host == null ) {
+                ps = sql.prepareStatement ( "delete from vhost where name = ?" );
+                ps.setString ( 1, ni.getNameStr ( ) );
+            } else {
+                ps = sql.prepareStatement ( "insert into vhost ( name, host, instater, stamp ) values ( ?, ?, ?, now() ) "
+                                          + "on duplicate key update host = ?, instater = ?, stamp = now()" );
+                ps.setString ( 1, ni.getNameStr ( ) );
+                ps.setString ( 2, host );
+                ps.setString ( 3, instater );
+                ps.setString ( 4, host );
+                ps.setString ( 5, instater );
+            }
+            ps.execute ( );
+            ps.close ( );
+            idleUpdate ( "saveVhost ( )" );
+        } catch ( SQLException ex )  {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
     public static boolean loadAllNickExp ( )  {
         NickInfo ni;
         if  ( ! activateConnection ( ) ) {
@@ -466,7 +527,7 @@ public class NSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             res2 = ps.executeQuery ( );
 
-            if  ( res2.next ( ) )  {
+            while  ( res2.next ( ) )  {
                 if ( (ni = NickServ.findNick(res2.getString("name"))) != null ) {
                     ni.getExp().setLastSent ( Long.parseLong ( res2.getString ( "lastsent" )  )  );
                     ni.getExp().setMailCount ( res2.getInt ( "mailcount" )  );

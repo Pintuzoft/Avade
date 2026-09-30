@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
+import nickserv.NSDatabase;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import server.Server;
@@ -134,6 +135,9 @@ public class OSExecutor extends Executor {
         } else if ( command.is(SPAMFILTER) ) {
             this.doSpamFilter ( user, cmd );
         
+        } else if ( command.is(VHOST) ) {
+            this.doVhost ( user, cmd );
+            
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user, cmd );
         
@@ -942,6 +946,48 @@ public class OSExecutor extends Executor {
     }
       
           
+    /* VHOST <nick> <host|OFF>, for staff hosts or to remove an abusive one.
+       Not limited by vhostforbidden. */
+    private void doVhost ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :VHOST nick host
+        //   0      1        2                       3     4    5   = 6
+        NickInfo ni;
+        if ( cmd.length < 6 ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "VHOST <nick> <host|OFF>" ) );
+            return;
+        }
+        if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
+            this.service.sendMsg ( user, "Error: nick "+cmd[4]+" is not registered." );
+            return;
+        }
+        String host = cmd[5].equalsIgnoreCase ( "OFF" ) ? null : cmd[5];
+        String reason;
+        if ( host != null && ( reason = NickServ.checkVhostSyntax ( host ) ) != null ) {
+            this.service.sendMsg ( user, "Error: "+reason+"." );
+            return;
+        }
+        if ( ! NSDatabase.saveVhost ( ni, host, user.getOper().getNameStr ( ) ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        ni.setVhost ( host );
+        for ( User u : Handler.findUsersByNick ( ni ) ) {
+            if ( u.getName().is ( ni.getName() ) ) {
+                if ( host != null ) {
+                    NickServ.applyVhost ( u, ni );
+                } else {
+                    NickServ.resetHost ( u );
+                }
+            }
+        }
+        String string = user.getOper().getNameStr()+" "+( host != null ? "set the vhost of "+ni.getNameStr()+" to "+host : "removed the vhost of "+ni.getNameStr() );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+        OSLogEvent log = new OSLogEvent ( ni.getName(), VHOST, user, user.getOper().getNick() );
+        log.setData ( host != null ? host : "OFF" );
+        OSDatabase.logEvent ( log );
+    }
+      
     private void doServer(User user, String[] cmd) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <DEL> <SERVERNAME> 
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <SET> <SERVERNAME> <PRIMARY> <SERVERNAME> 

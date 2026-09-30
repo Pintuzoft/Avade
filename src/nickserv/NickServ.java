@@ -27,6 +27,7 @@ import chanserv.ChanServ;
 import command.Command;
 import core.CommandInfo;
 import core.Handler;
+import server.Server;
 import core.HashString;
 import core.Proc;
 import core.Service;
@@ -94,6 +95,7 @@ public class NickServ extends Service {
         niList = nicks;
         if ( ! NSDatabase.loadAllSettings() ||
              ! NSDatabase.loadAllNickExp() ||
+             ! NSDatabase.loadAllVhosts() ||
              ! MSDatabase.loadAllMemos() ) {
             Proc.log ( "NickServ: could not load nick settings/memos from the database" );
             return;
@@ -626,6 +628,87 @@ public class NickServ extends Service {
      *
      * @param u
      */
+    /**
+     * Check a vhost a user wants
+     * @param host
+     * @return null if it is fine, else the reason it is not
+     */
+    public static String checkVhostSyntax ( String host ) {
+        if ( host == null || host.length() < 3 || host.length() > 63 ) {
+            return "a vhost must be 3 to 63 characters long";
+        }
+        if ( ! host.matches ( "[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+" ) ) {
+            return "a vhost may only contain a-z, 0-9, - and . and must contain at least one dot";
+        }
+        return null;
+    }
+
+    /**
+     * Check a vhost a user wants (syntax, not an ip, not the network's own
+     * names and not in vhostforbidden)
+     * @param host
+     * @return null if it is fine, else the reason it is not
+     */
+    public static String checkVhost ( String host ) {
+        String reason = checkVhostSyntax ( host );
+        if ( reason != null ) {
+            return reason;
+        }
+        if ( host.substring ( host.lastIndexOf ( '.' ) + 1 ).matches ( "[0-9]+" ) ) {
+            return "a vhost may not look like an ip address";
+        }
+        String[] reserved = {
+            Proc.getConf().get ( NAME ).getString(),
+            Proc.getConf().get ( STATS ).getString(),
+            Proc.getConf().get ( DOMAIN ).getString()
+        };
+        for ( String r : reserved ) {
+            if ( r != null && ! r.isEmpty() && 
+                 ( host.equalsIgnoreCase ( r ) || host.toLowerCase().endsWith ( "."+r.toLowerCase() ) ) ) {
+                return "that vhost is reserved for the network";
+            }
+        }
+        for ( Server s : Handler.getServerList ( ) ) {
+            if ( s.getName() != null && host.equalsIgnoreCase ( s.getName().getString() ) ) {
+                return "that vhost is reserved for the network";
+            }
+        }
+        for ( String pattern : Proc.getConf().getVhostForbidden ( ) ) {
+            if ( StringMatch.matches ( host, pattern ) ) {
+                return "that vhost is not allowed";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Show the vhost of the nick on the user
+     * @param u
+     * @param ni
+     */
+    public static void applyVhost ( User u, NickInfo ni ) {
+        if ( u != null && ni != null && ni.getVhost ( ) != null ) {
+            /* SVSHOST sets the masked host, bahamut only shows it with umode +H */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSHOST "+u.getString ( NAME )+" "+ni.getVhost ( ) );
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 +H" );
+        }
+    }
+
+    /**
+     * Show the user's own host again
+     * @param u
+     * @return false if not possible (the ircd masks hosts, so this would
+     *         reveal the real host: the user has to reconnect)
+     */
+    public static boolean resetHost ( User u ) {
+        if ( u == null || Handler.getUhmType ( ) > 0 ) {
+            return false;
+        }
+        /* Without umode +H bahamut shows the user's own host again */
+        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 -H" );
+        return true;
+    }
+
     public static void fixIdentState ( User u )  {
         NickInfo ni;
 
@@ -653,6 +736,7 @@ public class NickServ extends Service {
                 }
                 u.getModes().set ( IDENT, true );
                 Handler.getMemoServ().checkNick ( ni, u );
+                applyVhost ( u, ni );
 
             } else {
                 ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 -r" );

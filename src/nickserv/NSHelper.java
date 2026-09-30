@@ -135,6 +135,9 @@ public class NSHelper extends Helper {
         } else if ( command.is(SHOWHOST) ) {
             this.setShowHost ( user );
         
+        } else if ( command.is(VHOST) ) {
+            this.setVhost ( user );
+        
         } else if ( command.is(EMAIL) ) {
             this.setEmail ( user );
         
@@ -347,6 +350,7 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"SHOWHOST"+f.b ( ) +"   Show real host in info"                                             );
         this.service.sendMsg ( user, "       "+f.b ( ) +"EMAIL"+f.b ( ) +"      Set a new email on nick"                                            );
         this.service.sendMsg ( user, "       "+f.b ( ) +"PASSWD"+f.b ( ) +"     Set a new password on nick"                                         );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"VHOST"+f.b ( ) +"      Set a host that is shown instead of your own"                      );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                           );
@@ -437,6 +441,22 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   Recommending this option being off."                               );
         this.showEnd ( user );
     } 
+    
+    private void setVhost ( User user ) {
+        this.showStart ( user, "Set Vhost" );
+        this.service.sendMsg ( user, "   "                                                                  );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET VHOST <host>"+f.b ( ) +""        );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET VHOST OFF"+f.b ( ) +""           );
+        this.service.sendMsg ( user, "   "                                                                  );
+        this.service.sendMsg ( user, "   Sets a virtual host that is shown instead of your own host every"  );
+        this.service.sendMsg ( user, "   time you identify to your nick, for example: my.cool.host"          );
+        this.service.sendMsg ( user, "   "                                                                  );
+        this.service.sendMsg ( user, "   The host may contain a-z, 0-9, - and . and needs at least one dot." );
+        this.service.sendMsg ( user, "   IP addresses and the network's own names can't be used. The email" );
+        this.service.sendMsg ( user, "   of the nick must be confirmed and the vhost can be changed once"    );
+        this.service.sendMsg ( user, "   every 10 minutes."                                                 );
+        this.showEnd ( user );
+    }
     
     private void setEmail ( User user ) {
         this.showStart ( user, "Set Email" );

@@ -147,6 +147,24 @@ public class Handler extends HashNumeric {
      * @return true when all registered nicks and channels are loaded. Until
      *         then services must not touch anyone's identification or access.
      */
+    private static int uhmType = 0;
+
+    private static void setUhmType ( String type ) {
+        try {
+            uhmType = Integer.parseInt ( type );
+        } catch ( NumberFormatException ex ) {
+            uhmType = 0;
+        }
+    }
+
+    /**
+     * @return the user host-masking type of the network (SVSUHM), 0 = none.
+     *         When the ircd masks hosts we must never show a user's real host.
+     */
+    public static int getUhmType ( ) {
+        return uhmType;
+    }
+
     public static boolean isDataLoaded ( ) {
         return NickServ.isLoaded ( ) && ChanServ.isLoaded ( );
     }
@@ -316,6 +334,10 @@ public class Handler extends HashNumeric {
                     } else if ( command.is(OS) ) {
                         doOS ( this.data );
 
+                    } else if ( command.is(SVSUHM) ) {
+                        /* :server SVSUHM <type> [umodeH] */
+                        setUhmType ( this.data.length > 2 ? this.data[2] : "0" );
+
                     } else if ( command.is(SQUIT) ) {
                         /* :hub SQUIT leaf :reason */
                         this.doSquit ( this.data[2] );
@@ -414,6 +436,10 @@ public class Handler extends HashNumeric {
                 
                 } else if ( this.command.is(SQUIT) ) {
                     this.doSquit ( this.data[1] );
+
+                } else if ( this.command.is(SVSUHM) ) {
+                    /* SVSUHM <type> <umodeH>, sent by the hub when we link */
+                    setUhmType ( this.data.length > 1 ? this.data[1] : "0" );
                 
                 } else if ( this.command.is(SVINFO) ) {
                     this.doSVInfo ( );

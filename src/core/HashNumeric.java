@@ -774,6 +774,16 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString VHOST = new HashString ( "VHOST" );
+
+    /**
+     *
+     */
+    public static HashString SVSUHM = new HashString ( "SVSUHM" );
+
+    /**
+     *
+     */
     public static HashString ALL = new HashString ( "ALL" );
 
     /**

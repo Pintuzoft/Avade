@@ -128,6 +128,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "JUPE",      CMDAccess ( JUPE ),        "Jupiter a server" )                            );
         cmdList.add ( new CommandInfo ( "SERVER",    CMDAccess ( SERVER ),      "Handle server list" )                          );
         cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )          );
+        cmdList.add ( new CommandInfo ( "VHOST",     CMDAccess ( VHOST ),       "Set or remove the vhost of a nick" )           );
         cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )         );
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }

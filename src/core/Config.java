@@ -38,6 +38,7 @@ public class Config extends HashNumeric {
     private HashMap<BigInteger,Integer> configInt;
     private HashMap<BigInteger,Boolean> configBool;
     private HashMap<BigInteger,HashString> whiteList;
+    private ArrayList<String> vhostForbidden = new ArrayList<>();
     private HashMap<BigInteger,Integer> commands;
     private static final HashString[] cList = { 
         STOP,REHASH,BAHAMUT,SPAMFILTER,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,CLIST,SLIST,JUPE,
@@ -166,6 +167,16 @@ public class Config extends HashNumeric {
                 System.out.println("Warning!: The whitelist is empty, add services ip and staff addresses");
             }
               
+            /* VHOSTFORBIDDEN (optional): wildcard patterns users can't use as vhost */
+            Object forbidden = result.get ( "vhostforbidden" );
+            if ( forbidden instanceof java.util.List ) {
+                for ( Object o : (java.util.List<?>) forbidden ) {
+                    if ( o != null && ! o.toString().trim().isEmpty() ) {
+                        this.vhostForbidden.add ( o.toString().trim() );
+                    }
+                }
+            }
+
             /* COMMANDS */
             HashString[] accesses = { SRA, CSOP, SA, IRCOP };
             for ( HashString access : accesses ) {
@@ -215,6 +226,13 @@ public class Config extends HashNumeric {
      *
      * @return
      */
+    /**
+     * @return wildcard patterns that users may not use as vhost
+     */
+    public ArrayList<String> getVhostForbidden ( ) {
+        return this.vhostForbidden;
+    }
+
     public HashMap<BigInteger,HashString> getWhiteList ( ) {
         return this.whiteList;
     }
@@ -312,7 +330,10 @@ public class Config extends HashNumeric {
             System.out.println("commands is null!!");
         }     
         if ( commands.get(name.getCode()) == null ) {
-            System.out.println("commands.get is null!!");
+            /* Not in services.conf (e.g. a command added in a newer version):
+               only SRA+ may use it until it is configured */
+            System.out.println("Warning: command "+name.getString()+" has no access level in services.conf, using SRA");
+            return 4;
         }     
         
         return commands.get(name.getCode());
