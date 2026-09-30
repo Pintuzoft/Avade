@@ -826,6 +826,7 @@ public class OSExecutor extends Executor {
         
         for ( User u : Handler.findUsersByNick ( ni ) ) {
             Handler.forceOperModes ( u );
+            NickServ.applyStaffTag ( u );
         }
 
     }
@@ -843,7 +844,7 @@ public class OSExecutor extends Executor {
                 return;            
         
         } else if ( result.is(SYNTAX_ERROR_ADD) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER ADD <string> <flags> <time> <reason>" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER ADD <string> <flags> [target:<#chan|nick>] <reason>" ) );
                 return;            
         
         } else if ( result.is(BADFLAGS) ) {
@@ -866,7 +867,8 @@ public class OSExecutor extends Executor {
         if ( result.is(SHOWLIST) ) {
                 this.service.sendMsg ( user, "*** SpamFilter LIST ***" );
                 for ( SpamFilter sf : OperServ.getSpamFilters ( ) ) {
-                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), sf.getReason() ) );
+                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), 
+                                                          "["+sf.getShortID()+"] "+( sf.getTarget() != null ? "(target: "+sf.getTarget()+") " : "" )+sf.getReason() ) );
                 }
                 this.service.sendMsg ( user, "*** End of List ***" );            
         
@@ -886,12 +888,13 @@ public class OSExecutor extends Executor {
                 String reason = result.getString3();
                 String stamp = dateFormat.format ( new Date ( ) );
                 sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getNameStr(), reason, stamp );
+                sFilter.setTarget ( result.getString4 ( ) );
                 
-                /*  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason); */
                 OperServ.addSpamFilter ( sFilter );
             
-                this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );                
-                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Reason: "+reason  );            
+                this.service.sendServ ( sFilter.toServerLine ( ) );
+                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter "+sFilter.getShortID()+": "+pattern+" Flags: "+flags+
+                                          ( sFilter.getTarget() != null ? " Target: "+sFilter.getTarget() : "" )+" Reason: "+reason  );            
         }
         
     }
@@ -1459,7 +1462,14 @@ public class OSExecutor extends Executor {
                 //            0       1                          2           3   4                 5     6        7+              = 8+
                 sub = (cmd.length > 4 ? new HashString ( cmd[4] ) : new HashString ( "0" ));
                 flag = cmd.length > 6 ? cmd[6].toUpperCase().hashCode() : 0;
-                reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : "SpamFiltered"; 
+                /* optional target:<#chan|nick mask> before the reason */
+                String sfTarget = null;
+                int reasonAt = 7;
+                if ( cmd.length > 7 && cmd[7].toLowerCase().startsWith ( "target:" ) ) {
+                    sfTarget = cmd[7].substring ( 7 );
+                    reasonAt = 8;
+                }
+                reason = cmd.length > reasonAt ? Handler.cutArrayIntoString ( cmd, reasonAt ) : "SpamFiltered"; 
                 stamp = dateFormat.format ( new Date ( ) );
                                  
                 if ( isShorterThanLen ( 5, cmd ) ) {
@@ -1480,10 +1490,13 @@ public class OSExecutor extends Executor {
                 } else if ( OperServ.findSpamFilter ( cmd[5] ) != null ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( FILTER_EXISTS );
+                } else if ( sfTarget != null && ! sfTarget.matches ( "[^\\s:,]{1,63}" ) ) {
+                    result.setStatus ( SYNTAX_ERROR_ADD );
                 } else {
                     result.setString1 ( cmd[5] );
                     result.setString2 ( cmd[6] );
                     result.setString3 ( reason );
+                    result.setString4 ( sfTarget );
                     result.setStatus ( ADD );
                 }            
         

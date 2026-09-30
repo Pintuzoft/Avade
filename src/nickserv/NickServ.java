@@ -695,6 +695,40 @@ public class NickServ extends Service {
     }
 
     /**
+     * Show the services staff level (SA and up) of an identified user in its
+     * WHOIS, or remove it when the user no longer has it
+     * @param u
+     */
+    public static void applyStaffTag ( User u ) {
+        if ( u == null ) {
+            return;
+        }
+        int access = ( u.getSID ( ) != null ? u.getAccess ( ) : 0 );
+        if ( access < 2 ) {
+            /* IRC operators are already shown by the ircd */
+            access = 0;
+        }
+        if ( access == u.getStaffTag ( ) ) {
+            return;
+        }
+        String name = u.getString ( NAME );
+        if ( access == 0 ) {
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSTAG "+name+" 0 -" );
+        } else {
+            String role;
+            switch ( access ) {
+                case 5 :  role = "the Services Master";              break;
+                case 4 :  role = "a Services Root Administrator";    break;
+                case 3 :  role = "a Channel Services Operator";      break;
+                default : role = "a Services Administrator";         break;
+            }
+            /* -320: replace any earlier tag, + = everyone can see it */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSTAG "+name+" 0 -320 + :is "+role );
+        }
+        u.setStaffTag ( access );
+    }
+
+    /**
      * Show the user's own host again
      * @param u
      * @return false if not possible (the ircd masks hosts, so this would
@@ -749,7 +783,7 @@ public class NickServ extends Service {
             Handler.getNickServ().adNick ( u ); /* let nickserv advertise registration */
             u.resetState ( );
         }
-     
+        applyStaffTag ( u );
     }
     
     /**

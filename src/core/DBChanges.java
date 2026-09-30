@@ -202,6 +202,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126095 ( ) );
                 qList.add ( "update settings set value = '1.2609-5' where name = 'version'" );
 
+            case 126096 :
+                qList.add ( "to: v1.2609-6");
+                qList.addAll ( this.db126096 ( ) );
+                qList.add ( "update settings set value = '1.2609-6' where name = 'version'" );
+
                 break;
                 
             default :
@@ -658,6 +663,13 @@ public class DBChanges extends HashNumeric {
         }
         qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
         qList.add("SET FOREIGN_KEY_CHECKS=1");
+        return qList;
+    }
+
+    private ArrayList<String> db126096 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Spamfilters limited to a channel/nick mask */
+        qList.add("alter table spamfilter add target varchar(64) default null after flags");
         return qList;
     }
 

@@ -47,6 +47,7 @@ public class User extends HashNumeric {
     private ArrayList<Chan>             cList;
     private ServicesID                  sid;
     private long            serviceStamp;
+    private int             staffTag = 0;   /* services access shown in WHOIS (SVSTAG) */
     private HostInfo                    hi;
     
     private UserFlood                   flood;
@@ -511,12 +512,6 @@ public class User extends HashNumeric {
      */
     public int getAccess ( ) {
         if ( this.sid == null ) {
-            System.out.println ( "DEBUG!!: getaccess().sid:null" );
-        } else {
-            System.out.println ( "DEBUG!!: getaccess().sid:!null" );
-        }
-         
-        if ( this.sid == null ) {
             this.sid = new ServicesID ();
         }
         return this.sid.getAccess ( );
@@ -552,6 +547,14 @@ public class User extends HashNumeric {
     /**
      * @return the services ID the ircd told us the user has (NICK line)
      */
+    public int getStaffTag ( ) {
+        return this.staffTag;
+    }
+
+    public void setStaffTag ( int access ) {
+        this.staffTag = access;
+    }
+
     public long getServiceStamp ( ) {
         return this.serviceStamp;
     }

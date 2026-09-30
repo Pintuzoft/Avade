@@ -325,23 +325,23 @@ public class OSDatabase extends Database {
             return sfList;
         }
         try {
-            query = "select id,pattern,flags,instater,reason,stamp "+
+            query = "select id,pattern,flags,instater,reason,stamp,target "+
                     "from spamfilter "+
                     "order by pattern asc";
             ps = sql.prepareStatement ( query );
             res2 = ps.executeQuery ( );
             
             while ( res2.next ( ) ) {
-                sfList.add (
-                    new SpamFilter (
-                        res2.getLong ( "id" ),
-                        res2.getString ( "pattern" ),
-                        res2.getString ( "flags" ),
-                        res2.getString ( "instater" ),
-                        res2.getString ( "reason" ),
-                        res2.getString ( "stamp" )
-                    )
+                SpamFilter sf = new SpamFilter (
+                    res2.getLong ( "id" ),
+                    res2.getString ( "pattern" ),
+                    res2.getString ( "flags" ),
+                    res2.getString ( "instater" ),
+                    res2.getString ( "reason" ),
+                    res2.getString ( "stamp" )
                 );
+                sf.setTarget ( res2.getString ( "target" ) );
+                sfList.add ( sf );
             }
             res2.close ( );
             ps.close ( );
@@ -918,8 +918,8 @@ public class OSDatabase extends Database {
             return false;
         }
         query = "insert into spamfilter "+
-                "(id,pattern,flags,instater,reason,stamp) "+
-                "values (?,?,?,?,?,?)";
+                "(id,pattern,flags,instater,reason,stamp,target) "+
+                "values (?,?,?,?,?,?,?)";
         
         try {
             ps = sql.prepareStatement ( query );
@@ -929,6 +929,7 @@ public class OSDatabase extends Database {
             ps.setString   ( 4, sf.getInstater ( ) );
             ps.setString   ( 5, sf.getReason ( ) );
             ps.setString   ( 6, sf.getStamp ( ) );
+            ps.setString   ( 7, sf.getTarget ( ) );
             ps.execute ( );
             ps.close ( );
             

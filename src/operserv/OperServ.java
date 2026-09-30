@@ -1265,7 +1265,7 @@ public class OperServ extends Service {
 
     public void sendSpamFilter ( ) {
         for ( SpamFilter sf : spamfilters ) {
-            this.sendServ ( "SF "+sf.getPattern()+" "+sf.getBitFlags()+" :"+sf.getReason() );
+            this.sendServ ( sf.toServerLine ( ) );
         }
     }
 
