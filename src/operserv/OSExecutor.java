@@ -138,6 +138,9 @@ public class OSExecutor extends Executor {
         } else if ( command.is(VHOST) ) {
             this.doVhost ( user, cmd );
             
+        } else if ( command.is(CLONE) ) {
+            this.doClone ( user, cmd );
+            
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user, cmd );
         
@@ -946,6 +949,75 @@ public class OSExecutor extends Executor {
     }
       
           
+    /* CLONE ADD <ip|a.b.c.*> <limit> [reason] | DEL <mask> | LIST
+       Network wide clone limits, sent to the ircd with SVSCLONE */
+    private void doClone ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :CLONE ADD 1.2.3.* 20 school nat
+        //   0      1        2                       3     4   5      6  7+
+        String sub = cmd.length > 4 ? cmd[4].toUpperCase ( ) : "";
+        
+        if ( sub.equals ( "LIST" ) ) {
+            this.service.sendMsg ( user, "*** Clone limits ***" );
+            for ( CloneLimit cl : OperServ.getCloneLimits ( ) ) {
+                this.service.sendMsg ( user, "  "+cl.getMask()+" - "+cl.getLimit()+" clients - "+cl.getInstater()+
+                                             ( cl.getReason() != null ? " ("+cl.getReason()+")" : "" ) );
+            }
+            this.service.sendMsg ( user, "*** End of List ***" );
+            return;
+        }
+        
+        if ( ( ! sub.equals ( "ADD" ) && ! sub.equals ( "DEL" ) ) || cmd.length < 6 ||
+             ( sub.equals ( "ADD" ) && cmd.length < 7 ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "CLONE <ADD|DEL|LIST> [<ip|a.b.c.*>] [<limit>] [<reason>]" ) );
+            return;
+        }
+        String mask = cmd[5];
+        if ( ! CloneLimit.validMask ( mask ) ) {
+            this.service.sendMsg ( user, "Error: use an ip (1.2.3.4 or an IPv6 address) or a range (1.2.3.*)." );
+            return;
+        }
+        
+        if ( sub.equals ( "DEL" ) ) {
+            CloneLimit cl = OperServ.findCloneLimit ( mask );
+            if ( cl == null ) {
+                this.service.sendMsg ( user, "Error: there is no clone limit for "+mask+"." );
+                return;
+            }
+            if ( ! OSDatabase.deleteCloneLimit ( cl.getMask ( ) ) ) {
+                this.service.sendMsg ( user, "Error: Database not available, try again later." );
+                return;
+            }
+            OperServ.delCloneLimit ( cl.getMask ( ) );
+            this.service.sendServ ( "SVSCLONE "+cl.getMask()+" 0" );
+            String string = user.getOper().getNameStr()+" removed the clone limit for "+cl.getMask();
+            this.service.sendMsg ( user, string );
+            this.service.sendGlobOp ( string );
+            return;
+        }
+        
+        int limit;
+        try {
+            limit = Integer.parseInt ( cmd[6] );
+        } catch ( NumberFormatException ex ) {
+            limit = -1;
+        }
+        if ( limit < 1 || limit > 9999 ) {
+            this.service.sendMsg ( user, "Error: the limit must be a number between 1 and 9999." );
+            return;
+        }
+        String reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : null;
+        CloneLimit cl = new CloneLimit ( mask, limit, reason, user.getOper().getNameStr ( ), null );
+        if ( ! OSDatabase.saveCloneLimit ( cl ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        OperServ.addCloneLimit ( cl );
+        this.service.sendServ ( "SVSCLONE "+mask+" "+limit );
+        String string = user.getOper().getNameStr()+" set the clone limit for "+mask+" to "+limit+( reason != null ? " ("+reason+")" : "" );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+    }
+
     /* VHOST <nick> <host|OFF>, for staff hosts or to remove an abusive one.
        Not limited by vhostforbidden. */
     private void doVhost ( User user, String[] cmd ) {

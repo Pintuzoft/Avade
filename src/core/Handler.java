@@ -26,6 +26,7 @@ import channel.Topic;
 import chanserv.CSLogEvent;
 import chanserv.ChanInfo;
 import rootserv.RootServ;
+import operserv.CloneLimit;
 import operserv.OperServ;
 import memoserv.MemoServ;
 import chanserv.ChanServ;
@@ -659,6 +660,19 @@ public class Handler extends HashNumeric {
                 }
                 ++rangeCount;
             }
+        }
+        /* A clone limit set with OperServ CLONE replaces the trigger for that
+           ip/range, and like in the ircd a host limit exempts from the site */
+        CloneLimit ipLimit = OperServ.findCloneLimit ( user.getIp ( ) );
+        CloneLimit rangeLimit = OperServ.findCloneLimit ( user.getHostInfo().getRange ( ) );
+        if ( ipLimit != null ) {
+            rangeCount = 0;
+            if ( ipCount <= ipLimit.getLimit ( ) ) {
+                ipCount = 0;
+            }
+        }
+        if ( rangeLimit != null && rangeCount <= rangeLimit.getLimit ( ) ) {
+            rangeCount = 0;
         }
         String reason;
         if ( Trigger.isWarn() ) {
@@ -1680,6 +1694,7 @@ public class Handler extends HashNumeric {
         /* Fix Master after we synched */ 
         root.fixMaster ( );
         oper.sendSpamFilter ( );
+        oper.sendCloneLimits ( );
     }
 
     /**

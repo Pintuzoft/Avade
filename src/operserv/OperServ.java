@@ -95,6 +95,7 @@ public class OperServ extends Service {
         sqlines         = OSDatabase.getServicesBans ( SQLINE );
         sglines         = OSDatabase.getServicesBans ( SGLINE );
         spamfilters     = OSDatabase.getSpamFilters ( );
+        loadCloneLimits ( );
         staff           = OSDatabase.getAllStaff ( );
         servers         = OSDatabase.getServerList ( );
         setCommands ( );
@@ -129,6 +130,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "SERVER",    CMDAccess ( SERVER ),      "Handle server list" )                          );
         cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )          );
         cmdList.add ( new CommandInfo ( "VHOST",     CMDAccess ( VHOST ),       "Set or remove the vhost of a nick" )           );
+        cmdList.add ( new CommandInfo ( "CLONE",     CMDAccess ( CLONE ),       "Manage clone limits for ips and ranges" )      );
         cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )         );
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }
@@ -1208,6 +1210,59 @@ public class OperServ extends Service {
     /**
      *
      */
+    private static HashMap<String,CloneLimit> cloneLimits = new HashMap<>();
+
+    private static void loadCloneLimits ( ) {
+        ArrayList<CloneLimit> list = OSDatabase.getCloneLimits ( );
+        if ( list == null ) {
+            return;
+        }
+        cloneLimits.clear ( );
+        for ( CloneLimit cl : list ) {
+            cloneLimits.put ( cl.getMask().toLowerCase ( ), cl );
+        }
+    }
+
+    /**
+     * @param mask ip, a.b.c.* or IPv6 address
+     * @return the clone limit for it or null
+     */
+    public static CloneLimit findCloneLimit ( String mask ) {
+        return mask == null ? null : cloneLimits.get ( mask.toLowerCase ( ) );
+    }
+
+    /**
+     * @return all clone limits sorted by mask
+     */
+    public static ArrayList<CloneLimit> getCloneLimits ( ) {
+        ArrayList<CloneLimit> list = new ArrayList<> ( cloneLimits.values ( ) );
+        list.sort ( ( a, b ) -> a.getMask().compareToIgnoreCase ( b.getMask() ) );
+        return list;
+    }
+
+    /**
+     * @param cl
+     */
+    public static void addCloneLimit ( CloneLimit cl ) {
+        cloneLimits.put ( cl.getMask().toLowerCase ( ), cl );
+    }
+
+    /**
+     * @param mask
+     */
+    public static void delCloneLimit ( String mask ) {
+        cloneLimits.remove ( mask.toLowerCase ( ) );
+    }
+
+    /**
+     * The ircd only keeps clone limits in memory, send them when we link
+     */
+    public void sendCloneLimits ( ) {
+        for ( CloneLimit cl : cloneLimits.values ( ) ) {
+            this.sendServ ( "SVSCLONE "+cl.getMask()+" "+cl.getLimit() );
+        }
+    }
+
     public void sendSpamFilter ( ) {
         for ( SpamFilter sf : spamfilters ) {
             this.sendServ ( "SF "+sf.getPattern()+" "+sf.getBitFlags()+" :"+sf.getReason() );

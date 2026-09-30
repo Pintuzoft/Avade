@@ -784,6 +784,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString CLONE = new HashString ( "CLONE" );
+
+    /**
+     *
+     */
     public static HashString ALL = new HashString ( "ALL" );
 
     /**

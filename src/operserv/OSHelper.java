@@ -96,6 +96,12 @@ class OSHelper extends Helper {
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user );
         
+        } else if ( command.is(CLONE) ) {
+            this.clone ( user );
+        
+        } else if ( command.is(VHOST) ) {
+            this.vhost ( user );
+        
         } else if ( command.is(BAHAMUT) ) {
             this.bahamut ( user );
         
@@ -501,6 +507,30 @@ class OSHelper extends Helper {
         this.showEnd ( user );
     }
     
+    private void clone ( User user ) {
+        this.showStart ( user, "Clone" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ CLONE ADD <ip|a.b.c.*> <limit> [<reason>]"+f.b ( ) +""                       );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ CLONE DEL <ip|a.b.c.*>"+f.b ( ) +""                                           );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ CLONE LIST"+f.b ( ) +""                                                       );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Sets how many clients may connect from an ip or a range on the whole network, for"                         );
+        this.service.sendMsg ( user, "   example a school or a company behind one ip. The limit is sent to all servers and"                         );
+        this.service.sendMsg ( user, "   replaces the clone trigger for that ip/range. A limit on an ip also exempts it from"                        );
+        this.service.sendMsg ( user, "   the limit of its range. IPv6 limits are for single addresses only."                                        );
+        this.showEnd ( user );
+    }
+
+    private void vhost ( User user ) {
+        this.showStart ( user, "Vhost" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ VHOST <nick> <host|OFF>"+f.b ( ) +""                                         );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Sets or removes the vhost of a registered nick, for staff hosts or to remove a vhost"                      );
+        this.service.sendMsg ( user, "   that is abused. Not limited by vhostforbidden in the config."                                               );
+        this.showEnd ( user );
+    }
+
     private void forcenick ( User user ) {
         this.showStart ( user, "ForceNick" );
         this.service.sendMsg ( user, "   "                                                                                                          );

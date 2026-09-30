@@ -248,6 +248,76 @@ public class OSDatabase extends Database {
      *
      * @return
      */
+    /**
+     * @return all clone limits, or null if they could not be loaded
+     */
+    public static ArrayList<CloneLimit> getCloneLimits ( ) {
+        ArrayList<CloneLimit> list = new ArrayList<>();
+        if ( ! activateConnection ( ) )  {
+            return null;
+        }
+        try {
+            ps = sql.prepareStatement ( "select mask,maxclones,reason,instater,stamp from clonelimit order by mask" );
+            res2 = ps.executeQuery ( );
+            while ( res2.next ( ) ) {
+                list.add ( new CloneLimit ( res2.getString ( 1 ), res2.getInt ( 2 ), res2.getString ( 3 ), res2.getString ( 4 ), res2.getString ( 5 ) ) );
+            }
+            res2.close ( );
+            ps.close ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return null;
+        }
+        return list;
+    }
+
+    /**
+     * @param cl
+     * @return false if it could not be written
+     */
+    public static boolean saveCloneLimit ( CloneLimit cl ) {
+        if ( ! activateConnection ( ) )  {
+            return false;
+        }
+        try {
+            ps = sql.prepareStatement ( "insert into clonelimit ( mask, maxclones, reason, instater, stamp ) values ( ?, ?, ?, ?, now() ) "
+                                      + "on duplicate key update maxclones = ?, reason = ?, instater = ?, stamp = now()" );
+            ps.setString ( 1, cl.getMask ( ) );
+            ps.setInt    ( 2, cl.getLimit ( ) );
+            ps.setString ( 3, cl.getReason ( ) );
+            ps.setString ( 4, cl.getInstater ( ) );
+            ps.setInt    ( 5, cl.getLimit ( ) );
+            ps.setString ( 6, cl.getReason ( ) );
+            ps.setString ( 7, cl.getInstater ( ) );
+            ps.execute ( );
+            ps.close ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param mask
+     * @return false if it could not be removed
+     */
+    public static boolean deleteCloneLimit ( String mask ) {
+        if ( ! activateConnection ( ) )  {
+            return false;
+        }
+        try {
+            ps = sql.prepareStatement ( "delete from clonelimit where mask = ?" );
+            ps.setString ( 1, mask );
+            ps.execute ( );
+            ps.close ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
     public static ArrayList<SpamFilter> getSpamFilters ( ) {
         ArrayList<SpamFilter> sfList = new ArrayList<>();
         String query;

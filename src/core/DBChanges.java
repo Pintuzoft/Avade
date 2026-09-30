@@ -192,6 +192,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126093 ( ) );
                 qList.add ( "update settings set value = '1.2609-3' where name = 'version'" );
 
+            case 126094 :
+                qList.add ( "to: v1.2609-4");
+                qList.addAll ( this.db126094 ( ) );
+                qList.add ( "update settings set value = '1.2609-4' where name = 'version'" );
+
                 break;
                 
             default :
@@ -648,6 +653,13 @@ public class DBChanges extends HashNumeric {
         }
         qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
         qList.add("SET FOREIGN_KEY_CHECKS=1");
+        return qList;
+    }
+
+    private ArrayList<String> db126094 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Network wide clone limits (SVSCLONE) */
+        qList.add("CREATE TABLE IF NOT EXISTS clonelimit (mask varchar(64) NOT NULL, maxclones int NOT NULL, reason varchar(256) DEFAULT NULL, instater varchar(33) DEFAULT NULL, stamp datetime DEFAULT NULL, PRIMARY KEY (mask)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_swedish_ci");
         return qList;
     }
 
