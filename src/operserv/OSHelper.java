@@ -155,7 +155,7 @@ class OSHelper extends Helper {
     public void akill ( User user )  { 
         this.showStart ( user, "AKill" );
         this.service.sendMsg ( user, "   "                                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ AKILL <ADD|TIME|DEL|LIST> <minutes> <nick!user@host> <REASON>"+f.b ( ) +""   );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ AKILL <ADD|TIME|DEL|LIST> <minutes|20m|12h|7d> <nick!user@host> <REASON>"+f.b ( ) +""   );
         this.service.sendMsg ( user, "   "+f.b ( ) +"    Ex: /OperServ AKILL ADD 180 *!*@1.2.3.4 Flooding is not permitted"+f.b ( )+""              );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   AKill is a powerful command and allow staff remove unwanted clients from"                                  );

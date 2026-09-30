@@ -213,7 +213,7 @@ public class NickServ extends Service {
         ArrayList<NickInfo> nicks = new ArrayList<>();
         for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
             ni = entry.getValue();
-            if ( StringMatch.wild ( ni.getName().getString().toUpperCase(), string.toUpperCase() ) ) {
+            if ( StringMatch.matches ( ni.getName().getString(), string ) ) {
                 nicks.add ( ni );
             }
         }

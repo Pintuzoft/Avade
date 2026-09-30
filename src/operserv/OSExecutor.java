@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import core.StringMatch;
 import core.Scheduler;
 import channel.Chan;
 import core.Executor;
@@ -403,7 +404,7 @@ public class OSExecutor extends Executor {
                 return;            
         
         } else if ( result.is(SYNTAX_ERROR_ADD) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" ADD <pattern> <time> <reason>" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" ADD <time> <pattern> <reason>" ) );
                 return;            
         
         } else if ( result.is(BADTIME) ) {
@@ -525,7 +526,7 @@ public class OSExecutor extends Executor {
                 this.service.sendGlobOp ( output ( BAN_ADD_GLOB, cmdName.toLowerCase(), mask, ban.getInstater(), ""+uList.size(), percent, time ) );
                 
                 // -OperServ(stats@dal.net)- *!*@159.65.148.178 has been added to my autokill list for 30 minutes.
-                this.service.sendMsg ( user, mask+" has been added to the akill list for "+time+" min." );
+                this.service.sendMsg ( user, mask+" has been added to the akill list for "+time+( StringMatch.isInt ( time ) ? " min." : "." ) );
                 
                 // -OperServ(stats@dal.net)- This autokill's id hasAccess 1563280267K-k and the authorization id hasAccess 1563280267K-16159. Please send your reports@dal.net email as soon as possible.
                 this.service.sendMsg ( user, "The akill id is "+ban.getID()+". Please use the akill id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
@@ -1311,7 +1312,9 @@ public class OSExecutor extends Executor {
                 } else if ( isShorterThanLen ( 8, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
-                } else if ( ! ( cmd[6].contains("!") && cmd[6].contains("@") ) ) {
+                } else if ( ( command.is(AKILL) || command.is(IGNORE) ) && 
+                            ! ( cmd[6].contains("!") && cmd[6].contains("@") ) ) {
+                    /* SQLINE is a nick/channel and SGLINE a realname pattern */
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
                 } else if ( ( expire = Handler.expireToDateString ( stamp, time ) ) == null ) {
@@ -1510,7 +1513,7 @@ public class OSExecutor extends Executor {
             return "Permanent "+args[0]+" for "+args[1]+" was successfully placed. Affecting "+args[2]+" users ["+args[3]+"%]";            
         
         } else if ( code.is(BAN_ADD_GLOB) ) {
-            return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+" min." ;            
+            return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+( StringMatch.isInt ( args[5] ) ? " min." : "." ) ;            
         
         } else if ( code.is(BAN_EXIST) ) {
             return args[0]+" already exists for "+args[1]+".";            
@@ -1606,7 +1609,7 @@ public class OSExecutor extends Executor {
             return "MAKILL has been reset";             
         
         } else if ( code.is(MAKILL_ADD_GLOB) ) {
-            return args[0]+" akilled "+args[1]+" hosts for "+args[2]+" min affecting "+args[3]+" users ["+args[4]+"%].";             
+            return args[0]+" akilled "+args[1]+" hosts for "+args[2]+( StringMatch.isInt ( args[2] ) ? " min" : "" )+" affecting "+args[3]+" users ["+args[4]+"%].";             
         
         } else if ( code.is(MAKILL_NOBAN_GLOB) ) {
             return "MAKILL has no bans present";             

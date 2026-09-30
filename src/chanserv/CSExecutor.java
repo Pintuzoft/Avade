@@ -2335,7 +2335,7 @@ public class CSExecutor extends Executor {
                 } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) != null ) {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_ALREADY_REGGED );
-                } else if ( StringMatch.wild(c.getNameStr(), "*-relay" ) ) {
+                } else if ( StringMatch.matches(c.getNameStr(), "*-relay" ) ) {
                     result.setChan(c);
                     result.setStatus(CHAN_IS_RELAY);
                 } else if ( ! c.isOp ( user ) ) {

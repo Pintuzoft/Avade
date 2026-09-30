@@ -166,7 +166,7 @@ public class ServicesBan extends HashNumeric {
      * @return
      */
     public boolean match ( String fullmask )  {
-        return StringMatch.maskWild ( fullmask, this.mask.getString() );
+        return StringMatch.matches ( fullmask, this.mask.getString() );
     }
     
     /**

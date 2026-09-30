@@ -628,8 +628,8 @@ public class ChanServ extends Service {
         ChanInfo ci = null;
         for ( HashMap.Entry<BigInteger,ChanInfo> entry : ciList.entrySet() ) {
             ci = entry.getValue();
-            if ( StringMatch.wild ( ci.getName().getString().toUpperCase(), string.toUpperCase() ) ||
-                 StringMatch.wild ( ci.getString (TOPIC).toUpperCase(), string.toUpperCase() ) ) {
+            if ( StringMatch.matches ( ci.getName().getString(), string ) ||
+                 StringMatch.matches ( ci.getString (TOPIC), string ) ) {
                 chans.add ( ci );
             }
         }

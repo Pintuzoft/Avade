@@ -76,7 +76,7 @@ public class Chan extends HashNumeric {
     }
     
     private void checkRelay ( ) {
-        if ( StringMatch.wild(this.name.getString(), "*-relay") ) {
+        if ( StringMatch.matches(this.name.getString(), "*-relay") ) {
             this.isRelay = true;
             this.relay = new HashString ( this.name.getString().substring(0, this.name.getString().length()-6) );
         }

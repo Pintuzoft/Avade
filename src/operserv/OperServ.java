@@ -720,7 +720,7 @@ public class OperServ extends Service {
                 for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
                     u = entry.getValue();
                     nick = u.getString ( NAME );
-                    if ( StringMatch.nickWild ( nick, ban.getMask().getString() ) ) {
+                    if ( StringMatch.matches ( nick, ban.getMask().getString() ) ) {
                         while ( ( buf = Handler.findUser ( prefix+index ) ) != null ) {
                             index++;
                         }
@@ -734,7 +734,7 @@ public class OperServ extends Service {
                 this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
                 for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
                     u = entry.getValue();
-                    if ( StringMatch.wild ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
+                    if ( StringMatch.matches ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
                         this.sendServ ( "KILL "+u.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
                     }
                 }                
@@ -1282,7 +1282,7 @@ public class OperServ extends Service {
      */
     public static boolean isWhiteListed ( HashString usermask ) {
         for ( Map.Entry<BigInteger,HashString> white : Proc.getConf().getWhiteList().entrySet() ) {
-            if ( StringMatch.maskWild ( usermask.getString(), "*"+white.getValue() ) ) {
+            if ( StringMatch.matches ( usermask.getString(), "*"+white.getValue() ) ) {
                 return true;
             }
         }

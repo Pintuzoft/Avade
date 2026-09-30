@@ -134,6 +134,13 @@ public class Handler extends HashNumeric {
      * Forget everything we know about the network (users, channels and
      * servers), used before we relink to the hub and get a new burst
      */
+    private static void addServer ( Server server ) {
+        /* A SERVER line we could not parse has no name */
+        if ( server.getName ( ) != null ) {
+            sList.add ( server );
+        }
+    }
+
     public static void resetNetwork ( ) {
         for ( User u : uList.values ( ) ) {
             if ( u.getSID ( ) != null ) {
@@ -236,7 +243,7 @@ public class Handler extends HashNumeric {
                     this.command = new HashString ( this.data[1] );
                     
                     if ( command.is(SERVER) ) {
-                        sList.add ( new Server ( this.data ) );
+                        addServer ( new Server ( this.data ) );
                         root.sendPanic();
                         
                     } else if ( command.is(SJOIN) ) {
@@ -344,7 +351,7 @@ public class Handler extends HashNumeric {
                 this.command = new HashString ( this.data[0] );
                 
                 if ( this.command.is(SERVER) ) {
-                    sList.add ( new Server ( this.data ) );
+                    addServer ( new Server ( this.data ) );
                     root.sendPanic();
                 
                 } else if ( this.command.is(SJOIN) ) {
@@ -397,7 +404,8 @@ public class Handler extends HashNumeric {
     
     //     :Guest12203 PRIVMSG NickServ@services.sshd.biz :identify asd.
     private void doPrivmsg ( User user )  {
-        HashString service = new HashString ( this.data[2].substring ( 0, this.data[2].lastIndexOf ( "@" ) ) );
+        int at = this.data[2].lastIndexOf ( "@" );
+        HashString service = new HashString ( at > 0 ? this.data[2].substring ( 0, at ) : this.data[2] );
         
         if ( service.is(ROOTSERV) ) {
             if ( RootServ.isUp ( )  )  { 
@@ -608,14 +616,14 @@ public class Handler extends HashNumeric {
                 HashString mask;
                 String expire = Handler.expireToDateString ( stamp, "30m" );
                 id = new HashString ( ""+System.nanoTime() );
-                mask = new HashString ( "*!*@"+user.getIp() );
+                mask = new HashString ( "*!*@"+user.getHostInfo().getRange() );
                 reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
                 ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
                 percent = String.format("%.02f", (float) rangeCount / Handler.getUserList().size() * 100 );
                 if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
                     OperServ.addServicesBan ( ban );
                     Handler.getOperServ().sendServicesBan ( ban );
-                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
+                    oper.sendGlobOp ( "AKILL: *!*@"+user.getHostInfo().getRange()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
                 }
             }
         } else if ( Trigger.getAction().is(KILL) ) {
@@ -766,10 +774,11 @@ public class Handler extends HashNumeric {
             this.doChan ( true );
         }
         
-        if ( (c = findChan( this.data[3] )) != null ) {
-            c.addUser ( USER, user );
-            user.addChan ( c );
+        if ( user == null || (c = findChan( this.data[3] )) == null ) {
+            return;
         }
+        c.addUser ( USER, user );
+        user.addChan ( c );
         if ( ! c.isSaJoin() ) {
             ChanServ.addCheckUser ( c, user );
         } else {
@@ -829,20 +838,27 @@ public class Handler extends HashNumeric {
     private void doGlobOps ( String[] data ) {
         // :testnet.avade.net GLOBOPS :DreamHealer used SAJOIN (#fredde +b)
         //                  0       1            2    3      4       5+
-        System.out.println("debug: doGlobOps()");
         CSLogEvent log;
+        /* Only "<nick> used SAJOIN/SAMODE (#chan ...)" globops are of interest */
+        if ( this.data.length < 7 || ! this.data[3].equals ( "used" ) ) {
+            return;
+        }
         User user = Handler.findUser ( this.data[2].substring ( 1 ) );
         HashString command = new HashString ( this.data[4] );
-        Chan chan = Handler.findChan(this.data[5].substring ( 1 ));
+        Chan chan = Handler.findChan ( this.data[5].replace ( "(", "" ).replace ( ")", "" ) );
         String string = Handler.cutArrayIntoString ( this.data, 6 ).replace(")", "");
+        String oper = ( user != null && user.getOper() != null ? user.getOper().getNameStr() : this.data[2].substring ( 1 ) );
         
+        if ( chan == null ) {
+            return;
+        }
         if ( command.is(SAJOIN) ) {
-            log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, user.getOper().getNameStr() );
+            log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, oper );
             ChanServ.addLog ( log );
             chan.toggleSaJoin();
         
         } else if ( command.is(SAMODE) ) {
-            log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, user.getOper().getNameStr() );
+            log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, oper );
             ChanServ.addLog ( log );
         }
          
@@ -859,7 +875,7 @@ public class Handler extends HashNumeric {
      */
 
     public static String cutArrayIntoString ( String[] data, int pos ) {
-        if ( data == null || data.length < pos ) {
+        if ( data == null || data.length <= pos ) {
             return null;
         }
         String buf = String.join ( " ", data );
@@ -1369,9 +1385,9 @@ public class Handler extends HashNumeric {
         User user = null;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             user = entry.getValue();
-            if ( StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask.getString() )         ||
-                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask.getString() )     ||
-                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask.getString() )  )  {
+            if ( StringMatch.matches ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask.getString() )         ||
+                 StringMatch.matches ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask.getString() )     ||
+                 StringMatch.matches ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask.getString() )  )  {
                  ul.add ( user );
             }  
         } 
@@ -1413,7 +1429,7 @@ public class Handler extends HashNumeric {
         User user = null;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             user = entry.getValue();
-            if ( StringMatch.nickWild ( user.getString ( NAME ), nick ) ) {
+            if ( StringMatch.matches ( user.getString ( NAME ), nick ) ) {
                 ul.add ( user );
             }
         }
@@ -1430,7 +1446,7 @@ public class Handler extends HashNumeric {
         User user = null;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             user = entry.getValue();
-            if ( StringMatch.wild ( user.getString ( REALNAME ), gcos ) ) {
+            if ( StringMatch.matches ( user.getString ( REALNAME ), gcos ) ) {
                 ul.add ( user );
             }
         }
@@ -1488,36 +1504,50 @@ public class Handler extends HashNumeric {
      * @return
      */
     public static Date expireToDate ( Date date, String data ) {
-        String strBuf;
-        Date expire = new Date();
-        int ms = 60*1000;
-        int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Proc.log("expireToDate: date:"+date);
-        Proc.log("expireToDate: data:"+data);
-        if ( data == null ) {
-            data = "30";
-
-        } else if ( data.contains("-") ) {
+        if ( data != null && data.contains("-") ) {
+            /* Already a date */
             try {
-                expire = dateFormat.parse ( data );
+                return dateFormat.parse ( data );
             } catch ( ParseException ex ) {
                 Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
                 return null;
             }
-            return expire;
         }
-        
-        strBuf = data.substring ( 0, data.length ( ) - 1 );
-        Proc.log("expireToDate: strBuf = "+strBuf);
-        try {
-            amount = Integer.parseInt ( strBuf );            
-        } catch ( NumberFormatException ex ) {
+        long seconds = ( data == null ? 30 * 60 : parseDuration ( data ) );
+        if ( seconds < 0 ) {
             return null;
         }
-       
-        expire.setTime ( expire.getTime() + ( amount*ms ) );
-        return expire;
+        return new Date ( ( date != null ? date.getTime() : System.currentTimeMillis() ) + seconds * 1000L );
+    }
+
+    /**
+     * Parse a duration: a plain number is minutes, or a number followed by
+     * m (minutes), h (hours), d (days), w (weeks) or y (years)
+     * @param data
+     * @return seconds, or -1 if it is not a valid duration
+     */
+    public static long parseDuration ( String data ) {
+        if ( data == null || ! data.matches ( "[0-9]{1,9}[mhdwyMHDWY]?" ) ) {
+            return -1;
+        }
+        char unit = Character.toLowerCase ( data.charAt ( data.length() - 1 ) );
+        long amount;
+        long multiply;
+        if ( Character.isDigit ( unit ) ) {
+            amount = Long.parseLong ( data );
+            multiply = 60;
+        } else {
+            amount = Long.parseLong ( data.substring ( 0, data.length() - 1 ) );
+            switch ( unit ) {
+                case 'h' : multiply = 60L*60;          break;
+                case 'd' : multiply = 60L*60*24;       break;
+                case 'w' : multiply = 60L*60*24*7;     break;
+                case 'y' : multiply = 60L*60*24*365;   break;
+                default  : multiply = 60;              break;
+            }
+        }
+        return amount * multiply;
     }
     
     /**
@@ -1527,21 +1557,7 @@ public class Handler extends HashNumeric {
      * @return
      */
     public static String expireToDateString ( String datetime, String data ) {
-        int ms = 60*1000;
-        int amount;
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        Date date;
-        try {
-            date = dateFormat.parse ( datetime );
-            amount = Integer.parseInt ( data );            
-        } catch ( NumberFormatException | ParseException ex ) {
-            Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-        
-        date.setTime ( date.getTime() + ( amount*ms ) );
-        return dateFormat.format ( date );
+        return expireWithCharToDateString ( datetime, data );
     }
     
     /**
@@ -1551,45 +1567,19 @@ public class Handler extends HashNumeric {
      * @return
      */
     public static String expireWithCharToDateString ( String datetime, String data ) {
-        String          strBuf;
-        String          state;
-        int             multiply;
-        int             amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date;
-        
         try {
             date = dateFormat.parse ( datetime );
         } catch (ParseException ex) {
             Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
-        if ( StringMatch.isInt ( data ) ) {
-            state = "m";
-            amount = Integer.parseInt ( data );
-            
-        } else {
-            strBuf = data.substring ( 0, data.length() - 1 );
-            amount = Integer.parseInt ( strBuf );
-            state = ""+data.charAt ( data.length() - 1 );
+        long seconds = parseDuration ( data );
+        if ( seconds < 0 ) {
+            return null;
         }
-        
-        HashString ch = new HashString ( state );
-        
-        if ( ch.is(m) ) {
-            multiply = 60;
-        
-        } else if ( ch.is(h) ) {
-            multiply = 60*60;
-        
-        } else if ( ch.is(d) ) {
-            multiply = 60*60*24;
-        
-        } else {
-            multiply = 60;
-        }
-         
-        date.setTime ( date.getTime() + ( amount * multiply * 1000 ) );
+        date.setTime ( date.getTime() + seconds * 1000L );
         return dateFormat.format ( date );
     }
     
