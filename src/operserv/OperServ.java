@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.Timer;
 import nickserv.NickInfo;
 import server.Server;
 
@@ -77,7 +76,6 @@ public class OperServ extends Service {
     private Oper operNick = new Oper ( "OperServ", 4, "OperServ" );
     private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
-    private static ArrayList<Timer> timerList = new ArrayList<>();
     
     /**
      *
@@ -1332,22 +1330,6 @@ public class OperServ extends Service {
         logs.add ( log );
     }
     
-    /**
-     *
-     * @param task
-     */
-    public static void addTimer ( Timer task ) {
-        timerList.add ( task );
-    }
-    
-    /**
-     *
-     * @param task
-     */
-    public static void remTimer ( Timer task ) {
-        timerList.remove ( task );
-    }
-
     /**
      *
      * @param string

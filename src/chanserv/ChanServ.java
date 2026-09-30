@@ -27,6 +27,7 @@ import core.Proc;
 import core.Service;
 import core.StringMatch;
 import core.TextFormat;
+import core.WorkGuard;
 import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
@@ -819,6 +820,9 @@ public class ChanServ extends Service {
             ArrayList<CSLogEvent> eLogs = new ArrayList<>();
             for ( CSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
                 if ( CSDatabase.logEvent ( log ) > 0 ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "chan log" ) ) {
                     eLogs.add ( log );
                 }
             }
@@ -833,6 +837,9 @@ public class ChanServ extends Service {
             ArrayList<CSAccessLogEvent> eLogs = new ArrayList<>();
             for ( CSAccessLogEvent log : accessLogs.subList ( 0, getIndexFromSize ( accessLogs.size() ) ) ) {
                 if ( CSDatabase.accesslogEvent ( log ) ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "chan access log" ) ) {
                     eLogs.add ( log );
                 }
             }
@@ -849,6 +856,9 @@ public class ChanServ extends Service {
             ArrayList<ChanInfo> chans = new ArrayList<>();            
             for ( ChanInfo ci : regList.subList ( 0, getIndexFromSize ( regList.size() ) ) ) {
                 if ( CSDatabase.createChan ( ci ) == 1 ) {
+                    WorkGuard.done ( ci );
+                    chans.add ( ci );
+                } else if ( WorkGuard.failed ( ci, "register of "+ci.getName() ) ) {
                     chans.add ( ci );
                 }
             }
@@ -864,6 +874,9 @@ public class ChanServ extends Service {
             ArrayList<ChanInfo> chans = new ArrayList<>();
             for ( ChanInfo ci : changeList.subList ( 0, getIndexFromSize ( changeList.size() ) ) ) {
                 if ( CSDatabase.updateChan ( ci ) == 1 ) {
+                    WorkGuard.done ( ci );
+                    chans.add ( ci );
+                } else if ( WorkGuard.failed ( ci, "changes to "+ci.getName() ) ) {
                     chans.add ( ci );
                 }
                 ci.maintenence ( );
@@ -880,6 +893,9 @@ public class ChanServ extends Service {
             ArrayList<ChanInfo> chans = new ArrayList<>();            
             for ( ChanInfo ci : deleteList.subList ( 0, getIndexFromSize ( deleteList.size() ) ) ) {
                 if ( CSDatabase.deleteChan ( ci ) ) {
+                    WorkGuard.done ( ci );
+                    chans.add ( ci );
+                } else if ( WorkGuard.failed ( ci, "delete of "+ci.getName() ) ) {
                     chans.add ( ci );
                 }
             }

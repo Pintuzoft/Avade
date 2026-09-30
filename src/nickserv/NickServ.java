@@ -17,6 +17,7 @@
  */
 package nickserv;
 
+import core.WorkGuard;
 import chanserv.CSAcc;
 import chanserv.CSAccessLogEvent;
 import chanserv.CSDatabase;
@@ -325,6 +326,9 @@ public class NickServ extends Service {
             ArrayList<NSLogEvent> eLogs = new ArrayList<>();
             for ( NSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
                 if ( NSDatabase.logEvent ( log ) > 0 ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "nick log" ) ) {
                     eLogs.add ( log );
                 }
             }
@@ -345,6 +349,9 @@ public class NickServ extends Service {
             for ( NSAuth auth : newAuthList ) {
                 if ( ( auth.is(MAIL) && NSDatabase.addMail ( auth ) ) ||
                        auth.is(PASS) && NSDatabase.addPass ( auth ) ) {
+                    WorkGuard.done ( auth );
+                    auths.add ( auth );
+                } else if ( WorkGuard.failed ( auth, "auth" ) ) {
                     auths.add ( auth );
                 }
             }
@@ -361,6 +368,9 @@ public class NickServ extends Service {
         }
         NSAuth auth = newFullAuthList.get ( 0 );
         if ( NSDatabase.addFullAuth ( auth ) ) {
+            WorkGuard.done ( auth );
+            newFullAuthList.remove ( auth );
+        } else if ( WorkGuard.failed ( auth, "auth for "+auth.getNick() ) ) {
             newFullAuthList.remove ( auth );
         }
         return newFullAuthList.size();
@@ -372,6 +382,9 @@ public class NickServ extends Service {
         }
         NickInfo ni = regList.get ( 0 );
         if ( NSDatabase.createNick ( ni ) == 1 ) {
+            WorkGuard.done ( ni );
+            regList.remove ( ni );
+        } else if ( WorkGuard.failed ( ni, "register of "+ni.getNameStr() ) ) {
             regList.remove ( ni );
         }
         return regList.size();
@@ -384,7 +397,10 @@ public class NickServ extends Service {
         }
         NickInfo ni = changeList.get ( 0 );
         if ( NSDatabase.updateNick ( ni ) == 1 ) {
+            WorkGuard.done ( ni );
             ni.getChanges().clean();
+            changeList.remove ( ni );
+        } else if ( WorkGuard.failed ( ni, "changes to "+ni.getNameStr() ) ) {
             changeList.remove ( ni );
         }
         return changeList.size();
@@ -397,6 +413,9 @@ public class NickServ extends Service {
         }
         NickInfo ni = deleteList.get(0);
         if ( NSDatabase.deleteNick ( ni ) ) {
+            WorkGuard.done ( ni );
+            deleteList.remove ( ni );
+        } else if ( WorkGuard.failed ( ni, "delete of "+ni.getNameStr() ) ) {
             deleteList.remove ( ni );
         }
         return deleteList.size();

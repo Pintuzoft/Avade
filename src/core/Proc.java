@@ -108,6 +108,11 @@ public class Proc extends HashNumeric {
                 sleep = 0;
             }
             
+            /* Delayed tasks (guest nicks, reminders..) run here on the main thread */
+            if ( Scheduler.runDue ( ) > 0 ) {
+                commandChain++;
+            }
+            
             this.read = ( Proc.conn != null ? Proc.conn.readLine() : null );
              
             if ( this.read != null )  {
@@ -336,6 +341,15 @@ public class Proc extends HashNumeric {
     public static void log ( String className, Exception e )  {
         Logger.getLogger(className).log ( Level.SEVERE, null, e );
         if ( e instanceof SQLException ) {
+            String state = ((SQLException)e).getSQLState();
+            if ( e instanceof java.sql.SQLTimeoutException || 
+                 e instanceof java.sql.SQLRecoverableException ||
+                 e instanceof java.sql.SQLNonTransientConnectionException ||
+                 e instanceof java.sql.SQLTransientConnectionException ||
+                 ( state != null && state.startsWith ( "08" ) ) ) {
+                /* The connection itself is broken */
+                Database.invalidate ( );
+            }
             e.printStackTrace(System.err);
             System.err.println("SQLState: "+((SQLException)e).getSQLState());
             System.err.println("Error Code: "+((SQLException)e).getErrorCode());

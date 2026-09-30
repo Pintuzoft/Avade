@@ -17,6 +17,7 @@
  */
 package operserv;
 
+import core.Scheduler;
 import channel.Chan;
 import core.Executor;
 import core.Handler;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.Timer;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import server.Server;
@@ -935,10 +935,7 @@ public class OSExecutor extends Executor {
         Handler.getOperServ().sendServ ( "SQLINE "+u.getName()+" :You cannot use this nick." );
         Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
         
-        Timer timer = new Timer ( );
-        timer.schedule( new UnSQlineTask ( u.getNameStr() ), 15000);
-        
-        OperServ.addTimer ( timer );
+        Scheduler.schedule ( new UnSQlineTask ( u.getNameStr() ), 15000 );
         
         u.setName(newNick);
     }

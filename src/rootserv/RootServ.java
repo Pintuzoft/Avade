@@ -17,6 +17,7 @@
  */
 package rootserv;
 
+import core.Scheduler;
 import core.CommandInfo;
 import core.Handler;
 import core.HashString;
@@ -24,8 +25,7 @@ import core.Proc;
 import core.Service;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledFuture;
 import nickserv.NSDatabase;
 import nickserv.NickInfo;
 import nickserv.NickServ;
@@ -44,7 +44,7 @@ public class RootServ extends Service {
     private RSExecutor                      executor;       /* Object that parse and execute commands */
     private RSHelper                        helper;         /* Object that parse and respond to help queries */
     private RSSnoop                         snoop;          /* Object for monitoring and reporting */
-    private static Timer                    panicTimer;
+    private static ScheduledFuture<?>       panicTimer;
     private static boolean                  updConf; 
     
     /**
@@ -152,15 +152,12 @@ public class RootServ extends Service {
      *
      */
     public static void adPanic ( ) {
-        panicTimer = new Timer ( );
-        panicTimer.schedule ( new TimerTask ( ) {
-            @Override
-                public void run() {
-                    Handler.getRootServ().sendGlobOp ( "WARNING! Services PANIC state is currently set to: "+RootServ.getPanicStr ( NONE ) );
-                    RootServ.adPanic();
-                } 
-            }, 900000
-        );
+        /* Remind every 15 minutes while in panic, only one reminder at a time */
+        Scheduler.cancel ( panicTimer );
+        panicTimer = Scheduler.schedule ( ( ) -> {
+            Handler.getRootServ().sendGlobOp ( "WARNING! Services PANIC state is currently set to: "+RootServ.getPanicStr ( NONE ) );
+            RootServ.adPanic();
+        }, 900000 );
     }
     
     /**
@@ -176,7 +173,7 @@ public class RootServ extends Service {
             RootServ.adPanic ( );
         
         } else if ( state.is(USER) ) {
-            panicTimer.cancel();
+            Scheduler.cancel ( panicTimer );
             panicTimer = null;
         }
         

@@ -21,6 +21,7 @@ import core.Database;
 import core.HashNumeric;
 import core.HashString;
 import core.Service;
+import core.WorkGuard;
 import java.util.ArrayList;
 import user.User;
 
@@ -134,6 +135,9 @@ public class Snoop extends HashNumeric {
             ArrayList<SnoopLog> eLogs = new ArrayList<>();
             for ( SnoopLog log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
                 if ( Database.SnoopLog ( log ) ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "snoop log" ) ) {
                     eLogs.add ( log );
                 }
             }

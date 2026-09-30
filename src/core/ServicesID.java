@@ -24,7 +24,7 @@ import operserv.Oper;
 import user.User;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Timer;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  *
@@ -38,8 +38,8 @@ public class ServicesID extends HashNumeric {
     private Random                  rand;
     private User                    user;      /* the owner of this servicesid */
     private long                    stamp;     /* timestamp  ( seconds )  lastseen */
-    private Timer                   timer;
-    private Timer                   adTimer;
+    private ScheduledFuture<?>      timer;      /* guest nick change */
+    private ScheduledFuture<?>      adTimer;    /* identify reminder */
     
     /**
      *
@@ -294,7 +294,8 @@ public class ServicesID extends HashNumeric {
      *
      * @param timer
      */
-    public void addTimer ( Timer timer ) { 
+    public void addTimer ( ScheduledFuture<?> timer ) { 
+        Scheduler.cancel ( this.timer );
         this.timer = timer;
     }
 
@@ -302,7 +303,8 @@ public class ServicesID extends HashNumeric {
      *
      * @param timer
      */
-    public void addAdTimer ( Timer timer ) { 
+    public void addAdTimer ( ScheduledFuture<?> timer ) { 
+        Scheduler.cancel ( this.adTimer );
         this.adTimer = timer;
     }
      
@@ -310,13 +312,10 @@ public class ServicesID extends HashNumeric {
      *
      */
     public void resetTimers ( ) {
-        if ( this.timer != null ) {
-            this.timer.cancel ( );
-        }
-        if ( this.adTimer != null ) {
-            this.adTimer.cancel ( );
-        }
+        Scheduler.cancel ( this.timer );
+        Scheduler.cancel ( this.adTimer );
         this.timer = null;
+        this.adTimer = null;
     }
 
     User getUser ( ) { 

@@ -58,6 +58,10 @@ public class Database extends HashNumeric {
      */
     public static PreparedStatement ps;
     private static long lastConnectAttempt;
+    private static long lastValidated;          /* when we last asked the server if the connection works */
+    private static volatile boolean connValid;
+    private static final long VALIDATE_INTERVAL = 5000;    /* ms */
+    private static final long RECONNECT_INTERVAL = 30000;  /* ms between attempts while the database is down */
     private static long lastGlobops;
     private static int attempts;
     private static ResultSet res;
@@ -90,13 +94,21 @@ public class Database extends HashNumeric {
      */
     protected static void connect ( )  {
         try {
-            if ( ( sql == null || ! sql.isValid ( 1 ) ) &&
-                System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
+            if ( ! checkConn ( ) &&
+                System.currentTimeMillis() - lastConnectAttempt >= ( attempts == 0 ? 0 : RECONNECT_INTERVAL ) ) {
+                    lastConnectAttempt = System.currentTimeMillis();
+                    closeQuietly ( );
+                    /* Timeouts so a database that stops answering can never
+                       block services (and make the hub ping us out) for long */
                     sql = DriverManager.getConnection ( 
-                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString()+"?characterEncoding=UTF-8&connectionCollation=utf8mb4_swedish_ci", 
+                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString()
+                            +"?characterEncoding=UTF-8&connectionCollation=utf8mb4_swedish_ci"
+                            +"&connectTimeout=5000&socketTimeout=20000&tcpKeepAlive=true", 
                             Proc.getConf().get(MYSQLUSER).getString(), 
                             Proc.getConf().get(MYSQLPASS).getString()
                     );           
+                    connValid = true;
+                    lastValidated = System.currentTimeMillis();
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
                         Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
@@ -105,6 +117,7 @@ public class Database extends HashNumeric {
        
         } catch  ( SQLException | NumberFormatException ex )  {
             sql = null;
+            connValid = false;
             attempts++;
             if ( System.currentTimeMillis() - lastGlobops >= 10000 ) {
                 if ( attempts == 1 ) {
@@ -248,7 +261,7 @@ public class Database extends HashNumeric {
         if ( ! checkConn ( )  )  { 
             connect ( ); 
         }        
-        return checkConn ( );
+        return connValid;
     }
     
     /**
@@ -256,12 +269,41 @@ public class Database extends HashNumeric {
      * @return
      */
     public static boolean checkConn ( )  {
-        try {
-            return ! ( sql == null || ! sql.isValid ( 1 ) );
-        } catch (SQLException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        if ( sql == null ) {
+            return false;
         }
-        return false;
+        /* Asking the server costs a round trip, only do it every few seconds */
+        if ( connValid && System.currentTimeMillis() - lastValidated < VALIDATE_INTERVAL ) {
+            return true;
+        }
+        if ( ! connValid ) {
+            return false;
+        }
+        lastValidated = System.currentTimeMillis();
+        try {
+            connValid = sql.isValid ( 2 );
+        } catch (SQLException ex) {
+            connValid = false;
+        }
+        return connValid;
+    }
+
+    /**
+     * The connection failed (network error or timeout), stop using it and
+     * reconnect. Called from Proc.log for connection related SQLExceptions.
+     */
+    public static void invalidate ( )  {
+        connValid = false;
+    }
+
+    private static void closeQuietly ( )  {
+        if ( sql != null ) {
+            try {
+                sql.close ( );
+            } catch ( SQLException ex ) {
+                /* already broken */
+            }
+        }
     }
 
     /* Database changes */
