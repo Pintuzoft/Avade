@@ -313,7 +313,9 @@ public class User extends HashNumeric {
      *
      */
     public void quitServer ( ) { 
-        this.server.remUser ( this );
+        if ( this.server != null ) {
+            this.server.remUser ( this );
+        }
     }
 
     /**

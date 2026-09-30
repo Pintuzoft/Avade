@@ -49,7 +49,7 @@ public class ServicesID extends HashNumeric {
         this.id         = this.getUniqueID ( );
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
-        this.stamp      = System.currentTimeMillis();
+        this.stamp      = System.currentTimeMillis() / 1000;
         HashString buf  = new HashString ( ""+this.id );
         this.code       = buf.getCode ( );
     }
@@ -63,7 +63,7 @@ public class ServicesID extends HashNumeric {
         this.id         = id;
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
-        this.stamp      = System.currentTimeMillis();
+        this.stamp      = System.currentTimeMillis() / 1000;
         HashString buf  = new HashString ( ""+this.id );
         this.code       = buf.getCode ( );
     }

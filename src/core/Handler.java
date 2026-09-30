@@ -90,6 +90,7 @@ public class Handler extends HashNumeric {
     private Queue                           cmdQueue;
     private static boolean                  sanity;
     private static int                      burstPings; /* PINGs seen since link, burst ends after the 2nd */
+    private static boolean                  syncFinished;
     private HashString bufhash;
     
     /**
@@ -415,6 +416,9 @@ public class Handler extends HashNumeric {
            topic burst followed by another PING. After the 2nd we are synced */
         if ( burstPings < 2 ) {
             burstPings++;
+            if ( burstPings == 2 ) {
+                this.finishSync ( );
+            }
         }
     }
 
@@ -423,6 +427,7 @@ public class Handler extends HashNumeric {
      */
     public static void resetSync ( ) {
         burstPings = 0;
+        syncFinished = false;
     }
 
     /**
@@ -449,6 +454,9 @@ public class Handler extends HashNumeric {
         ServicesID sid = null;
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
         try {
+            /* The services ID (servicestamp) we gave the user with SVSMODE +d,
+               it lets us restore what the user was identified to after a
+               split or a services restart */
             long serviceID = Long.parseLong ( this.data[8] );
             if ( serviceID > 999 ) {
                 u.setSID ( Handler.findSid ( serviceID ) );
@@ -460,11 +468,14 @@ public class Handler extends HashNumeric {
         
         if ( u.getSID() == null ) {
             u.setSID ( new ServicesID ( ) );
+            Handler.newSid ( u.getSID() );
         }  
+        u.getSID().addUser ( u );
         
         NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
         
-        if ( ni != null && u.getModes().is ( IDENT ) ) {
+        /* Only services can set +r, so trust it for the current nick */
+        if ( ni != null && ( u.getModes().is ( IDENT ) || u.getSID().isIdentified ( ni ) ) ) {
             u.getSID().add ( ni );
         } else {
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
@@ -977,9 +988,16 @@ public class Handler extends HashNumeric {
      */
     public static void deleteUser ( User user )  {
         try {
-            user.getSID().remUser ( ); 
+            if ( user.getSID() != null ) {
+                user.getSID().remUser ( ); 
+            }
             user.partAll ( );
             user.quitServer ( );
+        } catch ( Exception e )  { 
+            Proc.log ( Handler.class.getName ( ) , e );
+        }
+        try {
+            /* Always forget the user, even if the cleanup above failed */
             removeUser ( user );
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -1037,7 +1055,7 @@ public class Handler extends HashNumeric {
     public static ServicesID findSid ( long id )  {
         HashString target = new HashString ( ""+id );
         try {
-            ServicesID sid = sidList.get ( target );
+            ServicesID sid = sidList.get ( target.getCode() );
             if ( sid != null ) {
                 return sid;
             }
@@ -1526,6 +1544,16 @@ public class Handler extends HashNumeric {
     }
     
     private void doFinishSync(String[] data) {
+        this.finishSync ( );
+    }
+
+    /* Run once per link when the burst is done. Hubs send LUSERSLOCK, but
+       every server ends the burst with the 2nd PING, so use whichever comes first */
+    private void finishSync ( ) {
+        if ( syncFinished ) {
+            return;
+        }
+        syncFinished = true;
         /* Fix Master after we synched */ 
         root.fixMaster ( );
         oper.sendSpamFilter ( );
