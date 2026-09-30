@@ -182,6 +182,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126091 ( ) );
                 qList.add ( "update settings set value = '1.2609-1' where name = 'version'" );
 
+            case 126092 :
+                qList.add ( "to: v1.2609-2");
+                qList.addAll ( this.db126092 ( ) );
+                qList.add ( "update settings set value = '1.2609-2' where name = 'version'" );
+
                 break;
                 
             default :
@@ -614,6 +619,30 @@ public class DBChanges extends HashNumeric {
         qList.add("update topiclog set topic = substring(topic, 2) where topic like ':%'");
         /* Used when loading the latest topic per channel */
         qList.add("alter table topiclog add index topiclog_name_stamp (name, stamp)");
+        return qList;
+    }
+
+    private ArrayList<String> db126092 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        String[] tables = { 
+            "akill", "banlog", "chan", "chanaccess", "chanaccess_mask", "chanacclog", "chanflag", 
+            "chanlog", "chansetting", "command", "comment", "globallog", "ignorelist", "log", 
+            "mailbox", "maillog", "memo", "nick", "nickexp", "nicklog", "nicksetting", "oper", 
+            "operlog", "passlog", "server", "servicesid", "settings", "sgline", "spamfilter", 
+            "sqline", "topiclog" 
+        };
+        /* Move from latin1 to utf8mb4 so any text (emojis etc) can be stored.
+           AES encrypted columns hold binary data, make them binary first so the
+           bytes are kept as they are and not converted as text */
+        qList.add("SET FOREIGN_KEY_CHECKS=0");
+        qList.add("alter table chan modify pass varbinary(64) default null");
+        qList.add("alter table passlog modify pass varbinary(64)");
+        qList.add("alter table maillog modify mail varbinary(256)");
+        for ( String table : tables ) {
+            qList.add("alter table "+table+" convert to character set utf8mb4 collate utf8mb4_swedish_ci");
+        }
+        qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
+        qList.add("SET FOREIGN_KEY_CHECKS=1");
         return qList;
     }
         

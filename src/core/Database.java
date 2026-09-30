@@ -93,7 +93,7 @@ public class Database extends HashNumeric {
             if ( ( sql == null || ! sql.isValid ( 1 ) ) &&
                 System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
                     sql = DriverManager.getConnection ( 
-                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString(), 
+                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString()+"?characterEncoding=UTF-8&connectionCollation=utf8mb4_swedish_ci", 
                             Proc.getConf().get(MYSQLUSER).getString(), 
                             Proc.getConf().get(MYSQLPASS).getString()
                     );           

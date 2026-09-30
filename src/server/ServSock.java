@@ -20,12 +20,21 @@ package server;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 
 /**
  *
@@ -35,7 +44,8 @@ public class ServSock extends HashNumeric {
 
     private Socket sock;
     private static PrintWriter out;
-    private BufferedReader in;
+    private InputStream in;
+    private final ByteArrayOutputStream lineBuf = new ByteArrayOutputStream ( 512 );
     private BufferedReader stdIn;
     private String buf;
     private long last;
@@ -53,8 +63,8 @@ public class ServSock extends HashNumeric {
             this.sock = new Socket(Proc.getConf().get(HUBHOST).getString(), Integer.parseInt(Proc.getConf().get(HUBPORT).getString()));
             this.sock.setKeepAlive(true);
             this.sock.setSoTimeout(200);
-            out = new PrintWriter(this.sock.getOutputStream(), true);
-            this.in = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));
+            out = new PrintWriter(new OutputStreamWriter(this.sock.getOutputStream(), StandardCharsets.UTF_8), true);
+            this.in = new BufferedInputStream(this.sock.getInputStream());
 
         } catch (UnknownHostException e) {
             System.out.println("Don't know about host: " + Proc.getConf().get(HUBNAME));
@@ -83,16 +93,43 @@ public class ServSock extends HashNumeric {
      */
     public String readLine() {
         try {
-            this.buf = this.in.readLine();
-            if (this.buf != null && this.buf.length() > 0) {
-                this.last = System.currentTimeMillis();
+            int b;
+            while ((b = this.in.read()) != -1) {
+                if (b == '\n') {
+                    this.buf = decode(this.lineBuf.toByteArray());
+                    this.lineBuf.reset();
+                    if (this.buf.length() > 0) {
+                        this.last = System.currentTimeMillis();
+                    }
+                    return this.buf;
+                } else if (b != '\r') {
+                    this.lineBuf.write(b);
+                }
             }
-            return this.buf;
-
+        } catch (SocketTimeoutException ex) {
+            /* Nothing more to read right now, keep any partial line for the next call */
         } catch (IOException ex) {
             // Logger.getLogger(ServSock.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
+    }
+
+    /**
+     * IRC has no fixed charset. Decode lines as UTF-8 and fall back to
+     * Windows-1252 (what old latin1 clients send) if it is not valid UTF-8.
+     * @param bytes
+     * @return
+     */
+    public static String decode(byte[] bytes) {
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes))
+                    .toString();
+        } catch (CharacterCodingException ex) {
+            return new String(bytes, Charset.forName("windows-1252"));
+        }
     }
 
     /**
