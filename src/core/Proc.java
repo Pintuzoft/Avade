@@ -177,6 +177,8 @@ public class Proc extends HashNumeric {
                 if ( Proc.conn != null && Proc.conn.timedOut() ) { /* Did we time out? */
                     Proc.log ( "Link to hub timed out, reconnecting" );
                     Proc.conn.disconnect();
+                } else if ( Proc.conn != null && ! Proc.conn.isClosed ( ) && Proc.conn.quiet ( ) ) {
+                    ServSock.sendCmd ( "PING :"+Proc.getConf().get ( NAME ) );
                 }
                 this.minMaintenance = System.nanoTime ( );
             }

@@ -93,7 +93,7 @@ Jämför gärna med `template.conf` för exakt utseende.
     ./avade.sh start
     ./avade.sh log        # följ utskriften, ctrl-c avslutar bara visningen
 
-Första starten uppgraderar databasen från produktionens version till 1.2609-6,
+Första starten uppgraderar databasen från produktionens version till 1.2609-7,
 sex steg i ordning. Steget som byter teckenkodning till utf8mb4 går igenom alla
 tabeller och kan ta en stund på en stor databas.
 
@@ -101,7 +101,7 @@ Kontrollera efteråt:
 
     mysql -u avade -p avadetest -e "select * from settings"
 
-Versionen ska vara `1.2609-6`.
+Versionen ska vara `1.2609-7`.
 
 Stoppa med `./avade.sh stop` eller `/RootServ STOP`. Båda skriver klart till databasen först.
 Undvik `kill -9`.

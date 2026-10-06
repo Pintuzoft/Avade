@@ -1184,37 +1184,10 @@ public class OSExecutor extends Executor {
     -OperServ- 4 = Shortcut to block+akill channel massads (contain the flags: scWRBA)
     */
     
+    /* Every character must be a flag SpamFilter.flagsToBits knows (they
+       are case sensitive: s and S are two different flags) */
     private boolean isFlagsGood ( String flags ) {
-        HashString ch;
-        for ( int index = 0; index < flags.length(); index++ ) {
-            ch = new HashString ( String.valueOf(flags.charAt(index)) );
-            if ( ch.is(s) ||
-                 ch.is(S) ||
-                 ch.is(r) ||
-                 ch.is(m) ||
-                 ch.is(p) ||
-                 ch.is(n) ||
-                 ch.is(k) ||
-                 ch.is(q) ||
-                 ch.is(t) ||
-                 ch.is(a) ||
-                 ch.is(c) ||
-                 ch.is(P) ||
-                 ch.is(W) ||
-                 ch.is(L) ||
-                 ch.is(R) ||
-                 ch.is(B) ||
-                 ch.is(K) ||
-                 ch.is(A) ||
-                 ch.is(NUM_1) ||
-                 ch.is(NUM_2) ||
-                 ch.is(NUM_3) ||
-                 ch.is(NUM_4) ) {
-                return true;
-           
-            } 
-        }
-        return false;
+        return flags.matches ( "[sSrmpnkqtacPWLRBKA1-4]+" );
     }
 
     private void makill(User user, String[] cmd) {
@@ -1503,6 +1476,10 @@ public class OSExecutor extends Executor {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( DEL );
                 } else if ( isShorterThanLen ( 7, cmd ) ) {
+                    result.setStatus ( SYNTAX_ERROR_ADD );
+                } else if ( cmd[5].startsWith ( ":" ) || cmd[5].replaceAll ( "[*?]", "" ).length ( ) < 4 ) {
+                    /* "*" would filter everything everyone says */
+                    this.service.sendMsg ( user, "Error: the pattern needs at least 4 characters that are not wildcards, and cannot start with a colon." );
                     result.setStatus ( SYNTAX_ERROR_ADD );
                 } else if ( ! this.isFlagsGood ( cmd[6] ) ) {
                     result.setStatus ( BADFLAGS );

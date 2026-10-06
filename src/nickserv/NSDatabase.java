@@ -419,6 +419,13 @@ public class NSDatabase extends Database {
             ps.setString  ( 1, ni.getNameStr() );
             ps.execute ( );
             ps.close ( ); 
+            /* Not tied to nick in the database: the memos must not be
+               waiting for the next owner of the name */
+            query = "delete from memo where name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ni.getNameStr() );
+            ps.execute ( );
+            ps.close ( ); 
             return true;
         } catch ( SQLException e )  {
             Proc.log ( NSDatabase.class.getName ( ), e );

@@ -197,4 +197,12 @@ public class ServSock extends HashNumeric {
     public boolean timedOut() {
         return System.currentTimeMillis() - this.last > defaultPing;
     }
+
+    /**
+     * @return true if the hub has been silent for a minute. A quiet network
+     * is not a dead link: ask the hub for a sign of life before giving up
+     */
+    public boolean quiet() {
+        return System.currentTimeMillis() - this.last > 60000;
+    }
 }

@@ -244,6 +244,18 @@ public class Handler extends HashNumeric {
         Handler.initServices ( );
     }
 
+    /* A service that is killed (a nick collision, a server KILL) comes back
+       at once, not first at the next relink */
+    private static void reintroduceIfService ( String target ) {
+        HashString name = new HashString ( target );
+        Service[] services = { root, oper, nick, chan, memo, guest, global };
+        for ( Service s : services ) {
+            if ( s != null && s.getName().is ( name ) ) {
+                s.introduce ( );
+            }
+        }
+    }
+
     public static void unloadServices ( ) {
         root = null;
         oper = null;
@@ -348,6 +360,8 @@ public class Handler extends HashNumeric {
                         User u;
                         if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
                             deleteUser ( u );
+                        } else {
+                            reintroduceIfService ( this.data[2] );
                         }
 
                     } else if ( command.is(KICK) ) {
@@ -405,10 +419,11 @@ public class Handler extends HashNumeric {
                         deleteUser ( user );
                     
                     } else if ( this.command.is(KILL) ) {
-                        //this.nullService ( user ); /* null if service */
                             User u;
                             if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
                                 deleteUser ( u );
+                            } else {
+                                reintroduceIfService ( this.data[2] );
                             }
                     
                     } else if ( this.command.is(NICK) ) {

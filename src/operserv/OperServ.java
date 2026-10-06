@@ -1319,6 +1319,9 @@ public class OperServ extends Service {
         //:testnet.avade.net OS SFAKILL fredde 1539289892 hello to you too!
         //                 0  1       2      3          4 5+
         String[] buf = data[3].split("@");
+        if ( buf.length < 2 || isWhiteListed ( "*!*@"+buf[1] ) ) {
+            return; /* nothing to ban, or an address that must never be banned */
+        }
         String host = buf[1];
         String reason = Handler.cutArrayIntoString ( data, 5 );
         ServicesBan ban = this.findBan ( AKILL, "*@"+host );
@@ -1365,7 +1368,9 @@ public class OperServ extends Service {
      */
     public static boolean isWhiteListed ( HashString usermask ) {
         for ( Map.Entry<BigInteger,HashString> white : Proc.getConf().getWhiteList().entrySet() ) {
-            if ( StringMatch.matches ( usermask.getString(), "*"+white.getValue() ) ) {
+            /* The ban ends with the address, or is a pattern that covers it */
+            if ( StringMatch.matches ( usermask.getString(), "*"+white.getValue() ) ||
+                 StringMatch.matches ( "x!y@"+white.getValue(), usermask.getString() ) ) {
                 return true;
             }
         }

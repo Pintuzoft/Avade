@@ -207,6 +207,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126096 ( ) );
                 qList.add ( "update settings set value = '1.2609-6' where name = 'version'" );
 
+            case 126097 :
+                qList.add ( "to: v1.2609-7");
+                qList.addAll ( this.db126097 ( ) );
+                qList.add ( "update settings set value = '1.2609-7' where name = 'version'" );
+
                 break;
                 
             default :
@@ -663,6 +668,14 @@ public class DBChanges extends HashNumeric {
         }
         qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
         qList.add("SET FOREIGN_KEY_CHECKS=1");
+        return qList;
+    }
+
+    private ArrayList<String> db126097 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Memos were left behind when a nick was dropped, and handed to
+           whoever registered the name next */
+        qList.add("delete from memo where name not in (select name from nick)");
         return qList;
     }
 

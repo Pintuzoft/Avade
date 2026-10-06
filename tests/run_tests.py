@@ -499,10 +499,35 @@ def test_oper_checks():
     check(has(r, 'cannot be juped') or has(r, 'linked right now'), 'JUPE of a linked server is refused', r)
     r = mm.svc('OperServ', 'JUPE ' + SERVICES)
     check(has(r, 'cannot be juped'), 'JUPE of services is refused', r)
+    r = mm.svc('OperServ', 'SPAMFILTER ADD *avadebadflags* zzW test')
+    check(not has(r, 'added SpamFilter'), 'SPAMFILTER with unknown flags is refused', r)
+    r = mm.svc('OperServ', 'SPAMFILTER ADD * cB test')
+    check(not has(r, 'added SpamFilter'), 'SPAMFILTER on everything is refused', r)
+    r = mm.svc('OperServ', 'AKILL ADD 30 *!*@127.0.0.* test')
+    check(not has(r, 'has been added') and not has(r, 'added to'), 'AKILL covering a whitelisted address is refused', r)
     mm.svc('OperServ', 'SGLINE ADD 10 *avadetestgcos* test', wait=2)
     check(has(mm.svc('OperServ', 'SGLINE LIST *'), 'avadetestgcos'), 'SGLINE LIST shows the sgline')
     mm.svc('OperServ', 'SGLINE DEL *avadetestgcos*')
     close(mm)
+
+
+def test_dropped_nick_memos():
+    """Memos stayed in the database and were given to the next owner of the nick."""
+    a = login('Alice')
+    t = Client('Tempnick')
+    t.svc('NickServ', 'REGISTER temppw12 tempnick@test.net')
+    check(wait_db("select name from nick where name = 'Tempnick'", 150) != '', '(a nick to drop is stored)')
+    a.svc('MemoServ', 'SEND Tempnick hemligt memo')
+    check(wait_db("select count(*) from memo where name = 'Tempnick' having count(*) > 0", 30) != '', '(it has a memo)')
+    t.svc('NickServ', 'DROP temppw12')
+    left = '1'
+    for i in range(100):
+        left = db("select count(*) from memo where name = 'Tempnick'")
+        if left == '0':
+            break
+        time.sleep(1.5)
+    check(left == '0', 'the memos of a dropped nick are removed', left)
+    close(a, t)
 
 
 def test_log_file():
@@ -589,7 +614,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 
