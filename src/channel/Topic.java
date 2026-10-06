@@ -79,6 +79,15 @@ public class Topic {
     }
 
     /**
+     * Versions before 1.2609 sent "TOPIC #chan null 0 :null" for channels
+     * without a stored topic, the network and the topic log can still hold it
+     * @return true if this is such a topic
+     */
+    public boolean isJunk ( ) {
+        return "null".equals ( this.text ) && "null".equals ( this.setter );
+    }
+
+    /**
      * @param topic
      * @return true if text, setter and stamp are the same
      */

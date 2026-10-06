@@ -11,11 +11,12 @@ and the database end up with. Each test uses its own channels, the users are
 registered once at the start (Avade writes new nicks to the database once a
 minute, so that takes a little over a minute).
 """
+import socket
 import sys
 import time
 import traceback
 
-from irctest import (Client, close_all, MASTER, LEAF_PORT, avade, avade_log, auth_code, db, ircd,
+from irctest import (Client, ENV, SERVICES, close_all, MASTER, LEAF_PORT, avade, avade_log, auth_code, db, ircd,
                      ircd_version, link_count, wait_db, wait_relink)
 
 USERS = ['Alice', 'Bob', 'Carol', 'Dave', 'Erin', 'Zed', MASTER]
@@ -186,6 +187,33 @@ def test_topic_sync():
     time.sleep(1)
     a.send('JOIN ' + chan)
     check(a.saw(r'^:ChanServ!\S+ TOPIC %s :%s' % (chan, 'hej'), m, 5), 'the topic is loaded from the database after a restart')
+    close(a)
+
+
+def test_old_null_topic():
+    """Versions before 1.2609 left "null" as topic (set by "null") on channels without one."""
+    chan = '#t_null'
+    a = login('Alice')
+    register_chan(a, chan)
+    avade('stop')
+    time.sleep(2)
+    # Play the old services for a moment and leave that topic on the network
+    s = socket.create_connection(('127.0.0.1', int(ENV['HUB_SERVER_PORT'])), timeout=10)
+    s.sendall(('PASS %s :TS\r\nCAPAB NICKIPSTR\r\nSERVER %s 1 :old services\r\nSVINFO 5 3 0 :%d\r\n'
+               % (ENV['LINK_PASS'], SERVICES, time.time())).encode())
+    time.sleep(3)
+    m = a.mark()
+    s.sendall((':%s TOPIC %s null 0 :null\r\n' % (SERVICES, chan)).encode())
+    check(a.saw(r' TOPIC %s :null' % chan, m, 5), '(the old topic "null" is on the network)')
+    s.close()
+    time.sleep(2)
+    avade('restart')
+    m = a.mark()
+    a.send('TOPIC ' + chan)
+    check(a.saw(r' 331 ', m, 5), 'the new version clears it', a.since(m))
+    time.sleep(65)
+    check(db("select count(*) from topiclog where name = '%s' and topic = 'null'" % chan) == '0',
+          'and does not store it')
     close(a)
 
 
@@ -445,7 +473,7 @@ def test_hub_restart():
     close(c)
 
 
-TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, test_topiclock,
+TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]

@@ -807,6 +807,9 @@ public class CSDatabase extends Database {
                         res3.getString ( 2 ),
                         Long.parseLong ( res3.getString ( 3 ) )
                 ); 
+                if ( topic.isJunk ( ) ) {
+                    topic = null;
+                }
             }
             
             res3.close ( );
@@ -1135,12 +1138,16 @@ public class CSDatabase extends Database {
                 settings.set ( HOLD,        res.getString ( "hold" )           );
                 settings.set ( AUDITORIUM,  res.getString ( "auditorium" )     );
                 settings.setModeLock ( res.getString ( "modelock" )            );
+                topic = new Topic ( res.getString("topic"), res.getString("setter"), res.getLong("tlunixstamp"), res.getString("tlstamp") );
+                if ( topic.isJunk ( ) ) {
+                    topic = new Topic ( "", "", 0 );
+                }
                 ci = new ChanInfo ( 
                     res.getString ( "name" ), 
                     res.getString ( "founder" ), 
                     res.getString ( "pass" ),
                     res.getString ( "description" ),
-                    new Topic ( res.getString("topic"), res.getString("setter"), res.getLong("tlunixstamp"), res.getString("tlstamp") ),
+                    topic,
                     res.getString ( "regstamp" ), 
                     res.getString ( "stamp" ),
                     settings

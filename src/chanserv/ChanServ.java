@@ -479,6 +479,17 @@ public class ChanServ extends Service {
         if ( topic == null || topic.isSame ( ci.getTopic ( ) ) ) {
             return;
         }
+        if ( topic.isJunk ( ) ) {
+            /* Left on the network by an older version, never store it */
+            if ( ci.getTopic ( ) != null && ci.getTopic().hasText ( ) ) {
+                c.setTopic ( ci.getTopic ( ) );
+                this.sendTopic ( ci );
+            } else {
+                c.setTopic ( new Topic ( "", "", 0 ) );
+                this.sendCmd ( "TOPIC "+ci.getString ( NAME )+" "+this.getName()+" "+( System.currentTimeMillis ( ) / 1000 )+" :" );
+            }
+            return;
+        }
         if ( ci.isSet ( TOPICLOCK ) && ci.getTopic ( ) != null && ci.getTopic().hasText ( ) ) {
             c.setTopic ( ci.getTopic ( ) );
             this.sendTopic ( ci );
