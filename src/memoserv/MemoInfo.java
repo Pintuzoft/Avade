@@ -62,7 +62,6 @@ public class MemoInfo {
         this.sender         = sender;
         this.stamp          = stamp;
         this.read           = read;
-//        this.stampString    = Handler.getSdf ( ) .format ( new Date ( this.stamp*1000 )  );
     }
     
     /**
@@ -118,9 +117,8 @@ public class MemoInfo {
      * @param stamp
      */
     public void setStamp ( long stamp ) { 
-        Date date = new Date ( this.stamp * 1000 );
-        this.stamp = stamp; 
-        this.stampString = Handler.getSdf ( ) .format ( date );
+        this.stamp          = stamp; 
+        this.stampString    = null;
     } 
   
     /**
@@ -136,6 +134,9 @@ public class MemoInfo {
      * @return
      */
     public String getStampStr ( ) { 
+        if ( this.stampString == null ) {
+            this.stampString = Handler.getSdf ( ) .format ( new Date ( this.stamp * 1000 ) );
+        }
         return this.stampString;
     }
     

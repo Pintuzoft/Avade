@@ -206,12 +206,8 @@ public class ChanServ extends Service {
             return;
         }
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
-        try {
-            if ( cmd[3].isEmpty ( ) ) { 
-                return; 
-            }
-        } catch ( Exception e ) {
-            Proc.log ( ChanServ.class.getName ( ), e );
+        if ( cmd.length < 4 || cmd[3].length ( ) < 2 ) {
+            return; /* no command */
         }
         
 //        user.getUserFlood().incCounter ( this );
@@ -260,7 +256,8 @@ public class ChanServ extends Service {
     public void checkAllUsers ( ChanInfo ci )  {
         Chan c;
         if ( ( c = Handler.findChan ( ci.getName() ) ) != null ) {
-            for ( User u : c.getList ( ALL ) ) {
+            /* a copy: checkUser can kick, which changes the list */
+            for ( User u : new ArrayList<> ( c.getList ( ALL ) ) ) {
                 this.checkUser ( c, u );                
             }
         }
@@ -271,7 +268,8 @@ public class ChanServ extends Service {
      */
     public void checkAllUsers ( Chan c )  {
         if ( c != null ) {
-            for ( User u : c.getList ( ALL ) ) {
+            /* a copy: checkUser can kick, which changes the list */
+            for ( User u : new ArrayList<> ( c.getList ( ALL ) ) ) {
                 this.checkUser ( c, u );                
             }
         }
@@ -541,8 +539,11 @@ public class ChanServ extends Service {
             if ( reason == null ) {
                 reason = user.getNameStr();
             }
+            this.sendCmd ( "KICK "+c.getNameStr()+" "+user.getNameStr()+" :"+reason );
+            /* Same bookkeeping as when the ircd tells us about a kick */
             c.remUser ( user );
-            this.sendCmd ( "KICK "+c.getNameStr()+" :"+user.getNameStr() );
+            user.remChan ( c );
+            Handler.deleteEmpty ( c );
         }
     }
     

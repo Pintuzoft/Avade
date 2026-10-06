@@ -51,12 +51,10 @@ public class HashString {
     
     private void generateCode ( ) {
         try {
-            String hex;
+            /* The digest as a positive number, no detour over a hex string */
             MessageDigest crypt = MessageDigest.getInstance ( "SHA-256" );
-            crypt.reset ( );
             crypt.update ( asciiUpper ( this.string ).getBytes ( StandardCharsets.UTF_8 ) );
-            hex = String.format ( "%064x", new BigInteger ( 1, crypt.digest ( ) ) );
-            this.code = new BigInteger ( hex, 16 );
+            this.code = new BigInteger ( 1, crypt.digest ( ) );
         } catch ( NoSuchAlgorithmException ex ) {
             Logger.getLogger(HashString.class.getName()).log ( Level.SEVERE, null, ex );
         }

@@ -526,10 +526,7 @@ public class ChanInfo extends HashNumeric {
      * @return  *******************************/  
     
     public boolean isFounder ( NickInfo ni )  {
-        if ( ni == null ) {
-            return false;
-        }
-        return this.founder.hashCode ( ) == ni.hashCode ( );
+        return ni != null && this.founder != null && this.founder.is ( ni );
     }
     
     /**
@@ -599,6 +596,8 @@ public class ChanInfo extends HashNumeric {
         else if ( access.is(VOP) )          { this.vlist.put ( code, acc );           }
         else if ( access.is(AKICK) )        { this.klist.put ( code, acc );           }
         
+        /* The latest change for a nick or mask is the one that counts */
+        this.dropPending ( code );
         this.addAccList.add ( acc );
         if ( acc.getNick() != null ) {
             acc.getNick().addToAccessList ( access, this );
@@ -762,9 +761,32 @@ public class ChanInfo extends HashNumeric {
      * @param acc
      */
   
+    /* Forget changes for this nick or mask that are not written yet. Adds
+       and removes are written in two passes, so "del, add" would otherwise
+       end as "add, del" in the database */
+    private void dropPending ( BigInteger code ) {
+        this.addAccList.removeIf ( a -> codeOf ( a ).equals ( code ) );
+        this.remAccList.removeIf ( a -> codeOf ( a ).equals ( code ) );
+    }
+    
+    private static BigInteger codeOf ( CSAcc acc ) {
+        return ( acc.isNick() ? acc.getNick().getName().getCode() : acc.getMask().getCode() );
+    }
+    
+    /**
+     * An access entry read from the database: it is already stored
+     * @param access
+     * @param acc
+     */
+    public void loadAccess ( HashString access, CSAcc acc ) {
+        this.addAccess ( access, acc );
+        this.addAccList.remove ( acc );
+    }
+    
     public void delAccess ( HashString access, CSAcc acc )  {
         BigInteger code = ( acc.isNick() ? acc.getNick().getName().getCode() : acc.getMask().getCode() );
         getAccessList(access).remove ( code );
+        this.dropPending ( code );
         this.remAccList.add ( acc );
         if ( acc.getNick() != null ) {
             acc.getNick().remFromAccessList ( access, this );
@@ -778,18 +800,12 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public CSAcc getAccess ( HashString subcommand, NickInfo ni2 ) {
-        CSAcc acc = null;
         if ( ni2 == null ) {
             return null;
         }
-        int hash = ni2.hashCode();
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(subcommand).entrySet() ) {
-            CSAcc a = entry.getValue();
-            if ( a.getNick() != null && a.getNick().hashCode() == hash ) {
-                acc = a;
-            }
-        }
-        return acc;
+        /* The lists are keyed on the code of the nick or mask */
+        CSAcc acc = getAccessList ( subcommand ).get ( ni2.getName().getCode ( ) );
+        return ( acc != null && acc.getNick ( ) != null ) ? acc : null;
     }
     
     /**
@@ -862,19 +878,15 @@ public class ChanInfo extends HashNumeric {
      */
 
     public String getIsAccess ( HashString access, User user )  {
-        NickInfo ni;
-        if ( (ni = this.getNickByUser(user)) == null ) {
-            return null;
-          
-        } else if ( this.getAccessList(access).get(ni.getName().getCode()) != null ) {
+        NickInfo ni = this.getNickByUser ( user );
+        if ( ni != null && this.getAccessList(access).get(ni.getName().getCode()) != null ) {
             return ni.getNameStr();
-            
-        } else {
-            for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
-                CSAcc acc = entry.getValue();
-                if ( acc.matchUser ( user ) ) {
-                    return acc.getMaskStr();
-                }
+        }
+        /* No nick with access: the user can still match a mask */
+        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
+            CSAcc acc = entry.getValue();
+            if ( acc.getNick ( ) == null && acc.matchUser ( user ) ) {
+                return acc.getMaskStr();
             }
         }
         return null;
@@ -907,6 +919,9 @@ public class ChanInfo extends HashNumeric {
                 acc.getNick().remFromAccessList ( access, this );
             }
         }
+        /* The list is already wiped in the database, nothing pending for it */
+        this.addAccList.removeIf ( a -> list.containsValue ( a ) );
+        this.remAccList.removeIf ( a -> a.getAccess ( ) != null && a.getAccess().is ( access ) );
         list.clear ( );
     }
     
@@ -971,6 +986,9 @@ public class ChanInfo extends HashNumeric {
             reason = "Masskick";
         }
         Chan c = Handler.findChan ( this.name );
+        if ( c == null ) {
+            return; /* nobody is in the channel */
+        }
         c.clearUsers ( );
         Handler.getChanServ().sendCmd ( "SVSHOLD "+c.getString ( NAME ) +" 60 :"+reason );
         Handler.getChanServ().sendCmd ( "CHANKILL "+c.getString ( NAME ) +" :"+reason );

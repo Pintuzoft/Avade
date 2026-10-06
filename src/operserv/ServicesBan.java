@@ -362,8 +362,9 @@ public class ServicesBan extends HashNumeric {
      */
     public String getBanTypeStr ( ) {
         if      ( type.is(AKILL) )          { return "AutoKill"; }
-        else if ( type.is(SQLINE) )         { return "AutoKill"; }
-        else if ( type.is(SGLINE) )         { return "AutoKill"; }
+        else if ( type.is(SQLINE) )         { return "SQLine";   }
+        else if ( type.is(SGLINE) )         { return "SGLine";   }
+        else if ( type.is(IGNORE) )         { return "Ignore";   }
         else {
             return "Unknown";
         }

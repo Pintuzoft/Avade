@@ -118,7 +118,7 @@ import user.User;
     public void doSend ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :send nick message
         //  0           1           2                       3     4     5   = 6
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) ) ; 
+        NickInfo ni = NickServ.findNick ( user.getName ( ) ) ; 
         NickInfo target;
         
         if ( cmd.length < 6 )  {
@@ -152,6 +152,10 @@ import user.User;
     
     private void sendToNick ( User user, NickInfo from, NickInfo to, String[] cmd )  {
         String message = Handler.cutArrayIntoString ( cmd, 5 );
+        if ( message.length ( ) > MAXLEN ) {
+            this.service.sendMsg ( user, "Error: The memo is too long, max "+MAXLEN+" characters." );
+            return;
+        }
         MemoInfo memo = new MemoInfo ( to.getNameStr(), from.getNameStr(), message );
         memo = MSDatabase.storeMemo ( memo );
         if ( memo == null ) {
@@ -172,13 +176,13 @@ import user.User;
     public void doCSend ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :csend chan message
         //  0           1           2                        3     4     5   = 6
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
         ChanInfo ci;
         
         if ( cmd.length < 6 )  {
             this.service.sendMsg ( 
                 user, 
-                output ( SYNTAX_ERROR, "SEND <nick> <message>" )
+                output ( SYNTAX_ERROR, "CSEND <#chan> <message>" )
             );
 
         } else if ( ni == null )  {
@@ -234,7 +238,7 @@ import user.User;
     public void doList ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :list
         //  0           1           2                       3   = 4        
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
 
         if ( cmd.length < 4 )  {
             this.service.sendMsg ( 
@@ -311,7 +315,7 @@ import user.User;
     public void doRead ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :read 1
         //  0           1           2                       3    4 = 5
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
         MemoInfo memo = null;
        
         if ( cmd.length < 5 )  {
@@ -343,6 +347,7 @@ import user.User;
                         "READ <#num>  ( where #num is a number ) "
                     )
                 );
+                return;
             }
             
             if ( memo == null )  {
@@ -359,7 +364,7 @@ import user.User;
                 );
                 this.service.sendMsg ( 
                     user, 
-                    output ( MEMO_BODY, memo.getName ( ),
+                    output ( MEMO_BODY, memo.getSender ( ),
                     memo.getMessage ( ) )
                 );
                 if ( MSDatabase.readMemo ( memo )  )  {
@@ -377,7 +382,7 @@ import user.User;
     public void doDelete ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :del 1
         //  0           1           2                       3    4 = 5
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
         MemoInfo memo = null;
        
         if ( cmd.length < 5 )  {
@@ -409,6 +414,7 @@ import user.User;
                         "DEL <#num>  ( where #num is a number ) "
                     )
                 );
+                return;
             }
             
             if ( memo == null )  {
@@ -534,6 +540,7 @@ import user.User;
     private final static int NO_SUCH_MEMO             = 1503; 
 
     private final static int MEMO_START               = 1551; 
+    private final static int MAXLEN                   = 256;    /* memo.message in the database */
     private final static int MEMO_BODY                = 1553; 
 
     private final static int DEL_ERROR                = 1554; 

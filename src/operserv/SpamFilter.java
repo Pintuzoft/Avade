@@ -360,7 +360,6 @@ public class SpamFilter extends HashNumeric {
             }
            
              
-            Proc.log("bits: "+ch+":"+this.bits);
         }
     }    
 }

@@ -43,9 +43,10 @@ class GuestTask extends TimerTask {
 
     @Override
     public void run ( )  {            
-        User u;
-        if (  ( u = Handler.findUser ( user.getString ( User.NAME )  )  )  != null &&
-                ! u.isIdented ( NickServ.findNick ( u.getString ( User.NAME )  )  )  )  {
+        /* The user this timer was started for could have quit and someone
+           else could be using the nick now: only act on the same user */
+        User u = Handler.findUser ( user.getName ( ) );
+        if ( u == this.user && ! u.isIdented ( NickServ.findNick ( u.getName ( ) ) ) ) {
             boolean search = true;
             while ( search )  {
                 this.index = this.rand.nextInt ( GuestServ.max ) +10000;

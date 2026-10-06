@@ -204,7 +204,6 @@ public class NSHelper extends Helper {
                 }
             }
             
-            System.out.println( "debug: mark: "+Proc.getConf().getCommandAccess(MARK)+":"+NickServ.getCMDList(SRA).size() );
         }
         this.showEnd ( user );
     }

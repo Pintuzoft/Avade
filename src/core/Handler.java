@@ -360,21 +360,31 @@ public class Handler extends HashNumeric {
                 } else {
                     /* User stuff */ 
                     
-                    if ( this.data == null || this.data[2].isEmpty ( )  )  { 
-                        return; 
+                    if ( this.data.length < 3 || this.data[2].isEmpty ( )  )  { 
+                        return; /* nothing we use is that short (":nick AWAY" when coming back) */
                     }
                     
                     User user; 
                     user = findUser ( this.source );
-                     
-                    if ( oper.isIgnored ( user ) ) {
-                        return;
-                    }
                     
                     this.command = new HashString ( this.data[1] );
+                    
+                    if ( user == null && ! this.command.is(KILL) ) {
+                        return; /* not a user we know of */
+                    }
                      
                     if ( this.command.is(PRIVMSG) ) {
-                        doPrivmsg ( user );
+                        /* Ignored users are not answered, but everything else
+                           they do (quit, nick, modes..) must still be tracked */
+                        if ( ! oper.isIgnored ( user ) ) {
+                            doPrivmsg ( user );
+                        }
+                    
+                    } else if ( this.command.is(JOIN) ) {
+                        /* The only JOIN servers get: the user left all channels */
+                        if ( this.data[2].equals ( "0" ) ) {
+                            user.partAll ( );
+                        }
                     
                     } else if ( this.command.is(MODE) ) {
                         doMode ( user );

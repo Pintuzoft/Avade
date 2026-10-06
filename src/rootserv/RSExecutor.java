@@ -23,6 +23,7 @@ import core.HashString;
 import core.Proc;
 import nickserv.NickInfo;
 import nickserv.NickServ;
+import operserv.OSLogEvent;
 import operserv.Oper;
 import operserv.OperServ;
 import user.User;
@@ -86,6 +87,10 @@ public class RSExecutor extends Executor {
         
         } else if ( command.is(PANIC) ) {
             this.panic ( user, cmd );
+        
+        } else {
+            this.found = false;
+            this.noMatch ( user, cmd[3] );
         }
          
         this.snoop.msg ( this.found, user, cmd );
@@ -99,11 +104,7 @@ public class RSExecutor extends Executor {
         }
     }
 
-    private void stop(User user, String[] cmd) {
-        if ( user == null || user.getOper() == null || user.getOper().getName() == null ) {
-            this.service.sendGlobOp ( "SERVICES STOP!. Failed by: "+user.getFullMask() );
-            return;
-        }
+    private void stop ( User user, String[] cmd ) {
         RootServ.setPanic ( OPER );
         this.service.sendGlobOp ( "SERVICES STOP!. Issued by: "+user.getFullMask()+" ["+user.getOper().getName()+"]" );
         Proc.stopServices();
@@ -111,6 +112,10 @@ public class RSExecutor extends Executor {
  
     
     private void sraw ( User user, String[] cmd )  {
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRAW <raw server line>" ) );
+            return;
+        }
         String buf = "";
         for ( int i = 4; i < cmd.length; i++ )  {
             if ( buf.length() > 0 ) {
@@ -134,7 +139,6 @@ public class RSExecutor extends Executor {
         // :DreamHea1er PRIVMSG RootServ@services.sshd.biz :SRA LIST
         // :DreamHea1er PRIVMSG RootServ@services.sshd.biz :SRA ADD Pintuz
         //  0           1       2                           3   4   5       = 6
-        System.out.println ( "debug ( doSra );" );
         NickInfo sra;
         NickInfo target;
         HashString command;
@@ -167,7 +171,7 @@ public class RSExecutor extends Executor {
             return;
         }
         
-        sra     = NickServ.findNick ( user.getSID().getOper().getString ( NAME ) );
+        sra     = NickServ.findNick ( user.getSID().getOper().getName ( ) );
         target  = NickServ.findNick ( cmd[5] );
         
         if ( sra == null )  {
@@ -176,27 +180,45 @@ public class RSExecutor extends Executor {
         } else if ( target == null )  {
             this.service.sendMsg ( user, output ( NICK_NOT_REGGED, cmd[5] )  );
 
-        } else {
-            if ( command.is(ADD) ) {
-                if ( RSDatabase.addSra ( sra, target )  )  {
-                    this.service.sendMsg ( user, output ( SRA_ADD, target.getNameStr() ) );
-                    this.service.sendGlobOp ( output ( GLOB_SRA_ADD, sra.getNameStr(), target.getNameStr() ) );
-                } else {
-                    this.service.sendMsg ( user, output ( SRA_NOT_ADD, target.getNameStr() ) );
-                }   
-           
-            } else if ( command.is(DEL) ) {
-                if ( RSDatabase.delSra ( target )  )  {
-                    this.service.sendMsg ( user, output ( SRA_DEL, target.getNameStr() ) );
-                    this.service.sendGlobOp ( output ( GLOB_SRA_DEL, sra.getNameStr(), target.getNameStr() ) );
-                } else {
-                    this.service.sendMsg ( user, output ( SRA_NOT_DEL, target.getNameStr() ) );
-                }
-            
-            } else {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" )  ); 
+        } else if ( command.is(ADD) ) {
+            /* The master stays master, and a SRA is not added twice */
+            if ( target.getOper().isAtleast ( SRA ) ) {
+                this.service.sendMsg ( user, output ( SRA_NOT_ADD, target.getNameStr() ) );
+                return;
             }
-            
+            this.setStaff ( user, target, new Oper ( target.getNameStr(), 4, sra.getNameStr() ), ADDSRA );
+            this.service.sendMsg ( user, output ( SRA_ADD, target.getNameStr() ) );
+            this.service.sendGlobOp ( output ( GLOB_SRA_ADD, sra.getNameStr(), target.getNameStr() ) );
+       
+        } else if ( command.is(DEL) ) {
+            /* Only a SRA is removed here: not the master, and not lower staff */
+            if ( target.getOper().getAccess ( ) != 4 ) {
+                this.service.sendMsg ( user, output ( SRA_NOT_DEL, target.getNameStr() ) );
+                return;
+            }
+            this.setStaff ( user, target, new Oper ( ), DELSRA );
+            this.service.sendMsg ( user, output ( SRA_DEL, target.getNameStr() ) );
+            this.service.sendGlobOp ( output ( GLOB_SRA_DEL, sra.getNameStr(), target.getNameStr() ) );
+        
+        } else {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SRA <ADD|DEL|LIST> [<nick>]" )  ); 
+        }
+    }
+    
+    /* Change the staff level of a nick the same way OperServ STAFF does it:
+       in memory at once, to the database through OperServ, and on the
+       users that are identified to the nick */
+    private void setStaff ( User user, NickInfo target, Oper oper, HashString event ) {
+        OperServ.addLogEvent ( new OSLogEvent ( target.getName(), event, user, user.getOper().getNick() ) );
+        if ( oper.getAccess ( ) > 0 ) {
+            OperServ.addOper ( oper );
+        } else {
+            OperServ.delOper ( target );
+        }
+        target.setOper ( oper );
+        for ( User u : Handler.findUsersByNick ( target ) ) {
+            Handler.forceOperModes ( u );
+            NickServ.applyStaffTag ( u );
         }
     }
      
@@ -224,7 +246,7 @@ public class RSExecutor extends Executor {
             state = NONE;
         }
         
-        sra = NickServ.findNick ( u.getSID().getOper().getString ( NAME ) );
+        sra = NickServ.findNick ( u.getSID().getOper().getName ( ) );
         
         if ( sra == null )  {
             this.service.sendMsg ( u, output ( ACCESS_DENIED, "" )  );
@@ -262,7 +284,7 @@ public class RSExecutor extends Executor {
             return "Access denied!";
         
         } else if ( code.is(SYNTAX_ERROR) ) {
-            return "Syntax: /OperServ "+args[0];
+            return "Syntax: /RootServ "+args[0];
         
         } else if ( code.is(NICK_NOT_REGGED) ) {
             return "Nick "+args[0]+" is not registered";

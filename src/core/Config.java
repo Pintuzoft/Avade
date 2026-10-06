@@ -44,7 +44,8 @@ public class Config extends HashNumeric {
         STOP,REHASH,BAHAMUT,SPAMFILTER,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,CLIST,SLIST,JUPE,
         DELETE,SQLINE,SGLINE,CLOSE,FREEZE,HOLD,MARK,NOGHOST,GETPASS,GETEMAIL,
         AKILL,MAKILL,BANLOG,GLOBAL,IGNORE,AUDIT,SERVER,CHANLIST,LIST,AUDITORIUM,
-        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG,SHOWCONFIG,SRA
+        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG,SHOWCONFIG,SRA,
+        VHOST,CLONE
     };
     private static final HashString[] keyStrings = {
         NAME,DOMAIN,NETNAME,STATS,MASTER,AUTHURL, LOGFILE, EXPIRE, SECRETSALT,
@@ -85,13 +86,11 @@ public class Config extends HashNumeric {
         this.loadYamlConf();
     }
     
-    private void printErrorAndExit ( String error ) {
-        System.out.println ( "ConfigError: "+error );
-        System.exit ( 1 );
-    }
     private HashString parseKey ( Map<String,Object> result, String key ) {
         if ( result.get ( key ) == null ) {
-            printErrorAndExit ( key );
+            /* Not valid: stops a start, and a REHASH keeps the old config */
+            System.out.println ( "ConfigError: "+key+" is missing in services.conf" );
+            throw new IllegalStateException ( "ConfigError: "+key );
         }
         return new HashString ( result.get(key).toString() );
     }
@@ -136,8 +135,10 @@ public class Config extends HashNumeric {
         String fileName = "services.conf";
         
         try {
-            InputStream ios = new FileInputStream ( new File ( fileName ) );
-            Map<String,Object> result = safelyCastToMap(yaml.load ( ios ));
+            Map<String,Object> result;
+            try ( InputStream ios = new FileInputStream ( new File ( fileName ) ) ) {
+                result = safelyCastToMap ( yaml.load ( ios ) );
+            }
             
             HashString[] types = { STRING, BOOLEAN, INTEGER };
             for ( HashString type : types ) {
@@ -310,7 +311,8 @@ public class Config extends HashNumeric {
     private ArrayList<String> getCommandsByAccess ( int access ) {
         ArrayList<String> list = new ArrayList<>();
         for ( HashString cmd : cList ) {
-            if ( this.commands.get(cmd.getCode()) == access ) {
+            Integer level = this.commands.get ( cmd.getCode ( ) );
+            if ( level != null && level == access ) {
                 list.add ( " - "+cmd.getString().toLowerCase() );
             }
         }

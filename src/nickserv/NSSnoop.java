@@ -117,6 +117,7 @@ public class NSSnoop extends Snoop {
         //   0      1          2            3    4    5
         switch ( commandOf ( arr ) ) {
             case "IDENTIFY" :
+            case "SIDENTIFY" :
                 return ( arr.length > 5 ? mask ( arr, 5 ) : mask ( arr, 4 ) );
             case "REGISTER" :
                 return mask ( arr, 4, 5 );
@@ -126,7 +127,9 @@ public class NSSnoop extends Snoop {
             case "GHOST" :
                 return mask ( arr, 5 );
             case "SET" :
-                if ( arr.length > 4 && arr[4].toUpperCase().startsWith ( "PASS" ) ) {
+                /* SET PASSWD <pass> <newpass> and SET EMAIL <pass> <email> */
+                if ( arr.length > 4 && ( arr[4].toUpperCase().startsWith ( "PASS" ) ||
+                                         arr[4].toUpperCase().startsWith ( "EMAIL" ) ) ) {
                     return mask ( arr, 5, 6 );
                 }
                 return arr;

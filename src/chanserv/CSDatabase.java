@@ -523,10 +523,11 @@ public class CSDatabase extends Database {
                 updateChanSettings ( ci, changes );
             } 
                 
+            /* An empty topic is logged too, or the old one comes back
+               after a restart */
             if ( ci.getChanges().hasChanged ( TOPIC ) && 
                     ci.getTopic() != null && 
-                    ci.getTopic().getText() != null && 
-                    ci.getTopic().getText().length() > 0 ) {
+                    ci.getTopic().getText() != null ) {
                 addTopicLog ( ci );
             }
                 
@@ -583,7 +584,6 @@ public class CSDatabase extends Database {
             return false;
         }
         
-        System.out.println("accesslogEvent: "+log.getNameStr());
         
         
         try {
@@ -937,6 +937,14 @@ public class CSDatabase extends Database {
             ps.setString  ( 1, ci.getName().getString() );
             ps.execute ( );
             ps.close ( );
+            
+            /* Not tied to chan in the database: without this a channel that
+               is registered again gets the topic of the old one */
+            query = "delete from topiclog where name = ?";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ci.getName().getString() );
+            ps.execute ( );
+            ps.close ( );
              
         } catch  ( SQLException ex )  {
             Proc.log ( CSDatabase.class.getName ( ) , ex );    
@@ -1069,7 +1077,6 @@ public class CSDatabase extends Database {
                          + "left join chansetting as cs on cs.name=c.name "
                          + "left join chanflag as cf on cf.name=c.name ";
                         
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, salt.getString() ); 
             res = ps.executeQuery ( );
@@ -1079,7 +1086,6 @@ public class CSDatabase extends Database {
             
             while ( res.next ( ) )  {
                 if ( index % 100000 == 0 ) {
-                    System.out.println(index);
                 } else if ( index % 1000 == 0 ) {
                     System.out.print(".");
                 }
@@ -1177,7 +1183,6 @@ public class CSDatabase extends Database {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
             return null;    
         } 
-        System.out.println(index);
         return cList;
     
     }
@@ -1198,7 +1203,6 @@ public class CSDatabase extends Database {
             String query = "select * from chanaccess "
                          + "where access = ?";
                         
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, access.getString() ); 
             res = ps.executeQuery ( );
@@ -1221,7 +1225,6 @@ public class CSDatabase extends Database {
             query = "select * from chanaccess_mask "
                   + "where access = ?";
                         
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, access.getString() ); 
             res = ps.executeQuery ( );
@@ -1245,6 +1248,18 @@ public class CSDatabase extends Database {
         }
     }
     
+    /* The access column as the list constant, one shared object for all rows */
+    private static HashString listOf ( String access ) {
+        if ( access == null )                           { return null;      }
+        HashString hash = new HashString ( access );
+        if      ( hash.is(SOP) )                        { return SOP;       }
+        else if ( hash.is(AOP) )                        { return AOP;       }
+        else if ( hash.is(HOP) )                        { return HOP;       }
+        else if ( hash.is(VOP) )                        { return VOP;       }
+        else if ( hash.is(AKICK) )                      { return AKICK;     }
+        return null;
+    }
+
     /**
      *
      */
@@ -1260,7 +1275,6 @@ public class CSDatabase extends Database {
             now = System.nanoTime();
             String query = "select * from chanaccess;";
                         
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             res = ps.executeQuery ( );
 
@@ -1269,24 +1283,29 @@ public class CSDatabase extends Database {
             while ( res.next ( ) )  {
                 ci = ChanServ.findChan(res.getString("name") );
                 ni = NickServ.findNick( res.getString("nick") );
-                access = new HashString ( res.getString("access") );
+                access = listOf ( res.getString("access") );
+                if ( ci == null || ni == null || access == null ) {
+                    continue; /* a row for a channel or nick that is gone */
+                }
                 acc = new CSAcc ( ni, access, res.getString ( "lastoped" ) );
-                ci.addAccess ( access, acc );
+                ci.loadAccess ( access, acc );
                 $count++;
             }
             res.close ( );
             ps.close ( );
             query = "select * from chanaccess_mask;";
                         
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             res = ps.executeQuery ( );
             while ( res.next ( ) )  {
                 mask = res.getString ( "mask" );
                 ci = ChanServ.findChan ( res.getString ( "name" ));
-                access = new HashString ( res.getString("access") );
+                access = listOf ( res.getString("access") );
+                if ( ci == null || mask == null || access == null ) {
+                    continue;
+                }
                 acc = new CSAcc ( mask, access, res.getString ( "lastoped" ) );
-                ci.addAccess ( access, acc );
+                ci.loadAccess ( access, acc );
                 $count++;
             }
             now2 = System.nanoTime();

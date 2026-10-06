@@ -187,7 +187,7 @@ public class OSExecutor extends Executor {
             this.service.sendMsg ( user, "        IP: " + u.getString ( IP )                                        );
             this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes().is ( IDENT )+" ), oper ( "+u.getModes().is ( OPER )+" ) , admin ( "+u.getModes().is ( ADMIN )+" ) , sadmin ( "+u.getModes().is ( SADMIN )+" ) " );
             this.service.sendMsg ( user, "    Server: "+u.getServ().getName ( )                                     );
-            for ( Chan c : user.getChans() ) {
+            for ( Chan c : u.getChans() ) {
                 this.service.sendMsg ( user, "   Channel: "+c.getString ( NAME )                                    );
             }
             this.service.sendMsg ( user, "*** End ***"                                                              );
@@ -376,7 +376,6 @@ public class OSExecutor extends Executor {
         // :DreamHealer PRIVMSG OperServ@stats.avade.net   :ban add fredde@172.* testing
         // 0            1       2                          3      4   5            6
         
-        System.out.println("Bans: "+Handler.getOperServ().getAkillCount()+":"+Handler.getOperServ().getIgnoreCount());
         
         if ( cmd.length > 4 && cmd[4].startsWith ( "-" ) ) {
             String[] buf = new String[6];
@@ -412,6 +411,11 @@ public class OSExecutor extends Executor {
         
         } else if ( result.is(SYNTAX_ERROR_ADD) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" ADD <time> <pattern> <reason>" ) );
+                if ( command.is(AKILL) ) {
+                    this.service.sendMsg ( user, "An AKILL pattern is *!user@host (or *!user@ip/bits), the nick part must be *" );
+                } else if ( command.is(IGNORE) ) {
+                    this.service.sendMsg ( user, "An IGNORE pattern is nick!user@host" );
+                }
                 return;            
         
         } else if ( result.is(BADTIME) ) {
@@ -485,11 +489,6 @@ public class OSExecutor extends Executor {
                 boolean foundOperMatch = false;
                 String expire = Handler.expireToDateString ( stamp, time );
                 
-                System.out.println("debug(2): mask:"+mask);
-                System.out.println("debug(2): time:"+time);
-                System.out.println("debug(2): reason:"+reason);
-                System.out.println("debug(2): stamp:"+stamp);
-                System.out.println("debug(2): expire:"+expire);
                 
                 
                 //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
@@ -518,7 +517,6 @@ public class OSExecutor extends Executor {
                 }
                 
                 
-                System.out.println("matching users: "+uList.size());
                 
                 for ( User u : uList ) {
                     if ( u.isAtleast ( IRCOP ) ) {
@@ -730,6 +728,17 @@ public class OSExecutor extends Executor {
             return;
         } else if ( serverName.is ( Proc.getConf().get(HUBNAME) ) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (services hub cannot be juped)" ) );
+            return;
+        } else if ( ! cmd[4].matches ( "[A-Za-z0-9.-]+" ) ) {
+            /* the ircd drops our link if we introduce a server with a bogus name */
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (only letters, digits, dots and dashes)" ) );
+            return;
+        } else if ( serverName.is ( Proc.getConf().get(NAME) ) || serverName.is ( Proc.getConf().get(STATS) ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (services cannot be juped)" ) );
+            return;
+        } else if ( Handler.findServer ( serverName ) != null ) {
+            /* a second server with the same name makes the ircd close a link, ours */
+            this.service.sendMsg ( user, "Error: "+cmd[4]+" is linked right now, SQUIT it first." );
             return;
         }
         String name = cmd[4];
@@ -947,8 +956,7 @@ public class OSExecutor extends Executor {
         Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
         
         Scheduler.schedule ( new UnSQlineTask ( u.getNameStr() ), 15000 );
-        
-        u.setName(newNick);
+        /* the ircd answers with a NICK line, that renames the user here */
     }
       
           
@@ -1035,6 +1043,11 @@ public class OSExecutor extends Executor {
             this.service.sendMsg ( user, "Error: nick "+cmd[4]+" is not registered." );
             return;
         }
+        if ( ni.getOper().getAccess ( ) >= user.getAccess ( ) && ! user.isIdented ( ni ) ) {
+            /* not on staff at your own level or above */
+            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+            return;
+        }
         String host = cmd[5].equalsIgnoreCase ( "OFF" ) ? null : cmd[5];
         String reason;
         if ( host != null && ( reason = NickServ.checkVhostSyntax ( host ) ) != null ) {
@@ -1101,7 +1114,7 @@ public class OSExecutor extends Executor {
                 this.service.sendMsg ( user, "*** End of List ***");            
         
         } else if ( result.is(DEL) ) {
-                if ( cmd.length == 6 && OperServ.addDelServer (result.getString1() ) ) {
+                if ( cmd.length == 6 && OperServ.addDelServer ( cmd[5] ) ) {
                     this.service.sendMsg ( user, "Server "+cmd[5]+" was successfully removed from list.");
                 } else {
                     this.service.sendMsg ( user, "Error: Server "+cmd[5]+" was not removed from list.");
@@ -1207,24 +1220,28 @@ public class OSExecutor extends Executor {
     private void makill(User user, String[] cmd) {
         CMDResult result = this.validateCommandData ( user, MAKILL, cmd );
         
-        if ( result.is(STATS) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <add> [<nick!user@host> <nick!user@host> ...]" ) );
+        if ( result.is(SYNTAX_ERROR) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <add> [<*!user@host> <*!user@host> ...]" ) );
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <commit> <length> <reason>" ) );
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );            
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );
+                return;
         
         } else if ( result.is(BADTIME) ) {
-                this.service.sendMsg ( user, output ( BADTIME, "" ) );            
+                this.service.sendMsg ( user, output ( BADTIME, "" ) );
+                return;
         
         } else if ( result.is(BADREASON) ) {
-                this.service.sendMsg ( user, output ( BADREASON, "" ) );            
+                this.service.sendMsg ( user, output ( BADREASON, "" ) );
+                return;
         
         } else if ( result.is(ACCESS_DENIED) ) {
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );            
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                return;
         }
          
         ServicesBan ban = null;
 
-        if ( result.getSub().is(COMMIT) ) {
+        if ( result.getSub ( ) != null && result.getSub().is(COMMIT) ) {
                 String time = result.getString1 ( );
                 String reason = result.getString2 ( );
                 String expire = result.getString3 ( );
@@ -1315,7 +1332,7 @@ public class OSExecutor extends Executor {
 
                 if ( sub.is(ADD) ) {
                         for ( int i = 5; i < cmd.length; i++ ) {
-                            if ( cmd[i].contains("!") && cmd[i].contains("@") ) {
+                            if ( validBanMask ( cmd[i] ) && cmd[i].startsWith ( "*!" ) ) {
                                 if ( OperServ.findBan ( AKILL, cmd[i] ) != null ) {
                                     /* Ban exist */
                                     this.service.sendMsg ( user, output ( BAN_EXIST, "AKill", cmd[i] ) );
@@ -1418,7 +1435,7 @@ public class OSExecutor extends Executor {
                     
                 } else if ( sub.is(DEL) && 
                             ( ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null &&
-                              ( ban = OperServ.findBan ( command, cmd[5] ) ) == null ) ) {
+                              ( ban = OperServ.findBanExact ( command, cmd[5] ) ) == null ) ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( BAN_NO_EXIST );
                 
@@ -1433,9 +1450,13 @@ public class OSExecutor extends Executor {
                 } else if ( isShorterThanLen ( 8, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
-                } else if ( ( command.is(AKILL) || command.is(IGNORE) ) && 
-                            ! ( cmd[6].contains("!") && cmd[6].contains("@") ) ) {
+                } else if ( ( command.is(AKILL) || command.is(IGNORE) ) && ! validBanMask ( cmd[6] ) ) {
                     /* SQLINE is a nick/channel and SGLINE a realname pattern */
+                    result.setStatus ( SYNTAX_ERROR_ADD );
+                    
+                } else if ( command.is(AKILL) && ! cmd[6].startsWith ( "*!" ) ) {
+                    /* The ircd bans on user@host only: with a nick in the mask we
+                       would count one user and then ban everyone on that host */
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
                 } else if ( ( expire = Handler.expireToDateString ( stamp, time ) ) == null ) {
@@ -1773,5 +1794,16 @@ public class OSExecutor extends Executor {
     }
 
  
+
+    /* nick!user@host with nothing empty, and /bits only on an ip address.
+       ServicesBan splits the mask without checking, and a host name with
+       /bits would be looked up in DNS */
+    static boolean validBanMask ( String mask ) {
+        if ( ! mask.matches ( "[^!@\\s]+![^!@\\s]+@[^!@\\s]+" ) ) {
+            return false;
+        }
+        String host = mask.substring ( mask.indexOf ( '@' ) + 1 );
+        return ! host.contains ( "/" ) || host.matches ( "[0-9a-fA-F:.]+/\\d{1,3}" );
+    }
 
 }

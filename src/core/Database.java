@@ -495,6 +495,7 @@ public class Database extends HashNumeric {
             ps.close ( ); 
             
         } catch ( SQLException ex ) {
+            Proc.log ( Database.class.getName ( ) , ex );
             return false;
         }
         return true;             

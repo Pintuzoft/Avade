@@ -109,7 +109,8 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "HELP",      1,                         "Show help information" )                       );
         cmdList.add ( new CommandInfo ( "UINFO",     CMDAccess ( UINFO ),       "Show user information" )                       );
         cmdList.add ( new CommandInfo ( "CINFO",     CMDAccess ( CINFO ),       "Show channel information" )                    );
-        cmdList.add ( new CommandInfo ( "NINFO",     CMDAccess ( CINFO ),       "Show nick information" )                       );
+        cmdList.add ( new CommandInfo ( "NINFO",     CMDAccess ( NINFO ),       "Show nick information" )                       );
+        cmdList.add ( new CommandInfo ( "SINFO",     CMDAccess ( SINFO ),       "Show server information" )                     );
         cmdList.add ( new CommandInfo ( "ULIST",     CMDAccess ( ULIST ),       "Show user list" )                              );
         cmdList.add ( new CommandInfo ( "CLIST",     CMDAccess ( CLIST ),       "Show user list" )                              );
         cmdList.add ( new CommandInfo ( "SLIST",     CMDAccess ( SLIST ),       "Show server list" )                            );
@@ -478,12 +479,12 @@ public class OperServ extends Service {
                         if ( ban != null ) {
                             newName = "SQLined"+rand.nextInt(99999);
                             this.ban ( u, ban );
+                            /* the ircd answers with a NICK line, that renames the user here */
                             this.sendServ ( "SVSNICK "+u.getString ( NAME )+" "+newName+" :0" );
-                            u.setName ( newName );
                         }
                     
                     } else if ( command.is(SGLINE) ) {
-                        ban = findBan ( command, u.getString ( REALNAME ) );
+                        ban = findSGLine ( u.getString ( REALNAME ) );
                         if ( ban != null ) {
                             this.ban ( u, ban );
                             Handler.deleteUser ( u );
@@ -498,15 +499,10 @@ public class OperServ extends Service {
             }
         }
         this.chList.removeAll ( checked );
-        
-        for ( User u2 : this.chList ) {
-            System.out.println("QUEUE: "+u2.getString ( NAME ) );
-        }
-        
     }
     
     private void expireBans ( ) {
-        HashString[] commands = { AKILL, SGLINE, SQLINE };
+        HashString[] commands = { AKILL, SGLINE, SQLINE, IGNORE };
         ArrayList<ServicesBan> delList = new ArrayList<>( );
         ArrayList<ServicesBan> list = null;
         for ( HashString command : commands ) {
@@ -535,6 +531,7 @@ public class OperServ extends Service {
         if      ( name.is(AKILL) )          { return akills;        }
         else if ( name.is(SQLINE) )         { return sqlines;       }
         else if ( name.is(SGLINE) )         { return sglines;       }
+        else if ( name.is(IGNORE) )         { return ignores;       }
         else {
             return null;
         }
@@ -555,7 +552,6 @@ public class OperServ extends Service {
         HashString command = new HashString ( cmd[3] );
         
         if ( user == null ) {
-            System.out.println("DEBUG: parse() -> no user");
             return;
         } else if ( ! user.isOper ( ) )  {
             this.sendMsg ( user, "IRC Operator Services are for IRC Operators only .. *sigh*" );
@@ -847,7 +843,7 @@ public class OperServ extends Service {
                 }   
             }            
         
-        } else if ( command.is(SQLINE) ) {
+        } else if ( command.is(SGLINE) ) {
             for ( ServicesBan ban : sglines ) {
                 if ( StringMatch.wild ( ban.getMask().getString(), pattern) ) {
                     bList.add ( ban );
@@ -863,6 +859,36 @@ public class OperServ extends Service {
      * @param usermask
      * @return
      */
+    /* The ban with exactly this mask (for DEL: "AKILL DEL *" must not
+       remove whatever ban happens to match first) */
+    public static ServicesBan findBanExact ( HashString command, String mask )  {
+        ArrayList<ServicesBan> list = getListByCommand ( command );
+        if ( list == null ) {
+            return null;
+        }
+        HashString hash = new HashString ( mask );
+        for ( ServicesBan ban : list ) {
+            if ( ban.isMask ( hash ) ) {
+                return ban;
+            }
+        }
+        return null;
+    }
+    
+    /* The realname of a user is data, never a pattern: a realname of "*"
+       must not match every SGLINE */
+    private static ServicesBan findSGLine ( String realname ) {
+        if ( realname == null ) {
+            return null;
+        }
+        for ( ServicesBan ban : sglines ) {
+            if ( StringMatch.matches ( realname, ban.getMask().getString ( ) ) ) {
+                return ban;
+            }
+        }
+        return null;
+    }
+    
     public static ServicesBan findBan ( HashString command, String usermask )  {
         if ( command.is(AKILL) ) {
             for ( ServicesBan a : akills )  {
@@ -1046,6 +1072,7 @@ public class OperServ extends Service {
             }
         }
         NetServer server = new NetServer ( name.getString(), null, null );
+        servers.add ( server );     /* known at once, not first after a restart */
         addServers.add ( server );
     }
 
@@ -1345,11 +1372,10 @@ public class OperServ extends Service {
         return false;
     }
     
-    static void addOper ( Oper oper ) {
+    public static void addOper ( Oper oper ) {
         Oper rem = null;
         HashString hash = oper.getName();
         for ( Oper o : staff ) {
-            System.out.println("addOper: "+hash+":"+o.getName().hashCode());
             if ( o.getName().is(hash) ) {
                 rem = o;
             }

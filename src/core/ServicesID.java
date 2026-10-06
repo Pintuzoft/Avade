@@ -159,12 +159,10 @@ public class ServicesID extends HashNumeric {
         }
         for ( ChanInfo chan : this.ciList )  {
             if ( chan.is(ci) ) {
-                this.printSID ( );
                 return;
             }
         }
         this.ciList.add ( ci );
-        this.printSID ( );
     }
     
     /**

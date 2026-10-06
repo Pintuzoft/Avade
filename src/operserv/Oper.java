@@ -76,7 +76,6 @@ public class Oper extends HashNumeric {
         } catch ( SQLException ex )  {
             Logger.getLogger ( Oper.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
         }
-        this.printOper();
     }
     
     /**

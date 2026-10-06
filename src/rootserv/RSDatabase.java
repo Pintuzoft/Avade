@@ -49,69 +49,6 @@ public class RSDatabase extends Database {
 2 rows in set  ( 0.00 sec )        
     */
 
-    /**
-     *
-     * @param sra
-     * @param target
-     * @return
-     */
-
-    public static boolean addSra ( NickInfo sra, NickInfo target )  {
-        if ( ! activateConnection ( ) ) {
-            return false;
-        }
-        try {
-            int id;
-
-            String query = "INSERT INTO oper  ( name, access, instater )  VALUES  ( ?, ?, ? )  "
-                          +"ON DUPLICATE KEY UPDATE access = ?, instater = ?;"; 
-            PreparedStatement preparedStmt = sql.prepareStatement ( query );
-            preparedStmt.setString   ( 1, target.getNameStr()       );
-            preparedStmt.setInt      ( 2, 4                         );
-            preparedStmt.setString   ( 3, sra.getNameStr()          );                
-            preparedStmt.setInt      ( 4, 4                         );
-            preparedStmt.setString   ( 5, sra.getNameStr()          );
-            preparedStmt.execute ( );
-            preparedStmt.close ( );
-
-            idleUpdate ( "addSra ( ) " );
-         
-        } catch  ( Exception ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );
-            return false;
-        } 
-        return true;
-    }
-    
-    /**
-     *
-     * @param ni
-     * @return
-     */
-    public static boolean delSra ( NickInfo ni )  {
-        if ( ! activateConnection ( )  )  {
-            return false;
-        }
-        try {
-            int id;
-            
-            String query = "DELETE FROM oper WHERE name = ?;";
-            ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, ni.getNameStr()  );
-            ps.execute ( );
-            ps.close ( );
-            
-           
-            
-            idleUpdate ( "delSra ( ) " );
-            return true;
-        
-        } catch  ( Exception ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );   
-        } 
-        return false;
-    }
-
     static boolean isMaster ( HashString master ) {
         if ( ! activateConnection ( ) ) {
             return false;
@@ -134,7 +71,7 @@ public class RSDatabase extends Database {
             return false;
         
         } catch  ( SQLException ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );   
+            Proc.log ( RSDatabase.class.getName ( ) , ex );   
         } 
         return false;
     }
@@ -153,7 +90,10 @@ public class RSDatabase extends Database {
             PreparedStatement preparedStmt = sql.prepareStatement ( query );
             res = preparedStmt.executeQuery ( );
             while ( res.next ( ) )  {
-                nList.add ( NickServ.findNick ( res.getString ( 1 ) ) );
+                NickInfo old = NickServ.findNick ( res.getString ( 1 ) );
+                if ( old != null ) {
+                    nList.add ( old );
+                }
             }
             res.close ( );
             preparedStmt.close ( );
@@ -163,6 +103,7 @@ public class RSDatabase extends Database {
             query = "UPDATE oper SET access = 4 WHERE access = 5";
             ps = sql.prepareStatement ( query );
             ps.execute ( );
+            ps.close ( );
             
             /* Set new master */
             query = "INSERT INTO oper ( name, access ) VALUES ( ?, ? ) "+
@@ -177,7 +118,7 @@ public class RSDatabase extends Database {
             idleUpdate ( "setMaster ( ) " );
             
         } catch  ( SQLException ex )  {
-            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            Proc.log ( RSDatabase.class.getName ( ) , ex );
         } 
         return nList;
     }

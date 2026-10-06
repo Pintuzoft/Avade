@@ -103,7 +103,6 @@ public class OSDatabase extends Database {
             ban.printData();
             String query = "insert into "+list+" ( id,mask,reason,instater,stamp,expire ) VALUES "
                           +" ( ?, ?, ?, ?, ?, ? );";
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ban.getID().getString() );
             ps.setString ( 2, ban.getMask().getString() );
@@ -499,7 +498,7 @@ public class OSDatabase extends Database {
                     )
                 );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             idleUpdate ( "getLogSearchList ( ) " );
          
@@ -533,7 +532,7 @@ public class OSDatabase extends Database {
                     (res.getString(3)!=null?res.getString(3):null) )
                 );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             idleUpdate ( "getLogSearchList ( ) " );
          
@@ -563,7 +562,7 @@ public class OSDatabase extends Database {
                                          res.getString ( 3 ) );
                 sList.add ( server );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             
         } catch ( SQLException ex ) {
@@ -583,7 +582,6 @@ public class OSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, server.getNameStr() );
             ps.execute ( );
-            res2.close ( );
             ps.close ( );
             deleted = true;
             
@@ -614,7 +612,6 @@ public class OSDatabase extends Database {
             ps.setString ( 2, server.getNameStr() );
             ps.execute();
 
-            res2.close ( );
             ps.close ( );
             return true;
             
@@ -638,7 +635,6 @@ public class OSDatabase extends Database {
             ps.setString ( 3, server.getNameStr() );
             ps.execute();
 
-            res2.close ( );
             ps.close ( );
             return true;
             
@@ -664,7 +660,7 @@ public class OSDatabase extends Database {
             ps.setString ( 1, name.getString() );
             res = ps.executeQuery ( );
             found = res.next();
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             
         } catch ( SQLException ex ) {
@@ -698,7 +694,7 @@ public class OSDatabase extends Database {
                 comment = new Comment ( res.getString(1), res.getString(2), res.getString(3), res.getString(4) );
                 cList.add ( comment );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             idleUpdate ( "getCommentList ( ) " );
 
@@ -716,7 +712,6 @@ public class OSDatabase extends Database {
         if ( ! activateConnection ( ) )  {
             return lsList;
         }
-        System.out.println("OSDatabase: "+target);
         try {
             if ( target == null || target.length() < 1 ) {
                 query = "select name,flag,usermask,oper,stamp,null as global from nicklog "+

@@ -127,7 +127,6 @@ public class NSDatabase extends Database {
      */
 
     public static int updateNick ( NickInfo ni )  {
-        ni.getChanges().printChanges();
         if ( ! ni.getChanges().changed ( ) ) {
             return 1;
         }
@@ -198,7 +197,6 @@ public class NSDatabase extends Database {
                
                 ps = sql.prepareStatement ( query );
                  int index = 1;
-                 ni.getChanges().printChanges();
                 if ( ni.hasChanged ( NOOP ) ) {
                     ps.setInt ( index++, ni.isSet ( NOOP ) ? 1 : 0 );
                 }

@@ -83,7 +83,8 @@ public class ChanSetting extends HashNumeric {
         else if ( it.is(OPGUARD) )      { return this.opGuard;                  }
         else if ( it.is(RESTRICT) )     { return this.restrict;                 }
         else if ( it.is(VERBOSE) )      { return this.verbose;                  }
-        else if ( it.is(MAILBLOCKED) )  { return this.mailBlock;                }
+        else if ( it.is(MAILBLOCKED) ||
+                  it.is(MAILBLOCK) )    { return this.mailBlock;                }
         else if ( it.is(LEAVEOPS) )     { return this.leaveOps;                 }
         else if ( it.is(AUTOAKICK) )    { return this.autoAkick;                }
         else if ( it.is(DYNAOP) )       { return this.dynAop;                   }
@@ -120,7 +121,8 @@ public class ChanSetting extends HashNumeric {
         else if ( it.is(OPGUARD) )      { this.opGuard      = state;            }
         else if ( it.is(RESTRICT) )     { this.restrict     = state;            }
         else if ( it.is(VERBOSE) )      { this.verbose      = state;            }
-        else if ( it.is(MAILBLOCKED) )  { this.mailBlock    = state;            }
+        else if ( it.is(MAILBLOCKED) ||
+                  it.is(MAILBLOCK) )    { this.mailBlock    = state;            }
         else if ( it.is(LEAVEOPS) )     { this.leaveOps     = state;            }
         else if ( it.is(AUTOAKICK) )    { this.autoAkick    = state;            }
         else if ( it.is(DYNAOP) )       { this.dynAop       = state;            }

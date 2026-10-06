@@ -298,8 +298,10 @@ public class NickServ extends Service {
             return;
         }
         for ( User user : Handler.findUsersByNick ( ni ) ) {
-            if ( ! user.hasAccess(ni.getName()) ) {
+            /* everyone except the one that is using the nick right now */
+            if ( ! user.is ( ni ) ) {
                 user.getSID().del ( ni );
+                Handler.addUpdateSID ( user.getSID ( ) );
                 Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
             }
         }
@@ -384,6 +386,11 @@ public class NickServ extends Service {
                        auth.is(PASS) && NSDatabase.addPass ( auth ) ) {
                     WorkGuard.done ( auth );
                     auths.add ( auth );
+                    /* The code is stored, now the mail with it can go out */
+                    NickInfo ni = findNick ( auth.getNick ( ) );
+                    if ( ni != null ) {
+                        SendMail.sendAuthMail ( ni, auth );
+                    }
                 } else if ( WorkGuard.failed ( auth, "auth" ) ) {
                     auths.add ( auth );
                 }

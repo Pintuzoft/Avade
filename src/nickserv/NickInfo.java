@@ -27,7 +27,9 @@ import memoserv.MSDatabase;
 import memoserv.MemoInfo;
 import operserv.Oper;
 import user.User;
+import java.math.BigInteger;
 import java.net.InetAddress;
+import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -138,9 +140,9 @@ public class NickInfo extends HashNumeric {
      */
     public NickInfo ( String name ) {
         User u          = Handler.findUser ( name );
-        Random random   = new Random ( );
         if ( u != null ) {
-            String passwd   = "Master" + random.nextInt ( 9800 ) + 100;
+            /* Not guessable: this is the nick with the highest access */
+            String passwd   = "Master" + new BigInteger ( 80, new SecureRandom ( ) ).toString ( 36 );
             this.name       = new HashString ( name );
             this.pass       = passwd;
             this.ip         = new HashString ( u.getString ( IP ) );
@@ -289,7 +291,6 @@ public class NickInfo extends HashNumeric {
         }
         if ( this.pass.compareTo ( pass ) == 0 )  {
             this.throttle.reset ( );
-            this.changes.hasChanged ( LASTUSED );
             return true;
         }
         this.throttle.hit ( );

@@ -64,8 +64,5 @@ public class OSSnoopLogEvent {
     }
     
     private void printThis ( ) {
-        System.out.println("DEBUG: target: "+this.target);
-        System.out.println("DEBUG: body: "+this.body);
-        System.out.println("DEBUG: stamp: "+this.stamp);
     }
 }

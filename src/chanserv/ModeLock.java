@@ -193,6 +193,16 @@ class ModeLock extends HashNumeric {
             missing += "t";
         }
         
+        /* Nothing to change: no MODE line at all */
+        if ( missing.equals ( "+-" ) ) {
+            return null;
+        }
+        if ( missing.endsWith ( "-" ) ) {
+            missing = missing.substring ( 0, missing.length ( ) - 1 );
+        }
+        if ( missing.startsWith ( "+-" ) ) {
+            missing = missing.substring ( 1 );
+        }
         return missing;
     }
     

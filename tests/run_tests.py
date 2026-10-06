@@ -11,6 +11,7 @@ and the database end up with. Each test uses its own channels, the users are
 registered once at the start (Avade writes new nicks to the database once a
 minute, so that takes a little over a minute).
 """
+import os
 import socket
 import sys
 import time
@@ -399,6 +400,117 @@ def test_staff_in_whois():
     close(mm, b)
 
 
+def test_panic_without_state():
+    """Used to recurse forever and take services down."""
+    mm = master()
+    r = mm.svc('RootServ', 'PANIC')
+    check(has(r, 'Panic state is: USER'), 'RootServ PANIC shows the state', r)
+    check(has(mm.svc('NickServ', 'INFO ' + MASTER), 'Info for'), 'and services are still alive')
+    check(has(mm.svc('RootServ', 'NOSUCHCOMMAND'), 'no such command'), 'an unknown RootServ command gets an answer')
+    close(mm)
+
+
+def test_akick_kicks():
+    """The kick was skipped when nobody in the channel was identified, and had no reason."""
+    chan = '#t_akick'
+    a = login('Alice')
+    register_chan(a, chan)
+    r = a.svc('ChanServ', 'AKICK %s ADD Evil*!*@*' % chan)
+    check(has(r, 'added'), 'an akick mask is added', r)
+    a.send('PART ' + chan)
+    time.sleep(1)
+    e = Client('EvilOne')
+    m = e.mark()
+    e.send('JOIN ' + chan)
+    kick = ''
+    try:
+        kick = e.wait(r' KICK %s EvilOne ' % chan, 8, m)
+    except TimeoutError:
+        pass
+    check(kick != '', 'the akicked user is kicked from a channel with nobody identified in it', e.since(m)[-4:])
+    check('AutoKicked' in kick, 'with the reason', kick)
+    check(has(a.svc('ChanServ', 'AKICK %s ADD broken!mask' % chan), 'not registered') or
+          not has(a.svc('ChanServ', 'AKICK %s ADD x!y@' % chan), 'added'), 'a mask that is not nick!user@host is refused')
+    a.svc('ChanServ', 'AKICK %s DEL Evil*!*@*' % chan)
+    close(a, e)
+
+
+def test_mask_rank():
+    """An AOP could move a mask from the SOP list down to the VOP list."""
+    chan = '#t_rank'
+    a, b = login('Alice'), login('Bob')
+    register_chan(a, chan)
+    a.svc('ChanServ', 'SOP %s ADD *!*@sopmask.test.example' % chan)
+    a.svc('ChanServ', 'AOP %s ADD Bob' % chan)
+    r = b.svc('ChanServ', 'VOP %s ADD *!*@sopmask.test.example' % chan)
+    check(not has(r, 'added'), 'an AOP cannot move a SOP mask to the VOP list', r)
+    r = a.svc('ChanServ', 'SOP %s LIST' % chan)
+    check(has(r, 'sopmask.test.example'), 'the mask is still on the SOP list', r)
+    close(a, b)
+
+
+def test_dash_in_channel_name():
+    chan, other = '#t-with-dash', '#twithdash'
+    a = login('Alice')
+    register_chan(a, chan)
+    register_chan(a, other)
+    mm = master()
+    mm.svc('ChanServ', 'FREEZE %s test' % chan)
+    frozen = lambda c: has(mm.svc('ChanServ', 'INFO ' + c), 'Frozen')
+    check(frozen(chan), 'FREEZE works on a channel with - in the name', mm.svc('ChanServ', 'INFO ' + chan))
+    check(not frozen(other), 'and does not hit the channel without the dashes')
+    mm.svc('ChanServ', 'FREEZE -%s' % chan)
+    check(not frozen(chan), 'and it can be unfrozen')
+    close(a, mm)
+
+
+def test_memo():
+    a, b = login('Alice'), login('Bob')
+    r = a.svc('MemoServ', 'SEND Bob hej Bob, det här är ett memo')
+    check(has(r, 'Memo sent to: Bob'), 'a memo is sent', r)
+    r = b.svc('MemoServ', 'LIST')
+    check(has(r, 'Alice') and not has(r, 'null') and not has(r, '1970'), 'LIST shows the sender and a real date', r)
+    r = b.svc('MemoServ', 'READ 1')
+    check(has(r, '<Alice> hej Bob'), 'READ shows who sent it', r)
+    r = b.svc('MemoServ', 'READ abc')
+    check(len([x for x in r if 'abc' in x or 'READ' in x]) == 1, 'READ with a non-number gives one error', r)
+    b.svc('MemoServ', 'DEL 1')
+    close(a, b)
+
+
+def test_nick_privacy_and_mail():
+    a, c = login('Alice'), login('Carol')
+    check(not has(c.svc('NickServ', 'INFO Alice'), 'Hostmask'), 'INFO hides the hostmask of someone else')
+    check(has(a.svc('NickServ', 'INFO Alice'), 'Hostmask'), 'and shows it to the owner')
+    check(has(a.svc('NickServ', 'SET NOOP banana'), 'Syntax'), 'SET needs ON or OFF')
+    r = c.svc('NickServ', 'SET EMAIL %s carol-new@test.net' % pw('Carol'))
+    mail = wait_db("select subject from mailbox where mail = 'carol-new@test.net'", 150)
+    check(mail != '', 'SET EMAIL sends a confirmation mail to the new address', (r, mail))
+    close(a, c)
+
+
+def test_oper_checks():
+    mm = master()
+    r = mm.svc('OperServ', 'AKILL ADD 30 Spammer!*@*.example.invalid test')
+    check(has(r, 'nick part must be'), 'AKILL with a nick in the mask is refused', r)
+    r = mm.svc('OperServ', 'AKILL ADD 30 *!*@ test')
+    check(has(r, 'Syntax'), 'AKILL with a broken mask gets an answer', r)
+    r = mm.svc('OperServ', 'JUPE ' + ENV['HUB_NAME'])
+    check(has(r, 'cannot be juped') or has(r, 'linked right now'), 'JUPE of a linked server is refused', r)
+    r = mm.svc('OperServ', 'JUPE ' + SERVICES)
+    check(has(r, 'cannot be juped'), 'JUPE of services is refused', r)
+    mm.svc('OperServ', 'SGLINE ADD 10 *avadetestgcos* test', wait=2)
+    check(has(mm.svc('OperServ', 'SGLINE LIST *'), 'avadetestgcos'), 'SGLINE LIST shows the sgline')
+    mm.svc('OperServ', 'SGLINE DEL *avadetestgcos*')
+    close(mm)
+
+
+def test_log_file():
+    log = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work', 'run', 'services.log'),
+               errors='replace').read()
+    check(log.count('\n') > 3, 'services.log is written, one line per entry', log[:200])
+
+
 def test_bans():
     mm = master()
     mm.svc('OperServ', 'AKILL TIME 60d *!*@203.0.113.7 test of 60 days')
@@ -475,7 +587,9 @@ def test_hub_restart():
 
 TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
-         test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_bans,
+         test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
+         test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
+         test_oper_checks, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

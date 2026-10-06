@@ -245,7 +245,7 @@ public class CSExecutor extends Executor {
             } else {
                 /* ident isSet off */
                 if ( ci.isSet ( VERBOSE )  )  {
-                    this.service.sendOpMsg (ci, output (NICK_NEVEROP, user.getNameStr(), targetUser.getNameStr(), ci.getNameStr() ) );
+                    this.service.sendOpMsg (ci, output (NICK_VERBOSE_OP, user.getNameStr(), targetUser.getNameStr(), ci.getNameStr() ) );
                 }
                 this.service.sendMsg (user, output (NICK_OP, targetUser.getNameStr(), ci.getNameStr() ) );
                 this.snoop.msg (true, NICK_OP, targetUser.getName(), user, cmd );
@@ -363,6 +363,11 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, NICK_NOT_REGISTERED, user.getNameStr(), user, cmd );
             return;
             
+        } else if ( result.was(NICK_NOT_IDENTIFIED) ) {
+            this.service.sendMsg (user, output (NICK_NOT_IDENTIFIED, user.getNameStr() ) ); 
+            this.snoop.msg (false, NICK_NOT_IDENTIFIED, user.getNameStr(), user, cmd );
+            return;
+            
         } else if ( result.was(CHAN_NOT_EXIST) ) {
             this.service.sendMsg (user, output (CHAN_NOT_EXIST, result.getString1().getString() ) ); 
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1 ( ), user, cmd );
@@ -393,7 +398,7 @@ public class CSExecutor extends Executor {
         if ( c.getTopic() != null ) {
             topic = c.getTopic();
         } else {
-            topic = new Topic ("", ni.getNameStr(), System.currentTimeMillis());
+            topic = new Topic ( "", ni.getNameStr(), System.currentTimeMillis ( ) / 1000 );
         }
         
         ci = new ChanInfo ( c.getNameStr(), ni, cmd[5], description, topic );
@@ -402,9 +407,13 @@ public class CSExecutor extends Executor {
         
         ci.setModeLock("+nt");
         ci.set ( TOPICLOCK, OFF );
-        ci.set ( IDENT, ON );
-        ci.set ( OPGUARD, ON );
-        ci.getChanges().change ( TOPIC );
+        /* The same defaults as the row createChan stores */
+        ci.set ( KEEPTOPIC, true );
+        ci.set ( IDENT, true );
+        ci.set ( OPGUARD, true );
+        if ( topic.hasText ( ) ) {
+            ci.getChanges().change ( TOPIC );
+        }
         ci.setChanFlag( new CSFlag ( ci.getNameStr() ) );
         
         CSLogEvent log = new CSLogEvent ( ci.getName(), REGISTER, ci.getFounder().getString ( FULLMASK ), ci.getFounder().getNameStr() );
@@ -591,7 +600,9 @@ public class CSExecutor extends Executor {
         ChanInfo ci = result.getChanInfo ( );
         NickInfo founder = ci.getFounder ( ); 
         if ( founder == null ) {
-            System.out.println("founder = null");
+            /* Should not happen, but a channel without founder must not break INFO */
+            this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, ci.getNameStr ( ) ) );
+            return;
         }
         
         this.showStart ( true, user, ci, f.b ( ) +"Info for: "+f.b ( )  ); 
@@ -918,7 +929,7 @@ public class CSExecutor extends Executor {
             if ( ci.getSettings().is ( VERBOSE ) ) {
                 this.service.sendOpMsg ( ci, output ( NICK_VERBOSE_ADDED, ni.getNameStr(), what, listName ) );
             }
-            if ( command.is ( AKICK ) && ci.isSet ( AUTOAKICK ) ) {
+            if ( c != null && command.is ( AKICK ) && ci.isSet ( AUTOAKICK ) ) {
                 c.addCheckUsers();
             }
             ci.changed(subcommand);
@@ -1165,6 +1176,12 @@ public class CSExecutor extends Executor {
                 ci.changed ( MODELOCK );
                 this.snoop.msg ( true, SET_MODELOCK, ci.getName(), user, cmd );
         
+        } else if ( ! option.is(ON) && ! option.is(OFF) ) {
+                /* Everything below is on or off, anything else used to mean off */
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET <#Chan> <option> <ON|OFF>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
+                return;
+        
         } else if ( command.is(KEEPTOPIC) ) {
                 this.sendWillOutput ( user, flag, "keep your topic if channel goes empty.", "forget the topic if the channel goes empty." );
                 ci.getSettings().set ( KEEPTOPIC, flag );
@@ -1178,7 +1195,7 @@ public class CSExecutor extends Executor {
                 this.snoop.msg ( true, SET_IDENT, ci.getName(), user, cmd );
         
         } else if ( command.is(OPGUARD) ) {
-                this.sendWillOutput ( user, flag, "guard channel ops.", "require ops to identify to their nicks." );
+                this.sendWillOutput ( user, flag, "guard channel ops.", "guard channel ops." );
                 ci.getSettings().set ( OPGUARD, flag );
                 ci.changed ( OPGUARD );
                 this.snoop.msg ( true, SET_OPGUARD, ci.getName(), user, cmd );
@@ -1435,7 +1452,7 @@ public class CSExecutor extends Executor {
     
     private void sendWillOutput ( User user, boolean enable, String will, String willNot )  {
         HashString flag = enable ? WILL_NOW : WILL_NOW_NOT;
-        this.service.sendMsg ( user, output ( flag, will ) );
+        this.service.sendMsg ( user, output ( flag, will.isEmpty ( ) ? willNot : will ) );
     }
     
     private void showStart ( boolean online, User user, ChanInfo ci, String str )  {
@@ -1819,6 +1836,9 @@ public class CSExecutor extends Executor {
         
         } else if ( command.is(GREETMSG) ) {
             String message = Handler.cutArrayIntoString ( cmd, 6 );
+            if ( message == null ) {
+                message = "";   /* no text: clear the greeting */
+            }
             ci.getChanFlag().setGreetmsg ( message );
             ci.getChanges().change ( command );
             ci.changed(command);
@@ -2054,15 +2074,24 @@ public class CSExecutor extends Executor {
 
                 /* Only SOP+ may touch the AKICK list, also indirectly by adding an
                    akicked nick or mask to another list (which removes the akick) */
-                boolean targetAkicked = ( ci != null &&
-                                          ci.getAccessList(AKICK).containsKey (
-                                              ni2 != null ? ni2.getName().getCode() : new HashString ( mask ).getCode() ) );
+                BigInteger targetCode = ( ni2 != null ? ni2.getName().getCode() : new HashString ( mask ).getCode() );
+                boolean targetAkicked = ( ci != null && ci.getAccessList(AKICK).containsKey ( targetCode ) );
+
+                /* A mask has a level too: the list it is on. Without this an AOP
+                   could move a mask from the SOP list down to the VOP list */
+                int maskLevel = 0;
+                if ( ci != null && ni2 == null ) {
+                    if      ( ci.getAccessList(SOP).containsKey ( targetCode ) ) { maskLevel = 4; }
+                    else if ( ci.getAccessList(AOP).containsKey ( targetCode ) ) { maskLevel = 3; }
+                    else if ( ci.getAccessList(HOP).containsKey ( targetCode ) ) { maskLevel = 2; }
+                    else if ( ci.getAccessList(VOP).containsKey ( targetCode ) ) { maskLevel = 1; }
+                }
 
                 if ( ! subcommand.is(ADD) &&
                      ! subcommand.is(DEL) ) {
                     result.setStatus ( SYNTAX_ERROR );
 
-                } else if ( ni2 == null && ! ( mask.contains("!") && mask.contains("@") ) ) {
+                } else if ( ni2 == null && ! mask.matches ( "[^!@\\s]+![^!@\\s]+@[^!@\\s]+" ) ) {
                     result.setString1 ( cmd[6] );
                     result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( ci == null ) {
@@ -2086,6 +2115,8 @@ public class CSExecutor extends Executor {
                             ! selfDel &&
                             ci.getAccessByNick ( ni ) <= ci.getAccessByNick ( ni2 ) ) {
                     result.setStatus ( NOT_ENOUGH_ACCESS );
+                } else if ( maskLevel > 0 && ci.getAccessByNick ( ni ) <= maskLevel ) {
+                    result.setStatus ( NOT_ENOUGH_ACCESS );
                 } else if ( ( acc = getAcc ( command, ci, ni2 ) ) == null && 
                             ( acc = getAcc ( command, ci, mask ) ) == null &&
                             subcommand.is ( DEL ) ) {
@@ -2102,10 +2133,6 @@ public class CSExecutor extends Executor {
                             ni2.isSet ( NOOP ) ) {
                     result.setNick2 ( ni2 );
                     result.setStatus ( NICK_HAS_NOOP );
-                } else if ( subcommand.is ( ADD ) && 
-                            ni2 == null &&
-                            mask == null  ) {  
-                    result.setStatus ( XOP_ADD_FAIL );
                 } else {
                     if ( subcommand.is(ADD)) {
                         if ( ni2 != null ) {
@@ -2136,9 +2163,11 @@ public class CSExecutor extends Executor {
                     result.setStatus ( CHAN_NOT_REGISTERED );
                 } else if ( ci.isSet ( FROZEN ) && ! user.isAtleast ( IRCOP ) ) {
                     result.setString1 ( ci.getName() );
+                    result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_FROZEN );
                 } else if ( ci.isSet ( CLOSED ) && ! user.isAtleast ( IRCOP ) ) {
                     result.setString1 ( ci.getName() );
+                    result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
                 } else if ( ! ci.isAtleastAop ( user ) && ! user.isAtleast ( IRCOP ) ) {
                     result.setStatus ( ACCESS_DENIED );
@@ -2157,9 +2186,11 @@ public class CSExecutor extends Executor {
                     result.setStatus ( CHAN_NOT_REGISTERED );
                 } else if ( ci.isSet ( FROZEN ) && ! user.isAtleast ( IRCOP ) ) {
                     result.setString1 ( ci.getName() );
+                    result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_FROZEN );
                 } else if ( ci.isSet ( CLOSED ) && ! user.isAtleast ( IRCOP ) ) {
                     result.setString1 ( ci.getName() );
+                    result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
                 } else if ( ! ci.isAtleastAop ( user ) && ! user.isAtleast ( IRCOP ) ) {
                     result.setStatus ( ACCESS_DENIED );
@@ -2221,15 +2252,13 @@ public class CSExecutor extends Executor {
                 if ( isShorterThanLen ( 6, cmd ) )  {
                     target = user;
                     result.setTarget ( target );
-                } else if ( isShorterThanLen ( 7, cmd ) ) {
-                    if ( ( target = Handler.findUser ( cmd[5] ) ) == null ) {                        
-                        result.setString1 ( cmd[5] );
-                        result.setStatus ( NICK_NOT_EXIST );
-                        return result;
-                    } else {
-                        result.setTarget( target );
-                    }
-                } 
+                } else if ( ( target = Handler.findUser ( cmd[5] ) ) == null ) {                        
+                    result.setString1 ( cmd[5] );
+                    result.setStatus ( NICK_NOT_EXIST );
+                    return result;
+                } else {
+                    result.setTarget ( target );
+                }
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( c = Handler.findChan ( cmd[4] ) ) == null ) {
@@ -2474,8 +2503,8 @@ public class CSExecutor extends Executor {
                     result.setStatus ( ACCESS_DENIED );                
                 } else if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );                
-                } else if ( ( ci = ChanServ.findChan ( cmd[4].replace ( "-", "" ) ) ) == null ) {
-                    result.setString1 ( cmd[4].replace ( "-", "" ) );
+                } else if ( ( ci = ChanServ.findChan ( name ) ) == null ) {
+                    result.setString1 ( name );
                     result.setStatus ( CHAN_NOT_REGISTERED );                
                 } else if ( ci.isSet ( MARK ) && ( !command.is(MARK) || (command.is(MARK) && ! remove) ) ) {
                     result.setChanInfo ( ci );
@@ -2714,7 +2743,7 @@ public class CSExecutor extends Executor {
             return f.b ( ) +args[0]+f.b ( ) +" has added "+args[1]+" to the "+args[2]+" list.";
          
         else if ( output.is(NICK_INVITED) ) 
-            return f.b ( ) +args[0]+f.b ( ) +" was invited to "+args[2]+".";
+            return f.b ( ) +args[0]+f.b ( ) +" was invited to "+args[1]+".";
          
         else if ( output.is(NICK_VERBOSE_DELETED) ) 
             return f.b ( ) +args[0]+f.b ( ) +" has removed "+args[1]+" from the "+args[2]+" list.";

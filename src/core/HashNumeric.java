@@ -369,6 +369,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString JOIN = new HashString ( "JOIN" );
+
+    /**
+     *
+     */
     public static HashString KICK = new HashString ( "KICK" );
 
     /**

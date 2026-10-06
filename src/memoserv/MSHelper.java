@@ -94,7 +94,7 @@ public class MSHelper extends Helper {
         this.showStart ( user, "Help" );
 
         this.service.sendMsg ( user, "   MemoServ allows you to send short messages to other users regardless"                  );
-        this.service.sendMsg ( user, "   they are online or not. To use them type: /NickServ <command>"                         );
+        this.service.sendMsg ( user, "   they are online or not. To use them type: /MemoServ <command>"                         );
         this.service.sendMsg ( user, "   For more information on a specific command, type:"                                     );
         this.service.sendMsg ( user, "       /MemoServ HELP <command>"                                                          );
         this.service.sendMsg ( user, "   "                                                                                      );
@@ -104,7 +104,6 @@ public class MSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"READ"+f.b ( ) +"        Read a memo"                                   );
         this.service.sendMsg ( user, "       "+f.b ( ) +"DEL"+f.b ( ) +"         Delete a memo"                                 );
         this.service.sendMsg ( user, "   "                                                                                      );
-        this.service.sendMsg ( user, "   For further options available for your nickname use: /MemoServ HELP SET"               );
 
         this.showEnd ( user );   
     }

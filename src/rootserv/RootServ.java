@@ -190,21 +190,24 @@ public class RootServ extends Service {
     
     /**
      *
-     * @param panic
+     * @param state OPER, IDENT or USER, anything else gives the current state
      * @return
      */
-    public static String getPanicStr ( HashString panic ) {
-        if ( panic.is(OPER) ) {
+    public static String getPanicStr ( HashString state ) {
+        if ( state.is(OPER) ) {
             return "OPER [only IRCops can access services]";
         
-        } else if ( panic.is(IDENT) ) {
+        } else if ( state.is(IDENT) ) {
             return "IDENT [only identified users (+r) can access services]";
         
-        } else if ( panic.is(USER) ) {
+        } else if ( state.is(USER) ) {
             return "USER [everyone can access services]";
         
-        } else {
+        } else if ( panic.is(OPER) || panic.is(IDENT) ) {
             return getPanicStr ( panic );
+        
+        } else {
+            return getPanicStr ( USER );
         }
         
     }
@@ -233,7 +236,7 @@ public class RootServ extends Service {
      */
     public void fixMaster ( ) {
         HashString master = Proc.getConf().get(MASTER);
-        NickInfo ni = NickServ.findNick ( master );
+        NickInfo ni;
         User user;
         boolean newNick = false;
         
@@ -243,9 +246,10 @@ public class RootServ extends Service {
         }
         
         if ( master == null ) {
-            System.out.println ( "Couldnt find Master nickname in configuration file." );
+            Proc.log ( "Couldnt find Master nickname in configuration file." );
             System.exit ( 1 );
         }
+        ni   = NickServ.findNick ( master );
         user = Handler.findUser ( master );
         
         if ( ni == null && user == null ) {
@@ -267,12 +271,12 @@ public class RootServ extends Service {
             ArrayList<NickInfo> nList = RSDatabase.setMaster ( master );
             for ( NickInfo old : nList ) {
                 old.setOper ( new Oper ( old.getNameStr(), 4, "Services config" ) );
-                log = new OSLogEvent ( old.getName(), new HashString ( "DELMASTER" ), "new!master@services", "Services config" );
+                log = new OSLogEvent ( old.getName(), DELMASTER, "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
-                log = new OSLogEvent ( old.getName(), new HashString ( "ADDSRA" ), "new!master@services", "Services config" );
+                log = new OSLogEvent ( old.getName(), ADDSRA, "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
             }
-            log = new OSLogEvent ( ni.getName(), new HashString ( "ADDMASTER" ), "new!master@services", "Services config" );
+            log = new OSLogEvent ( ni.getName(), ADDMASTER, "new!master@services", "Services config" );
             OSDatabase.logEvent ( log );
             /* Also when the master is not online right now, or the role would
                only start to work after the next restart */
@@ -280,6 +284,7 @@ public class RootServ extends Service {
             if ( user != null ) {
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
+                    this.sendMsg ( user, "The nick was registered for you with the password: "+ni.getPass ( ) );
                     this.sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );
                     this.sendMsg ( user, "NOTE: losing access of the master nick can cause inconvenience as only the master can manage the SRA list, and no SRA can add a new master." );
                 }

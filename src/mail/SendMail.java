@@ -60,6 +60,47 @@ public class SendMail extends HashNumeric {
         MXDatabase.sendMail ( mail );
     }
     
+    /* AUTH MAIL */
+
+    /**
+     * The mail with the code that confirms a new mail address or a new
+     * password. Sent when the code is stored, so the link in it works.
+     * @param ni
+     * @param auth
+     */
+    public static void sendAuthMail ( NickInfo ni, NSAuth auth ) {
+        String link = Proc.getConf().get(AUTHURL).getString()+auth.getAuth();
+        String sign = "\n\nRegards\n\n/"+Proc.getConf().get ( NETNAME );
+        String to;
+        String subject;
+        String body;
+
+        if ( auth.is(MAIL) && ! ni.isAuth ( ) ) {
+            /* First address of a new nick */
+            sendNickRegisterMail ( ni, auth );
+            return;
+
+        } else if ( auth.is(MAIL) ) {
+            to      = auth.getValue ( );
+            subject = "Confirm your new email address";
+            body    = "Hello "+ni.getNameStr()+"\n\nYou asked to change the email address of the "+
+                      "nickname: "+ni.getNameStr()+" to this address.\n"+
+                      "To confirm the change please follow this link: "+link+sign;
+
+        } else if ( ni.isAuth ( ) ) {
+            to      = ni.getString ( MAIL );
+            subject = "Confirm your new password";
+            body    = "Hello "+ni.getNameStr()+"\n\nYou asked to change the password of the "+
+                      "nickname: "+ni.getNameStr()+".\n"+
+                      "To confirm the change please follow this link: "+link+"\n\n"+
+                      "If you did not ask for this you can ignore this mail, the password stays as it is."+sign;
+
+        } else {
+            return; /* no confirmed address to send to */
+        }
+        MXDatabase.sendMail ( new Mail ( to, subject, auth.getAuth ( ), body ) );
+    }
+    
     /* NEW MEMO */
 
     /**
@@ -69,6 +110,10 @@ public class SendMail extends HashNumeric {
      */
 
     public static void sendNewMemo ( NickInfo ni, MemoInfo mi ) {   
+        /* Only to a confirmed address, and not if the owner said no (SET MAILBLOCK) */
+        if ( ! ni.isAuth ( ) || ni.isSet ( MAILBLOCKED ) ) {
+            return;
+        }
         Mail mail = new Mail ( 
             ni.getString ( MAIL ), 
             mailStr ( NEWMEMO_SUBJECT, "" ), 

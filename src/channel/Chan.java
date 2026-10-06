@@ -400,7 +400,7 @@ public class Chan extends HashNumeric {
      */
     public boolean nickIsPresent ( HashString nick )  {
         for ( User user : this.getList ( ALL )  )  {
-            if ( user.hasAccess(nick) ) {
+            if ( user.getName().is ( nick ) ) {
                 return true;
             }
         } 

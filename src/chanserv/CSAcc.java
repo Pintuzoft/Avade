@@ -54,6 +54,8 @@ public class CSAcc extends HashNumeric {
     private int cidr = -1;
     
 
+    private boolean broken;     /* a mask that is not nick!user@host */
+
     /**
      *
      * @param ni
@@ -79,11 +81,18 @@ public class CSAcc extends HashNumeric {
     public CSAcc ( String mask, HashString access, String lastOped ) {
         this.mask = new HashString(mask);
         String[] parts = mask.split("[!@/]");
+        this.access = access;
+        if ( parts.length < 3 || parts[0].isEmpty ( ) || parts[1].isEmpty ( ) || parts[2].isEmpty ( ) ) {
+            /* Not nick!user@host: keep the entry so it can be listed and
+               removed, but it never matches anyone */
+            this.broken = true;
+            this.lastOped = ( lastOped != null && lastOped.length ( ) >= 19 ? lastOped.substring ( 0, 19 ) : lastOped );
+            return;
+        }
         this.nick = parts[0];
         this.user = parts[1];
         this.host = parts[2];
       
-        this.access = access;
         if ( lastOped != null ) {
             this.lastOped = lastOped.substring(0,19);
         } else {
@@ -162,12 +171,26 @@ public class CSAcc extends HashNumeric {
         this.hostPattern = Pattern.compile ( pattern, Pattern.CASE_INSENSITIVE );
     }
     
+    /* An irc mask as a regex: * is anything, ? is one character, and
+       everything else is literal (a dot is a dot, a [ is a [) */
     private String parsePattern ( String pattern ) {
-        String buf = "";
-        buf = "^"+pattern+"$";
-        buf = buf.replace("*","(.*)");
-        buf = buf.replace("?","(.?)");
-        return buf;
+        StringBuilder buf = new StringBuilder ( "^" );
+        StringBuilder literal = new StringBuilder ( );
+        for ( char ch : pattern.toCharArray ( ) ) {
+            if ( ch == '*' || ch == '?' ) {
+                if ( literal.length ( ) > 0 ) {
+                    buf.append ( Pattern.quote ( literal.toString ( ) ) );
+                    literal.setLength ( 0 );
+                }
+                buf.append ( ch == '*' ? ".*" : "." );
+            } else {
+                literal.append ( ch );
+            }
+        }
+        if ( literal.length ( ) > 0 ) {
+            buf.append ( Pattern.quote ( literal.toString ( ) ) );
+        }
+        return buf.append ( "$" ).toString ( );
     }
     
     /**
@@ -206,6 +229,10 @@ public class CSAcc extends HashNumeric {
             return user.isIdented ( ni );
         }
         
+        if ( this.broken ) {
+            return false;
+        }
+        
         /* Match nick!user@hostip */
         if ( wildNick ) {
             matchNick = true;
@@ -223,7 +250,13 @@ public class CSAcc extends HashNumeric {
         } else {
             if ( isIPv4 || isIPv6 ) {
                 try {
-                    matchHost = this.cidrUtils.isInRange ( user.getString ( HOST ) );
+                    /* The ip of the user, never the host name: that would be
+                       a DNS lookup in the middle of the main loop */
+                    String ip = user.getString ( IP );
+                    matchHost = ip != null &&
+                                ( isIPv4Address ( ip ) || isIPv6Address ( ip ) ) &&
+                                this.cidrUtils != null &&
+                                this.cidrUtils.isInRange ( ip );
                 } catch (UnknownHostException ex) {
                     Logger.getLogger(CSAcc.class.getName()).log(Level.SEVERE, null, ex);
                 }

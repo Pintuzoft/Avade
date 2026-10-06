@@ -80,8 +80,7 @@ public class MSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "storeMemo ( ) " );
         } catch  ( SQLException ex )  {
-            /* Nick already exists? return -1 */
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
             return null;
         }
         return memo;
@@ -112,7 +111,7 @@ public class MSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "getMemosByNick ( ) " );
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
         }
         return mList;
     }
@@ -141,7 +140,7 @@ public class MSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "getMemosByNick ( ) " );
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
             return false;
         }
         return true;
@@ -167,7 +166,7 @@ public class MSDatabase extends Database {
             idleUpdate ( "delMemo ( ) " ); 
             return true;
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
         }
         return false;
     }
@@ -194,7 +193,7 @@ public class MSDatabase extends Database {
             idleUpdate ( "delMemo ( ) " );
             return true;
         } catch ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
         }
         return false;
     }

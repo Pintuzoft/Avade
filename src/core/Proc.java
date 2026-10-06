@@ -151,6 +151,10 @@ public class Proc extends HashNumeric {
             } else {
                 /* We didnt find any new data so lets take a nap */
                 try {
+                    /* Without a link the read above returns at once, never spin */
+                    if ( sleep < 50 && ( Proc.conn == null || Proc.conn.isClosed ( ) ) ) {
+                        sleep = 50;
+                    }
                     Thread.sleep ( sleep );          
                 } catch  ( Exception ex )  {
                     Logger.getLogger ( Proc.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
@@ -284,6 +288,10 @@ public class Proc extends HashNumeric {
         } catch ( Exception ex ) { 
             Logger.getLogger ( Proc.class.getName ( )  ) .log ( Level.SEVERE, null, ex ); 
         } 
+        if ( config == null || ! config.isValid ( ) ) {
+            System.out.println ( "Error: services.conf is missing or not valid, see the errors above." );
+            System.exit ( 1 );
+        }
     }
 
     /**

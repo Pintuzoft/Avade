@@ -68,7 +68,8 @@ public class NickSetting extends HashNumeric {
     public boolean is ( HashString it )  {
         if      ( it.is(NOOP) )             { return this.noOp;                 }
         else if ( it.is(NEVEROP) )          { return this.neverOp;              }
-        else if ( it.is(MAILBLOCKED) )      { return this.mailBlock;            }
+        else if ( it.is(MAILBLOCKED) ||
+                  it.is(MAILBLOCK) )        { return this.mailBlock;            }
         else if ( it.is(SHOWEMAIL) )        { return this.showEmail;            }
         else if ( it.is(SHOWHOST) )         { return this.showHost;             }
         else if ( it.is(AUTH) )             { return this.auth;                 }
@@ -92,7 +93,8 @@ public class NickSetting extends HashNumeric {
     public void set ( HashString it, boolean state )  {
         if      ( it.is(NOOP) )             { this.noOp         = state;        }
         else if ( it.is(NEVEROP) )          { this.neverOp      = state;        }
-        else if ( it.is(MAILBLOCKED) )      { this.mailBlock    = state;        }
+        else if ( it.is(MAILBLOCKED) ||
+                  it.is(MAILBLOCK) )        { this.mailBlock    = state;        }
         else if ( it.is(SHOWEMAIL) )        { this.showEmail    = state;        }
         else if ( it.is(SHOWHOST) )         { this.showHost     = state;        }
         else if ( it.is(AUTH) )             { this.auth         = state;        }
