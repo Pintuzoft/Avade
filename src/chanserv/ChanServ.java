@@ -376,7 +376,7 @@ public class ChanServ extends Service {
         if ( c == null || ! Handler.isDataLoaded ( ) ) {
             return;
         }
-        if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {
+        if ( ( ci = ChanServ.findChan ( c.getName ( ) ) ) != null ) {
             if ( ci.isSet ( CLOSED ) ) {
                 ci.kickAll ( "Channel is CLOSED" );
             } else {
@@ -429,7 +429,7 @@ public class ChanServ extends Service {
             return false;
         }
 
-        if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {   /* If chan isSet regged */
+        if ( ( ci = ChanServ.findChan ( c.getName ( ) ) ) != null ) {   /* If chan isSet regged */
             if ( ci.isSet ( TOPICLOCK )  )  {                    /* If topiclock isSet set */
                 if (  ( ni = ci.getNickByUser ( u )  )  != null ) {            /* Nick has some access to the chan */
                     if ( ci.getSettings().isTopicLock ( FOUNDER ) ) {
@@ -470,7 +470,7 @@ public class ChanServ extends Service {
     public void checkServerTopic ( Chan c ) {
         ChanInfo ci;
         Topic topic;
-        if ( c == null || ! Handler.isDataLoaded ( ) || ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) == null ) {
+        if ( c == null || ! Handler.isDataLoaded ( ) || ( ci = ChanServ.findChan ( c.getName ( ) ) ) == null ) {
             return;
         }
         topic = c.getTopic ( );
@@ -558,7 +558,7 @@ public class ChanServ extends Service {
         if ( ! c.isOp ( user )  )  {
             this.sendCmd ( "MODE "+c.getString ( NAME )+" +o "+user.getString ( NAME )  );
             c.chModeUser ( user, OP, OP, false );
-            if ( ( ci = ChanServ.findChan ( c.getString(NAME) ) ) != null ) {
+            if ( ( ci = ChanServ.findChan ( c.getName ( ) ) ) != null ) {
                 ci.setLastUsed();
                 ci.changed(LASTUSED);
             }

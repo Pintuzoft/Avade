@@ -201,7 +201,7 @@ public class Handler extends HashNumeric {
                 u.setSID ( sid );
                 sid.addUser ( u );
             }
-            NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
+            NickInfo ni = NickServ.findNick ( u.getName ( ) );
             if ( ni != null && u.getModes().is ( IDENT ) ) {
                 u.getSID().add ( ni );
             }
@@ -622,7 +622,7 @@ public class Handler extends HashNumeric {
         }  
         u.getSID().addUser ( u );
         
-        NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( u.getName ( ) );
         
         /* Only services can set +r, so trust it for the current nick */
         if ( ni != null && ( u.getModes().is ( IDENT ) || u.getSID().isIdentified ( ni ) ) ) {
@@ -862,7 +862,7 @@ public class Handler extends HashNumeric {
             user.setName ( this.data[2] );
             uList.put ( user.getName().getCode(), user );
         }
-        ni = NickServ.findNick ( user.getString ( NAME )  );
+        ni = NickServ.findNick ( user.getName ( )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );
         for ( Chan c : user.getChans ( ) ) {
@@ -922,7 +922,7 @@ public class Handler extends HashNumeric {
         if ( Handler.isChanName ( this.data[2] ) ) {
             Chan c = findChan ( this.data[2] );
             if ( c != null ) {
-                ChanInfo ci = ChanServ.findChan ( c.getString ( NAME ) );
+                ChanInfo ci = ChanServ.findChan ( c.getName ( ) );
                 c.getModes().set ( MODE, this.data );
                 c.chMode ( this.data );
                 Handler.getChanServ().checkModes ( c, ci );
@@ -1331,7 +1331,7 @@ public class Handler extends HashNumeric {
             for ( User u : uList )  { 
                 System.out.println ( "DEBUG: checkNiStates ( "+u.getString ( User.NAME ) +" );" );
      
-                if (  ( ni = NickServ.findNick ( u.getString ( User.NAME )  )  )  != null && !u.isIdented ( ni )  )  {     
+                if (  ( ni = NickServ.findNick ( u.getName ( )  )  )  != null && !u.isIdented ( ni )  )  {     
                     System.out.println ( "DEBUG: checkNiStates ( "+u.getString ( User.NAME ) +"/not idented );" );
 
                     this.nick.warnIdent ( u ); /* send warning */

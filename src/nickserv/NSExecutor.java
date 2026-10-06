@@ -1039,7 +1039,7 @@ import java.util.regex.Pattern;
      * @param str
      */
     public void showStart ( boolean online, User user, NickInfo ni, String str )  {
-        if ( Handler.findUser ( ni.getString ( NAME ) ) == null )  {
+        if ( Handler.findUser ( ni.getName ( ) ) == null )  {
             this.service.sendMsg ( user, "*** "+str+ni.getString ( NickInfo.NAME ) + ( online?" [Offline]":"" ) +" ***" );
         } else {
             this.service.sendMsg ( user, "*** "+str+ni.getString ( NickInfo.NAME ) + ( online?" [Online]":"" ) +" ***" );
@@ -1179,7 +1179,7 @@ import java.util.regex.Pattern;
                     command.is(IDENTIFY) ) {
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
+                } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
                     result.setString1 ( user.getString ( NAME ) );
                     result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( FROZEN ) ) {
@@ -1329,7 +1329,7 @@ import java.util.regex.Pattern;
         } else if ( command.is(SETEMAIL) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
+                } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
                     result.setString1 ( user.getString(NAME) );
                     result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( FROZEN ) ) {
@@ -1352,7 +1352,7 @@ import java.util.regex.Pattern;
         } else if ( command.is(SETPASSWD) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
+                } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
                     result.setString1 ( user.getString(NAME) );
                     result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( FROZEN ) ) {
