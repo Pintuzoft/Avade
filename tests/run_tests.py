@@ -495,6 +495,8 @@ def test_nick_privacy_and_mail():
 
 def test_oper_checks():
     mm = master()
+    r = mm.svc('OperServ', 'AKILL ADD 99y *!*@203.0.113.99 test')
+    check(has(r, 'Bad expire time'), 'a ban for more than ten years is refused', r)
     r = mm.svc('OperServ', 'AKILL ADD 30 Spammer!*@*.example.invalid test')
     check(has(r, 'nick part must be'), 'AKILL with a nick in the mask is refused', r)
     r = mm.svc('OperServ', 'AKILL ADD 30 *!*@ test')
@@ -543,6 +545,24 @@ def test_dropped_nick_memos():
         time.sleep(1.5)
     check(left == '0', 'the memos of a dropped nick are removed', left)
     close(a, t)
+
+
+def test_help_and_last_login():
+    a = login('Alice')
+    m = a.mark()
+    a.send('PRIVMSG ChanServ@%s :HELP' % SERVICES)
+    time.sleep(4)
+    lines = [l for l in a.since(m) if ' NOTICE ' in l]
+    check(lines and not any(l.startswith(':OperServ!') for l in lines),
+          'ChanServ HELP is sent by ChanServ only', [l for l in lines if l.startswith(':OperServ!')][:2])
+    close(a)
+    b = Client('Alice', host='::1')
+    r = b.svc('NickServ', 'IDENTIFY ' + pw('Alice'))
+    check(has(r, 'Last login from') and has(r, 'Password accepted'),
+          'IDENTIFY from another address shows where the last login was from', r)
+    r = b.svc('NickServ', 'IDENTIFY ' + pw('Alice'))
+    check(not has(r, 'Last login from'), 'but not when it is the same address again', r)
+    close(b)
 
 
 def test_log_file():
@@ -629,7 +649,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

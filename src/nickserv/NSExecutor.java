@@ -247,7 +247,8 @@ import java.util.regex.Pattern;
         }  
          
         NickInfo ni = result.getNick ( );
-        if ( ! ni.is(user) ) {
+        if ( ! ni.isMask ( user ) ) {
+            /* From somewhere else than last time: show where that was */
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );        
         }
@@ -437,12 +438,11 @@ import java.util.regex.Pattern;
         }  
          
         ni = result.getNick ( );
-        if ( ! ni.isMask(user) ) {
+        if ( ! ni.isMask ( user ) ) {
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );
-        } else {
-            this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         }
+        this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         user.getSID().add ( ni );
         NickServ.fixIdentState ( user );
         ni.setLastUsed ( );

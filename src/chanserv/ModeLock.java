@@ -62,6 +62,9 @@ class ModeLock extends HashNumeric {
     private void parseLock ( String data )  {
         int state = 0;
         this.init ( );
+        if ( data == null ) {
+            data = "";  /* a channel row without settings must not stop the loading */
+        }
         this.modes = data;
         for ( int index = 0; index < data.length ( ); index++ ) {
             switch ( ( ""+data.charAt ( index ) ).hashCode ( ) ) {

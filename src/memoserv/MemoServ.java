@@ -83,37 +83,6 @@ public class MemoServ extends Service {
          
     }
     
-    /*public void parse ( User user, String[] cmd )  {
-        //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
-        HashString command;
-        try {
-            if ( cmd[3].isEmpty ( )  )  { 
-                return; 
-            }
-        } catch ( Exception e )  {
-            Proc.log ( MemoServ.class.getName ( ) , e );
-        }
-        
-        if ( ! MSDatabase.checkConn ( )  )  {
-            Handler.getMemoServ ( ) .sendMsg ( user, "Database error. Please try again in a little while." );
-            return;
-        }
-        
-        user.getUserFlood().incCounter ( this );
-         
-        command = new HashString ( cmd[3].substring ( 1 ) );
-        
-        if ( command.is(OHELP) ) {
-            this.doOHelp ( user, cmd );
-        
-        } else if ( command.is(HELP) ) {
-            this.helper.parse ( user, cmd );
-        
-        } else {
-            this.doDefault ( user, cmd );
-        } 
-    }
-     */
 
     /**
      *

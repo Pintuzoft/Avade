@@ -114,6 +114,7 @@ public class CSDatabase extends Database {
             
             try {
                 HashString salt = Proc.getConf().get ( SECRETSALT );
+                begin ( );
                 String query = "insert into chan ( name, founder, pass, description, regstamp, stamp )  "
                              + "values ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
@@ -146,10 +147,11 @@ public class CSDatabase extends Database {
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.execute ( );
                 ps.close ( );
+                commit ( );
                 
                 idleUpdate ( "createChan ( ) " );
             } catch  ( SQLException ex )  {
-                /* Nick already exists? return -1 */
+                rollback ( );
                 Proc.log ( CSDatabase.class.getName ( ), ex );
                 return -1;
             }
@@ -509,40 +511,50 @@ public class CSDatabase extends Database {
             return -2;
         } else if ( ci == null ) {
             return -3;
-        } else {
-
+        }
+        /* All parts or none: a part that fails must not be forgotten, and
+           the parts that worked must not be written twice at the retry */
+        boolean ok = true;
+        try {
+            begin ( );
             if ( ci.getChanges().hasChanged ( FOUNDER ) ||
                  ci.getChanges().hasChanged ( DESCRIPTION ) ||
                  ci.getChanges().hasChanged ( LASTUSED ) ) {
-                updateChanInfo ( ci );
+                ok = ( updateChanInfo ( ci ) != -1 );
             }
             
             String changes = compileSettingChanges ( ci );
-
-            if ( changes.length() > 0 ) {
-                updateChanSettings ( ci, changes );
+            if ( ok && changes.length() > 0 ) {
+                ok = ( updateChanSettings ( ci, changes ) != -1 );
             } 
                 
             /* An empty topic is logged too, or the old one comes back
                after a restart */
-            if ( ci.getChanges().hasChanged ( TOPIC ) && 
-                    ci.getTopic() != null && 
-                    ci.getTopic().getText() != null ) {
-                addTopicLog ( ci );
+            if ( ok && 
+                 ci.getChanges().hasChanged ( TOPIC ) && 
+                 ci.getTopic() != null && 
+                 ci.getTopic().getText() != null ) {
+                ok = ( addTopicLog ( ci ) != -1 );
             }
                 
             changes = compileFlagChanges ( ci );
-
-            if ( changes.length() > 0 ) {
-                updateFlagChanges ( ci, changes );
+            if ( ok && changes.length() > 0 ) {
+                ok = ( updateFlagChanges ( ci, changes ) != -1 );
             }
-
-            ci.getChanges().cleanUp ( );
-
-            idleUpdate ( "updateChan ( ) " );
-        
+            
+            if ( ok ) {
+                commit ( );
+            }
+        } catch ( SQLException ex ) {
+            Proc.log ( CSDatabase.class.getName ( ) , ex );
+            ok = false;
         }
-        /* Nick was added */
+        if ( ! ok ) {
+            rollback ( );
+            return -1;
+        }
+        ci.getChanges().cleanUp ( );
+        idleUpdate ( "updateChan ( ) " );
         return 1;
     }
     

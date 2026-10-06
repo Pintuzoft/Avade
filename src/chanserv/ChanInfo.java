@@ -726,34 +726,6 @@ public class ChanInfo extends HashNumeric {
         return buf;
     }
 
-/*    public void addAccess ( int access, CSAcc acc )  {
-       
-        System.out.println(" - 0");
-        if ( acc == null ) {
-        System.out.println(" - 1");
-            return;
-        }
-        System.out.println(" - 2");
-        if ( acc.getNick() != null ) {
-        System.out.println(" - 3");
-            this.removeFromAll ( acc.getNick() );
-        } else if ( acc.getMask() != null ) {
-        System.out.println(" - 4");
-            this.removeFromAll ( acc );
-        }
-        System.out.println(" - 5");
-        this.getAccessList (access).add ( acc );
-        System.out.println(" - 6");
-        this.addAccList.add ( acc );
-        System.out.println(" - 7");
-        if ( acc.getNick() != null ) {
-        System.out.println(" - 8");
-            acc.getNick().addToAccessList ( access, this );
-        }
-        System.out.println(" - 9");
-
-    }
-  */  
 
     /**
      *

@@ -767,99 +767,6 @@ public class Handler extends HashNumeric {
         
         
         
-/*        if ( action.is(AKILL) ) {
-                String stamp = dateFormat.format ( new Date ( ) );
-                String percent;
-                boolean foundOperMatch = false;
-                HashString id;
-                HashString mask;
-                String expire = Handler.expireToDateString ( stamp, "30m" );
-                if ( ipCount > Trigger.getActionIP ( ) ) {
-                    reason = "Cloning. Too many clients found from this IP. 30 min ban.";
-                    id = new HashString ( ""+System.nanoTime() );
-                    mask = new HashString ( "*!*@"+user.getIp() );
-
-                    
-                    ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
-                    percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
-                    if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                        Handler.getOperServ().addServicesBan ( ban );
-                        Handler.getOperServ().sendServicesBan ( ban );
-                        oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
-                    }
-                } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
-                    if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
-                         ipCount % 10 == 0 ) {
-                        oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
-                    }
-                }
-                if ( ipCount > Trigger.getActionRange() ) {
-                    id = new HashString ( ""+System.nanoTime() );
-                    mask = new HashString ( "*!*@"+user.getIp() );
-                    reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
-                    ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
-                    percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
-                    if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                        Handler.getOperServ().addServicesBan ( ban );
-                        Handler.getOperServ().sendServicesBan ( ban );
-                        oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
-                    }
-                } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
-                    if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
-                         ipCount % 10 == 0 ) {
-                        oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
-                    }
-                }
-        
-        } else if ( action.is(KILL) ) {
-                if ( ipCount > Trigger.getActionIP() ) {
-                    reason = "Cloning. Too many clients found from this IP.";
-                    oper.sendGlobOp ( "KILL: "+user.getFullMask()+" for cloning." );
-                    oper.sendRaw ( "KILL "+user.getName()+" :"+reason );
-                    Handler.deleteUser ( user );
-                }
-        }
-         
-  /*      if ( Trigger.getAction() == AKILL && ipCount > Trigger.getActionIP() ) {
-                String stamp = dateFormat.format ( new Date ( ) );
-                String reason = "Cloning. Too many clients found from this IP. 30 min ban.";
-                String percent;
-                boolean foundOperMatch = false;
-                String expire = Handler.expireToDateString ( stamp, "30m" );
-                ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
-                percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
-                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                    Handler.getOperServ().addServicesBan ( ban );
-                    Handler.getOperServ().sendServicesBan ( ban );
-                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
-                }
-        } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
-            if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
-                 ipCount % 10 == 0 ) {
-                oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
-            }
-        }
-        
-        if ( Trigger.getAction() == AKILL && rangeCount > Trigger.getActionRange()) {
-                String stamp = dateFormat.format ( new Date ( ) );
-                String reason = "Cloning. Too many clients found from this IPRANGE. 30 min ban.";
-                String percent;
-                boolean foundOperMatch = false;
-                String expire = Handler.expireToDateString ( stamp, "30m" );
-                ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getHostInfo().getRange(), reason, "OperServ", null, expire );
-                percent = String.format("%.02f", (float) rangeCount / Handler.getUserList().size() * 100 );
-                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                    Handler.getOperServ().addServicesBan ( ban );
-                    Handler.getOperServ().sendServicesBan ( ban );
-                    oper.sendGlobOp ( "AKILL: *!*@"+user.getHostInfo().getRange()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
-                }
-        } else if ( rangeCount > Trigger.getWarnRange() ) {
-            if ( rangeCount == ( Trigger.getWarnRange() + 1 ) ||
-                 rangeCount % 10 == 0 ) {
-                oper.sendGlobOp ( "Warning! possible clones: "+rangeCount+" clients from range: *!*@"+user.getHostInfo().getRange() );
-            }
-        }
-    */    
         
     }
     
@@ -1669,7 +1576,9 @@ public class Handler extends HashNumeric {
                 default  : multiply = 60;              break;
             }
         }
-        return amount * multiply;
+        long seconds = amount * multiply;
+        /* More than ten years is a typo, and the date would not fit the database */
+        return seconds > 10L*365*24*60*60 ? -1 : seconds;
     }
     
     /**

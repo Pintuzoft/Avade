@@ -65,6 +65,7 @@ public class NSDatabase extends Database {
         /* Try add the nick */
         try {
             HashString salt = Proc.getConf().get ( SECRETSALT );
+            begin ( );
             /* NICK */
             String query = "insert into nick  ( name,  mask, regstamp, stamp )  "
                           +"values  ( ?, ?, ?, ? )";
@@ -108,10 +109,11 @@ public class NSDatabase extends Database {
             ps.setInt      ( 6, ni.getSettings().is ( SHOWHOST ) ?1:0                 );
             ps.execute ( );
             ps.close ( ); 
+            commit ( );
 
             idleUpdate ( "createNick ( ) " );
         } catch  ( SQLException ex )  {
-            /* Nick already exists? return -1 */
+            rollback ( );
             Proc.log ( NSDatabase.class.getName ( ) , ex );
             return -1;
         }

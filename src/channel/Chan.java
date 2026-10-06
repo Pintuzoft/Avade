@@ -62,7 +62,6 @@ public class Chan extends HashNumeric {
         this.hList          = new ArrayList<>( );    /* halfoplist */
         this.vList          = new ArrayList<>( );    /* voicelist */
         this.modes.set ( ChanMode.SERVER, data );
-        this.init ( data );
         this.checkRelay();
         this.topic          = new Topic ( "", "", 0 );
     }
@@ -80,10 +79,6 @@ public class Chan extends HashNumeric {
             this.isRelay = true;
             this.relay = new HashString ( this.name.getString().substring(0, this.name.getString().length()-6) );
         }
-    }
-    
-    private void init ( String[] data ) {
-        this.addUserList ( data, 6 );
     }
     
     /**
@@ -117,6 +112,15 @@ public class Chan extends HashNumeric {
         try {
 
             this.modes.setModeString ( data[4] );
+            /* The nicks are the trailing parameter. Modes with arguments put
+               those in between ("+kl key 10 :@nick"), and a key that happens
+               to be the nick of someone online must not become a member */
+            for ( int i = 5; i < data.length; i++ ) {
+                if ( data[i].startsWith ( ":" ) ) {
+                    offset = i;
+                    break;
+                }
+            }
             String[] nicks = Arrays.copyOfRange(data, offset, data.length);
             
             for ( String nick : nicks ) {

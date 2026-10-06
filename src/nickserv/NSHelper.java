@@ -167,7 +167,7 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"IDENTIFY"+f.b ( ) +"    Identify as owner of your nick"                );
         this.service.sendMsg ( user, "       "+f.b ( ) +"GHOST"+f.b ( ) +"       Kill ghosted client holding your nick"         );
         this.service.sendMsg ( user, "       "+f.b ( ) +"SET"+f.b ( ) +"         Set nick settings"                             );
-        this.service.sendMsg ( user, "       "+f.b ( ) +"INFO"+f.b ( ) +"        Identify as owner of your nick"                );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"INFO"+f.b ( ) +"        Show information about a nick"                 );
         this.service.sendMsg ( user, "   "                                                                                      );
         this.service.sendMsg ( user, "   For further options available for your nickname use: /NickServ HELP SET"               );
         this.service.sendMsg ( user, "   "                                                                                      );

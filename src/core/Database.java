@@ -151,6 +151,27 @@ public class Database extends HashNumeric {
      *
      * @param where
      */
+    /* All or nothing for a register that is several inserts: without it a
+       failure half way leaves a row that makes every retry fail on the
+       primary key, and a nick or channel that cannot be loaded */
+    protected static void begin ( ) throws SQLException {
+        sql.setAutoCommit ( false );
+    }
+    
+    protected static void commit ( ) throws SQLException {
+        sql.commit ( );
+        sql.setAutoCommit ( true );
+    }
+    
+    protected static void rollback ( ) {
+        try {
+            sql.rollback ( );
+            sql.setAutoCommit ( true );
+        } catch ( SQLException ex ) {
+            /* the connection is gone, a new one starts in autocommit */
+        }
+    }
+    
     protected static void idleUpdate ( String where )  {
         if ( debug )  {
             System.out.println ( "DEBUG: "+where );

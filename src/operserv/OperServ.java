@@ -604,17 +604,6 @@ public class OperServ extends Service {
     }
 
     
-/*    public boolean isBanned ( User u )  {
-        if ( u == null )  { return true; } 
-        for ( ServicesBan ban : akills )  {
-            if ( ban.match ( u.getString ( USER ) +"@"+u.getString ( HOST ) ) )  {
-                ban ( ban ); 
-                return true;
-            }
-        }
-        return false;
-    }
- */   
 
     /**
      *
@@ -918,22 +907,6 @@ public class OperServ extends Service {
         return null;
     }
      
-/*    public String output ( int code, String... args )  {
-        switch ( code )  {
-            case AKILL_EXPIRE :
-                return "Akill "+args[0]+" [Ticket:"+args[1]+"] [by:"+args[2]+"] has expired.";
-                
-            case AKILL_FAIL_EXPIRE :
-                return "Akill "+args[0]+" [Ticket:"+args[1]+"] [by:"+args[2]+"] failed to expired.";
-                
-            default:
-                return ""; 
-            
-        }
-    }     
-    private static final int AKILL_EXPIRE           = 1001;
-    private static final int AKILL_FAIL_EXPIRE      = 1002;
-*/
 
     /**
      *

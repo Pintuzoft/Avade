@@ -120,7 +120,7 @@ public class CSHelper extends Helper {
 
         for ( CommandInfo ci : ChanServ.getCMDList ( USER )  )  {
             if ( ci.getDescription() != null ) {
-                Handler.getOperServ().sendMsg ( user, "       "+f.b ( ) +ci.getName ( ) +f.b ( ) +ci.getPatch ( ) +ci.getDescription ( )  );
+                this.service.sendMsg ( user, "       "+f.b ( ) +ci.getName ( ) +f.b ( ) +ci.getPatch ( ) +ci.getDescription ( )  );
             }
         }
         this.service.sendMsg ( user, "   "                                                                              );
@@ -133,14 +133,14 @@ public class CSHelper extends Helper {
                 count++;
             }
             if ( count > 3 ) {
-                Handler.getOperServ().sendMsg ( user, "       "+f.b()+buf+f.b()  );
+                this.service.sendMsg ( user, "       "+f.b()+buf+f.b()  );
                 count = 0;
                 buf = "";
             }
         }
 
         if ( buf.length() > 0 ) {
-            Handler.getOperServ().sendMsg ( user, "       "+f.b()+buf+f.b()  );
+            this.service.sendMsg ( user, "       "+f.b()+buf+f.b()  );
         }
          
         if ( access > 0 ) {
@@ -266,7 +266,7 @@ public class CSHelper extends Helper {
     public void sop ( User user )  {
         this.showStart ( user, "Sop" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SOP <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Add, delete or list SuperOps in the channel."                                              );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -283,7 +283,7 @@ public class CSHelper extends Helper {
     public void aop ( User user )  {
         this.showStart ( user, "Aop" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AOP <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Add, delete or list AutoOps in the channel. AOPs can also manage the"                      );
         this.service.sendMsg ( user, "   HOP and VOP lists."                                                                        );
@@ -334,7 +334,7 @@ public class CSHelper extends Helper {
     public void akick ( User user )  {
         this.showStart ( user, "Akick" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AKICK <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b( )+""   );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AKICK <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b( )+""   );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Add, delete or list AutoKicked users in the channel."                                      );
         this.service.sendMsg ( user, "   "                                                                                          );

@@ -116,7 +116,7 @@ public class NickInfo extends HashNumeric {
         this.user       = new HashString ( user.getString ( USER ) );
         this.host       = new HashString ( user.getString ( HOST ) );
         this.ip         = new HashString ( user.getString ( IP ) );
-        this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(IP) ); 
+        this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(HOST) ); 
         this.pass       = pass;
         this.mail       = ""; 
         this.settings   = new NickSetting ( );
@@ -148,7 +148,7 @@ public class NickInfo extends HashNumeric {
             this.ip         = new HashString ( u.getString ( IP ) );
             this.user       = new HashString ( u.getString ( USER ) );
             this.host       = new HashString ( u.getString ( HOST ) );
-            this.hashMask   = new HashString ( this.user+"@"+this.ip ); 
+            this.hashMask   = new HashString ( this.user+"@"+this.host ); 
             this.mail       = "master@localhost";
             String date = this.dateFormat.format ( new Date ( ) );
             this.regTime    = date;
@@ -597,7 +597,8 @@ public class NickInfo extends HashNumeric {
      * @return bool
      */
     public boolean isMask ( User user ) {
-        return this.host.is ( user.getMask() );
+        /* user@host of the last login against user@host of this user */
+        return this.hashMask != null && this.hashMask.is ( user.getMask ( ) );
     }
     
     /**

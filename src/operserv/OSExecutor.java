@@ -532,10 +532,10 @@ public class OSExecutor extends Executor {
                 this.service.sendGlobOp ( output ( BAN_ADD_GLOB, cmdName.toLowerCase(), mask, ban.getInstater(), ""+uList.size(), percent, time ) );
                 
                 // -OperServ(stats@dal.net)- *!*@159.65.148.178 has been added to my autokill list for 30 minutes.
-                this.service.sendMsg ( user, mask+" has been added to the akill list for "+time+( StringMatch.isInt ( time ) ? " min." : "." ) );
+                this.service.sendMsg ( user, mask+" has been added to the "+cmdName.toLowerCase ( )+" list for "+time+( StringMatch.isInt ( time ) ? " min." : "." ) );
                 
                 // -OperServ(stats@dal.net)- This autokill's id hasAccess 1563280267K-k and the authorization id hasAccess 1563280267K-16159. Please send your reports@dal.net email as soon as possible.
-                this.service.sendMsg ( user, "The akill id is "+ban.getID()+". Please use the akill id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
+                this.service.sendMsg ( user, "The "+cmdName.toLowerCase ( )+" id is "+ban.getID()+". Please use the id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
                
         }  
          
@@ -551,21 +551,6 @@ public class OSExecutor extends Executor {
         }
         return ban;
     }
-/*    private String dataToReason ( String[] cmd, int start )  {
-        String reason = new String ( );
-        int index = 0;
-        for ( String buf : cmd )  {
-            if ( index++ > start )  {
-                if ( reason.length ( ) == 0 )  {
-                    reason = buf;
-                } else {
-                    reason += " "+buf;
-                }
-            }
-        }
-        return reason;
-    }
- */
     private void doSearchLog ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SEARCHLOG <nick|chan> [FULL]
         //            0       1                          2          3           4      5 < 6
@@ -710,7 +695,7 @@ public class OSExecutor extends Executor {
         for ( OSLogEvent log : lsList ) {
             this.service.sendMsg ( user, output ( SHOWBANLOG, log.getStamp(), log.getFlag().getString(), log.getName().getString(), log.getMask(), log.getOper(), log.getData() ) );
         }
-        this.service.sendMsg ( user, "*** End of Audit ***" ); 
+        this.service.sendMsg ( user, "*** End of BanLog ***" ); 
         
     }
     
@@ -1424,6 +1409,10 @@ public class OSExecutor extends Executor {
                 } else if ( isShorterThanLen ( 8, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
+                } else if ( cmd[6].length ( ) > 110 ) {
+                    /* does not fit the database, and no real mask is that long */
+                    result.setStatus ( SYNTAX_ERROR_ADD );
+                    
                 } else if ( ( command.is(AKILL) || command.is(IGNORE) ) && ! validBanMask ( cmd[6] ) ) {
                     /* SQLINE is a nick/channel and SGLINE a realname pattern */
                     result.setStatus ( SYNTAX_ERROR_ADD );
@@ -1436,7 +1425,7 @@ public class OSExecutor extends Executor {
                 } else if ( ( expire = Handler.expireToDateString ( stamp, time ) ) == null ) {
                     result.setStatus ( BADTIME );
                 
-                } else if ( reason == null ) {
+                } else if ( reason == null || reason.length ( ) > 250 ) {
                     result.setStatus ( BADREASON );
                 
                 } else if ( OperServ.findBan ( command, cmd[6] ) != null ) {

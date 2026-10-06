@@ -140,7 +140,7 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "NOGHOST",  CMDAccess ( NOGHOST ),  "Deactivate ghost for nick" )   );
         cmdList.add ( new CommandInfo ( "GETPASS",  CMDAccess ( GETPASS ),  "Get nick password" )           );
         cmdList.add ( new CommandInfo ( "GETEMAIL", CMDAccess ( GETEMAIL ), "Get nick email" )              );
-        cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Get nick email" )              );
+        cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Delete a nick" )               );
     }
     
     /**
