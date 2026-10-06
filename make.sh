@@ -1,8 +1,13 @@
 #!/bin/bash                                                                                                                               
           
 # Set JAVA_HOME yourself to use another java: JAVA_HOME=/path/to/jdk ./make.sh
-if [ -z "$JAVA_HOME" ] && [ -d /usr/lib/jvm/java17 ]; then
-   export JAVA_HOME=/usr/lib/jvm/java17
+if [ -z "$JAVA_HOME" ]; then
+   for DIR in /usr/lib/jvm/java-17-openjdk /usr/lib/jvm/java-17 /usr/lib/jvm/java17; do
+      if [ -x "$DIR/bin/javac" ]; then
+         export JAVA_HOME=$DIR
+         break
+      fi
+   done
 fi
                                                                                                                                 
 MISSING="";                                                                                                                               
