@@ -1,6 +1,9 @@
 #!/bin/bash                                                                                                                               
           
-export JAVA_HOME=/usr/lib/jvm/java17
+# Set JAVA_HOME yourself to use another java: JAVA_HOME=/path/to/jdk ./make.sh
+if [ -z "$JAVA_HOME" ] && [ -d /usr/lib/jvm/java17 ]; then
+   export JAVA_HOME=/usr/lib/jvm/java17
+fi
                                                                                                                                 
 MISSING="";                                                                                                                               
 
@@ -56,6 +59,10 @@ fi
 # Compile / Install
 
 function compile {
+   if ! command -v ant > /dev/null 2>&1; then
+      echo "Note: ant is not installed, nothing is compiled. Using the dist/Avade.jar that came with the source.";
+      return;
+   fi
    ant ${1} ${2} 2>&1 | while read line; do
       if [ -z "$1" ]; then
          echo $line | grep -i 'warning\|error';
@@ -74,6 +81,7 @@ function install {
    cp reference.conf ~/avade/
    cp avade.sh ~/avade/
    chmod +x ~/avade/avade.sh
+   echo "Installed: $(ls -l ~/avade/avade.jar)";
 }
 
 if [ -z "$1" ]; then
