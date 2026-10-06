@@ -189,6 +189,14 @@ public class Config extends HashNumeric {
                     System.out.println ( "ConfigError: uhmsalt must be 16 to 128 letters and digits" );
                     throw new IllegalStateException ( "ConfigError: uhmsalt" );
                 }
+                /* The masking salt goes out to every server, the database salt
+                   must never leave services: they can not be the same value */
+                HashString dbSalt = this.get ( SECRETSALT );
+                if ( dbSalt != null && this.uhmSalt.equals ( dbSalt.getString ( ) ) ) {
+                    System.out.println ( "ConfigError: uhmsalt is the same as secretsalt. The uhmsalt is sent to the servers, "+
+                                         "use a value of its own (./avade.sh gensalt)" );
+                    throw new IllegalStateException ( "ConfigError: uhmsalt equals secretsalt" );
+                }
                 Object prefix = result.get ( "uhmprefix" );
                 this.uhmPrefix = ( prefix != null ? prefix.toString().trim ( ) : "user" );
                 if ( ! this.uhmPrefix.matches ( "[A-Za-z0-9]{1,16}" ) ) {

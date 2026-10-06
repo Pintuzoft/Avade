@@ -19,7 +19,9 @@ IRC operators still see the real host.
 The masks are made with a secret salt. **Anyone who has it can work out which
 mask belongs to which ip**, so treat it like a database password.
 
-It is set in one place, `uhmsalt` in Avade's `services.conf`. Services send it
+It is set in one place, `uhmsalt` in Avade's `services.conf`. It must be a
+value of its own, not the `secretsalt` that protects passwords and mail in the
+database: Avade refuses to start if the two are the same. Services send it
 to the servers, and each server keeps it in `avade_uhm.salt` next to its
 `ircd.conf` (readable by the ircd user only) so it survives a restart while
 services are away. Nothing is put on a server by hand.
