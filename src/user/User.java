@@ -35,6 +35,7 @@ import java.util.Date;
  */
 public class User extends HashNumeric {
     private String                  vhost;          /* set by services right now, null if none */
+    private boolean                 showReal;       /* the owner asked for the real host on a network that masks (SET SHOWHOST) */
 
     private HashString                  name;
     private HashString                  mask;           
@@ -150,6 +151,17 @@ public class User extends HashNumeric {
     }
 
     /**
+     * @param showReal true when services have taken the mask of the ircd off this user
+     */
+    public void setShowReal ( boolean showReal ) {
+        this.showReal = showReal;
+    }
+
+    public boolean isShowReal ( ) {
+        return this.showReal;
+    }
+
+    /**
      * @return the host other users see when it is not the real one: the
      *         vhost, or the mask of the ircd when the network masks hosts.
      *         Null when the real host is what everyone sees.
@@ -157,6 +169,9 @@ public class User extends HashNumeric {
     public String getShownHost ( ) {
         if ( this.vhost != null ) {
             return this.vhost;
+        }
+        if ( this.showReal ) {
+            return null;
         }
         return Handler.maskedHost ( this.getHost ( ), this.getIp ( ) );
     }

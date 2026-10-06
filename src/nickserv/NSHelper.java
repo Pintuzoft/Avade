@@ -435,7 +435,10 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET SHOWHOST ON"+f.b ( ) +""         );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET SHOWHOST OFF"+f.b ( ) +""        );
         this.service.sendMsg ( user, "   "                                                                  );
-        this.service.sendMsg ( user, "   Setting ShowHost on or off."                                       );
+        this.service.sendMsg ( user, "   With ShowHost on your real host is shown to everyone in /NickServ INFO."      );
+        this.service.sendMsg ( user, "   If the network masks hosts it is also shown on IRC instead of the masked"      );
+        this.service.sendMsg ( user, "   one while you are identified, for those who have a host of their own to show." );
+        this.service.sendMsg ( user, "   A vhost set with SET VHOST goes before this."                                  );
         this.service.sendMsg ( user, "   "                                                                  );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                     );
         this.service.sendMsg ( user, "   Recommending this option being off."                               );

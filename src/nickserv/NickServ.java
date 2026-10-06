@@ -758,6 +758,33 @@ public class NickServ extends Service {
      * @return false if not possible (the ircd masks hosts in a way we do not
      *         know, so this would reveal the real host: the user has to reconnect)
      */
+    /**
+     * Give an identified user the host its nick should show: the vhost of the
+     * nick, or the real host when the owner asked for it on a network that
+     * masks hosts (SET SHOWHOST ON, for someone who has a host of their own
+     * to show), or else what the network gives everyone
+     * @param u
+     * @param ni the nick the user is on and identified to
+     */
+    public static void applyHost ( User u, NickInfo ni ) {
+        if ( u == null || ni == null ) {
+            return;
+        }
+        if ( ni.getVhost ( ) != null ) {
+            u.setShowReal ( false );
+            applyVhost ( u, ni );
+        
+        } else if ( ni.isSet ( SHOWHOST ) && Handler.getUhmType ( ) > 0 ) {
+            /* Without umode +H the ircd shows the real host */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 -H" );
+            u.setVhost ( null );
+            u.setShowReal ( true );
+        
+        } else if ( u.isShowReal ( ) ) {
+            resetHost ( u );    /* SHOWHOST was turned off: masked like everyone else again */
+        }
+    }
+
     public static boolean resetHost ( User u ) {
         if ( u == null ) {
             return false;
@@ -769,7 +796,9 @@ public class NickServ extends Service {
                 return false;
             }
             ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSHOST "+u.getString ( NAME )+" "+masked );
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 +H" );
             u.setVhost ( null );
+            u.setShowReal ( false );
             return true;
         }
         /* Without umode +H bahamut shows the user's own host again */
@@ -805,11 +834,14 @@ public class NickServ extends Service {
                 }
                 u.getModes().set ( IDENT, true );
                 Handler.getMemoServ().checkNick ( ni, u );
-                applyVhost ( u, ni );
+                applyHost ( u, ni );
 
             } else {
                 ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 -r" );
                 Handler.getGuestServ().addNick ( u, ni );      
+                if ( u.isShowReal ( ) ) {
+                    resetHost ( u );    /* not identified any more: no real host on request */
+                }
             }
 
         } else {

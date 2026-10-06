@@ -928,6 +928,11 @@ import java.util.regex.Pattern;
         ni.getSettings().set ( command, enable );
         ni.getChanges().change ( command );
         NickServ.addToWorkList ( CHANGE, ni );
+        if ( command.is(SHOWHOST) && user.getName().is ( ni.getName ( ) ) ) {
+            /* On a network that masks hosts this also puts the real host
+               back on IRC, or the mask when it is turned off */
+            NickServ.applyHost ( user, ni );
+        }
         this.snoop.msg ( true, SET, ni.getName(), user, cmd );        
     }
 

@@ -675,7 +675,22 @@ def test_host_masking():
         x.send('JOIN ' + chan)
         check(x.saw(r' KICK %s Maskedone ' % chan, m, 8), 'an AKICK on the masked host kicks the user', (r, x.since(m)[-3:]))
         a.svc('ChanServ', 'AKICK %s DEL *!*@%s' % (chan, shown))
-        close(x, v, a)
+        close(x, v)
+        # SET SHOWHOST: someone with a host of their own to show gets the real one back
+        e = login('Erin')
+        time.sleep(1)
+        host = lambda: [t.split()[2] for n, t in a.whois('Erin') if n == '311'][0]
+        masked = host()
+        check(masked.startswith('avade-') or masked.endswith('.ip'), '(an identified user is masked too)', masked)
+        e.svc('NickServ', 'SET SHOWHOST ON')
+        time.sleep(1)
+        real = host()
+        check(real != masked and not real.endswith('.ip') and not real.startswith('avade-'),
+              'SET SHOWHOST ON shows the real host on IRC', (masked, real))
+        e.svc('NickServ', 'SET SHOWHOST OFF')
+        time.sleep(1)
+        check(host() == masked, 'and SET SHOWHOST OFF puts the mask back', host())
+        close(a, e)
     finally:
         mm.svc('OperServ', 'UHM 0 0')
     close(mm)

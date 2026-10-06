@@ -62,6 +62,10 @@ In Avade:
 
 Users that were already online keep the host they had until they reconnect.
 
+A user who wants to show the real host anyway (someone with a host of their
+own) can turn the mask off for themselves with `/NickServ SET SHOWHOST ON`.
+It applies while they are identified. A vhost (`SET VHOST`) goes before both.
+
 ## Check that services and the servers agree
 
     /MODULE CMD avade_uhm TEST <host> <ip>      on a server, as server admin
