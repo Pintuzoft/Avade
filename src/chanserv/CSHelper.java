@@ -1005,6 +1005,10 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "     HIDE_MODE_LISTS <ON|OFF>     - Hide mode lists"                                          );
         this.service.sendMsg ( user, "     NO_NICK_CHANGE <ON|OFF>      - Stop nick changes"                                        );
         this.service.sendMsg ( user, "     NO_UTF8 <ON|OFF>             - Stop special characters"                                  );
+        this.service.sendMsg ( user, "     USER_VERBOSE <ON|OFF>        - Report what the ChanFlags stopped to <#chan>-relay"       );
+        if ( user.isAtleast ( SA ) ) {
+            this.service.sendMsg ( user, "     OPER_VERBOSE <ON|OFF>        - Report what the ChanFlags stopped to IRC operators (SA+)" );
+        }
         this.service.sendMsg ( user, "     GREETMSG <greeting>          - Set join greeting message for warning users they might"   );
         this.service.sendMsg ( user, "                                    get match by the ChanFlags."                              );
         this.service.sendMsg ( user, "     LIST                         - Will list current configuration"                          );

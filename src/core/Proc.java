@@ -22,6 +22,8 @@ import server.ServSock;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import memoserv.MemoServ;
@@ -44,7 +46,10 @@ public class Proc extends HashNumeric {
     private static final long           RECONNECT_DELAY = 30000; /* ms between attempts to relink */
 
     private Handler                     handler;
-    private static boolean              run; 
+    private static volatile boolean     run;
+    private static volatile boolean     signalStop;     /* stopped by a signal (kill), not by RootServ STOP */
+    private static volatile boolean     exiting;
+    private static final CountDownLatch stopped = new CountDownLatch ( 1 );
     private static Log                  logger; 
     private static long                 start;
     private static long                 servicesStart;
@@ -81,9 +86,31 @@ public class Proc extends HashNumeric {
         this.secondDelay        = 1_000_000_000L; /* Every second */
         this.minuteDelay        = 60 * 1_000_000_000L; /* Every minute */
         this.hourDelay          = 60 * 60 * 1_000_000_000L; /* Every hour */
+        this.stopOnSignal ( );
         this.runLoop ( );
     }
     
+    /* A plain kill (SIGTERM) or ctrl-c stops services the same way as
+       RootServ STOP: pending changes are written to the database first */
+    private void stopOnSignal ( ) {
+        Runtime.getRuntime().addShutdownHook ( new Thread ( ) {
+            @Override
+            public void run ( ) {
+                if ( exiting ) {
+                    return;
+                }
+                System.out.println ( "Got a signal to stop, writing pending changes to the database.." );
+                signalStop = true;
+                Proc.stopServices ( );
+                try {
+                    stopped.await ( 75, TimeUnit.SECONDS );
+                } catch ( InterruptedException ex ) {
+                    /* nothing more to do */
+                }
+            }
+        } );
+    }
+
     @SuppressWarnings ( "WaitWhileNotSynced" ) 
     private void runLoop ( )  {
         int counter = 0;
@@ -191,7 +218,12 @@ public class Proc extends HashNumeric {
         if ( Proc.conn != null ) {
             Proc.conn.disconnect();
         }
-        System.exit ( 0 );
+        exiting = true;
+        stopped.countDown ( );
+        if ( ! signalStop ) {
+            System.exit ( 0 );
+        }
+        /* else: the JVM is already going down and waits for us to return */
     }
 
     /**

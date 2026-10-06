@@ -90,7 +90,8 @@ Jämför gärna med `template.conf` för exakt utseende.
 ## 6. Starta
 
     cd ~/avade
-    java -jar avade.jar
+    ./avade.sh start
+    ./avade.sh log        # följ utskriften, ctrl-c avslutar bara visningen
 
 Första starten uppgraderar databasen från produktionens version till 1.2609-6,
 sex steg i ordning. Steget som byter teckenkodning till utf8mb4 går igenom alla
@@ -102,7 +103,8 @@ Kontrollera efteråt:
 
 Versionen ska vara `1.2609-6`.
 
-Stoppa alltid med `/RootServ STOP`, inte med kill.
+Stoppa med `./avade.sh stop` eller `/RootServ STOP`. Båda skriver klart till databasen först.
+Undvik `kill -9`.
 
 ## 7. Att prova
 

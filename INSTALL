@@ -59,6 +59,17 @@ server.
 
 6. Starting Services
 
+cd ~/avade
+./avade.sh start
+
+Other actions: stop, restart, status, check and log. The output of services
+ends up in ~/avade/avade.out (the five latest are kept).
+
+To bring services back after a reboot or a crash, add this to the crontab of
+the user running services (crontab -e):
+
+*/5 * * * * $HOME/avade/avade.sh check
+
 The first time you start services it will look at the services configuration 
 and try login to the database. Once it does this it will look at the database
 and if its empty it will try create the tables it requires. If the database is
@@ -71,13 +82,13 @@ created (if not already existing) and give the nickname master access.
 
 7. Stopping Services
 
-Try avoid killing the process as this will potentially mean loss of data. Rather
-use the /RootServ STOP command to stop services. This will set services into a
-mode where it doesnt allow users to issue service commands and then try to work
-off all pending database work it can find. This means any pending nick or chan
-registration etc, or services logs that needs to be stored.
+Use "./avade.sh stop" or the /RootServ STOP command. Both set services into a
+mode where it tries to work off all pending database work it can find before
+it exits. This means any pending nick or chan registration etc, or services
+logs that needs to be stored.
 
-So in short, use RootServ STOP to stop services..
+A normal kill does the same thing. Avoid "kill -9" as that will potentially
+mean loss of data.
 
 
 8. Updating Services

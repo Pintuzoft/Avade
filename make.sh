@@ -72,6 +72,8 @@ function install {
    cp -Rv dist/lib ~/avade/
    cp template.conf ~/avade/
    cp reference.conf ~/avade/
+   cp avade.sh ~/avade/
+   chmod +x ~/avade/avade.sh
 }
 
 if [ -z "$1" ]; then
