@@ -596,6 +596,87 @@ def test_uhm():
     close(mm)
 
 
+def test_host_masking():
+    """The avade_uhm module in the ircd and Avade must agree on every mask."""
+    if not os.path.exists(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work',
+                                       'ircd-' + '.'.join(str(x) for x in ircd_version()), 'modules', 'avade_uhm.so')):
+        print('    skip  this bahamut has no host-masking hook')
+        return
+    mm = master()
+    mm.send('MODE %s +A' % MASTER)
+    mm.send('LINKS')
+    time.sleep(1)
+    if not any(' 364 ' in l and ' leaf.test.net ' in l for l in mm.since(0)):
+        mm.send('CONNECT leaf.test.net 7016')
+        time.sleep(8)
+    def module(c, args):
+        m = c.mark()
+        c.send('MODULE CMD avade_uhm ' + args)
+        try:
+            return c.wait(r'NOTICE \S+ :avade_uhm', 20, m).split(' :', 1)[1]
+        except TimeoutError:
+            return ''
+    check('set by services' in module(mm, ''), 'the hub got the salt from services', module(mm, ''))
+    check(has(mm.svc('OperServ', 'UHM'), 'salt for the avade_uhm module is set'), 'OperServ UHM says the salt is configured')
+
+    cases = [('192.0.2.44', '192.0.2.44'), ('10.0.0.1', '10.0.0.1'), ('255.255.255.255', '255.255.255.255'),
+             ('2001:db8::1', '2001:db8::1'), ('2001:0db8:0:0:0:0:0:1', '2001:0db8:0:0:0:0:0:1'), ('0::1', '0::1'),
+             ('0::ffff:192.0.2.1', '0::ffff:192.0.2.1'), ('fe80::abcd:1234', 'fe80::abcd:1234'),
+             ('c-83-233-12-7.bredband.telia.com', '83.233.12.7'), ('C-83-233-12-7.Bredband.TELIA.com', '83.233.12.7'),
+             ('example.com', '192.0.2.9'), ('localhost', '127.0.0.1'), ('a.b.c', '192.0.2.10'),
+             ('very-long-host-name-part-one.very-long-host-name-part-two.example.org', '192.0.2.11'),
+             ('host.with_underscore.example.net', '2001:db8::2')]
+    diff = []
+    for host, ip in cases:
+        ircd_mask = module(mm, 'TEST %s %s' % (host, ip)).rsplit(' -> ', 1)[-1]
+        avade_mask = ''.join(mm.svc('OperServ', 'UHM TEST %s %s' % (host, ip), wait=0.4)).rsplit(' -> ', 1)[-1]
+        if not ircd_mask or ircd_mask != avade_mask:
+            diff.append((host, ip, ircd_mask, avade_mask))
+    check(not diff, 'Avade and the ircd get the same mask for %d hosts and addresses' % len(cases), diff)
+
+    # The same on the leaf: services sent the salt to every server
+    close(mm)
+    # (over ::1: bahamut throttles an address network wide, also when the allow block
+    #  says no throttling, and too many test clients from 127.0.0.1 would get refused)
+    mm = login(MASTER, port=LEAF_PORT, host='::1')
+    mm.oper()
+    mm.send('MODE %s +A' % MASTER)
+    time.sleep(1)
+    check('set by services' in module(mm, ''), 'the leaf got the salt too', module(mm, ''))
+    diff = []
+    for host, ip in cases[:1] + cases[3:4] + cases[8:9]:
+        ircd_mask = module(mm, 'TEST %s %s' % (host, ip)).rsplit(' -> ', 1)[-1]
+        avade_mask = ''.join(mm.svc('OperServ', 'UHM TEST %s %s' % (host, ip), wait=0.4)).rsplit(' -> ', 1)[-1]
+        if not ircd_mask or ircd_mask != avade_mask:
+            diff.append((host, ip, ircd_mask, avade_mask))
+    check(not diff, 'and gives the same masks', diff)
+
+    mm.svc('OperServ', 'UHM 1 1')
+    try:
+        time.sleep(1)
+        x = Client('Maskedone', LEAF_PORT)
+        v = Client('Viewer')
+        time.sleep(1)
+        shown = [t.split()[2] for n, t in v.whois('Maskedone') if n == '311'][0]
+        check(shown.startswith('avade-') or shown.endswith('.ip'), 'a user that connects is shown with a masked host', shown)
+        r = mm.svc('OperServ', 'UINFO Maskedone')
+        check(has(r, 'Shown as: ' + shown), 'Avade knows that masked host', (shown, [l for l in r if 'Shown' in l]))
+        chan = '#t_masked'
+        a = login('Alice')
+        register_chan(a, chan)
+        r = a.svc('ChanServ', 'AKICK %s ADD *!*@%s' % (chan, shown))
+        a.send('PART ' + chan)
+        time.sleep(1)
+        m = x.mark()
+        x.send('JOIN ' + chan)
+        check(x.saw(r' KICK %s Maskedone ' % chan, m, 8), 'an AKICK on the masked host kicks the user', (r, x.since(m)[-3:]))
+        a.svc('ChanServ', 'AKICK %s DEL *!*@%s' % (chan, shown))
+        close(x, v, a)
+    finally:
+        mm.svc('OperServ', 'UHM 0 0')
+    close(mm)
+
+
 def test_log_file():
     log = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work', 'run', 'services.log'),
                errors='replace').read()
@@ -638,7 +719,7 @@ def test_leaf_split():
     if not any(' 364 ' in l and ' leaf.test.net ' in l for l in mm.since(0)):
         mm.send('CONNECT leaf.test.net 7016')
         time.sleep(8)
-    d = login('Dave', port=LEAF_PORT)
+    d = login('Dave', port=LEAF_PORT, host='::1')    # see test_host_masking about the throttle
     mm.join(chan)
     d.join(chan)
     time.sleep(2)
@@ -680,7 +761,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

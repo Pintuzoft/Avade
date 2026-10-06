@@ -68,6 +68,16 @@ ircd_conf "$LEAF_NAME" "$LEAF_CLIENT_PORT" "$LEAF_SERVER_PORT" "" \
 "connect { name $HUB_NAME; host 127.0.0.1; port $HUB_SERVER_PORT; apasswd $LINK_PASS; cpasswd $LINK_PASS; class servers; flags H; };" > "$WORK/leaf/ircd.conf"
 cp -f "$IRCD/ircd.motd" "$IRCD/ircd.crt" "$IRCD/ircd.key" "$WORK/leaf/" 2>/dev/null || true
 
+### The host-masking module, on both servers (bahamut versions that have the hook)
+if grep -q CHOOK_MASKHOST "$WORK/src-$IRCD_VERSION/include/hooks.h" 2>/dev/null; then
+    rm -f "$IRCD/avade_uhm.salt" "$WORK/leaf/avade_uhm.salt"
+    "$REPO/bahamut-module/build.sh" "$WORK/src-$IRCD_VERSION" "$IRCD" > "$WORK/module-$IRCD_VERSION.log" 2>&1 \
+        || { tail -5 "$WORK/module-$IRCD_VERSION.log"; exit 1; }
+    mkdir -p "$WORK/leaf/modules" && cp -f "$IRCD/modules/avade_uhm.so" "$WORK/leaf/modules/"
+    echo 'modules { path modules; autoload avade_uhm; };' >> "$IRCD/ircd.conf"
+    echo 'modules { path modules; autoload avade_uhm; };' >> "$WORK/leaf/ircd.conf"
+fi
+
 ### Avade config, from the template in the repo
 sed -e "s/^name: .*/name: $SERVICES_NAME/" \
     -e "s/^domain: .*/domain: test.net/" \
@@ -84,6 +94,7 @@ sed -e "s/^name: .*/name: $SERVICES_NAME/" \
     -e "s/^mysqldb: .*/mysqldb: $DB_NAME/" \
     "$REPO/template.conf" > "$RUN/services.conf"
 printf '\nvhostforbidden:\n  - "*admin*"\n  - "*oper*"\n' >> "$RUN/services.conf"
+printf '\nuhmsalt: TestSalt1234567890abcdefGHIJ\nuhmprefix: avade\n' >> "$RUN/services.conf"
 
 "$TESTS/ircd.sh" start
 "$TESTS/avade.sh" start

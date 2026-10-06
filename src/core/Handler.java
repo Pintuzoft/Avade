@@ -141,6 +141,9 @@ public class Handler extends HashNumeric {
         /* A SERVER line we could not parse has no name */
         if ( server.getName ( ) != null ) {
             sList.add ( server );
+            if ( syncFinished ) {
+                sendUhmSalt ( );    /* a server that linked later needs the salt too */
+            }
         }
     }
 
@@ -160,6 +163,32 @@ public class Handler extends HashNumeric {
             }
         } catch ( NumberFormatException ex ) {
             uhmType = 0;
+        }
+    }
+
+    /**
+     * What the ircd shows as the host of this user when the network masks
+     * hosts with the avade_uhm module (SVSUHM type 1).
+     * @param host
+     * @param ip
+     * @return the masked host, or null when hosts are not masked or we have no salt
+     */
+    public static String maskedHost ( String host, String ip ) {
+        String salt = Proc.getConf().getUhmSalt ( );
+        if ( uhmType != 1 || salt == null || host == null ) {
+            return null;
+        }
+        return HostMask.mask ( salt, Proc.getConf().getUhmPrefix ( ), host, ip );
+    }
+
+    /**
+     * Give the salt of the host-masking to the modules on all servers. The
+     * ircd passes the line on to every server, sending it again is harmless.
+     */
+    public static void sendUhmSalt ( ) {
+        String salt = Proc.getConf().getUhmSalt ( );
+        if ( salt != null && oper != null ) {
+            oper.sendCmd ( "MODULE CGLOBAL avade_uhm SALT "+salt+" "+Proc.getConf().getUhmPrefix ( ) );
         }
     }
 
@@ -1652,6 +1681,7 @@ public class Handler extends HashNumeric {
         root.fixMaster ( );
         oper.sendSpamFilter ( );
         oper.sendCloneLimits ( );
+        sendUhmSalt ( );
     }
 
     /**

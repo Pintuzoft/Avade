@@ -3,7 +3,10 @@
 Runs Avade against a real bahamut: a hub, a leaf, MariaDB (Docker) and Avade
 built from `src/`, all on localhost with an empty database.
 
-Needs: Docker, Java 17+, python3, git, gcc, make, autoconf.
+Needs: Docker, Java 17+, python3, git, gcc, make, autoconf and the OpenSSL headers.
+
+The host-masking module (`bahamut-module/`) is built and loaded on both servers
+when the bahamut version has the hook for it.
 
     ./start.sh [version]     # build bahamut if needed and start everything (default 2.2.4)
     ./run_tests.py [name..]  # all tests, or the ones whose name contains a word

@@ -9,6 +9,7 @@
 #   ./avade.sh status
 #   ./avade.sh check      start if not running, quiet otherwise (for cron)
 #   ./avade.sh log        follow the output
+#   ./avade.sh gensalt    print a random salt for uhmsalt in services.conf
 #
 # Cron, to bring services back after a reboot or a crash:
 #   */5 * * * * $HOME/avade/avade.sh check
@@ -124,8 +125,9 @@ case "${1,,}" in
     status)  status ;;
     check)   [ -n "$(running_pid)" ] || start ;;
     log)     tail -n 50 -f "$OUT" ;;
+    gensalt) LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48; echo ;;
     *)
-        echo "Syntax: $0 <start|stop|restart|status|check|log>"
+        echo "Syntax: $0 <start|stop|restart|status|check|log|gensalt>"
         exit 1
         ;;
 esac

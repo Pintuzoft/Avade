@@ -110,7 +110,8 @@ import java.util.Date;
                     "NICK "+this.name+
                     " 1 "+
                     Math.round ( this.date.getTime ( ) / 1000 ) +
-                    " + "+
+                    /* the ircd only takes module commands (the host-masking salt) from an oper */
+                    ( this.name.is(OPERSERV) ? " +o " : " + " )+
                     this.user+" "+
                     this.host+" "+
                     this.server+

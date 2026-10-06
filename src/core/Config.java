@@ -39,6 +39,8 @@ public class Config extends HashNumeric {
     private HashMap<BigInteger,Boolean> configBool;
     private HashMap<BigInteger,HashString> whiteList;
     private ArrayList<String> vhostForbidden = new ArrayList<>();
+    private String uhmSalt;     /* host-masking salt, null when the network does not use the module */
+    private String uhmPrefix;
     private HashMap<BigInteger,Integer> commands;
     private static final HashString[] cList = { 
         STOP,REHASH,BAHAMUT,SPAMFILTER,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,CLIST,SLIST,JUPE,
@@ -178,6 +180,23 @@ public class Config extends HashNumeric {
                 }
             }
 
+            /* Host-masking with the avade_uhm module of the ircd (optional).
+               Only letters and digits, it is sent to the servers as one word */
+            Object salt = result.get ( "uhmsalt" );
+            if ( salt != null && ! salt.toString().trim().isEmpty ( ) ) {
+                this.uhmSalt = salt.toString().trim ( );
+                if ( ! this.uhmSalt.matches ( "[A-Za-z0-9]{16,128}" ) ) {
+                    System.out.println ( "ConfigError: uhmsalt must be 16 to 128 letters and digits" );
+                    throw new IllegalStateException ( "ConfigError: uhmsalt" );
+                }
+                Object prefix = result.get ( "uhmprefix" );
+                this.uhmPrefix = ( prefix != null ? prefix.toString().trim ( ) : "user" );
+                if ( ! this.uhmPrefix.matches ( "[A-Za-z0-9]{1,16}" ) ) {
+                    System.out.println ( "ConfigError: uhmprefix must be 1 to 16 letters and digits" );
+                    throw new IllegalStateException ( "ConfigError: uhmprefix" );
+                }
+            }
+
             /* COMMANDS */
             HashString[] accesses = { SRA, CSOP, SA, IRCOP };
             for ( HashString access : accesses ) {
@@ -232,6 +251,20 @@ public class Config extends HashNumeric {
      */
     public ArrayList<String> getVhostForbidden ( ) {
         return this.vhostForbidden;
+    }
+
+    /**
+     * @return the salt of the host-masking, null if it is not configured
+     */
+    public String getUhmSalt ( ) {
+        return this.uhmSalt;
+    }
+
+    /**
+     * @return the prefix of masked host names ("prefix-hash.isp.net")
+     */
+    public String getUhmPrefix ( ) {
+        return this.uhmPrefix;
     }
 
     public HashMap<BigInteger,HashString> getWhiteList ( ) {

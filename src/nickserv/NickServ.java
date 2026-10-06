@@ -714,6 +714,7 @@ public class NickServ extends Service {
             /* SVSHOST sets the masked host, bahamut only shows it with umode +H */
             ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSHOST "+u.getString ( NAME )+" "+ni.getVhost ( ) );
             ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 +H" );
+            u.setVhost ( ni.getVhost ( ) );
         }
     }
 
@@ -754,15 +755,26 @@ public class NickServ extends Service {
     /**
      * Show the user's own host again
      * @param u
-     * @return false if not possible (the ircd masks hosts, so this would
-     *         reveal the real host: the user has to reconnect)
+     * @return false if not possible (the ircd masks hosts in a way we do not
+     *         know, so this would reveal the real host: the user has to reconnect)
      */
     public static boolean resetHost ( User u ) {
-        if ( u == null || Handler.getUhmType ( ) > 0 ) {
+        if ( u == null ) {
             return false;
+        }
+        if ( Handler.getUhmType ( ) > 0 ) {
+            /* Back to the mask of the ircd, never to the real host */
+            String masked = Handler.maskedHost ( u.getHost ( ), u.getIp ( ) );
+            if ( masked == null ) {
+                return false;
+            }
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSHOST "+u.getString ( NAME )+" "+masked );
+            u.setVhost ( null );
+            return true;
         }
         /* Without umode +H bahamut shows the user's own host again */
         ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 -H" );
+        u.setVhost ( null );
         return true;
     }
 

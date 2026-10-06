@@ -22,6 +22,7 @@ import core.Scheduler;
 import channel.Chan;
 import core.Executor;
 import core.Handler;
+import core.HostMask;
 import core.Proc;
 import static core.HashNumeric.ADD;
 import static core.HashNumeric.DEL;
@@ -188,6 +189,9 @@ public class OSExecutor extends Executor {
                 }
             }
             this.service.sendMsg ( user, "        IP: " + u.getString ( IP )                                        );
+            if ( u.getShownHost ( ) != null ) {
+                this.service.sendMsg ( user, " Shown as: " + u.getShownHost ( )                                     );
+            }
             this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes().is ( IDENT )+" ), oper ( "+u.getModes().is ( OPER )+" ) , admin ( "+u.getModes().is ( ADMIN )+" ) , sadmin ( "+u.getModes().is ( SADMIN )+" ) " );
             this.service.sendMsg ( user, "    Server: "+u.getServ().getName ( )                                     );
             for ( Chan c : u.getChans() ) {
@@ -1029,6 +1033,19 @@ public class OSExecutor extends Executor {
         if ( cmd.length < 5 ) {
             this.service.sendMsg ( user, "Host-masking type: "+Handler.getUhmType ( )+( Handler.getUhmType ( ) == 0 ? " (off)" : "" )+
                                          ", umode +H: "+uhmUmodeHStr ( Handler.getUhmUmodeH ( ) ) );
+            this.service.sendMsg ( user, Proc.getConf().getUhmSalt ( ) != null ?
+                                         "The salt for the avade_uhm module is set in the config and sent to the servers." :
+                                         "No uhmsalt in the config: services do not know the masked hosts." );
+            return;
+        }
+        if ( cmd[4].equalsIgnoreCase ( "TEST" ) ) {
+            /* UHM TEST <host> <ip>: what the mask is, to compare with /MODULE CMD avade_uhm TEST on a server */
+            String salt = Proc.getConf().getUhmSalt ( );
+            if ( cmd.length < 7 || salt == null ) {
+                this.service.sendMsg ( user, salt == null ? "Error: no uhmsalt in the config." : output ( SYNTAX_ERROR, "UHM TEST <host> <ip>" ) );
+                return;
+            }
+            this.service.sendMsg ( user, cmd[5]+" ("+cmd[6]+") -> "+HostMask.mask ( salt, Proc.getConf().getUhmPrefix ( ), cmd[5], cmd[6] ) );
             return;
         }
         if ( cmd.length < 6 || ! cmd[4].matches ( "[0-9]{1,2}" ) || ! cmd[5].matches ( "[012]" ) ) {

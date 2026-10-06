@@ -34,6 +34,7 @@ import java.util.Date;
  * @author DreamHealer
  */
 public class User extends HashNumeric {
+    private String                  vhost;          /* set by services right now, null if none */
 
     private HashString                  name;
     private HashString                  mask;           
@@ -139,6 +140,26 @@ public class User extends HashNumeric {
      *
      * @return
      */
+
+    /**
+     * The vhost services have set on this user right now (SVSHOST), or null
+     * @param vhost
+     */
+    public void setVhost ( String vhost ) {
+        this.vhost = vhost;
+    }
+
+    /**
+     * @return the host other users see when it is not the real one: the
+     *         vhost, or the mask of the ircd when the network masks hosts.
+     *         Null when the real host is what everyone sees.
+     */
+    public String getShownHost ( ) {
+        if ( this.vhost != null ) {
+            return this.vhost;
+        }
+        return Handler.maskedHost ( this.getHost ( ), this.getIp ( ) );
+    }
 
     public String getHost ( ) { 
         return this.hi.getHost ( );

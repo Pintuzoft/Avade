@@ -261,8 +261,11 @@ public class CSAcc extends HashNumeric {
                     Logger.getLogger(CSAcc.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
-                Matcher match = this.hostPattern.matcher ( user.getString(HOST) );
-                matchHost = match.find ( );
+                /* The real host, or the one everyone sees (vhost or the mask
+                   of the ircd): a mask is written against what people see */
+                String shown = user.getShownHost ( );
+                matchHost = this.hostPattern.matcher ( user.getString(HOST) ).find ( ) ||
+                            ( shown != null && this.hostPattern.matcher ( shown ).find ( ) );
             }
         }
         return ( matchNick && matchUser && matchHost );
