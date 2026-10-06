@@ -399,12 +399,16 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || newFullAuthList.isEmpty() ) {
             return newFullAuthList.size();
         }
-        NSAuth auth = newFullAuthList.get ( 0 );
-        if ( NSDatabase.addFullAuth ( auth ) ) {
-            WorkGuard.done ( auth );
-            newFullAuthList.remove ( auth );
-        } else if ( WorkGuard.failed ( auth, "auth for "+auth.getNick() ) ) {
-            newFullAuthList.remove ( auth );
+        for ( int i = getIndexFromSize ( newFullAuthList.size() ); i > 0; i-- ) {
+            NSAuth auth = newFullAuthList.get ( 0 );
+            if ( NSDatabase.addFullAuth ( auth ) ) {
+                WorkGuard.done ( auth );
+                newFullAuthList.remove ( auth );
+            } else if ( WorkGuard.failed ( auth, "auth for "+auth.getNick() ) ) {
+                newFullAuthList.remove ( auth );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return newFullAuthList.size();
     }
@@ -413,12 +417,16 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || regList.isEmpty() ) {
             return regList.size();
         }
-        NickInfo ni = regList.get ( 0 );
-        if ( NSDatabase.createNick ( ni ) == 1 ) {
-            WorkGuard.done ( ni );
-            regList.remove ( ni );
-        } else if ( WorkGuard.failed ( ni, "register of "+ni.getNameStr() ) ) {
-            regList.remove ( ni );
+        for ( int i = getIndexFromSize ( regList.size() ); i > 0; i-- ) {
+            NickInfo ni = regList.get ( 0 );
+            if ( NSDatabase.createNick ( ni ) == 1 ) {
+                WorkGuard.done ( ni );
+                regList.remove ( ni );
+            } else if ( WorkGuard.failed ( ni, "register of "+ni.getNameStr() ) ) {
+                regList.remove ( ni );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return regList.size();
     }
@@ -428,13 +436,17 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || changeList.isEmpty() ) {
             return changeList.size();
         }
-        NickInfo ni = changeList.get ( 0 );
-        if ( NSDatabase.updateNick ( ni ) == 1 ) {
-            WorkGuard.done ( ni );
-            ni.getChanges().clean();
-            changeList.remove ( ni );
-        } else if ( WorkGuard.failed ( ni, "changes to "+ni.getNameStr() ) ) {
-            changeList.remove ( ni );
+        for ( int i = getIndexFromSize ( changeList.size() ); i > 0; i-- ) {
+            NickInfo ni = changeList.get ( 0 );
+            if ( NSDatabase.updateNick ( ni ) == 1 ) {
+                WorkGuard.done ( ni );
+                ni.getChanges().clean();
+                changeList.remove ( ni );
+            } else if ( WorkGuard.failed ( ni, "changes to "+ni.getNameStr() ) ) {
+                changeList.remove ( ni );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return changeList.size();
     }
@@ -444,12 +456,16 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || deleteList.isEmpty() ) {
             return deleteList.size();
         }
-        NickInfo ni = deleteList.get(0);
-        if ( NSDatabase.deleteNick ( ni ) ) {
-            WorkGuard.done ( ni );
-            deleteList.remove ( ni );
-        } else if ( WorkGuard.failed ( ni, "delete of "+ni.getNameStr() ) ) {
-            deleteList.remove ( ni );
+        for ( int i = getIndexFromSize ( deleteList.size() ); i > 0; i-- ) {
+            NickInfo ni = deleteList.get(0);
+            if ( NSDatabase.deleteNick ( ni ) ) {
+                WorkGuard.done ( ni );
+                deleteList.remove ( ni );
+            } else if ( WorkGuard.failed ( ni, "delete of "+ni.getNameStr() ) ) {
+                deleteList.remove ( ni );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return deleteList.size();
     }

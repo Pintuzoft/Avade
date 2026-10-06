@@ -37,7 +37,8 @@ public class Hash {
             enc = MessageDigest.getInstance ( "MD5" );
             enc.update ( original.getBytes ( ), 0, original.length ( )  );
             String md5;
-            md5 = new BigInteger(1,enc.digest()).toString ( 16 );
+            /* always 32 characters, leading zeros included */
+            md5 = String.format ( "%032x", new BigInteger(1,enc.digest()) );
             return md5;
             
         } catch  ( NoSuchAlgorithmException ex )  {

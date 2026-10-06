@@ -31,6 +31,7 @@ import nickserv.NickInfo;
 import nickserv.NickServ;
 import operserv.OSLogEvent;
 import operserv.OSDatabase;
+import operserv.Oper;
 import operserv.OperServ;
 import user.User;
 
@@ -265,6 +266,7 @@ public class RootServ extends Service {
             OSLogEvent log;
             ArrayList<NickInfo> nList = RSDatabase.setMaster ( master );
             for ( NickInfo old : nList ) {
+                old.setOper ( new Oper ( old.getNameStr(), 4, "Services config" ) );
                 log = new OSLogEvent ( old.getName(), new HashString ( "DELMASTER" ), "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
                 log = new OSLogEvent ( old.getName(), new HashString ( "ADDSRA" ), "new!master@services", "Services config" );
@@ -272,8 +274,10 @@ public class RootServ extends Service {
             }
             log = new OSLogEvent ( ni.getName(), new HashString ( "ADDMASTER" ), "new!master@services", "Services config" );
             OSDatabase.logEvent ( log );
+            /* Also when the master is not online right now, or the role would
+               only start to work after the next restart */
+            ni.setOper ( new Oper ( ni.getNameStr(), 5, "Services config" ) );
             if ( user != null ) {
-                ni.setOper ( OperServ.getOper ( master ) );
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
                     this.sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );

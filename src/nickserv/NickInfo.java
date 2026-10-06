@@ -123,6 +123,7 @@ public class NickInfo extends HashNumeric {
         this.lastUsed   = date; 
         this.date       = new Date ( );
         this.oper       = new Oper ( );
+        this.exp        = new Expire ( );
         this.changes    = new NSChanges ( );
         this.throttle   = new Throttle ( );
         this.userIdent ( user );
