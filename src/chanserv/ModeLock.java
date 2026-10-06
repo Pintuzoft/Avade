@@ -117,7 +117,8 @@ class ModeLock extends HashNumeric {
                    break;
                    
                case MODE_k :
-                   if ( this.m_key == -1 ) { 
+                   /* Only "no key" can be locked, a locked +k would need the key */
+                   if ( state == -1 ) { 
                        this.m_key = -1; 
                    }  
                    break;
@@ -194,6 +195,10 @@ class ModeLock extends HashNumeric {
         }
         if ( this.m_topic == -1 && modes.is ( MODE_t ) ) {
             missing += "t";
+        }
+        /* Last: it is the only one with an argument (the key, added by the caller) */
+        if ( this.m_key == -1 && modes.is ( MODE_k ) && c.getKey ( ) != null ) {
+            missing += "k";
         }
         
         /* Nothing to change: no MODE line at all */

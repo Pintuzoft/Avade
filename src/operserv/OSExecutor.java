@@ -141,6 +141,9 @@ public class OSExecutor extends Executor {
         } else if ( command.is(CLONE) ) {
             this.doClone ( user, cmd );
             
+        } else if ( command.is(UHM) ) {
+            this.doUhm ( user, cmd );
+            
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user, cmd );
         
@@ -1013,6 +1016,43 @@ public class OSExecutor extends Executor {
         String string = user.getOper().getNameStr()+" set the clone limit for "+mask+" to "+limit+( reason != null ? " ("+reason+")" : "" );
         this.service.sendMsg ( user, string );
         this.service.sendGlobOp ( string );
+    }
+
+    /* UHM [<type> <0|1|2>]
+       User host-masking in the ircd (SVSUHM). The type is the kind of masking
+       the masking module of the ircd does, 0 is off. The second value is
+       umode +H: 0 = users cannot use it, 1 = set for everyone when they
+       connect, 2 = users may set it themselves. The ircd remembers it. */
+    private void doUhm ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :UHM 1 1
+        //   0      1        2                      3  4 5   = 6
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, "Host-masking type: "+Handler.getUhmType ( )+( Handler.getUhmType ( ) == 0 ? " (off)" : "" )+
+                                         ", umode +H: "+uhmUmodeHStr ( Handler.getUhmUmodeH ( ) ) );
+            return;
+        }
+        if ( cmd.length < 6 || ! cmd[4].matches ( "[0-9]{1,2}" ) || ! cmd[5].matches ( "[012]" ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "UHM [<type> <0|1|2>]" ) );
+            return;
+        }
+        int type    = Integer.parseInt ( cmd[4] );
+        int umodeH  = Integer.parseInt ( cmd[5] );
+        this.service.sendServ ( "SVSUHM "+type+" "+umodeH );
+        Handler.setUhm ( type, umodeH );
+        String string = user.getOper().getNameStr()+" set host-masking to type "+type+( type == 0 ? " (off)" : "" )+", umode +H: "+uhmUmodeHStr ( umodeH );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+        OSLogEvent log = new OSLogEvent ( user.getName ( ), UHM, user, user.getOper().getNick ( ) );
+        log.setData ( string );
+        OSDatabase.logEvent ( log );
+    }
+    
+    private static String uhmUmodeHStr ( int umodeH ) {
+        switch ( umodeH ) {
+            case 1  : return "1 (set for everyone at connect)";
+            case 2  : return "2 (users may set it themselves)";
+            default : return "0 (not available to users)";
+        }
     }
 
     /* VHOST <nick> <host|OFF>, for staff hosts or to remove an abusive one.

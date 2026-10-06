@@ -99,6 +99,9 @@ class OSHelper extends Helper {
         } else if ( command.is(CLONE) ) {
             this.clone ( user );
         
+        } else if ( command.is(UHM) ) {
+            this.uhm ( user );
+        
         } else if ( command.is(VHOST) ) {
             this.vhost ( user );
         
@@ -504,6 +507,22 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "   This functionality adds automation and its powerful so dont play around with it, only"                     );
         this.service.sendMsg ( user, "   add strings in to actually help with the noise and block or akill users who matches"                       );
         this.service.sendMsg ( user, "   the strings. Always try add long strings to avoid false positive matches."                                 );
+        this.showEnd ( user );
+    }
+    
+    private void uhm ( User user ) {
+        this.showStart ( user, "UHM" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ UHM"+f.b ( ) +""                                                             );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ UHM <type> <0|1|2>"+f.b ( ) +""                                              );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Shows or sets the user host-masking of the network. The servers need a masking"                            );
+        this.service.sendMsg ( user, "   module loaded, the type is the kind of masking that module should do and 0 turns"                          );
+        this.service.sendMsg ( user, "   it off. The second value is for usermode +H (masked host):"                                                );
+        this.service.sendMsg ( user, "       0 - users cannot use it"                                                                               );
+        this.service.sendMsg ( user, "       1 - it is set for everyone when they connect"                                                          );
+        this.service.sendMsg ( user, "       2 - users may set it themselves"                                                                       );
+        this.service.sendMsg ( user, "   The setting is sent to all servers, and they remember it."                                                 );
         this.showEnd ( user );
     }
     

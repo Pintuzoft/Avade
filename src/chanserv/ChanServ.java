@@ -411,7 +411,13 @@ public class ChanServ extends Service {
         String missing = null;
         if ( ( missing = ci.getSettings().getModeLock().getMissingModes ( c, ci ) ) != null ) {
             c.getModes().setModeString ( missing );
-            this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :"+missing );
+            /* -k needs the key as argument, and is always last in the string */
+            String arg = "";
+            if ( missing.endsWith ( "k" ) && missing.contains ( "-" ) && c.getKey ( ) != null ) {
+                arg = " "+c.getKey ( );
+                c.clearKey ( );
+            }
+            this.sendCmd ( "MODE "+ci.getName ( ) +" 0 "+missing+arg );
         }
     }
 

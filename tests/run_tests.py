@@ -565,6 +565,37 @@ def test_help_and_last_login():
     close(b)
 
 
+def test_modelock_key():
+    chan = '#t_mlock'
+    a = login('Alice')
+    register_chan(a, chan)
+    m = a.mark()
+    r = a.svc('ChanServ', 'SET %s MODELOCK +nt' % chan)
+    check(not a.saw(r' MODE %s .*null' % chan, m, 2) and not a.saw(r' MODE %s \S*l' % chan, m, 1),
+          'SET MODELOCK sends nothing when the modes already are right', [l for l in a.since(m) if ' MODE ' in l])
+    a.send('MODE %s +k hemlig' % chan)
+    time.sleep(1)
+    m = a.mark()
+    a.svc('ChanServ', 'SET %s MODELOCK +nt-k' % chan)
+    check(a.saw(r' MODE %s -k hemlig' % chan, m, 4), 'MODELOCK -k removes the key', [l for l in a.since(m) if ' MODE ' in l])
+    m = a.mark()
+    a.send('MODE %s +k igen' % chan)
+    check(a.saw(r' MODE %s -k igen' % chan, m, 4), 'and removes a key that is set later', [l for l in a.since(m) if ' MODE ' in l])
+    close(a)
+
+
+def test_uhm():
+    mm = master()
+    r = mm.svc('OperServ', 'UHM')
+    check(has(r, 'Host-masking type: 0 (off)'), 'OperServ UHM shows the host-masking of the network', r)
+    r = mm.svc('OperServ', 'UHM 1 2')
+    check(has(r, 'set host-masking to type 1'), 'UHM sets it', r)
+    check(has(mm.svc('OperServ', 'UHM'), 'type: 1, umode +H: 2'), 'and remembers it')
+    mm.svc('OperServ', 'UHM 0 0')
+    check(has(mm.svc('OperServ', 'UHM x y'), 'Syntax'), 'bad values are refused')
+    close(mm)
+
+
 def test_log_file():
     log = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work', 'run', 'services.log'),
                errors='replace').read()
@@ -649,7 +680,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

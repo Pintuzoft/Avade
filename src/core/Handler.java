@@ -149,13 +149,36 @@ public class Handler extends HashNumeric {
      *         then services must not touch anyone's identification or access.
      */
     private static int uhmType = 0;
+    private static int uhmUmodeH = 0;
 
-    private static void setUhmType ( String type ) {
+    /* SVSUHM <type> [umodeH]: without the second value the ircd keeps what it had */
+    private static void setUhm ( String type, String umodeH ) {
         try {
             uhmType = Integer.parseInt ( type );
+            if ( umodeH != null ) {
+                uhmUmodeH = Integer.parseInt ( umodeH );
+            }
         } catch ( NumberFormatException ex ) {
             uhmType = 0;
         }
+    }
+
+    /**
+     * @return how users may use umode +H (SVSUHM): 0 = not at all,
+     *         1 = set for everyone when they connect, 2 = allowed, not automatic
+     */
+    public static int getUhmUmodeH ( ) {
+        return uhmUmodeH;
+    }
+
+    /**
+     * The network setting changed (OperServ UHM), the ircd tells all servers but not us
+     * @param type
+     * @param umodeH
+     */
+    public static void setUhm ( int type, int umodeH ) {
+        uhmType     = type;
+        uhmUmodeH   = umodeH;
     }
 
     /**
@@ -349,7 +372,7 @@ public class Handler extends HashNumeric {
 
                     } else if ( command.is(SVSUHM) ) {
                         /* :server SVSUHM <type> [umodeH] */
-                        setUhmType ( this.data.length > 2 ? this.data[2] : "0" );
+                        setUhm ( this.data.length > 2 ? this.data[2] : "0", this.data.length > 3 ? this.data[3] : null );
 
                     } else if ( command.is(SQUIT) ) {
                         /* :hub SQUIT leaf :reason */
@@ -465,7 +488,7 @@ public class Handler extends HashNumeric {
 
                 } else if ( this.command.is(SVSUHM) ) {
                     /* SVSUHM <type> <umodeH>, sent by the hub when we link */
-                    setUhmType ( this.data.length > 1 ? this.data[1] : "0" );
+                    setUhm ( this.data.length > 1 ? this.data[1] : "0", this.data.length > 2 ? this.data[2] : null );
                 
                 } else if ( this.command.is(SVINFO) ) {
                     this.doSVInfo ( );

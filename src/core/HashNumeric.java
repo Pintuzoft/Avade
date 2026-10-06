@@ -794,6 +794,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString UHM = new HashString ( "UHM" );
+
+    /**
+     *
+     */
     public static HashString USER_VERBOSE = new HashString ( "USER_VERBOSE" );
 
     /**

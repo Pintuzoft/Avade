@@ -132,6 +132,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )          );
         cmdList.add ( new CommandInfo ( "VHOST",     CMDAccess ( VHOST ),       "Set or remove the vhost of a nick" )           );
         cmdList.add ( new CommandInfo ( "CLONE",     CMDAccess ( CLONE ),       "Manage clone limits for ips and ranges" )      );
+        cmdList.add ( new CommandInfo ( "UHM",       CMDAccess ( UHM ),         "Control user host-masking on the network" )    );
         cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )         );
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }

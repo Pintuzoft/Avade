@@ -1440,9 +1440,8 @@ public class CSExecutor extends Executor {
         Chan c = Handler.findChan(ci.getName());
         ci.getSettings().setModeLock ( cmd[6] );
         this.service.sendMsg ( user, output ( MODELOCK, ci.getNameStr ( ), cmd[6] ) );
-        if ( c != null ) {
-            this.service.sendRaw( ":ChanServ MODE "+ci.getName()+" 0 :"+ci.getSettings().getModeLock().getMissingModes ( c, ci ) );
-        }
+        /* Set what the new lock wants right away (nothing is sent if it already is so) */
+        Handler.getChanServ().checkModes ( c, ci );
     }
  
     private void sendIsOutput ( User user, boolean enable, String str )  {

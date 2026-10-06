@@ -44,6 +44,14 @@ public class Chan extends HashNumeric {
     private ChanMode            modes;
     private boolean sajoin = false;
     
+    /* What the modes with an argument are set to. Needed to remove a key
+       (-k wants the key) and to decide a join ourselves (join requests) */
+    private String              key;                                /* +k, null when not set */
+    private int                 limit;                              /* +l, 0 when not set */
+    private ArrayList<String>   bans        = new ArrayList<>( );   /* +b */
+    private ArrayList<String>   excepts     = new ArrayList<>( );   /* +e */
+    private ArrayList<String>   invites     = new ArrayList<>( );   /* +I */
+    
     private boolean             isRelay;
     private HashString          relay;
     
@@ -112,6 +120,7 @@ public class Chan extends HashNumeric {
         try {
 
             this.modes.setModeString ( data[4] );
+            this.setSjoinModeArgs ( data );
             /* The nicks are the trailing parameter. Modes with arguments put
                those in between ("+kl key 10 :@nick"), and a key that happens
                to be the nick of someone online must not become a member */
@@ -195,6 +204,9 @@ public class Chan extends HashNumeric {
             }
             
             if ( ! takesParam ( ch, state ) ) {
+                if ( ch == 'l' ) {
+                    this.limit = 0;     /* -l has no argument */
+                }
                 continue;
             }
             if ( param >= cmd.length ) {
@@ -203,6 +215,7 @@ public class Chan extends HashNumeric {
             String arg = cmd[param++];
             
             if ( ch != 'o' && ch != 'h' && ch != 'v' ) {
+                this.setModeArg ( ch, state, arg );
                 continue;
             }
             if ( ( u = Handler.findUser ( arg ) ) == null ) {
@@ -232,6 +245,48 @@ public class Chan extends HashNumeric {
      * @param adding
      * @return
      */
+    /* Remember the argument of a mode that is not a status mode */
+    private void setModeArg ( char mode, boolean adding, String arg ) {
+        ArrayList<String> list = null;
+        switch ( mode ) {
+            case 'k' :
+                this.key = ( adding ? arg : null );
+                return;
+            case 'l' :
+                try {
+                    this.limit = ( adding ? Integer.parseInt ( arg ) : 0 );
+                } catch ( NumberFormatException ex ) {
+                    this.limit = 0;
+                }
+                return;
+            case 'b' : list = this.bans;    break;
+            case 'e' : list = this.excepts; break;
+            case 'I' : list = this.invites; break;
+            default  : return;
+        }
+        list.removeIf ( m -> m.equalsIgnoreCase ( arg ) );
+        if ( adding ) {
+            list.add ( arg );
+        }
+    }
+    
+    /* The arguments of the modes in a SJOIN: "+kl key 10 :nicks" */
+    private void setSjoinModeArgs ( String[] data ) {
+        int param = 5;
+        for ( char ch : data[4].toCharArray ( ) ) {
+            if ( ( ch == 'k' || ch == 'l' ) && param < data.length && ! data[param].startsWith ( ":" ) ) {
+                this.setModeArg ( ch, true, data[param++] );
+            }
+        }
+    }
+
+    public String getKey ( )                    { return this.key;      }
+    public void clearKey ( )                    { this.key = null;      }
+    public int getLimit ( )                     { return this.limit;    }
+    public ArrayList<String> getBans ( )        { return this.bans;     }
+    public ArrayList<String> getExcepts ( )     { return this.excepts;  }
+    public ArrayList<String> getInvites ( )     { return this.invites;  }
+    
     public static boolean takesParam ( char mode, boolean adding ) {
         switch ( mode ) {
             case 'b' : case 'e' : case 'I' :
