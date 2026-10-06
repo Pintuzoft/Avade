@@ -315,6 +315,18 @@ public class ChanServ extends Service {
                 return;
             }
             
+            /* Banned through a host that was shown then, and back with
+               another one: the ban follows. The new ban is on what the user
+               shows now, so nothing about the real host is given away */
+            String evaded = c.evadedBan ( user );
+            if ( evaded != null && ! user.isOper ( ) ) {
+                String mask = "*!*@"+shownOrReal ( user );
+                c.addOwnBan ( mask, evaded );
+                this.sendCmd ( "MODE "+c.getString ( NAME )+" 0 +b "+mask );
+                kickUser ( c, user, "Banned ("+evaded+")" );
+                return;
+            }
+            
             /* User Access */
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
@@ -527,10 +539,17 @@ public class ChanServ extends Service {
     public void banUser ( Chan c, User user, String mask )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( mask == null )  {
-            this.sendCmd ( "MODE "+c.getString(NAME)+" +b *!"+user.getString(USER)+"@"+user.getString(HOST) );
-        } else {
-            this.sendCmd ( "MODE "+c.getString(NAME)+" +b "+mask );
+            /* On the host everyone sees: a ban on the real host of someone
+               with a vhost or a masked host would show it to the channel */
+            mask = "*!"+user.getString(USER)+"@"+shownOrReal ( user );
         }
+        c.addOwnBan ( mask, null );
+        this.sendCmd ( "MODE "+c.getString(NAME)+" 0 +b "+mask );
+    }
+    
+    private static String shownOrReal ( User user ) {
+        String shown = user.getShownHost ( );
+        return ( shown != null ? shown : user.getString ( HOST ) );
     }
     
     /**

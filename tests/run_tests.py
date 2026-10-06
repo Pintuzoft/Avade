@@ -486,6 +486,10 @@ def test_nick_privacy_and_mail():
     a, c = login('Alice'), login('Carol')
     check(not has(c.svc('NickServ', 'INFO Alice'), 'Hostmask'), 'INFO hides the hostmask of someone else')
     check(has(a.svc('NickServ', 'INFO Alice'), 'Hostmask'), 'and shows it to the owner')
+    f = [l for l in c.svc('ChanServ', 'INFO #t_topic') if 'Founder' in l]
+    check(f and '@' not in f[0], 'ChanServ INFO does not show the host of the founder to others', f)
+    f = [l for l in a.svc('ChanServ', 'INFO #t_topic') if 'Founder' in l]
+    check(f and '@' in f[0], 'but shows it to the founder', f)
     check(has(a.svc('NickServ', 'SET NOOP banana'), 'Syntax'), 'SET needs ON or OFF')
     r = c.svc('NickServ', 'SET EMAIL %s carol-new@test.net' % pw('Carol'))
     mail = wait_db("select subject from mailbox where mail = 'carol-new@test.net'", 150)
@@ -677,6 +681,53 @@ def test_host_masking():
     close(mm)
 
 
+def test_ban_follows():
+    """A ban on a vhost must still hold when the user comes back showing another host."""
+    chan = '#t_follow'
+    mm = master()
+    mm.svc('OperServ', 'VHOST Carol carol.har.en.vhost')
+    close(mm)
+    a = login('Alice')
+    register_chan(a, chan)
+    c = login('Carol')
+    time.sleep(1)
+    c.join(chan)
+    time.sleep(1)
+    seen = [l for l in a.since(0) if ' JOIN ' in l and l.startswith(':Carol!')][-1]
+    check('@carol.har.en.vhost' in seen, '(the user is shown with a vhost)', seen)
+    a.send('MODE %s +b *!*@carol.har.en.vhost' % chan)
+    a.send('KICK %s Carol :ut' % chan)
+    time.sleep(1)
+    close(c)
+    # Back without identifying: no vhost, the ban on it does not match any more
+    c = Client('Carol')
+    time.sleep(1)
+    m, ma = c.mark(), a.mark()
+    c.send('JOIN ' + chan)
+    check(c.saw(r' KICK %s Carol ' % chan, m, 8), 'a ban on a vhost follows the user who comes back without it', c.since(m)[-3:])
+    ban = [l for l in a.since(ma) if ' MODE %s ' % chan in l and '+b' in l]
+    check(ban and 'carol.har.en.vhost' not in ban[-1] and '127.0.0.1' not in ban[-1],
+          'and the new ban is on the host the user shows now', ban)
+    # Somebody else from another address is not touched
+    b = Client('Bystander', host='::1')
+    m = b.mark()
+    b.send('JOIN ' + chan)
+    check(not b.saw(r' KICK %s Bystander ' % chan, m, 3), 'a user from another address can join', b.since(m)[-3:])
+    # Remove the bans: the user is welcome again
+    for l in ban:
+        a.send('MODE %s -b %s' % (chan, l.split()[-1]))
+    a.send('MODE %s -b *!*@carol.har.en.vhost' % chan)
+    time.sleep(1)
+    m = c.mark()
+    c.send('JOIN ' + chan)
+    check(c.saw(r' JOIN :?%s' % chan, m, 5) and not c.saw(r' KICK %s Carol ' % chan, m, 3),
+          'when the ban is removed the user can join again', c.since(m)[-3:])
+    close(a, b, c)
+    mm = master()
+    mm.svc('OperServ', 'VHOST Carol OFF')
+    close(mm)
+
+
 def test_log_file():
     log = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work', 'run', 'services.log'),
                errors='replace').read()
@@ -761,7 +812,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

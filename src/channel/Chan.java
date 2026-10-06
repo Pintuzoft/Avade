@@ -26,6 +26,8 @@ import core.StringMatch;
 import user.User;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  *
@@ -51,6 +53,11 @@ public class Chan extends HashNumeric {
     private ArrayList<String>   bans        = new ArrayList<>( );   /* +b */
     private ArrayList<String>   excepts     = new ArrayList<>( );   /* +e */
     private ArrayList<String>   invites     = new ArrayList<>( );   /* +I */
+    /* Bans that only hit someone through the host that is shown (a vhost, or
+       the mask of the ircd): the real ip of those users, per ban, in lower
+       case. A shown host can change, the ban should follow the person.
+       Never shown to anyone. */
+    private HashMap<String,HashSet<String>> followBans = new HashMap<>( );
     
     private boolean             isRelay;
     private HashString          relay;
@@ -267,6 +274,72 @@ public class Chan extends HashNumeric {
         list.removeIf ( m -> m.equalsIgnoreCase ( arg ) );
         if ( adding ) {
             list.add ( arg );
+        }
+        if ( mode == 'b' ) {
+            this.followBans.remove ( arg.toLowerCase ( ) );
+            if ( adding ) {
+                this.rememberBanned ( arg );
+            }
+        }
+    }
+    
+    /* Who does this ban hit only because of the host they show right now? */
+    private void rememberBanned ( String mask ) {
+        HashSet<String> ips = new HashSet<>( );
+        for ( User u : Handler.getUserList().values ( ) ) {
+            String shown = u.getShownHost ( );
+            String ip    = u.getIp ( );
+            if ( shown == null || ! validIp ( ip ) ) {
+                continue;
+            }
+            String who = u.getString ( NAME )+"!"+u.getString ( USER )+"@";
+            if ( StringMatch.matches ( who+shown, mask ) &&
+                 ! StringMatch.matches ( who+u.getHost ( ), mask ) &&
+                 ! StringMatch.matches ( who+ip, mask ) ) {
+                ips.add ( ip );
+            }
+        }
+        if ( ! ips.isEmpty ( ) ) {
+            this.followBans.put ( mask.toLowerCase ( ), ips );
+        }
+    }
+    
+    private static boolean validIp ( String ip ) {
+        return ip != null && ip.length ( ) > 1 && ( ip.contains ( "." ) || ip.contains ( ":" ) );
+    }
+    
+    /**
+     * @param user someone who is in, or just joined, the channel
+     * @return the ban this user got around by changing the host that is
+     *         shown, null when there is none
+     */
+    public String evadedBan ( User user ) {
+        String ip = user.getIp ( );
+        if ( this.followBans.isEmpty ( ) || ! validIp ( ip ) ) {
+            return null;
+        }
+        String shown = user.getShownHost ( );
+        String who   = user.getString ( NAME )+"!"+user.getString ( USER )+"@"+( shown != null ? shown : user.getHost ( ) );
+        for ( HashMap.Entry<String,HashSet<String>> entry : this.followBans.entrySet ( ) ) {
+            /* Still hit by the ban as it is: that is for the ircd to enforce
+               (someone banned while inside the channel stays until kicked) */
+            if ( entry.getValue().contains ( ip ) && ! StringMatch.matches ( who, entry.getKey ( ) ) ) {
+                return entry.getKey ( );
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * A ban we set ourselves (the ircd does not send our own modes back)
+     * @param mask
+     * @param sameAs the ban it continues, so it follows the same people
+     */
+    public void addOwnBan ( String mask, String sameAs ) {
+        HashSet<String> ips = ( sameAs != null ? this.followBans.get ( sameAs.toLowerCase ( ) ) : null );
+        this.setModeArg ( 'b', true, mask );
+        if ( ips != null ) {
+            this.followBans.computeIfAbsent ( mask.toLowerCase ( ), k -> new HashSet<>( ) ).addAll ( ips );
         }
     }
     

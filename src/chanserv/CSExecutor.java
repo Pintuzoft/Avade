@@ -607,7 +607,7 @@ public class CSExecutor extends Executor {
         
         this.showStart ( true, user, ci, f.b ( ) +"Info for: "+f.b ( )  ); 
      
-        this.service.sendMsg ( user, "     Founder: "+founder.getName() +" ("+founder.getString ( USER )+"@"+founder.getString ( HOST )+") " );
+        this.service.sendMsg ( user, "     Founder: "+founder.getName()+this.hostOf ( user, founder ) );
         this.service.sendMsg ( user, "   Mode Lock: "+ci.getSettings().getModeLock().getModes ( ) );
         this.service.sendMsg ( user, "       Topic: "+ci.getString ( TOPIC )+" ("+ci.getString(TOPICNICK)+")");
         this.service.sendMsg ( user, " Description: "+ci.getString ( DESCRIPTION ) );
@@ -768,9 +768,9 @@ public class CSExecutor extends Executor {
             CSAcc acc = entry.getValue();
             if ( acc.getNick ( ) != null )  {
                 if ( acc.getLastOped() != null ) {
-                    this.service.sendMsg ( user,  " - "+acc.getNick().getName()+" ("+acc.getNick().getString ( FULLMASK )+") - [LastOped: "+acc.getLastOped()+"]" );
+                    this.service.sendMsg ( user,  " - "+acc.getNick().getName()+this.hostOf ( user, acc.getNick ( ) )+" - [LastOped: "+acc.getLastOped()+"]" );
                 } else {
-                    this.service.sendMsg ( user,  " - "+acc.getNick().getName()+" ("+acc.getNick().getString ( FULLMASK )+")" );
+                    this.service.sendMsg ( user,  " - "+acc.getNick().getName()+this.hostOf ( user, acc.getNick ( ) ) );
                 }
             } else {
                 this.service.sendMsg ( user,  " - "+acc.getMask ( )+" (mask)" );
@@ -1444,6 +1444,16 @@ public class CSExecutor extends Executor {
         Handler.getChanServ().checkModes ( c, ci );
     }
  
+    /* The last real host of a registered nick is for the owner and for IRC
+       operators. Everyone else sees the name only: lists and INFO must not
+       give away what a vhost or the host-masking hides */
+    private String hostOf ( User viewer, NickInfo ni ) {
+        if ( viewer.isAtleast ( IRCOP ) || viewer.isIdented ( ni ) ) {
+            return " ("+ni.getString ( FULLMASK )+")";
+        }
+        return "";
+    }
+    
     private void sendIsOutput ( User user, boolean enable, String str )  {
         HashString flag = enable ? IS_NOW : IS_NOT;
         this.service.sendMsg ( user, output ( flag, str ) );
@@ -1919,7 +1929,7 @@ public class CSExecutor extends Executor {
         HashString[] lists = { SOP, AOP };
         ChanInfo ci = result.getChanInfo ( );
         this.service.sendMsg ( user,  "FOUNDER: " );
-        this.service.sendMsg ( user,  "  "+ci.getFounder().getName()+" ("+ci.getFounder().getString ( FULLMASK )+")" );
+        this.service.sendMsg ( user,  "  "+ci.getFounder().getName()+this.hostOf ( user, ci.getFounder ( ) ) );
 
         for ( HashString access : lists ) {
             String accStr = accessToString ( access );
@@ -1928,7 +1938,7 @@ public class CSExecutor extends Executor {
             for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(access).entrySet() ) {
                 CSAcc acc = entry.getValue();
                 if ( acc.getNick ( ) != null )  {
-                    this.service.sendMsg ( user,  "  "+acc.getNick().getName()+" ("+acc.getNick().getString ( FULLMASK ) +") - [LastOped: "+acc.getLastOped()+"]" );
+                    this.service.sendMsg ( user,  "  "+acc.getNick().getName()+this.hostOf ( user, acc.getNick ( ) )+( acc.getLastOped ( ) != null ? " - [LastOped: "+acc.getLastOped()+"]" : "" ) );
                 } else {
                     this.service.sendMsg ( user,  "  "+acc.getMask ( )+" (mask)" );
                 }
