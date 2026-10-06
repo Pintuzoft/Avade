@@ -232,6 +232,7 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                         );
         this.service.sendMsg ( user, "   Do not use an easy-to-guess password, rather mix letters with digits and other"        );
         this.service.sendMsg ( user, "   characters in order to make your password more secure."                                );
+        this.service.sendMsg ( user, "   The password must be at least 8 characters."                                           );
         this.service.sendMsg ( user, "   Do not share your password ( s )  with anyone, not even your friends. Friends has"     );
         this.service.sendMsg ( user, "   broken up for even less than a hijacked nickname on IRC."                              );
         this.showEnd ( user );
@@ -475,7 +476,7 @@ public class NSHelper extends Helper {
     private void setPasswd ( User user ) {
         this.showStart ( user, "Set Passwd" );
         this.service.sendMsg ( user, "   "                                                                    );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET PASSWD <pass> <email>"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET PASSWD <current-pass> <new-pass>"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                    );
         this.service.sendMsg ( user, "   This command will set a new pass to the current nickname. After"     );
         this.service.sendMsg ( user, "   the new pass has been set you will be sent a auth mail. You need"    );

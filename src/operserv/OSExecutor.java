@@ -519,7 +519,8 @@ public class OSExecutor extends Executor {
                 
                 
                 for ( User u : uList ) {
-                    if ( u.isAtleast ( IRCOP ) ) {
+                    /* Every IRC operator (+o), also one that is not on the staff list */
+                    if ( u.isOper ( ) ) {
                         this.service.sendMsg ( user, output ( BAN_MATCH_OPER, cmdName, mask, "" ) );
                         return;
                     }
@@ -1240,7 +1241,7 @@ public class OSExecutor extends Executor {
                     );
                     affectedUsers = Handler.findUsersByBan ( ban );
                     for ( User u : affectedUsers ) {
-                        if ( u.isAtleast ( IRCOP ) ) {
+                        if ( u.isOper ( ) ) {
                             this.service.sendMsg ( user, output ( BAN_MATCH_OPER, "Akill", str, "" ) );
                             shouldAdd = false;
                         } 
@@ -1540,7 +1541,7 @@ public class OSExecutor extends Executor {
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ( u = Handler.findUser ( cmd[4] ) ) == null ) {
                     result.setStatus ( NICK_NOT_FOUND );
-                } else if ( u.isAtleast ( IRCOP ) ) {
+                } else if ( u.isOper ( ) ) {
                     result.setString1 ( u.getNameStr() );
                     result.setStatus ( NICK_IS_OPER );
                 } else if ( cmd.length == 6 && ( u2 = Handler.findUser ( cmd[5] ) ) != null ) {

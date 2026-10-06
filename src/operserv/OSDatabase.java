@@ -100,7 +100,6 @@ public class OSDatabase extends Database {
             return false;
         }
         try { 
-            ban.printData();
             String query = "insert into "+list+" ( id,mask,reason,instater,stamp,expire ) VALUES "
                           +" ( ?, ?, ?, ?, ?, ? );";
             ps = sql.prepareStatement ( query );

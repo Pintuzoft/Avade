@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
  * @author DreamHealer
  */
  public class NSExecutor extends Executor {
+    private static final int MINPASS = 8;
     private static final int MAXPASS = 63;  /* longer does not fit AES-encrypted in passlog.pass */
     private NSSnoop                 snoop;
     private TextFormat              f;
@@ -1143,7 +1144,7 @@ import java.util.regex.Pattern;
         if ( command.is(REGISTER) ) {
                 if ( isShorterThanLen ( 6, cmd )  )  {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( cmd[4].length ( ) > MAXPASS ) {
+                } else if ( cmd[4].length ( ) < MINPASS || cmd[4].length ( ) > MAXPASS ) {
                     result.setStatus ( INVALID_PASS );
                 } else if ( ! validEmail ( cmd[5] )  )  {
                     result.setString1 ( cmd[5] );
@@ -1364,7 +1365,7 @@ import java.util.regex.Pattern;
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
                     result.setNick ( ni );
                     result.setStatus ( IDENTIFY_FAIL );
-                } else if ( cmd[6].length ( ) < 8 || cmd[6].length ( ) > MAXPASS ) {
+                } else if ( cmd[6].length ( ) < MINPASS || cmd[6].length ( ) > MAXPASS ) {
                     result.setStatus ( INVALID_PASS );
                 } else {
                     result.setString1 ( cmd[6] );
@@ -1453,7 +1454,7 @@ import java.util.regex.Pattern;
             return "Error: "+args[0]+" is not a valid email-adress";
         
         } else if ( code.is(INVALID_PASS) ) {
-            return "Error: password is not valid, it might be too short, too long (max "+MAXPASS+") or too easy.";
+            return "Error: password is not valid, it must be "+MINPASS+" to "+MAXPASS+" characters.";
         
         } else if ( code.is(INVALID_NICK) ) {
             return "Error: "+args[0]+" is not a valid nick for registration";

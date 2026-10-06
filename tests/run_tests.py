@@ -29,7 +29,7 @@ current = ['']
 
 
 def pw(nick):
-    return nick + 'pw1'
+    return nick + 'pass1'      # at least 8 characters
 
 
 def check(ok, text, detail=None):
@@ -108,6 +108,10 @@ def setup():
 ### Tests
 
 def test_identify():
+    s = Client('Shortpw')
+    r = s.svc('NickServ', 'REGISTER short1 shortpw@test.net')
+    check(has(r, 'password is not valid'), 'REGISTER needs a password of at least 8 characters', r)
+    close(s)
     c = Client('Alice')
     check(has(c.svc('NickServ', 'IDENTIFY fel-losenord'), 'accepted') is False, 'wrong password is refused')
     check(has(c.svc('NickServ', 'IDENTIFY ' + pw('Alice')), 'Password accepted'), 'right password identifies')
@@ -505,6 +509,17 @@ def test_oper_checks():
     check(not has(r, 'added SpamFilter'), 'SPAMFILTER on everything is refused', r)
     r = mm.svc('OperServ', 'AKILL ADD 30 *!*@127.0.0.* test')
     check(not has(r, 'has been added') and not has(r, 'added to'), 'AKILL covering a whitelisted address is refused', r)
+    # With forcemodes on (the default) nobody outside the staff list keeps +o,
+    # so "an IRC operator" and "staff" are the same thing on the network
+    o = Client('PlainOper')
+    m = o.mark()
+    o.oper()
+    check(o.saw(r' MODE PlainOper :?-\S*o', m, 5), 'an oper that is not on the staff list loses +o', o.since(m)[-3:])
+    close(o)
+    r = mm.svc('OperServ', 'SQLINE ADD 10 %s test' % MASTER)
+    check(has(r, 'matches oper'), 'a ban that hits an IRC operator is refused', r)
+    r = mm.svc('OperServ', 'FORCENICK ' + MASTER)
+    check(has(r, 'is an IRCop'), 'FORCENICK on an IRC operator is refused', r)
     mm.svc('OperServ', 'SGLINE ADD 10 *avadetestgcos* test', wait=2)
     check(has(mm.svc('OperServ', 'SGLINE LIST *'), 'avadetestgcos'), 'SGLINE LIST shows the sgline')
     mm.svc('OperServ', 'SGLINE DEL *avadetestgcos*')
