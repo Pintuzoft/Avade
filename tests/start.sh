@@ -68,8 +68,9 @@ ircd_conf "$LEAF_NAME" "$LEAF_CLIENT_PORT" "$LEAF_SERVER_PORT" "" \
 "connect { name $HUB_NAME; host 127.0.0.1; port $HUB_SERVER_PORT; apasswd $LINK_PASS; cpasswd $LINK_PASS; class servers; flags H; };" > "$WORK/leaf/ircd.conf"
 cp -f "$IRCD/ircd.motd" "$IRCD/ircd.crt" "$IRCD/ircd.key" "$WORK/leaf/" 2>/dev/null || true
 
-### The host-masking module, on both servers (bahamut versions that have the hook)
-if grep -q CHOOK_MASKHOST "$WORK/src-$IRCD_VERSION/include/hooks.h" 2>/dev/null; then
+### The host-masking module, on both servers (bahamut 2.2.0 and newer, where the hook has the ip)
+IFVER=$(sed -n 's/^#define MODULE_INTERFACE_VERSION \([0-9]*\).*/\1/p' "$WORK/src-$IRCD_VERSION/include/hooks.h" 2>/dev/null)
+if [ "${IFVER:-0}" -ge 1011 ]; then
     rm -f "$IRCD/avade_uhm.salt" "$WORK/leaf/avade_uhm.salt"
     "$REPO/bahamut-module/build.sh" "$WORK/src-$IRCD_VERSION" "$IRCD" > "$WORK/module-$IRCD_VERSION.log" 2>&1 \
         || { tail -5 "$WORK/module-$IRCD_VERSION.log"; exit 1; }

@@ -190,7 +190,7 @@ public class OSExecutor extends Executor {
             }
             this.service.sendMsg ( user, "        IP: " + u.getString ( IP )                                        );
             if ( u.getShownHost ( ) != null ) {
-                this.service.sendMsg ( user, " Shown as: " + u.getShownHost ( )                                     );
+                this.service.sendMsg ( user, "  Shown as: " + u.getShownHost ( )                                    );
             }
             this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes().is ( IDENT )+" ), oper ( "+u.getModes().is ( OPER )+" ) , admin ( "+u.getModes().is ( ADMIN )+" ) , sadmin ( "+u.getModes().is ( SADMIN )+" ) " );
             this.service.sendMsg ( user, "    Server: "+u.getServ().getName ( )                                     );

@@ -34,7 +34,10 @@ the old masks stop matching.
 
 ## Install
 
-On every server of the network:
+This is the short version. `INSTALL` in the top directory (step 10) has every
+step, what the servers answer and what to do when something goes wrong.
+
+bahamut 2.2.0 or newer is needed. On every server of the network:
 
 1. Build it against the bahamut source the server was built from (after
    `./configure` has been run there):
@@ -47,7 +50,9 @@ On every server of the network:
 
        modules { path modules; autoload avade_uhm; };
 
-   and rehash, or load it at once as a server admin: `/MODULE LOAD avade_uhm`.
+   `autoload` is only acted on when the ircd starts: a rehash does not load
+   the module. To load it without a restart, as a server admin:
+   `/MODULE LOAD avade_uhm`. `/MODULE LIST` shows what is loaded.
 
 In Avade:
 

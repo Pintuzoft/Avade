@@ -37,7 +37,7 @@ Kör inte heller mailskriptet mot `avadetest`.
 
     git clone https://github.com/DALnet/bahamut.git
     cd bahamut
-    git checkout bahamut-2.2.4
+    git checkout v2.2.4
     ./configure --prefix=$HOME/ircd224
     make && make install
 
@@ -127,7 +127,19 @@ sådant som bara går att se med riktig data.
   är kvar.
 - `/OperServ CLONE ADD`, `/OperServ SPAMFILTER` med target.
 
-## 8. Om något går fel
+## 8. Hostmasking (valfritt)
+
+Följ steg 10 i `INSTALL`. Med katalogerna från steg 3 ovan byggs modulen så här:
+
+    cd Avade/bahamut-module
+    ./build.sh ~/bahamut ~/ircd224
+
+Finns det flera bahamut-källor på maskinen måste det vara den som den körande
+ircd:n byggdes från, annars vägrar ircd:n ladda modulen.
+
+Saltet (`uhmsalt`) ska vara ett eget för testnätet, inte produktionens.
+
+## 9. Om något går fel
 
 Spara `services.log` och det Avade skrev i terminalen. Läs sedan in dumpen på
 nytt (steg 1) så är databasen tillbaka i utgångsläget.

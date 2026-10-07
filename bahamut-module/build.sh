@@ -18,6 +18,14 @@ if [ ! -f "$SRC/include/setup.h" ]; then
     echo "Error: run ./configure in $SRC first."
     exit 1
 fi
+# The hook got the ip as an argument in interface 1011 (bahamut 2.2.0), and an
+# ircd only loads a module built for its own interface version.
+IFVER=$(sed -n 's/^#define MODULE_INTERFACE_VERSION \([0-9]*\).*/\1/p' "$SRC/include/hooks.h")
+if [ "${IFVER:-0}" -lt 1011 ]; then
+    echo "Error: $SRC has module interface ${IFVER:-?}, bahamut 2.2.0 or newer (1011) is needed."
+    echo "Use the source the running ircd was built from."
+    exit 1
+fi
 
 gcc -g -O2 -Wall -fno-strict-aliasing -fgnu89-inline -fPIC -shared \
     -I"$SRC/include" -o "$HERE/avade_uhm.so" "$HERE/avade_uhm.c" -lcrypto || exit 1

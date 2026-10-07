@@ -36,6 +36,7 @@
 #include "send.h"
 
 #include <sys/stat.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <openssl/evp.h>

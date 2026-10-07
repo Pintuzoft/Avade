@@ -120,6 +120,186 @@ All you need to remember is to take a backup of the database before starting
 the new version of Avade IRC Services.
 
 
+10. Host-masking (optional)
+
+Avade can hide the real host of users from other users, together with the
+avade_uhm module for bahamut that comes with Avade (the bahamut-module
+directory). bahamut itself is not changed.
+
+c-83-233-12-7.bredband.telia.com  ->  mynet-0cabd86f.bredband.telia.com
+192.0.2.44                        ->  6c13e277.8057c675.1b690abc.ip
+
+IRC operators still see the real host. How the masks are made is described in
+bahamut-module/README.md.
+
+Steps 10.1 and 10.2 are done on every server of the network, the rest once.
+
+Needed on every server:
+- bahamut 2.2.0 or newer, check with /VERSION
+- the bahamut source that the running ircd was built from, with ./configure
+  run in it
+- gcc and the OpenSSL headers
+
+CentOS:
+yum install gcc
+yum install openssl-devel
+
+
+10.1 Build the module (every server)
+
+cd Avade-<version>/bahamut-module
+./build.sh /path/to/bahamut-source /path/to/ircd
+
+The first path is the bahamut source. The second is the directory of the
+running ircd, where its ircd.conf is. The module is put in
+/path/to/ircd/modules/avade_uhm.so.
+
+The source must be of the same bahamut version as the ircd that runs. If the
+machine has several, this shows the version of a source directory:
+
+cd /path/to/bahamut-source
+grep -E "define (MAJOR|MINOR|PATCH) " include/patchlevel.h
+
+When bahamut is upgraded the module has to be built again from the new source.
+
+
+10.2 Load the module (every server)
+
+Add this to ircd.conf, so the module is loaded every time the ircd starts:
+
+modules { path modules; autoload avade_uhm; };
+
+The line is only used when the ircd starts. A /REHASH does not load the module.
+To load it without restarting the ircd, as a server admin (oper access A)
+connected to that server:
+
+/MODULE LOAD avade_uhm
+/MODULE LIST
+
+The list should show:
+
+Module: avade_uhm    Version: 1.0
+  - User host-masking that Avade IRC Services can follow
+
+Until services have sent the salt (10.3) the module masks with a random one.
+No real host is shown, but the masks are not the ones services expect.
+
+
+10.3 The salt
+
+The masks are made with a secret salt. Anyone who has it can work out which
+mask belongs to which ip, so treat it like a database password.
+
+It is set in one place, the services.conf of Avade. Nothing is put on a server
+by hand: Avade sends the salt to the servers, and each server keeps it in the
+file avade_uhm.salt next to its ircd.conf.
+
+Make a salt:
+
+cd ~/avade
+./avade.sh gensalt
+
+"openssl rand -hex 24" works as well. Put it in services.conf:
+
+uhmsalt: <the salt>
+uhmprefix: mynet
+
+- uhmsalt is 16 to 128 letters and digits, nothing else
+- uhmsalt must not be the same as secretsalt, services do not start if it is
+- uhmprefix is the first part of masked host names, 1 to 16 letters and digits
+
+Restart services:
+
+./avade.sh restart
+
+The opers on the servers get this notice:
+
+*** Notice -- avade_uhm: host-masking salt set by OperServ
+
+It can also be checked on each server, as server admin:
+
+/MODULE CMD avade_uhm
+
+which should answer "salt set by services".
+
+Changing the salt later changes every mask. Bans, akicks and access masks that
+were set on the old masks stop matching.
+
+
+10.4 Turn it on
+
+/OperServ UHM 1 1
+
+The first value is the type of masking: 1 is the one the module does, 0 is off.
+The second value is the user mode +H:
+
+0   users cannot use it
+1   everyone gets it when they connect
+2   users may set it themselves
+
+"/OperServ UHM" shows the setting and "/OperServ UHM 0 0" turns the masking
+off. The servers remember the setting.
+
+Users that were already online keep the host they had until they reconnect.
+
+A user who wants to show the real host can turn the mask off for themselves
+with "/NickServ SET SHOWHOST ON". A vhost (SET VHOST) goes before both.
+
+
+10.5 Check that it works
+
+Services and every server must give the same mask for the same host:
+
+/MODULE CMD avade_uhm TEST c-83-233-12-7.bredband.telia.com 83.233.12.7
+/OperServ UHM TEST c-83-233-12-7.bredband.telia.com 83.233.12.7
+
+Then connect a new client. It gets +H, and a /WHOIS on it shows the masked
+host. "/OperServ UINFO <nick>" shows the same host on the line "Shown as".
+
+
+10.6 If something goes wrong
+
+"Module load error for avade_uhm: Incompatible module (My interface version:
+1011 Module version: 1010)"
+    The module was built from the source of another bahamut version than the
+    one that runs. Build it again from the right source (10.1).
+
+build.sh: "has module interface 1010, bahamut 2.2.0 or newer (1011) is needed"
+    The same thing: that source directory is older than bahamut 2.2.0.
+
+build.sh: "run ./configure in ... first"
+    Run ./configure in the bahamut source, with the same options as when the
+    ircd was built. It does not have to be compiled or installed again.
+
+"Module load error for avade_uhm: ... cannot open shared object file"
+    avade_uhm.so is not in the modules directory of the ircd. Give build.sh
+    the directory of the running ircd as the second path.
+
+"Permission Denied, You do not have the correct irc operator privileges"
+    MODULE LOAD and MODULE CMD are for server admins (access A in the oper
+    block), and only on the server they are connected to.
+
+"I don't have module support."
+    The ircd was built with --disable-hookmodules. Build bahamut again
+    without it.
+
+/MODULE LIST is empty after a /REHASH
+    A rehash does not load modules: use /MODULE LOAD avade_uhm (10.2).
+
+/MODULE CMD avade_uhm says "salt not set yet"
+    Services have not sent the salt to that server. Check that uhmsalt is in
+    services.conf, that services are linked, and that the name of services is
+    in the super block of the ircd.conf.
+
+The two TEST commands in 10.5 give different masks
+    That server does not have the salt from services (see above).
+
+"ConfigError: uhmsalt ..." or "ConfigError: uhmprefix ..." when services start
+    The salt has other characters than letters and digits, is shorter than 16
+    or longer than 128, or is the same as secretsalt. The prefix is 1 to 16
+    letters and digits.
+
+
 ############
 ### HELP ###
 ############
