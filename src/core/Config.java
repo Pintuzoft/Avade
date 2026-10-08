@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import user.User;
 /**
@@ -133,7 +135,8 @@ public class Config extends HashNumeric {
      * Load config and validate it at the same time
      */
     private void loadYamlConf ( ) {
-        Yaml yaml = new Yaml();
+        /* Only maps, lists and plain values, never objects named by a tag in the file */
+        Yaml yaml = new Yaml ( new SafeConstructor ( new LoaderOptions ( ) ) );
         String fileName = "services.conf";
         
         try {

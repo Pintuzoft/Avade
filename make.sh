@@ -81,6 +81,10 @@ function install {
    echo "Installing to ~/avade/";
    mkdir -p ~/avade
    cp -v dist/Avade.jar ~/avade/avade.jar
+   # Libraries from an older version are not used anymore, remove them
+   for JAR in ~/avade/lib/*.jar; do
+      [ -e "$JAR" ] && [ ! -e "dist/lib/$(basename "$JAR")" ] && rm -v "$JAR";
+   done
    cp -Rv dist/lib ~/avade/
    cp template.conf ~/avade/
    cp reference.conf ~/avade/
