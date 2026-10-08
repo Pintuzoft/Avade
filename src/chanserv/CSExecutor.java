@@ -40,6 +40,8 @@ import java.util.HashMap;
  * @author DreamHealer
  */
 public class CSExecutor extends Executor {
+    private static final int MINPASS = 8;
+    private static final int MAXPASS = 63;
     private CSSnoop snoop;
     private TextFormat f;
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -104,7 +106,7 @@ public class CSExecutor extends Executor {
         else if ( command.is(HOLD) )        { this.changeFlag ( HOLD, user, cmd );          }
         else if ( command.is(AUDITORIUM) )  { this.changeFlag ( AUDITORIUM, user, cmd );    }
         else if ( command.is(DELETE) )      { this.delete ( user, cmd );                    }
-        else if ( command.is(GETPASS) )     { this.getPass ( user, cmd );                   }
+        else if ( command.is(SETPASS) )     { this.setPass ( user, cmd );                   }
         else {
             this.noMatch ( user, cmd[3] );
         }
@@ -387,6 +389,11 @@ public class CSExecutor extends Executor {
             this.service.sendMsg (user, output (USER_NOT_OP, result.getChan().getNameStr() ) ); 
             this.snoop.msg (false, USER_NOT_OP, result.getChan().getNameStr(), user, cmd );
             return;
+            
+        } else if ( result.was(INVALID_PASS) ) {
+            this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+            this.snoop.msg ( false, INVALID_PASS, cmd[4], user, cmd );
+            return;
         }
         
         Chan c = result.getChan ( );
@@ -542,7 +549,7 @@ public class CSExecutor extends Executor {
             return;
             
         } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1().getString() ) ); 
+            /* the access check already told the user */
             this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
             return;
 
@@ -1176,6 +1183,19 @@ public class CSExecutor extends Executor {
                 ci.changed ( MODELOCK );
                 this.snoop.msg ( true, SET_MODELOCK, ci.getName(), user, cmd );
         
+        } else if ( command.is(PASSWD) ) {
+                /* SET <#chan> PASSWD <new-pass>, the founder (by nick) only */
+                if ( cmd.length != 7 || cmd[6].length ( ) < MINPASS || cmd[6].length ( ) > MAXPASS ) {
+                    this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+                    this.snoop.msg ( false, INVALID_PASS, ci.getName(), user, cmd );
+                    return;
+                }
+                ci.setNewPass ( cmd[6] );
+                CSLogEvent log = new CSLogEvent ( ci.getName(), PASS, user.getFullMask(), "" );
+                ChanServ.addLog ( log );
+                this.service.sendMsg ( user, "A new password has been set on channel: "+ci.getName() );
+                this.snoop.msg ( true, SET_PASSWD, ci.getName(), user, cmd );
+        
         } else if ( ! option.is(ON) && ! option.is(OFF) ) {
                 /* Everything below is on or off, anything else used to mean off */
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET <#Chan> <option> <ON|OFF>" ) );
@@ -1243,17 +1263,32 @@ public class CSExecutor extends Executor {
         }
     }
     
-    private void getPass ( User user, String[] cmd ) {
-        CMDResult result = this.validateCommandData ( user, GETPASS, cmd );
-        if ( result.was(SYNTAX_ERROR) ) {
-            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "GETPASS <#chan>" )  );
-            this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
+    /**
+     * SETPASS <#chan> <new-pass>: staff sets a new channel password. Nobody
+     * can see the old one
+     * @param user
+     * @param cmd
+     */
+    private void setPass ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG ChanServ@services.sshd.biz :setpass #chan newpass   = 6
+        //       0         1               2                    3      4      5
+        CMDResult result = this.validateCommandData ( user, SETPASS, cmd );
+        String pass = null;
+        
+        if ( cmd.length > 5 ) {
+            pass = cmd[5];
+            cmd[5] = "pass_redacted";
+        }
+        
+        if ( result.was(ACCESS_DENIED) ) {
+            /* the access check already told the user */
+            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
             return;
             
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
-            return;  
+        } else if ( result.was(SYNTAX_ERROR) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SETPASS <#chan> <new-pass>" )  );
+            this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
+            return;
             
         } else if ( result.was(CHAN_NOT_REGISTERED) ) {
             this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, cmd[4] ) );
@@ -1264,16 +1299,21 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, output ( IS_MARKED, cmd[4] ) );
             this.snoop.msg ( false, IS_MARKED, cmd[4], user, cmd );
             return;
+            
+        } else if ( result.was(INVALID_PASS) ) {
+            this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+            this.snoop.msg ( false, INVALID_PASS, cmd[4], user, cmd );
+            return;
         }
          
         ChanInfo ci = result.getChanInfo ( ); 
         NickInfo oper = user.getOper().getNick ( );
-        HashString command = result.getCommand ( );
-        CSLogEvent log = new CSLogEvent ( ci.getName(), command, user.getFullMask(), oper.getNameStr() );
+        ci.setNewPass ( pass );
+        CSLogEvent log = new CSLogEvent ( ci.getName(), SETPASS, user.getFullMask(), oper.getNameStr() );
         ChanServ.addLog ( log );
-        this.service.sendMsg ( user, output ( CHAN_GETPASS, ci.getPass() ) );
-        this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ci.getName() );
-        this.snoop.msg ( true, CHAN_GETPASS, ci.getName(), user, cmd );
+        this.service.sendMsg ( user, "A new password has been set on channel: "+ci.getName() );
+        this.service.sendGlobOp ( oper.getName()+" used SETPASS on: "+ci.getName() );
+        this.snoop.msg ( true, SETPASS, ci.getName(), user, cmd );
     }
     
     private void changeFlag ( HashString flag, User user, String[] cmd )  {
@@ -2231,6 +2271,7 @@ public class CSExecutor extends Executor {
                     result.setChanInfo ( ci );
                     result.setStatus ( CHAN_IS_CLOSED );
                 } else if ( ! ci.isFounder ( user ) ) {
+                    result.setString1 ( ci.getName ( ) );
                     result.setChanInfo ( ci );
                     result.setStatus ( ACCESS_DENIED );
                 } else {
@@ -2399,6 +2440,8 @@ public class CSExecutor extends Executor {
                 } else if ( ! c.isOp ( user ) ) {
                     result.setChan ( c );
                     result.setStatus ( USER_NOT_OP );
+                } else if ( cmd[5].length ( ) < MINPASS || cmd[5].length ( ) > MAXPASS ) {
+                    result.setStatus ( INVALID_PASS );
                 } else {
                     result.setChan(c);
                     result.setChanInfo(ci);
@@ -2535,8 +2578,25 @@ public class CSExecutor extends Executor {
                     }
                 }
         
-        } else if ( command.is(DELETE) ||
-                    command.is(GETPASS) ) {
+        } else if ( command.is(SETPASS) ) {
+                result.setCommand ( command );
+                if ( ! ChanServ.enoughAccess ( user, command ) ) {
+                    result.setStatus ( ACCESS_DENIED );
+                } else if ( cmd.length != 6 ) {
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ci = ChanServ.findChan ( cmd[4] ) ) == null ) {
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( CHAN_NOT_REGISTERED );
+                } else if ( ci.isSet(MARK) ) {
+                    result.setChanInfo ( ci );
+                    result.setStatus ( IS_MARKED );
+                } else if ( cmd[5].length ( ) < MINPASS || cmd[5].length ( ) > MAXPASS ) {
+                    result.setStatus ( INVALID_PASS );
+                } else {
+                    result.setChanInfo ( ci );
+                }
+        
+        } else if ( command.is(DELETE) ) {
                 result.setCommand ( command );
                 if ( ! ChanServ.enoughAccess ( user, command ) ) {
                     result.setStatus ( ACCESS_DENIED );
@@ -2808,8 +2868,8 @@ public class CSExecutor extends Executor {
         else if ( output.is(ALREADY_ON_LIST) ) 
             return args[0]+" is already on "+args[1]+" list";
 
-        else if ( output.is(CHAN_GETPASS) ) 
-            return "Password is: "+args[0]+".";
+        else if ( output.is(INVALID_PASS) ) 
+            return "Error: password is not valid, it must be "+MINPASS+" to "+MAXPASS+" characters.";
 
         else if ( output.is(CHAN_UNBAN) ) 
             return "Bans for "+args[0]+" has been cleared on "+args[1]+".";

@@ -101,6 +101,27 @@ public class SendMail extends HashNumeric {
         MXDatabase.sendMail ( new Mail ( to, subject, auth.getAuth ( ), body ) );
     }
     
+    /* RESET PASSWORD */
+
+    /**
+     * RESETPASS: the code that lets the owner choose a new password. Only
+     * sent to a confirmed address
+     * @param ni
+     * @param code
+     */
+    public static void sendResetMail ( NickInfo ni, String code ) {
+        if ( ! ni.isAuth ( ) ) {
+            return;
+        }
+        String body = "Hello "+ni.getNameStr()+"\n\nSomeone asked to reset the password of the nickname: "+
+                      ni.getNameStr()+".\n"+
+                      "To choose a new password, type this on IRC within 2 hours:\n\n"+
+                      "    /NickServ RESETPASS "+ni.getNameStr()+" "+code+" <new password>\n\n"+
+                      "If you did not ask for this you can ignore this mail, the password stays as it is."+
+                      "\n\nRegards\n\n/"+Proc.getConf().get ( NETNAME );
+        MXDatabase.sendMail ( new Mail ( ni.getString ( MAIL ), "Reset your password", null, body ) );
+    }
+
     /* NEW MEMO */
 
     /**

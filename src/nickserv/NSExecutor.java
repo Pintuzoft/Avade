@@ -28,6 +28,7 @@ import core.HashString;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import mail.SendMail;
+import security.Hash;
 import server.ServSock;
 import user.User;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ import java.util.regex.Pattern;
  */
  public class NSExecutor extends Executor {
     private static final int MINPASS = 8;
-    private static final int MAXPASS = 63;  /* longer does not fit AES-encrypted in passlog.pass */
+    private static final int MAXPASS = 63;
     private NSSnoop                 snoop;
     private TextFormat              f;
     private static final Pattern    VALID_EMAIL_ADDRESS_REGEX = Pattern.compile ( "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE );
@@ -112,8 +113,11 @@ import java.util.regex.Pattern;
         } else if ( command.is(NOGHOST) ) {
             this.changeFlag ( NOGHOST, user, cmd );
         
-        } else if ( command.is(GETPASS) ) {
-            this.getPass ( user, cmd );
+        } else if ( command.is(RESETPASS) ) {
+            this.resetPass ( user, cmd );
+        
+        } else if ( command.is(SETPASS) ) {
+            this.setPass ( user, cmd );
         
         } else if ( command.is(GETEMAIL) ) {
             this.getEmail ( user, cmd );
@@ -778,14 +782,111 @@ import java.util.regex.Pattern;
          
     }
     
-    /* Can possibly merge getPass and getEmail methods in the future */
-    private void getPass ( User user, String[] cmd ) {
-        CMDResult result = this.validateCommandData ( user, GETPASS, cmd );
+    /**
+     * RESETPASS <nick>: mail a code to the confirmed address of the nick.
+     * RESETPASS <nick> <code> <new-pass>: a new password with that code.
+     * Anyone can ask for it, the code only goes to the owner
+     * @param user
+     * @param cmd
+     */
+    private void resetPass ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :resetpass nick code newpass   = 7
+        //       0         1               2                    3       4    5     6
+        CMDResult result = this.validateCommandData ( user, RESETPASS, cmd );
+        String pass = null;
+        
+        if ( cmd.length > 6 ) {
+            pass = cmd[6];
+            cmd[5] = "code_redacted";
+            cmd[6] = "pass_redacted";
+        }
         
         if ( result.is(SYNTAX_ERROR) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "RESETPASS <nick> [<code> <new-pass>]" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;            
+                return;
+        
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
+                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
+                return;
+        
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg ( user, output ( IS_MARKED, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg ( user, output ( IS_FROZEN, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, IS_FROZEN, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(NICK_NOT_AUTHED) ) {
+                this.service.sendMsg ( user, output ( NICK_NOT_AUTHED, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, NICK_NOT_AUTHED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(IS_THROTTLED) ) {
+                this.service.sendMsg ( user, output ( IS_THROTTLED, "" ) );
+                this.snoop.msg ( false, IS_THROTTLED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(NO_AUTH_FOUND) ) {
+                this.service.sendMsg ( user, "Error: the code is wrong or does not work any more. A new one is sent with: /NickServ RESETPASS "+result.getNick().getNameStr() );
+                this.snoop.msg ( false, NO_AUTH_FOUND, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(INVALID_PASS) ) {
+                this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+                this.snoop.msg ( false, INVALID_PASS, user.getName(), user, cmd );
+                return;
+        }
+        
+        NickInfo ni = result.getNick ( );
+        
+        if ( pass == null ) {
+            String code = ni.newResetCode ( );
+            if ( code == null ) {
+                this.service.sendMsg ( user, "A code was mailed for nick "+ni.getName()+" a short while ago. Check the mail, a new code can be sent 15 minutes after the last one." );
+                this.snoop.msg ( false, RESETPASS, ni.getName(), user, cmd );
+                return;
+            }
+            SendMail.sendResetMail ( ni, code );
+            this.service.sendMsg ( user, "A code has been mailed to the address of nick "+ni.getName()+". Follow the instructions in the mail to choose a new password." );
+            this.snoop.msg ( true, RESETPASS, ni.getName(), user, cmd );
+            return;
+        }
+        
+        ni.setNewPass ( pass );
+        ni.clearResetCode ( );
+        NickServ.unIdentifyAllFromNick ( ni );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), RESETPASS, user.getFullMask(), null );
+        NickServ.addLog ( log );
+        this.service.sendMsg ( user, "The password of nick "+ni.getName()+" has been changed. Identify with: /NickServ IDENTIFY "+ni.getName()+" <new-pass>" );
+        this.snoop.msg ( true, RESETPASS, ni.getName(), user, cmd );
+    }
+    
+    /**
+     * SETPASS <nick> <new-pass>: staff sets a new password for an owner that
+     * lost it. Nobody can see the old one
+     * @param user
+     * @param cmd
+     */
+    private void setPass ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :setpass nick newpass   = 6
+        //       0         1               2                    3     4     5
+        CMDResult result = this.validateCommandData ( user, SETPASS, cmd );
+        String pass = null;
+        
+        if ( cmd.length > 5 ) {
+            pass = cmd[5];
+            cmd[5] = "pass_redacted";
+        }
+        
+        if ( result.is(SYNTAX_ERROR) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SETPASS <nick> <new-pass>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
+                return;
         
         } else if ( result.is(ACCESS_DENIED) ) {
                 /* the access check already told the user */
@@ -795,31 +896,34 @@ import java.util.regex.Pattern;
         } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;            
+                return;
         
         } else if ( result.is(IS_MARKED) ) {
-                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
-                this.snoop.msg (false, IS_MARKED, result.getNick().getName ( ), user, cmd );
-                return;            
+                this.service.sendMsg ( user, output ( IS_MARKED, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(ACCESS_DENIED_SETPASS_OPER) ) {
+                this.service.sendMsg ( user, output ( ACCESS_DENIED_SETPASS_OPER, "" ) );
+                this.snoop.msg ( false, ACCESS_DENIED_SETPASS_OPER, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(INVALID_PASS) ) {
+                this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+                this.snoop.msg ( false, INVALID_PASS, user.getName(), user, cmd );
+                return;
         }
-         
-        NickInfo ni = result.getNick ( ); 
+        
+        NickInfo ni = result.getNick ( );
         NickInfo oper = user.getOper().getNick ( );
-        HashString command = result.getCommand ( );
-        this.service.sendMsg ( user, "*** Password log of "+ni.getName()+":" );
-        if ( ! NSDatabase.checkConn() ) {
-            this.service.sendMsg ( user, "No passwords currently available as no database connection is present." );
-        } else {
-            ArrayList<NSAuth> pList = NSDatabase.getAuthsByNick ( PASS, ni.getName() );
-            for ( NSAuth pass : pList ) {
-                String auth = ( pass.getAuth() == null ? "A" : "N" );
-                this.service.sendMsg ( user, output ( NICK_GETEMAIL, pass.getStamp(), auth, pass.getValue() ) );
-            }
-        }       
-        this.service.sendMsg ( user, "*** End of log ***" );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getNameStr() );
+        ni.setNewPass ( pass );
+        ni.clearResetCode ( );
+        NickServ.unIdentifyAllFromNick ( ni );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), SETPASS, user.getFullMask(), oper.getNameStr() );
         NickServ.addLog ( log );
-        this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ni.getName() );
+        this.service.sendMsg ( user, "A new password has been set on nick: "+ni.getName() );
+        this.service.sendGlobOp ( oper.getName()+" used SETPASS on: "+ni.getName() );
+        this.snoop.msg ( true, SETPASS, ni.getName(), user, cmd );
     }
  
     private void getEmail ( User user, String[] cmd ) {
@@ -1011,7 +1115,8 @@ import java.util.regex.Pattern;
                 this.snoop.msg ( true, SETEMAIL, ni.getName(), user, cmd );              
         
         } else if ( command.is(SETPASSWD) ) {
-                auth = new NSAuth ( PASS, ni.getName(), value );
+                /* the new password waits as a hash until the mail is confirmed */
+                auth = new NSAuth ( PASS, ni.getName(), Hash.password ( value ) );
                 NickServ.addNewAuth ( auth );
                 NickServ.addToWorkList ( CHANGE, ni );
                 log = new NSLogEvent ( ni.getName(), PASS, user.getFullMask(), null );
@@ -1315,8 +1420,7 @@ import java.util.regex.Pattern;
                     }
                 }
                 
-        } else if ( command.is(GETEMAIL) ||
-                    command.is(GETPASS) ) {
+        } else if ( command.is(GETEMAIL) ) {
                 result.setCommand ( command );
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
@@ -1332,6 +1436,58 @@ import java.util.regex.Pattern;
                     result.setNick ( ni );
                 }            
             
+        } else if ( command.is(RESETPASS) ) {
+                /* RESETPASS <nick> or RESETPASS <nick> <code> <new-pass> */
+                if ( cmd.length != 5 && cmd.length != 7 ) {
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGGED );
+                } else if ( ni.isSet ( MARK ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
+                } else if ( ni.isSet ( FROZEN ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN );
+                } else if ( ! ni.isAuth ( ) ) {
+                    /* no confirmed address to send the code to */
+                    result.setNick ( ni );
+                    result.setStatus ( NICK_NOT_AUTHED );
+                } else if ( cmd.length == 7 && ni.getThrottle().isThrottled ( ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_THROTTLED );
+                } else if ( cmd.length == 7 && ! ni.isResetCode ( cmd[5] ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( NO_AUTH_FOUND );
+                } else if ( cmd.length == 7 && ( cmd[6].length ( ) < MINPASS || cmd[6].length ( ) > MAXPASS ) ) {
+                    result.setStatus ( INVALID_PASS );
+                } else {
+                    result.setNick ( ni );
+                }
+                
+        } else if ( command.is(SETPASS) ) {
+                result.setCommand ( command );
+                if ( cmd.length != 6 ) {
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( ! NickServ.enoughAccess ( user, command ) ) {
+                    result.setStatus ( ACCESS_DENIED );
+                } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGGED );
+                } else if ( ni.isSet ( MARK ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
+                } else if ( ni.getOper().getAccess ( ) > 0 &&
+                            ni.getOper().getAccess ( ) >= user.getAccess ( ) ) {
+                    /* the password of staff is set by someone above */
+                    result.setNick ( ni );
+                    result.setStatus ( ACCESS_DENIED_SETPASS_OPER );
+                } else if ( cmd[5].length ( ) < MINPASS || cmd[5].length ( ) > MAXPASS ) {
+                    result.setStatus ( INVALID_PASS );
+                } else {
+                    result.setNick ( ni );
+                }
+                
         } else if ( command.is(SETEMAIL) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
@@ -1533,8 +1689,11 @@ import java.util.regex.Pattern;
         } else if ( code.is(NICKFLAG_EXIST) ) {
             return "Nick "+args[0]+" is already "+args[1]+".";
         
-        } else if ( code.is(NICK_GETPASS) ) {
-            return "Password is: "+args[0]+".";
+        } else if ( code.is(NICK_NOT_AUTHED) ) {
+            return "Error: nick "+args[0]+" has no confirmed mail address, so the password can not be reset by mail. Ask the network staff for help.";
+
+        } else if ( code.is(ACCESS_DENIED_SETPASS_OPER) ) {
+            return "Access denied. The password of staff can only be set by someone with higher access.";
         
         } else if ( code.is(NICK_GETEMAIL) ) {
             return "["+args[0]+"] "+args[1]+" "+args[2]+"";

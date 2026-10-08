@@ -113,18 +113,17 @@ public class CSDatabase extends Database {
         } else {
             
             try {
-                HashString salt = Proc.getConf().get ( SECRETSALT );
                 begin ( );
+                /* the pass is a hash */
                 String query = "insert into chan ( name, founder, pass, description, regstamp, stamp )  "
-                             + "values ( ?, ?, AES_ENCRYPT(?,?), ?, ?, ? )";
+                             + "values ( ?, ?, ?, ?, ?, ? )";
                 ps = sql.prepareStatement ( query );
                 ps.setString  ( 1, ci.getString ( NAME ) );
                 ps.setString  ( 2, ci.getFounder().getName().getString()  );
                 ps.setString  ( 3, ci.getPass ( ) );
-                ps.setString  ( 4, salt.getString() );             
-                ps.setString  ( 5, ci.getString ( DESCRIPTION )  );
-                ps.setString  ( 6, ci.getString ( REGTIME ) );
-                ps.setString  ( 7, ci.getString ( LASTUSED ) );
+                ps.setString  ( 4, ci.getString ( DESCRIPTION )  );
+                ps.setString  ( 5, ci.getString ( REGTIME ) );
+                ps.setString  ( 6, ci.getString ( LASTUSED ) );
                 ps.execute ( );
                 ps.close ( );
                  
@@ -288,16 +287,14 @@ public class CSDatabase extends Database {
     }
     
     private static int updateChanInfo ( ChanInfo ci ) {
-        HashString salt = Proc.getConf().get ( SECRETSALT );
-        String query = "update chan set founder = ?, pass = aes_encrypt(?,?), description = ?, stamp = ? where name = ?";
+        String query = "update chan set founder = ?, pass = ?, description = ?, stamp = ? where name = ?";
         try {
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ci.getFounder().getNameStr() );
             ps.setString  ( 2, ci.getPass ( ) );
-            ps.setString  ( 3, salt.getString() );
-            ps.setString  ( 4, ci.getString ( DESCRIPTION ) );
-            ps.setString  ( 5, ci.getString ( LASTUSED ) );
-            ps.setString  ( 6, ci.getNameStr() ); 
+            ps.setString  ( 3, ci.getString ( DESCRIPTION ) );
+            ps.setString  ( 4, ci.getString ( LASTUSED ) );
+            ps.setString  ( 5, ci.getNameStr() ); 
             ps.executeUpdate ( );
             ps.close ( );
         } catch  ( SQLException ex )  {
@@ -1076,8 +1073,7 @@ public class CSDatabase extends Database {
         }
         try { 
             now = System.nanoTime();
-            HashString salt = Proc.getConf().get ( SECRETSALT );
-            String query = "select c.name,c.founder,AES_DECRYPT(c.pass,?) as pass,c.description,c.regstamp,c.stamp,"
+            String query = "select c.name,c.founder,c.pass,c.description,c.regstamp,c.stamp,"
                          + "cs.keeptopic,cs.topiclock,cs.ident,cs.opguard,cs.restricted,cs.verbose,cs.mailblock,cs.leaveops,cs.autoakick,cs.dynaop,"
                          + "cs.modelock,cs.mark,cs.freeze,cs.close,cs.hold,cs.auditorium,"
                          + "tl.topic,tl.setter,unix_timestamp(tl.stamp) as tlunixstamp,tl.stamp as tlstamp,"
@@ -1090,7 +1086,6 @@ public class CSDatabase extends Database {
                          + "left join chanflag as cf on cf.name=c.name ";
                         
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, salt.getString() ); 
             res = ps.executeQuery ( );
 
             System.out.print("Loading Chans: ");
@@ -1357,16 +1352,14 @@ public class CSDatabase extends Database {
             return cList;
         }
         try { 
-            HashString salt = Proc.getConf().get ( SECRETSALT );
-            String query = "select c.name,c.founder,AES_DECRYPT(c.pass,?),c.description,c.regstamp,c.stamp "
+            String query = "select c.name,c.founder,c.pass,c.description,c.regstamp,c.stamp "
                          + "from chan as c "
                          + "where c.name rlike ? "
                          + "or c.description rlike ? "
                          + "order by c.name asc";
             ps = sql.prepareStatement ( query );
-            ps.setString  ( 1, salt.getString() );
+            ps.setString  ( 1, "^"+pattern+"$" );
             ps.setString  ( 2, "^"+pattern+"$" );
-            ps.setString  ( 3, "^"+pattern+"$" );
             res = ps.executeQuery ( );
             
             while ( res.next ( )  )  { 

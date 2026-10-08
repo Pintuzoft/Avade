@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
 import nickserv.NickServ;
+import security.Hash;
 import user.User;
 import java.util.ArrayList;
 import java.util.Date;
@@ -104,15 +105,15 @@ public class ChanInfo extends HashNumeric {
      *
      * @param name
      * @param founder
-     * @param pass
+     * @param pass the password in clear, it is stored hashed
      * @param desc
      * @param topic
      */
     public ChanInfo ( String name, NickInfo founder, String pass, String desc, Topic topic )  {
-        /* Register nickname */
+        /* Register channel */
         this.name       = new HashString ( name );
         this.founder    = founder;
-        this.pass       = pass;
+        this.pass       = Hash.password ( pass );
         this.desc       = desc;
         this.topic      = topic;
         this.settings   = new ChanSetting ( );
@@ -256,8 +257,13 @@ public class ChanInfo extends HashNumeric {
         if ( pass == null || this.throttle.isThrottled ( ) ) {
             return false;
         }
-        if ( this.pass.compareTo ( pass ) == 0 ) {
+        if ( Hash.verify ( pass, this.pass ) ) {
             this.throttle.reset ( );
+            if ( Hash.needsRehash ( this.pass ) ) {
+                /* made with fewer iterations than new hashes get */
+                this.pass = Hash.password ( pass );
+                this.changed ( LASTUSED );
+            }
             return true;
         }
         this.throttle.hit ( );
@@ -276,18 +282,20 @@ public class ChanInfo extends HashNumeric {
     }
 
     /**
-     *
-     * @param oldPass
-     * @param newPass
-     * @return
+     * SET PASSWD by the founder, SETPASS by staff. Whoever identified to
+     * the channel with the old password is unidentified
+     * @param pass the new password in clear, it is stored hashed
      */
-    public boolean setPass ( String oldPass, String newPass )  {
-        if ( this.pass.compareTo ( oldPass )  == 0 )  {
-            this.pass = newPass;
-            this.changed(LASTUSED);
-            return true;
+    public void setNewPass ( String pass )  {
+        this.pass = Hash.password ( pass );
+        this.changed ( LASTUSED );
+        for ( User user : Handler.getUserList().values ( ) ) {
+            if ( user.getSID ( ) != null && user.getSID().isIdentified ( this ) ) {
+                user.getSID().unIdentify ( this );
+                Handler.addUpdateSID ( user.getSID ( ) );
+                Handler.getChanServ().sendMsg ( user, "The password of "+this.name+" was changed, you have been unidentified from the channel." );
+            }
         }
-        return false;
     }
 
     /**
@@ -301,7 +309,7 @@ public class ChanInfo extends HashNumeric {
      
     /**
      *
-     * @return
+     * @return the hash of the password, for the database
      */
     public String getPass ( )  {
         return this.pass;

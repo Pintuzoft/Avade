@@ -338,7 +338,6 @@ public class OSExecutor extends Executor {
         this.service.sendMsg ( user, "      host: "+ni.getString(HOST) );
         this.service.sendMsg ( user, "        IP: "+ni.getString(IP) );
         this.service.sendMsg ( user, "      mail: "+( ni.getEmail ( ) != null ? ni.getEmail ( ) : "" ) );
-        this.service.sendMsg ( user, "      pass: "+ni.getPass ( ) );
         this.service.sendMsg ( user, "  settings: "+ni.getSettings().getInfoStr() );
         this.service.sendMsg ( user, "   regtime: "+ni.getString(REGTIME) );
         this.service.sendMsg ( user, "  lastused: "+ni.getString(LASTUSED) );

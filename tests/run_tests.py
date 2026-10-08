@@ -12,6 +12,7 @@ registered once at the start (Avade writes new nicks to the database once a
 minute, so that takes a little over a minute).
 """
 import os
+import re
 import socket
 import sys
 import time
@@ -66,7 +67,7 @@ def close(*clients):
     time.sleep(0.5)
 
 
-def register_chan(founder, chan, password='chanpw1'):
+def register_chan(founder, chan, password='chanpw12'):
     founder.join(chan)
     r = founder.svc('ChanServ', 'REGISTER %s %s test channel' % (chan, password))
     if not has(r, 'successfully registered') and not has(r, 'already registered'):   # a second run
@@ -743,6 +744,85 @@ def test_ban_follows():
     close(mm)
 
 
+def test_passwords():
+    # Stored as one way hashes, nothing in the database can be decrypted
+    check(db("select count(*) from passlog where pass not like 'pbkdf2-sha256$%'") == '0',
+          'every nick password is stored as a hash')
+    check(db("select count(*) from chan where pass not like 'pbkdf2-sha256$%'") == '0',
+          'every channel password is stored as a hash')
+    m = master()
+    r = m.svc('NickServ', 'GETPASS Alice') + m.svc('ChanServ', 'GETPASS #t_topic')
+    check(not has(r, pw('Alice')) and not has(r, 'chanpw12') and not has(r, 'Password is'),
+          'GETPASS is gone from NickServ and ChanServ', r)
+    check(not has(m.svc('OperServ', 'NINFO Alice'), 'pass:'), 'NINFO does not show a password')
+
+    # A pending SET PASSWD from before the upgrade still works with its code
+    if db("select count(*) from passlog where nick = 'Bob' and auth = 'aaaabbbbccccddddeeeeffff00001111'") == '1':
+        b = login('Bob')
+        check(has(b.svc('NickServ', 'AUTH aaaabbbbccccddddeeeeffff00001111'), 'fully authed'),
+              'a password change waiting from before the upgrade can be confirmed')
+        close(b)
+        b = Client('Bob')
+        check(has(b.svc('NickServ', 'IDENTIFY Bobnewpass12'), 'Password accepted'), 'and the new password works')
+        close(b)
+        m.svc('NickServ', 'SETPASS Bob ' + pw('Bob'))
+
+    # RESETPASS: a code to the confirmed mail, anyone can ask
+    x = Client('Resetter')
+    r = x.svc('NickServ', 'RESETPASS Erin')
+    check(has(r, 'code has been mailed'), 'RESETPASS mails a code', r)
+    body = wait_db("select body from mailbox where mail = 'erin@test.net' and subject = 'Reset your password' "
+                   "order by id desc limit 1", 30)
+    code = re.search(r'RESETPASS Erin (\w+)', body)
+    check(code, 'the mail has the code', body)
+    code = code.group(1) if code else 'none'
+    check(has(x.svc('NickServ', 'RESETPASS Erin'), 'short while ago'), 'a second code is not sent at once')
+    check(has(x.svc('NickServ', 'RESETPASS Erin wrongcode123 Erinreset123'), 'code is wrong'), 'a wrong code is refused')
+    check(has(x.svc('NickServ', 'RESETPASS Erin %s short' % code), 'not valid'), 'a short password is refused')
+    check(has(x.svc('NickServ', 'RESETPASS Erin %s Erinreset123' % code), 'has been changed'),
+          'the code sets a new password')
+    check(has(x.svc('NickServ', 'RESETPASS Erin %s Erinreset456' % code), 'code is wrong'), 'the code works once')
+    check(has(x.svc('NickServ', 'RESETPASS Nomail'), 'no confirmed mail'), 'not without a confirmed mail')
+    close(x)
+    e = Client('Erin')
+    check(not has(e.svc('NickServ', 'IDENTIFY ' + pw('Erin')), 'accepted'), 'the old password does not work')
+    check(has(e.svc('NickServ', 'IDENTIFY Erinreset123'), 'Password accepted'), 'the new one does')
+    close(e)
+
+    # SETPASS by staff, never for staff with the same or higher access
+    a = login('Alice')
+    check(not has(a.svc('NickServ', 'SETPASS Bob Alicehack123'), 'has been set'), 'a user can not use SETPASS')
+    check(has(m.svc('NickServ', 'SETPASS %s Masterhack123' % MASTER), 'Access denied'),
+          'SETPASS refuses a staff nick with the same access')
+    check(has(m.svc('NickServ', 'SETPASS Erin ' + pw('Erin')), 'has been set'), 'staff sets a new password')
+    e = login('Erin')
+    check(True, 'and the owner identifies with it')
+    check(wait_db("select count(*) from passlog where nick = 'Erin' and pass like 'pbkdf2-sha256$%' "
+                  "having count(*) >= 3", 150) != '', 'the new passwords are stored as hashes')
+    check(db("select count(*) from passlog where pass like '%Erinreset%' or pass like '%Erinpass%'") == '0',
+          'no password in clear in the database')
+
+    # Channel: at least 8 characters, founder SET PASSWD, staff SETPASS
+    a.join('#t_shortpw')
+    check(has(a.svc('ChanServ', 'REGISTER #t_shortpw short77 test'), 'not valid'),
+          'REGISTER needs a channel password of at least 8 characters')
+    chan = '#t_passwd'
+    register_chan(a, chan)
+    b = login('Bob')
+    b.join(chan)
+    check(not has(b.svc('ChanServ', 'SET %s PASSWD Bobhack1234' % chan), 'has been set'), 'only the founder sets it')
+    check(has(a.svc('ChanServ', 'SET %s PASSWD short' % chan), 'not valid'), 'a short channel password is refused')
+    check(has(a.svc('ChanServ', 'SET %s PASSWD chanpw-new1' % chan), 'has been set'), 'the founder sets a new password')
+    check(not has(b.svc('ChanServ', 'IDENTIFY %s chanpw12' % chan), 'accepted'), 'the old channel password does not work')
+    check(has(b.svc('ChanServ', 'IDENTIFY %s chanpw-new1' % chan), 'Password accepted'), 'the new one does')
+    mk = b.mark()
+    check(has(m.svc('ChanServ', 'SETPASS %s chanpw-staff1' % chan), 'has been set'), 'staff sets a channel password')
+    check(b.saw('unidentified from the channel', mk, 4), 'who identified with the old one is unidentified')
+    check(has(b.svc('ChanServ', 'IDENTIFY %s chanpw-staff1' % chan), 'Password accepted'), 'the staff password works')
+    check(not has(b.svc('ChanServ', 'DELETE %s' % chan), 'deleted'), 'a user can not DELETE a channel')
+    close(a, b, e, m)
+
+
 def test_log_file():
     log = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work', 'run', 'services.log'),
                errors='replace').read()
@@ -766,9 +846,9 @@ def test_bans():
 def test_drop_and_hold():
     chan = '#t_drop'
     a = login('Alice')
-    register_chan(a, chan, 'droppw1')
-    a.svc('ChanServ', 'DROP %s droppw1' % chan)
-    check(has(a.svc('ChanServ', 'REGISTER %s droppw1 again' % chan), 'successfully registered'),
+    register_chan(a, chan, 'droppw12')
+    a.svc('ChanServ', 'DROP %s droppw12' % chan)
+    check(has(a.svc('ChanServ', 'REGISTER %s droppw12 again' % chan), 'successfully registered'),
           'a dropped channel can be registered again at once')
     mm = master()
     mm.svc('ChanServ', 'HOLD %s test' % chan)
@@ -827,7 +907,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

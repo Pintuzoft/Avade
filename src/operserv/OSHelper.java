@@ -252,10 +252,13 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "     H+     Held               Held"                                                                          );
         this.service.sendMsg ( user, "     H-     UnHeld             UnHeld"                                                                        );
         this.service.sendMsg ( user, "     GE     GetEmail"                                                                                         );
-        this.service.sendMsg ( user, "     GP     GetPass            GetPass"                                                                       );
+        this.service.sendMsg ( user, "     GP     GetPass            GetPass (old versions)"                                                        );
         this.service.sendMsg ( user, "     Md                        Mass-deop"                                                                     );
         this.service.sendMsg ( user, "     Mk                        Mass-kick"                                                                     );
+        this.service.sendMsg ( user, "     p      Password set       Password set (founder)"                                                        );
+        this.service.sendMsg ( user, "     P!     SetPass (staff)    SetPass (staff)"                                                               );
         this.service.sendMsg ( user, "     R      Register           Register"                                                                      );
+        this.service.sendMsg ( user, "     Rp     ResetPass"                                                                                        );
         this.service.sendMsg ( user, "     SJ                        SAJOIN"                                                                        );
         this.service.sendMsg ( user, "     SP     SendPass           SendPass"                                                                      );
         this.service.sendMsg ( user, "     T                         Topic wipe (CSop)"                                                             );
@@ -345,7 +348,7 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "                  /OperServ STAFF CSOP ADD DreamHealer"                                                       );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   Different accesses unlocks different commands. IRCop's can see nick/chan logs. SA's is"                    );
-        this.service.sendMsg ( user, "   allowed to use usermode +a, Akill and see staff audit logs. CSop's can access getpass/getemail"            );
+        this.service.sendMsg ( user, "   allowed to use usermode +a, Akill and see staff audit logs. CSop's can access setpass/getemail"            );
         this.service.sendMsg ( user, "   and freeze/close nicks and chans. SRA's can add people as CSop, rehash services config and jupe"           );
         this.service.sendMsg ( user, "   servers, and send raw services commands. Finally the Master is the only one capable of "                   );
         this.service.sendMsg ( user, "   adding SRA's."                                                                                             );

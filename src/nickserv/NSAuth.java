@@ -77,11 +77,10 @@ public class NSAuth {
     }
     
     /**
-     *
+     * The code in the confirmation link, random so it can not be guessed
      */
     public void hash ( ) {
-        String buf = this.nick+this.value+System.currentTimeMillis()+( Hash.md5 ( ""+System.nanoTime() ) );
-        this.auth = Hash.md5 ( buf );
+        this.auth = Hash.token ( );
     }
 
     /**

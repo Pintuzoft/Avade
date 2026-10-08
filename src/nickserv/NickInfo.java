@@ -26,6 +26,7 @@ import core.Throttle;
 import memoserv.MSDatabase;
 import memoserv.MemoInfo;
 import operserv.Oper;
+import security.Hash;
 import user.User;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -34,6 +35,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Random;
 
 
@@ -48,7 +50,7 @@ public class NickInfo extends HashNumeric {
     private HashString              ip;
     private InetAddress             iNet; 
     private HashString              hashMask;       /* Integer representation of user@mask */ 
-    private String                  pass;
+    private String                  pass;           /* hash, see security.Hash */
     private String                  mail; 
     private String                  vhost;              /* host shown instead of the real one */
     private long                    vhostChanged = 0;   /* ms, when the user last changed it */
@@ -61,6 +63,9 @@ public class NickInfo extends HashNumeric {
     private Expire                  exp;
     private NSChanges               changes;
     private Throttle                throttle;       /* throttle login attempts */
+    private String                  resetCode;      /* RESETPASS: the code sent by mail */
+    private long                    resetExpire;    /* ms, when the code stops working */
+    private long                    resetSent;      /* ms, when the last code was sent */
     private ArrayList<ChanInfo>     akickList = new ArrayList<>();
     private ArrayList<ChanInfo>     aopList = new ArrayList<>();
     private ArrayList<ChanInfo>     hopList = new ArrayList<>();
@@ -68,6 +73,8 @@ public class NickInfo extends HashNumeric {
     private ArrayList<ChanInfo>     sopList = new ArrayList<>();
     private ArrayList<ChanInfo>     founderList = new ArrayList<>();
     private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final long       RESETWAIT  = 15 * 60 * 1000L;      /* between two RESETPASS mails */
+    private static final long       RESETVALID = 2 * 60 * 60 * 1000L;  /* how long a code works */
 
     /* DATABASE */
 
@@ -107,7 +114,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param user
-     * @param pass
+     * @param pass the password in clear, it is stored hashed
      */
 
     public NickInfo ( User user, String pass )  {
@@ -117,7 +124,7 @@ public class NickInfo extends HashNumeric {
         this.host       = new HashString ( user.getString ( HOST ) );
         this.ip         = new HashString ( user.getString ( IP ) );
         this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(HOST) ); 
-        this.pass       = pass;
+        this.pass       = Hash.password ( pass );
         this.mail       = ""; 
         this.settings   = new NickSetting ( );
         String date = this.dateFormat.format ( new Date ( ) );
@@ -144,7 +151,7 @@ public class NickInfo extends HashNumeric {
             /* Not guessable: this is the nick with the highest access */
             String passwd   = "Master" + new BigInteger ( 80, new SecureRandom ( ) ).toString ( 36 );
             this.name       = new HashString ( name );
-            this.pass       = passwd;
+            this.pass       = Hash.password ( passwd );
             this.ip         = new HashString ( u.getString ( IP ) );
             this.user       = new HashString ( u.getString ( USER ) );
             this.host       = new HashString ( u.getString ( HOST ) );
@@ -289,12 +296,68 @@ public class NickInfo extends HashNumeric {
         if ( this.throttle.isThrottled ( ) ) {
             return false;
         }
-        if ( this.pass.compareTo ( pass ) == 0 )  {
+        if ( Hash.verify ( pass, this.pass ) )  {
             this.throttle.reset ( );
+            if ( Hash.needsRehash ( this.pass ) ) {
+                /* made with fewer iterations than new hashes get */
+                this.setNewPass ( pass );
+            }
             return true;
         }
         this.throttle.hit ( );
         return false;
+    }
+
+    /**
+     * A password that works at once, without a confirmation mail
+     * (RESETPASS, SETPASS by staff)
+     * @param pass the password in clear
+     */
+    public void setNewPass ( String pass ) {
+        this.pass = Hash.password ( pass );
+        NickServ.addNewAuth ( new NSAuth ( PASS, this.name, this.pass, null, null ) );
+    }
+
+    /**
+     * RESETPASS: a new code to mail to the owner. A new code replaces the old one
+     * @return the code, null when one was sent less than RESETWAIT ago
+     */
+    public String newResetCode ( ) {
+        long now = System.currentTimeMillis ( );
+        if ( now - this.resetSent < RESETWAIT ) {
+            return null;
+        }
+        this.resetSent      = now;
+        this.resetExpire    = now + RESETVALID;
+        this.resetCode      = Hash.code ( 12 );
+        return this.resetCode;
+    }
+
+    /**
+     * @param code
+     * @return true if it is the code that was sent and it still works.
+     *         A wrong code counts as a failed IDENTIFY
+     */
+    public boolean isResetCode ( String code ) {
+        if ( code == null || this.resetCode == null || this.throttle.isThrottled ( ) ) {
+            return false;
+        }
+        if ( System.currentTimeMillis ( ) > this.resetExpire ) {
+            this.resetCode = null;
+            return false;
+        }
+        if ( Hash.same ( this.resetCode, code.toLowerCase ( Locale.ROOT ) ) ) {
+            return true;
+        }
+        this.throttle.hit ( );
+        return false;
+    }
+
+    /**
+     * The code has been used
+     */
+    public void clearResetCode ( ) {
+        this.resetCode = null;
     }
     
     /* hasAccess commands */
@@ -328,27 +391,15 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @param newPass
+     * @param newPass a hash from security.Hash (a confirmed SET PASSWD)
      */
     public void setPass ( String newPass ) {
         this.pass = newPass;
     }
-      
-    /**
-     *
-     * @param pass
-     * @return bool
-     */
-    public boolean isPass ( String pass )  {
-        if ( pass == null ) {
-            return false;
-        }
-        return ( this.pass.compareTo ( pass ) == 0 );
-    }
  
     /**
      *
-     * @return pass
+     * @return the hash of the password, for the database
      */
     public String getPass ( )  {
         return this.pass;

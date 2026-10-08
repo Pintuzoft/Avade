@@ -130,6 +130,7 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "AUTH",     0,   "Authorize a mail or pass" )                       );
         cmdList.add ( new CommandInfo ( "IDENTIFY", 0,   "Identify as owner of a nick" )                    );
         cmdList.add ( new CommandInfo ( "GHOST",    0,   "Kill the ghost using your nick" )                 );
+        cmdList.add ( new CommandInfo ( "RESETPASS",0,   "New password with a code by mail" )               );
         cmdList.add ( new CommandInfo ( "SET",      0,   "Set nick options" )                               );
         cmdList.add ( new CommandInfo ( "INFO",     0,   "Show nick info" )                                 );
         cmdList.add ( new CommandInfo ( "DROP",     0,   "Drop / end nick registration" )                   );
@@ -138,7 +139,7 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "FREEZE",   CMDAccess ( FREEZE ),   "Freeze nick" )                 );
         cmdList.add ( new CommandInfo ( "HOLD",     CMDAccess ( HOLD ),     "Hold nick" )                   );
         cmdList.add ( new CommandInfo ( "NOGHOST",  CMDAccess ( NOGHOST ),  "Deactivate ghost for nick" )   );
-        cmdList.add ( new CommandInfo ( "GETPASS",  CMDAccess ( GETPASS ),  "Get nick password" )           );
+        cmdList.add ( new CommandInfo ( "SETPASS",  CMDAccess ( SETPASS ),  "Set a new nick password" )     );
         cmdList.add ( new CommandInfo ( "GETEMAIL", CMDAccess ( GETEMAIL ), "Get nick email" )              );
         cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Delete a nick" )               );
     }
@@ -386,9 +387,10 @@ public class NickServ extends Service {
                        auth.is(PASS) && NSDatabase.addPass ( auth ) ) {
                     WorkGuard.done ( auth );
                     auths.add ( auth );
-                    /* The code is stored, now the mail with it can go out */
+                    /* The code is stored, now the mail with it can go out.
+                       A password set by RESETPASS or staff has no code */
                     NickInfo ni = findNick ( auth.getNick ( ) );
-                    if ( ni != null ) {
+                    if ( ni != null && auth.getAuth ( ) != null ) {
                         SendMail.sendAuthMail ( ni, auth );
                     }
                 } else if ( WorkGuard.failed ( auth, "auth" ) ) {

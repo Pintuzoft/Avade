@@ -68,7 +68,7 @@ Utgå från produktionens `services.conf` och ändra:
 
 | Inställning | Värde |
 |---|---|
-| `secretsalt` | **Samma som i produktion.** Annars går varken lösen eller mail att läsa. |
+| `secretsalt` | **Samma som i produktion.** Uppgraderingen behöver det för att göra om lösenorden till hashar, och mailadresserna läses med det. Med fel salt vägrar uppgraderingen, och ingenting ändras. |
 | `hubname`, `hubhost`, `hubport`, `hubpass` | testnätets hub, inte produktionens |
 | `mysqldb`, `mysqluser`, `mysqlpass` | `avadetest` och användaren från steg 1 |
 | `master` | ett nick som är registrerat i kopian och som du kan lösenordet till |
@@ -78,6 +78,11 @@ det står en varning om det vid start):
 
       - vhost
       - clone
+
+Under `csop:` byts `getpass` mot `setpass`. GETPASS finns inte längre, och
+SETPASS sätter ett nytt lösenord utan att någon ser det gamla:
+
+      - setpass
 
 Valfritt, ord som inte får ingå i användares vhostar:
 
@@ -93,15 +98,24 @@ Jämför gärna med `template.conf` för exakt utseende.
     ./avade.sh start
     ./avade.sh log        # följ utskriften, ctrl-c avslutar bara visningen
 
-Första starten uppgraderar databasen från produktionens version till 1.2609-7,
-sex steg i ordning. Steget som byter teckenkodning till utf8mb4 går igenom alla
+Första starten uppgraderar databasen från produktionens version till 1.2609-8,
+sju steg i ordning. Steget som byter teckenkodning till utf8mb4 går igenom alla
 tabeller och kan ta en stund på en stor databas.
 
 Kontrollera efteråt:
 
     mysql -u avade -p avadetest -e "select * from settings"
 
-Versionen ska vara `1.2609-7`.
+Versionen ska vara `1.2609-8`.
+
+Det sista steget gör om alla lösenord till envägshashar. Det tar cirka 70 ms
+per lösenord och kärna, så några tusen nick tar några minuter. Gamla lösenord
+(historiken) tas bort. Efteråt ska den här ge 0:
+
+    mysql -u avade -p avadetest -e "select count(*) from passlog where pass not like 'pbkdf2-sha256\$%'"
+
+Efter uppgraderingen kan en äldre Avade inte längre köras mot databasen,
+eftersom den inte kan läsa hasharna. Vägen tillbaka är dumpen från steg 1.
 
 Stoppa med `./avade.sh stop` eller `/RootServ STOP`. Båda skriver klart till databasen först.
 Undvik `kill -9`.
@@ -111,8 +125,9 @@ Undvik `kill -9`.
 Kör igenom det här med ett par klienter. Det som är markerat *viktigast* är
 sådant som bara går att se med riktig data.
 
-- *Viktigast:* identifiera dig med ditt vanliga lösen på ett gammalt nick.
-  Fungerar det har AES-datan överlevt flytten och uppgraderingen.
+- *Viktigast:* identifiera dig med ditt vanliga lösen på ett gammalt nick, och
+  med kanallösenordet (`/ChanServ IDENTIFY`) på en gammal kanal. Fungerar det
+  har lösenorden överlevt flytten och gjorts om till hashar rätt.
 - *Viktigast:* `/NickServ INFO` och `/ChanServ INFO` på nick och kanaler med
   å, ä, ö i topic eller annan text. Ska visas rätt.
 - *Viktigast:* gå in i en gammal kanal där du är founder/SOP/AOP. Du ska få op,
@@ -126,6 +141,11 @@ sådant som bara går att se med riktig data.
 - `/ChanServ CHANFLAG` på en kanal, starta om Avade, kontrollera att flaggorna
   är kvar.
 - `/OperServ CLONE ADD`, `/OperServ SPAMFILTER` med target.
+- `/NickServ RESETPASS <nick>` på ett nick med din egen mailadress. Mailet
+  hamnar i `mailbox` (skicka det inte), och koden i det sätter ett nytt lösen
+  med `/NickServ RESETPASS <nick> <kod> <nytt>`.
+- `/NickServ SETPASS` och `/ChanServ SETPASS` som csop, och
+  `/ChanServ SET #kanal PASSWD` som founder.
 
 ## 8. Hostmasking (valfritt)
 

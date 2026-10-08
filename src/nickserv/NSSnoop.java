@@ -125,7 +125,11 @@ public class NSSnoop extends Snoop {
             case "AUTH" :
                 return mask ( arr, 4, 5 );
             case "GHOST" :
+            case "SETPASS" :
                 return mask ( arr, 5 );
+            case "RESETPASS" :
+                /* RESETPASS <nick> <code> <newpass> */
+                return mask ( arr, 5, 6 );
             case "SET" :
                 /* SET PASSWD <pass> <newpass> and SET EMAIL <pass> <email> */
                 if ( arr.length > 4 && ( arr[4].toUpperCase().startsWith ( "PASS" ) ||

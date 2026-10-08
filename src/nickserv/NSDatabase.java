@@ -64,7 +64,6 @@ public class NSDatabase extends Database {
         }
         /* Try add the nick */
         try {
-            HashString salt = Proc.getConf().get ( SECRETSALT );
             begin ( );
             /* NICK */
             String query = "insert into nick  ( name,  mask, regstamp, stamp )  "
@@ -77,13 +76,12 @@ public class NSDatabase extends Database {
             ps.execute ( );
             ps.close ( );
 
-            /* PASS */
+            /* PASS, a hash */
             query = "insert into passlog (nick,pass,stamp) "+
-                    "values (?,aes_encrypt(?,?),now())";
+                    "values (?,?,now())";
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, ni.getPass() );
-            ps.setString ( 3, salt.getString() );
             ps.execute();
             ps.close();
             
@@ -376,7 +374,7 @@ public class NSDatabase extends Database {
                     
                     "union "+
                     
-                    "select nick,null as mail,aes_decrypt(pass,?) as pass,auth,stamp "+
+                    "select nick,null as mail,pass,auth,stamp "+
                     "from passlog "+
                     "where auth = ? "+
                     "and nick = ?";
@@ -385,9 +383,8 @@ public class NSDatabase extends Database {
             ps.setString ( 1, salt.getString() );
             ps.setString ( 2, code );
             ps.setString ( 3, user.getNameStr() );
-            ps.setString ( 4, salt.getString() );
-            ps.setString ( 5, code );
-            ps.setString ( 6, user.getNameStr() );
+            ps.setString ( 4, code );
+            ps.setString ( 5, user.getNameStr() );
             res2 = ps.executeQuery ( );
             
             if ( res2.next() ) {
@@ -804,18 +801,16 @@ public class NSDatabase extends Database {
             return pass;
         }
         
-        String query = "select aes_decrypt(pass,?) as pass "+
+        String query = "select pass "+
                        "from passlog "+
                        "where nick = ? "+
                        "and auth is null "+
-                       "order by stamp desc "+
+                       "order by stamp desc, id desc "+
                        "limit 1";
         
         try {
-            HashString salt = Proc.getConf().get ( SECRETSALT );
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, salt.getString() );
-            ps.setString ( 2, nick );
+            ps.setString ( 1, nick );
             res = ps.executeQuery ( );
             if ( res.next ( ) ) {
                 pass = res.getString("pass");
@@ -857,16 +852,15 @@ public class NSDatabase extends Database {
         if ( ! activateConnection() ) {
             return false;
         }
+        /* The value is a hash, auth is null for a password that works at once */
         String query = "insert into passlog "+
                        "(nick,pass,auth,stamp) "+
-                       "values ( ?, aes_encrypt(?,?), ?, now() )";
+                       "values ( ?, ?, ?, now() )";
         try {
-            HashString salt = Proc.getConf().get ( SECRETSALT );
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, pass.getNick().getString() );
             ps.setString ( 2, pass.getValue() );
-            ps.setString ( 3, salt.getString() );
-            ps.setString ( 4, pass.getAuth() );
+            ps.setString ( 3, pass.getAuth() );
             ps.execute();
             ps.close();
             
@@ -896,7 +890,7 @@ public class NSDatabase extends Database {
             
             String query = "select n.name,"+
                            "  n.mask,"+
-                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as pass,"+
+                           "  (select pass from passlog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc, id desc limit 1) as pass,"+
                            "  (select aes_decrypt(mail,?) from maillog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as mail,"+
                            "  n.regstamp,"+
                            "  n.stamp "+
@@ -905,7 +899,6 @@ public class NSDatabase extends Database {
             
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, salt.getString() );
-            ps.setString ( 2, salt.getString() );
             res = ps.executeQuery ( );
 
             System.out.print("Loading Nicks: ");

@@ -140,7 +140,8 @@ public class CSSnoop extends Snoop {
             else if ( it.is(CHAN_SET_FLAG) )            { return "CHAN_SET_FLAG";           } 
             else if ( it.is(CHANFLAG_EXIST) )           { return "CHANFLAG_EXIST";          } 
             else if ( it.is(ALREADY_ON_LIST) )          { return "ALREADY_ON_LIST";         } 
-            else if ( it.is(CHAN_GETPASS) )             { return "CHAN_GETPASS";            }
+            else if ( it.is(SETPASS) )                  { return "SETPASS";                 }
+            else if ( it.is(SET_PASSWD) )               { return "SET_PASSWD";              }
             else if ( it.is(CHAN_INFO) )                { return "CHAN_INFO";               }
             else if ( it.is(CHAN_UNBAN) )               { return "CHAN_UNBAN";              }
             else if ( it.is(ACCESS_LIST) )              { return "ACCESS_LIST";             }
@@ -185,6 +186,7 @@ public class CSSnoop extends Snoop {
             case "REGISTER" :
             case "IDENTIFY" :
             case "DROP" :
+            case "SETPASS" :
                 return mask ( arr, 5 );
             case "SET" :
                 if ( arr.length > 5 && arr[5].toUpperCase().startsWith ( "PASS" ) ) {

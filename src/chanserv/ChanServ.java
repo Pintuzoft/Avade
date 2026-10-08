@@ -112,7 +112,7 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "CLOSE",        CMDAccess ( CLOSE ),        "Close channel" )                       );
         cmdList.add ( new CommandInfo ( "HOLD",         CMDAccess ( HOLD ),         "Hold channel" )                        );
         cmdList.add ( new CommandInfo ( "AUDITORIUM",   CMDAccess ( AUDITORIUM ),   "Set Auditorium setting" )              );
-        cmdList.add ( new CommandInfo ( "GETPASS",      CMDAccess ( GETPASS ),      "Get channel password" )                );
+        cmdList.add ( new CommandInfo ( "SETPASS",      CMDAccess ( SETPASS ),      "Set a new channel password" )          );
         cmdList.add ( new CommandInfo ( "DELETE",       CMDAccess ( DELETE ),       "Force DROP a channel" )                );
     }
     

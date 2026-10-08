@@ -284,7 +284,7 @@ public class RootServ extends Service {
             if ( user != null ) {
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
-                    this.sendMsg ( user, "The nick was registered for you with the password: "+ni.getPass ( ) );
+                    /* the password was shown when the nick was made, only the hash is kept */
                     this.sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );
                     this.sendMsg ( user, "NOTE: losing access of the master nick can cause inconvenience as only the master can manage the SRA list, and no SRA can add a new master." );
                 }

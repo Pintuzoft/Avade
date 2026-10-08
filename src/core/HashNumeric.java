@@ -1237,6 +1237,16 @@ public abstract class HashNumeric extends TextFormat {
     public static HashString SENDPASS = new HashString ( "SENDPASS" );
 
     /**
+     * NickServ: a new password with a code sent to the confirmed mail
+     */
+    public static HashString RESETPASS = new HashString ( "RESETPASS" );
+
+    /**
+     * NickServ/ChanServ: staff sets a new password
+     */
+    public static HashString SETPASS = new HashString ( "SETPASS" );
+
+    /**
      *
      */
     public static HashString EXPIREFOUNDER = new HashString ( "EXPIREFOUNDER" );
@@ -1899,6 +1909,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString ACCESS_DENIED_SETPASS_OPER = new HashString ( "ACCESS_DENIED_SETPASS_OPER" );
+
+    /**
+     *
+     */
     public static HashString NICK_GETPASS = new HashString ( "NICK_GETPASS" );
 
     /**
@@ -2240,6 +2255,11 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString SET_MODELOCK = new HashString ( "SET_MODELOCK" );
+
+    /**
+     *
+     */
+    public static HashString SET_PASSWD = new HashString ( "SET_PASSWD" );
 
     /**
      *

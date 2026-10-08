@@ -91,6 +91,7 @@ public class CSHelper extends Helper {
         else if ( command.is(MARK) )            { this.mark ( user );       }
         else if ( command.is(AUDITORIUM) )      { this.auditorium ( user ); }
         else if ( command.is(DELETE) )          { this.delete ( user );     }
+        else if ( command.is(SETPASS) )         { this.setPass ( user );    }
         else {
             this.noMatch ( user, cmd[4] );
         }
@@ -195,6 +196,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   After issuing this command and therefor registering a not already registered"              );
         this.service.sendMsg ( user, "   channel services will keep the channel for you and allow you to administer it."            );
         this.service.sendMsg ( user, "   You need to identify to a registered nickname before being able to register a channel"     );
+        this.service.sendMsg ( user, "   The password must be at least 8 characters."                                               );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
         this.service.sendMsg ( user, "   Do not use an easy-to-guess password, rather mix letters with digits and other"            );
@@ -524,6 +526,7 @@ public class CSHelper extends Helper {
         else if ( command.is(AUTOAKICK) )       { this.setAutoAKick ( user );   }
         else if ( command.is(PRIVATE) )         { this.setPrivate ( user );     }
         else if ( command.is(DYNAOP) )          { this.setDynAOP ( user );      }
+        else if ( command.is(PASSWD) )          { this.setPasswd ( user );      }
         else {
             this.setMain ( user );
         }
@@ -554,6 +557,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"LEAVEOPS"+f.b ( ) +"       First user in will be allowed to be op(@) "                             );
         this.service.sendMsg ( user, "       "+f.b ( ) +"AUTOAKICK"+f.b ( ) +"      Have ChanServ remove all matching users when placing an akick"          );
         this.service.sendMsg ( user, "       "+f.b ( ) +"DYNAOP"+f.b ( ) +"         ChanServ will try automatically fill/del the AOP list upon op/deop(@)"  );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"PASSWD"+f.b ( ) +"         Sets a new channel password"                                            );
         this.service.sendMsg ( user, "   "                                                                                                               );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                                      );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                                );
@@ -561,6 +565,24 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
       
+    /**
+     *
+     * @param user
+     */
+    public void setPasswd ( User user )  {
+        this.showStart ( user, "Set Passwd" );
+        this.service.sendMsg ( user, "   "                                                                                                              );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SET <#chan> PASSWD <new-pass>"+f.b ( ) +""                                         );
+        this.service.sendMsg ( user, "   "                                                                                                              );
+        this.service.sendMsg ( user, "   Sets a new password on the channel. Only the founder can do this, identified to"                               );
+        this.service.sendMsg ( user, "   the founder nick. Everyone who identified to the channel with the old password"                                );
+        this.service.sendMsg ( user, "   is unidentified from it."                                                                                      );
+        this.service.sendMsg ( user, "   "                                                                                                              );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                                     );
+        this.service.sendMsg ( user, "   Use a password of its own for the channel, not the one of your nick."                                          );
+        this.showEnd ( user );
+    }
+
     /**
      *
      * @param user
@@ -905,6 +927,23 @@ public class CSHelper extends Helper {
         this.showEnd ( user );      
     }
 
+    private void setPass ( User user ) {
+        if ( ! ChanServ.enoughAccess ( user, SETPASS ) ) {
+            return;
+        }
+        this.showStart ( user, "SetPass" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SETPASS <#chan> <new-pass>"+f.b ( ) +""                      );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Sets a new password on a channel. Nobody can see the old password, it is stored"           );
+        this.service.sendMsg ( user, "   as a hash. The founder does not need this, it can use SET <#chan> PASSWD."                 );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
+        this.service.sendMsg ( user, "   Make sure it is the founder you are talking to. This command is logged and sent as"        );
+        this.service.sendMsg ( user, "   globops."                                                                                  );
+        this.showEnd ( user );  
+    }
+
     private void mark(User user) {
         if ( ! ChanServ.enoughAccess ( user, MARK ) ) {
             return;
@@ -914,7 +953,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ MARK [-]<#chan>"+f.b ( ) +""                                     );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   This command will set the mark flag or remove it from a channel. When the flag is"         );
-        this.service.sendMsg ( user, "   set the channel will be locked from ownership commands including sendpass and getpass"     );
+        this.service.sendMsg ( user, "   set the channel will be locked from ownership commands including setpass"                  );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
         this.service.sendMsg ( user, "   Marking a channel should only be done if there is a conflict of ownership. The flag"       );
