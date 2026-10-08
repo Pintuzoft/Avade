@@ -6,8 +6,8 @@ the bahamut ircd, written in Java 17. MariaDB holds the data.
 - Target: the latest bahamut 2.2.x release (see `bahamut` in `src/core/Version.java`).
   Production upgrades its ircd before an Avade release, so no workarounds for
   older bahamut versions. Bahamut 3.0 (gossip) is not released and out of scope.
-- `docs/AUDIT-2026-09.md` (Swedish) tracks what was found and fixed, by number.
-  Add what you fix or build there.
+- `docs/AUDIT-2026-09.md` tracks what was found and fixed, by number. Add what
+  you fix or build there. Everything in the repository is written in English.
 
 ## Build and test
 

@@ -6,7 +6,7 @@ name: bahamut watch
 #    with that bahamut version as supported.
 #  - New things to control, or tests that fail: Claude writes the support on
 #    a branch and opens a pull request, and an issue tells what happened.
-# Setup: docs/BAHAMUT-BEVAKNING.md
+# Setup: docs/BAHAMUT-WATCH.md
 
 on:
   schedule:
@@ -155,9 +155,9 @@ jobs:
                Unless it is a dry run: commit on a new branch bahamut-${{ steps.find.outputs.version }},
                push it, and open a pull request to the default branch with gh. Never push to the
                default branch itself. Write the pull
-               request in Swedish: what changed in bahamut, what you built and why, the test result,
+               request in English: what changed in bahamut, what you built and why, the test result,
                and what a person must check before merging.
-            5. Answer with the structured output. summary: 2-6 sentences in Swedish.
+            5. Answer with the structured output. summary: 2-6 sentences in English.
           claude_args: |
             --model claude-opus-5-5
             --max-turns 300
@@ -174,7 +174,7 @@ jobs:
         env:
           VERSION: ${{ steps.find.outputs.version }}
           SUMMARY: ${{ steps.tests.outputs.summary }}
-          ANALYSIS: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary || 'Ingen analys av ändringarna i bahamut (ingen Claude-nyckel).' }}
+          ANALYSIS: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary || 'The changes in bahamut were not read (no Claude secret).' }}
         run: |
           branch=${{ github.event.repository.default_branch }}
           git checkout -f "$branch"
@@ -187,9 +187,9 @@ jobs:
           git tag "v$avade"
           git push origin "HEAD:$branch" "v$avade"
           printf '%s\n\n%s\n\n%s\n' \
-            "Stöd för bahamut $VERSION. Testsviten gick igenom mot den: $(echo "$SUMMARY" | head -1)." \
+            "Support for bahamut $VERSION. The test suite passed against it: $(echo "$SUMMARY" | head -1)." \
             "$ANALYSIS" \
-            "Släppt automatiskt av bahamut watch: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > notes.md
+            "Released automatically by bahamut watch: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > notes.md
           gh release create "v$avade" --title "$avade" --notes-file notes.md
           echo "avade=$avade" >> "$GITHUB_OUTPUT"
 
@@ -209,20 +209,20 @@ jobs:
           [ -n "$OUTPUT" ] || OUTPUT='{}'
           pr=$(echo "$OUTPUT" | jq -r '.pr_url // empty' 2>/dev/null)
           analysis=$(echo "$OUTPUT" | jq -r '.summary // empty' 2>/dev/null)
-          if [ "$RESULT" == "0" ]; then status="testerna går igenom"; else status="testerna går inte igenom"; fi
+          if [ "$RESULT" == "0" ]; then status="the tests pass"; else status="the tests fail"; fi
           {
-            echo "bahamut $VERSION är släppt (Avade stöder $CURRENT). Avade släpptes inte automatiskt."
+            echo "bahamut $VERSION is released (Avade supports $CURRENT). Avade was not released automatically."
             echo
-            echo "**Testsviten mot $VERSION:** $status"
+            echo "**Test suite against $VERSION:** $status"
             echo '```'
             echo "$SUMMARY"
             echo '```'
-            [ "$MAJOR_OK" != "true" ] && echo "Ny huvudversion: släpps aldrig automatiskt." && echo
+            [ "$MAJOR_OK" != "true" ] && echo "A new major version: never released automatically." && echo
             if [ -n "$analysis" ]; then echo "**Claude:** $analysis"; echo; fi
             [ -n "$pr" ] && echo "**Pull request:** $pr" && echo
-            [ "$CLAUDE" == "failure" ] && echo "Claude-steget misslyckades, se körningen." && echo
-            [ "$HAS_CLAUDE" != "true" ] && echo "Ingen analys av ändringarna (ingen Claude-nyckel)." && echo
-            echo "Ändringar i bahamut: https://github.com/DALnet/bahamut/compare/v$CURRENT...v$VERSION"
-            echo "Körningen, med loggar: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            [ "$CLAUDE" == "failure" ] && echo "The Claude step failed, see the run." && echo
+            [ "$HAS_CLAUDE" != "true" ] && echo "The changes were not read (no Claude secret)." && echo
+            echo "Changes in bahamut: https://github.com/DALnet/bahamut/compare/v$CURRENT...v$VERSION"
+            echo "The run, with logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } > issue.md
           gh issue create --title "bahamut $VERSION: $status" --body-file issue.md
