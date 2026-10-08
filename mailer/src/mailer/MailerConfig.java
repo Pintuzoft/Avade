@@ -26,14 +26,21 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 /**
- * mailer.conf, see mailer-template.conf
+ * mailer.conf, every setting is explained in mailer-reference.conf. The
+ * database settings have the same names as in services.conf
  *
  * @author DreamHealer
  */
 public class MailerConfig {
     private Map<String,Object>  conf;
-    private Map<String,Object>  mysql;
-    private Map<String,Object>  smtp;
+
+    /**
+     * Settings that are not in a file yet (setup)
+     * @param conf
+     */
+    MailerConfig ( Map<String,Object> conf ) {
+        this.conf = conf;
+    }
 
     /**
      * @param fileName
@@ -47,18 +54,15 @@ public class MailerConfig {
         } catch ( IOException ex ) {
             throw new IllegalStateException ( "can not read "+fileName+": "+ex.getMessage ( ) );
         }
-        this.mysql  = map ( this.conf.get ( "mysql" ), "mysql" );
-        this.smtp   = map ( this.conf.get ( "smtp" ), "smtp" );
-
-        for ( String key : new String[] { "host", "user", "db" } ) {
-            this.need ( this.mysql, "mysql", key );
+        for ( String key : new String[] { "mysqlhost", "mysqluser", "mysqldb" } ) {
+            this.need ( key );
         }
         if ( this.send ( ) ) {
-            this.need ( this.smtp, "smtp", "host" );
-            this.need ( this.smtp, "smtp", "from" );
+            this.need ( "smtphost" );
+            this.need ( "smtpfrom" );
             if ( this.smtpAuth ( ) ) {
-                this.need ( this.smtp, "smtp", "user" );
-                this.need ( this.smtp, "smtp", "pass" );
+                this.need ( "smtpuser" );
+                this.need ( "smtppass" );
             }
         }
     }
@@ -73,32 +77,32 @@ public class MailerConfig {
     /** @return times a mail the server turns away for now is tried */
     public int retries ( )              { return Math.max ( 1, num ( this.conf, "retries", 5 ) ); }
 
-    public String dbHost ( )            { return str ( this.mysql, "host", "localhost" );   }
-    public int dbPort ( )               { return num ( this.mysql, "port", 3306 );          }
-    public String dbUser ( )            { return str ( this.mysql, "user", "" );            }
-    public String dbPass ( )            { return str ( this.mysql, "pass", "" );            }
-    public String dbName ( )            { return str ( this.mysql, "db", "" );              }
+    public String dbHost ( )            { return str ( this.conf, "mysqlhost", "localhost" ); }
+    public int dbPort ( )               { return num ( this.conf, "mysqlport", 3306 );      }
+    public String dbUser ( )            { return str ( this.conf, "mysqluser", "" );        }
+    public String dbPass ( )            { return str ( this.conf, "mysqlpass", "" );        }
+    public String dbName ( )            { return str ( this.conf, "mysqldb", "" );          }
 
-    public String smtpHost ( )          { return str ( this.smtp, "host", "" );             }
-    public int smtpPort ( )             { return num ( this.smtp, "port", 587 );            }
+    public String smtpHost ( )          { return str ( this.conf, "smtphost", "" );         }
+    public int smtpPort ( )             { return num ( this.conf, "smtpport", 587 );        }
     /** @return STARTTLS required, and the certificate must match the host */
-    public boolean smtpTls ( )          { return bool ( this.smtp, "tls", true );           }
-    public boolean smtpAuth ( )         { return bool ( this.smtp, "auth", true );          }
-    public String smtpUser ( )          { return str ( this.smtp, "user", "" );             }
-    public String smtpPass ( )          { return str ( this.smtp, "pass", "" );             }
-    public String smtpFrom ( )          { return str ( this.smtp, "from", "" );             }
+    public boolean smtpTls ( )          { return bool ( this.conf, "smtptls", true );       }
+    public boolean smtpAuth ( )         { return bool ( this.conf, "smtpauth", true );      }
+    public String smtpUser ( )          { return str ( this.conf, "smtpuser", "" );         }
+    public String smtpPass ( )          { return str ( this.conf, "smtppass", "" );         }
+    public String smtpFrom ( )          { return str ( this.conf, "smtpfrom", "" );         }
 
     @SuppressWarnings ( "unchecked" )
     private static Map<String,Object> map ( Object obj, String what ) {
         if ( obj instanceof Map<?,?> ) {
             return (Map<String,Object>) obj;
         }
-        throw new IllegalStateException ( what+" is missing or not a section in the config" );
+        throw new IllegalStateException ( what+" has no settings" );
     }
 
-    private void need ( Map<String,Object> section, String name, String key ) {
-        if ( str ( section, key, "" ).isEmpty ( ) ) {
-            throw new IllegalStateException ( name+"."+key+" is missing in the config" );
+    private void need ( String key ) {
+        if ( str ( this.conf, key, "" ).isEmpty ( ) ) {
+            throw new IllegalStateException ( key+" is missing in the config" );
         }
     }
 

@@ -63,8 +63,8 @@ Needs Java 17 or newer. With ant, `make.sh` compiles Avade, without it the
     git checkout <the release tag or branch to test>
     ./make.sh install
 
-This puts `avade.jar`, `mailer.jar`, `lib/`, `template.conf`, `reference.conf`
-and `mailer-template.conf` in `~/avade/`.
+This puts `avade.jar`, `mailer.jar`, `lib/`, `template.conf`, `reference.conf`,
+`mailer-template.conf` and `mailer-reference.conf` in `~/avade/`.
 
 `make.sh` looks for Java 17 in the usual places. To use another one:
 `JAVA_HOME=/path/to/jdk ./make.sh install`.
@@ -81,7 +81,10 @@ Start from the `services.conf` of production and change:
 | `master` | a nick that is registered in the copy and whose password you know |
 
 Commands that are new since older versions need an access level (otherwise
-only SRA can use them, and a warning says so at start). Under `sa:`:
+only SRA can use them, and a warning says so at start). `./avade.sh setup`
+does this for you: with a `services.conf` that is already there it lists the
+commands that are new or gone and changes the access lists when you say yes.
+By hand, under `sa:`:
 
       - vhost
       - clone
@@ -97,7 +100,8 @@ Optional, words that may not be part of a user's vhost:
       - "*admin*"
       - "*oper*"
 
-Compare with `template.conf` for the exact layout.
+Compare with `template.conf` for the exact layout. `reference.conf` explains
+every setting.
 
 ## 6. Start
 
@@ -130,12 +134,12 @@ database first. Avoid `kill -9`.
 ## 7. The mailer, without sending
 
     cd ~/avade
-    cp mailer-template.conf mailer.conf
-    chmod 600 mailer.conf
-
-Set the `mysql` section to `avadetest` and keep **`send: false`**. Then:
-
     ./avade.sh mailer start
+
+The first time it asks for the database login and the mail server. Take the
+database login of services, skip the test mail, and answer **no** to "Send the
+mails of services for real?" (that is `send: false` in `mailer.conf`). Then:
+
     ./avade.sh mailer queue
 
 Every mail Avade makes is marked "not sent (send: false)" and logged in

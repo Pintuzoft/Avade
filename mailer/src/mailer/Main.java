@@ -32,6 +32,8 @@ import java.util.Map;
  *   java -jar mailer.jar [-c mailer.conf] once      one round, then exit
  *   java -jar mailer.jar [-c mailer.conf] status    mails per status
  *   java -jar mailer.jar [-c mailer.conf] resend <id|failed>
+ *   java -jar mailer.jar [-c mailer.conf] test <address>    send a test mail
+ *   java -jar mailer.jar setup                      ask what is needed and write mailer.conf
  *
  * @author DreamHealer
  */
@@ -60,6 +62,9 @@ public class Main {
         String command = args.length > i ? args[i] : "run";
         String arg = args.length > i + 1 ? args[i + 1] : null;
 
+        if ( command.equals ( "setup" ) ) {
+            System.exit ( new Setup ( ).run ( ) );
+        }
         MailerConfig config;
         try {
             config = new MailerConfig ( file );
@@ -74,8 +79,15 @@ public class Main {
             case "once" :       mailer.once ( );                break;
             case "status" :     mailer.status ( );              break;
             case "resend" :     mailer.resend ( arg );          break;
+            case "test" :
+                if ( arg == null ) {
+                    System.out.println ( "Syntax: test <address>" );
+                    System.exit ( 1 );
+                }
+                System.exit ( Setup.test ( config, arg ) );
+                break;
             default :
-                System.out.println ( "Syntax: java -jar mailer.jar [-c mailer.conf] [run|once|status|resend <id|failed>]" );
+                System.out.println ( "Syntax: java -jar mailer.jar [-c mailer.conf] [run|once|status|resend <id|failed>|test <address>|setup]" );
                 System.exit ( 1 );
         }
     }

@@ -11,9 +11,9 @@ the bahamut ircd, written in Java 17. MariaDB holds the data.
 
 ## Build and test
 
-- `./make.sh` builds with ant. Without ant: `javac --release 17 -encoding UTF-8 -cp "lib/*"`.
-- `dist/Avade.jar` is committed. Rebuild it when the code changes; the manifest
-  `Class-Path` lists the jars in `dist/lib/` (see `.github/scripts/bahamut-support.sh`).
+- `./make.sh` builds `dist/Avade.jar` and `dist/AvadeMailer.jar`, with ant when
+  it is there and with javac alone when it is not.
+- Both jars are committed. Rebuild them with `./make.sh` when the code changes.
 - `tests/start.sh [bahamut version]` starts a hub, a leaf, MariaDB (Docker) and
   Avade from `src/` with an empty database, `tests/run_tests.py [words]` runs the
   tests, `tests/stop.sh` stops. The first run registers users (about 5 minutes).
@@ -28,8 +28,30 @@ with status 1 (`mail/MXDatabase.sendMail`). `mailer/` is AvadeMailer, a
 program of its own that sends them (Jakarta Mail, its jars in `lib/mail/`) and
 sets the status (0 sent, 2 being sent, 3 not sent because `send: false`, 500
 failed). `mailer/build.sh` builds `dist/AvadeMailer.jar`, which is committed
-like `dist/Avade.jar`. Config: `mailer-template.conf`, docs: "Mail" in
-`INSTALL`. In the tests it sends to `tests/smtp.py`.
+like `dist/Avade.jar`. Docs: "Mail" in `INSTALL`. In the tests it sends to
+`tests/smtp.py`.
+
+## Config files
+
+`template.conf` is what a new `services.conf` starts from, `reference.conf`
+has the same settings with every one explained. The mailer has the same pair:
+`mailer-template.conf` and `mailer-reference.conf`. A new setting goes in both
+files of the pair, with example values that are not real (`example.net`,
+`CHANGE-THIS`): the repository is public. `test_config_files` checks that the
+pairs agree with each other and with the code.
+
+## Install and setup
+
+Installing must stay simple and obvious: `./install.sh` and a few questions.
+`install.sh` checks Java, runs `make.sh install` and then `avade.sh start`.
+When there is no `services.conf`, `avade.sh start` runs the setup
+(`src/setup/Setup.java`, `java -jar avade.jar setup`), which asks only what
+can not be guessed, checks the answers against the real database and hub, and
+writes the file from `template.conf`. The mailer has the same
+(`mailer/src/mailer/Setup.java`). `avade.sh` never asks without a terminal.
+A new setting needs a question only if no default works for everyone;
+otherwise it gets its value from the template. `tests/start.sh` makes the
+configs of the test network with both setups, and `test_setup` covers the rest.
 
 ## Code style
 

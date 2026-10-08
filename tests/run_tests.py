@@ -113,6 +113,110 @@ def setup():
 
 ### Tests
 
+def test_config_files():
+    """template.conf and reference.conf must have the same settings, and the ones the code reads."""
+    repo = os.path.dirname(HERE)
+
+    def read(name):
+        out, section = {}, None
+        for line in open(os.path.join(repo, name), encoding='utf-8'):
+            m = re.match(r'^([a-z]+):', line)
+            if m:
+                section = m.group(1)
+                out[section] = []
+            elif section and re.match(r'^\s+- ', line):
+                out[section].append(line.split('#')[0].strip()[2:].strip().strip('"'))
+        return out
+
+    t, r = read('template.conf'), read('reference.conf')
+    optional = {'vhostforbidden', 'uhmsalt', 'uhmprefix'}
+    check(set(t) - optional == set(r) - optional, 'template.conf and reference.conf have the same settings',
+          sorted(set(t) ^ set(r)))
+    lists = ('sra', 'csop', 'sa', 'ircop')
+    diff = [a for a in lists if sorted(t.get(a, [])) != sorted(r.get(a, []))]
+    check(not diff, 'and the same commands in every access list', diff)
+    src = open(os.path.join(repo, 'src', 'core', 'Config.java'), encoding='utf-8').read()
+    code = set(c.lower() for c in re.findall(r'[A-Z]+', re.search(r'cList = \{(.*?)\};', src, re.S).group(1)))
+    conf = set(c for a in lists for c in t.get(a, []))
+    check(code == conf, 'every staff command of Config.java is in the access lists', sorted(code ^ conf))
+    need = set(k.lower() for part in re.findall(r'key(?:Strings|Ints|Bools) = \{(.*?)\};', src, re.S)
+               for k in re.findall(r'[A-Z]+', part))
+    check(need <= set(t), 'every setting Config.java needs is in template.conf', sorted(need - set(t)))
+
+    mt, mr = read('mailer-template.conf'), read('mailer-reference.conf')
+    msrc = open(os.path.join(repo, 'mailer', 'src', 'mailer', 'MailerConfig.java'), encoding='utf-8').read()
+    mcode = set(re.findall(r'this\.conf, "([a-z]+)"', msrc))
+    check(set(mt) == set(mr) == mcode, 'mailer-template.conf, mailer-reference.conf and MailerConfig.java agree',
+          sorted((set(mt) ^ set(mr)) | (set(mt) ^ mcode)))
+
+
+def test_setup():
+    """The setup rounds: "avade.jar setup" and "mailer.jar setup" (start.sh used both for this network)."""
+    import shutil
+    import stat
+    import tempfile
+    repo = os.path.dirname(HERE)
+    cp = os.path.join(WORK, 'classes') + ':' + os.path.join(repo, 'lib', '*')
+
+    def setup(answers, files=None):
+        d = tempfile.mkdtemp(dir=WORK)
+        shutil.copy(os.path.join(repo, 'template.conf'), d)
+        for name, text in (files or {}).items():
+            open(os.path.join(d, name), 'w').write(text)
+        r = subprocess.run(['java', '-cp', cp, 'main.Main', 'setup'], cwd=d, input='\n'.join(answers) + '\n',
+                           capture_output=True, text=True)
+        return d, r.returncode, r.stdout
+
+    run = os.path.join(WORK, 'run')
+    mode = stat.S_IMODE(os.stat(os.path.join(run, 'services.conf')).st_mode)
+    check(mode == 0o600, 'services.conf written by the setup can only be read by its owner', oct(mode))
+    hub = open(os.path.join(run, 'hub-setup.txt')).read()
+    check('flags   H;' in hub and 'services.test.net' in hub and 'stats.test.net' in hub,
+          'the setup gives the lines for the ircd.conf of the hub (this hub uses them)')
+    # (the setup never connects to the hub: bahamut refuses an address after a few connections in a row)
+
+    net = ['TestNET', 'test.net', 'Someone', '', '', '', '']
+    database = ['127.0.0.1', ENV['DB_PORT'], ENV['DB_NAME'], ENV['DB_USER']]
+    d, code, out = setup(net[:2])
+    check(code == 1 and 'nothing was written' in out and not os.path.exists(os.path.join(d, 'services.conf')),
+          'when the answers stop, nothing is written', out[-200:])
+    d, code, out = setup(['TestNET', 'not a domain', 'test.net', 'bad nick!', 'Someone', '', '', 'x', '', ''] +
+                         database + [ENV['DB_PASS']])
+    check(code == 0 and 'A domain looks like' in out and 'not a nick' in out and 'A port is a number' in out,
+          'a wrong answer is explained and asked again', out[-300:])
+    conf = open(os.path.join(d, 'services.conf')).read()
+    salt = re.search(r"^secretsalt: (\S+)$", conf, re.M)
+    check('master: Someone' in conf and 'name: services.test.net' in conf and salt and len(salt.group(1)) == 48
+          and 'CHANGE-THIS' not in conf, 'the answers and a random secretsalt are in services.conf', conf[:400])
+    d, code, out = setup(net + database + ['wrong-password', 's'])
+    check(code == 0 and 'create user if not exists' in out and "identified by 'wrong-password'" in out,
+          'when services can not log in to the database, the setup shows what to run as root', out[-600:])
+
+    old = open(os.path.join(run, 'services.conf')).read().replace(' - setpass\n', ' - getpass\n')
+    d, code, out = setup(['y'], {'services.conf': old})
+    new = open(os.path.join(d, 'services.conf')).read()
+    check(code == 0 and 'csop: setpass' in out and 'getpass' in out, 'with a services.conf from an older version it lists what changed', out)
+    check(' - setpass' in new and 'getpass' not in new and new.replace(' - setpass\n', '') == old.replace(' - getpass\n', '')
+          and os.path.exists(os.path.join(d, 'services.conf.old')),
+          'adds the new command, removes the one that is gone, and keeps the old file')
+    d, code, out = setup([], {'services.conf': new})
+    check(code == 0 and 'every command of this version' in out and open(os.path.join(d, 'services.conf')).read() == new,
+          'and leaves a services.conf that is up to date alone', out)
+
+    d = tempfile.mkdtemp(dir=WORK)
+    shutil.copy(os.path.join(repo, 'avade.sh'), d)
+    open(os.path.join(d, 'avade.jar'), 'w').close()
+    r = subprocess.run([os.path.join(d, 'avade.sh'), 'start'], stdin=subprocess.DEVNULL, capture_output=True, text=True)
+    check(r.returncode != 0 and 'services.conf is missing' in r.stdout and 'avade.sh setup' in r.stdout,
+          'avade.sh start without a terminal never asks, it tells what to run', r.stdout)
+
+    m = os.path.join(WORK, 'mailer')
+    mode = stat.S_IMODE(os.stat(os.path.join(m, 'mailer.conf')).st_mode)
+    mails = [email.message_from_binary_file(open(f, 'rb')) for f in glob.glob(os.path.join(m, 'smtp', '*.eml'))]
+    check(mode == 0o600 and any(x['To'] == 'setup@test.net' and 'Test mail' in x['Subject'] for x in mails),
+          'the mailer setup wrote mailer.conf and its test mail reached the mail server', oct(mode))
+
+
 def test_identify():
     s = Client('Shortpw')
     r = s.svc('NickServ', 'REGISTER short1 shortpw@test.net')
@@ -983,7 +1087,7 @@ def test_hub_restart():
     close(c)
 
 
-TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
+TESTS = [test_config_files, test_setup, test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,

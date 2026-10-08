@@ -63,9 +63,29 @@ fi
 
 # Compile / Install
 
+# Without ant: dist/Avade.jar with javac alone
+function compile_javac {
+   local B=$(mktemp -d)
+   mkdir "$B/classes"
+   if javac --release 17 -nowarn -encoding UTF-8 -d "$B/classes" -cp "lib/*" $(find src -name '*.java') 2>&1 | grep -v '^Note:' | grep . ; then
+      echo "Error: Avade did not compile.";
+      rm -rf "$B";
+      return 1;
+   fi
+   printf 'Class-Path: %s\nMain-Class: main.Main\n' "$(cd dist && ls lib/*.jar | tr '\n' ' ' | sed 's/ $//')" > "$B/manifest.txt"
+   jar cfm dist/Avade.jar "$B/manifest.txt" -C "$B/classes" . && echo "Built dist/Avade.jar";
+   rm -rf "$B";
+}
+
 function compile {
-   if ! command -v ant > /dev/null 2>&1; then
-      echo "Note: ant is not installed, Avade is not compiled. Using the dist/Avade.jar that came with the source.";
+   if [ "$1" == "-q" ] && ! command -v ant > /dev/null 2>&1; then
+      :
+   elif ! command -v ant > /dev/null 2>&1; then
+      if command -v javac > /dev/null 2>&1; then
+         compile_javac;
+      else
+         echo "Note: no ant and no javac, Avade is not compiled. Using the dist/Avade.jar that came with the source.";
+      fi
    else
       ant ${1} ${2} 2>&1 | while read line; do
          if [ -z "$1" ]; then
@@ -96,6 +116,7 @@ function install {
    cp template.conf ~/avade/
    cp reference.conf ~/avade/
    cp mailer-template.conf ~/avade/
+   cp mailer-reference.conf ~/avade/
    cp avade.sh ~/avade/
    chmod +x ~/avade/avade.sh
    echo "Installed: $(ls -l ~/avade/avade.jar)";

@@ -10,42 +10,87 @@ These installation instructions will only describe the process of installing
 Avade IRC Services and not anything else. 
 
 
+### The short way ###
+
+As the user that will run services (not root):
+
+    git clone https://github.com/Pintuzoft/Avade.git
+    cd Avade
+    ./install.sh
+
+install.sh checks that the machine has Java 17, puts everything in ~/avade/,
+and starts services. The first time there is no services.conf, so it asks a
+few questions (your network, the hub, the database) and writes it for you:
+
+- it tries the database login while you answer, and when that does not work
+  it shows the lines to run as the root user of the database
+- it shows the lines the hub needs in its ircd.conf, with your names and
+  password filled in (also saved in ~/avade/hub-setup.txt)
+- the secret salt and the passwords you do not type are made for you
+
+Mail to users is the same: "./avade.sh mailer start" asks for your mail server
+the first time, sends a test mail and writes mailer.conf (see 11.).
+
+To upgrade, get the new version and run ./install.sh again. It offers to take
+a backup of the database first, keeps services.conf, adds the commands the new
+version brought to its access lists, and restarts services.
+
+What you need before you start: a bahamut hub you can change the ircd.conf of,
+and MariaDB (or MySQL) with its root login.
+
+The rest of this file describes each step, for when you want to do it by hand
+or want to know what happens.
+
+
 ### Install & Update ###
 
 
 1. Dependencies
 
-CentOS:
-yum install openjdk
-yum install openjdk-devel
-yum install ant
+Java 17 or newer. Avade comes built (dist/), so the Java runtime is enough:
+
+    Fedora, RHEL, CentOS:   sudo dnf install java-17-openjdk-headless
+    Debian, Ubuntu:         sudo apt-get install openjdk-17-jre-headless
+
+To build it yourself you need the JDK (java-17-openjdk-devel, openjdk-17-jdk).
+ant is used when it is there, without it ./make.sh builds with javac.
 
 
 2. Download
 
 Goto and download the latest release from:
 https://github.com/Pintuzoft/Avade/releases
+or clone the repository as in the short way above.
 
 
 3. Install
 
 tar -zxvf Avade-<version>.tar.gz
 cd Avade-<version>
-./make.sh
-./make.sh install
+./install.sh
+
+By hand instead: "./make.sh" builds and "./make.sh install" puts everything in
+~/avade/.
 
 
 4. Setup Database ( MariaDB / MySQL )
 
-create database avade;
-grant all privileges on avade.* to 'avade'@'localhost' identified by 'avade123';
+The setup tries the login and shows these lines with your names when they are
+needed. As the root user of the database:
+
+create database if not exists avade;
+create user if not exists 'services'@'localhost' identified by 'CHOOSE-A-PASSWORD';
+grant all privileges on avade.* to 'services'@'localhost';
 
 
 5. Services Configuration
 
-Under "~/avade/" you will find, if installed correctly. the template.conf file.
-Use the template.conf file and create from it the file services.conf. Add the
-proper database login information into the services.conf file 
+"./avade.sh start" writes services.conf for you the first time, by asking what
+is needed. "./avade.sh setup" does only that. The same command, with a
+services.conf that is already there, adds the commands a new version brought.
+
+By hand instead: under "~/avade/" you will find the template.conf file. Copy
+it to services.conf and set the values. reference.conf explains every setting.
 
 Dont forget to set network name and change the salt to something completely 
 random. After setting the salt value please save it in a secure place perhaps in
@@ -64,8 +109,12 @@ server.
 cd ~/avade
 ./avade.sh start
 
-Other actions: stop, restart, status, check and log. The output of services
-ends up in ~/avade/avade.out (the five latest are kept).
+start tells whether services linked to the hub, and when they did not, what
+is in the way (the hub does not answer, the hub closed the link and why, or
+the database can not be reached). Services keep trying by themselves.
+
+Other actions: stop, restart, status, setup, check and log. The output of
+services ends up in ~/avade/avade.out (the five latest are kept).
 
 To bring services back after a reboot or a crash, add this to the crontab of
 the user running services (crontab -e):
@@ -95,6 +144,12 @@ mean loss of data.
 
 8. Updating Services
 
+Get the new version as described in step 2 and run ./install.sh in it. It
+offers to take a backup of the database (to ~/avade/backup/), installs the
+new version, adds new commands to the access lists of services.conf, and
+restarts services.
+
+By hand instead:
 - Take a backup of the database!
 - Then start the new version of Avade
 
@@ -338,9 +393,10 @@ A mail is never sent twice by itself. A mail that was being sent when the
 mailer stopped may or may not have gone out, so it is marked failed and is
 only sent again with "resend".
 
-11.1 A database user for the mailer
+11.1 A database user for the mailer (optional)
 
-The mailer only needs the mailbox table:
+The mailer can use the database login of services, which is the simplest. A
+user of its own that can do nothing but use the mailbox table is safer:
 
     grant select, update, delete on avade.mailbox to 'mailer'@'localhost' identified by 'MAILERPASS';
 
@@ -349,26 +405,32 @@ another machine.
 
 11.2 mailer.conf
 
-./make.sh install puts mailer.jar and mailer-template.conf in ~/avade/.
+"./avade.sh mailer start" writes mailer.conf for you the first time: it asks
+for the database login (the one of services, or the user from 11.1) and the
+mail server, sends a test mail to an address you give, and asks whether mails
+should be sent for real. "./avade.sh mailer setup" does only that.
+
+By hand instead:
 
     cd ~/avade
     cp mailer-template.conf mailer.conf
     chmod 600 mailer.conf
 
-Set the database user from 11.1, the mail server, and "send: true". Every
-setting is explained in the file.
+Set the database user from 11.1 (the mysql settings have the same names as in
+services.conf), the mail server, and "send: true". Every setting is explained
+in mailer-reference.conf.
 
 With Amazon SES:
-- host email-smtp.<region>.amazonaws.com (for example eu-north-1), port 587,
-  tls: true, auth: true.
-- user and pass are the SMTP credentials made in the SES console, not the AWS
-  access keys.
-- from must be a verified address, or an address in a verified domain.
+- smtphost email-smtp.<region>.amazonaws.com, smtpport 587, smtptls: true,
+  smtpauth: true.
+- smtpuser and smtppass are the SMTP credentials made in the SES console, not
+  the AWS access keys.
+- smtpfrom must be a verified address, or an address in a verified domain.
 - A new SES account is in the sandbox: it only sends to verified addresses,
   one mail a second. Ask AWS for production access before going live.
 
-With a mail server on the same machine (postfix, sendmail): host localhost,
-port 25, tls: false, auth: false.
+With a mail server on the same machine (postfix, sendmail): smtphost
+localhost, smtpport 25, smtptls: false, smtpauth: false.
 
 11.3 Starting and checking
 
@@ -388,6 +450,8 @@ running, as soon as mailer.conf exists.
     ./avade.sh mailer queue                 mails in the mailbox per status
     ./avade.sh mailer resend <id>           send that mail again
     ./avade.sh mailer resend failed         send all failed mails again
+    ./avade.sh mailer test <address>        send a test mail
+    ./avade.sh mailer setup                 write mailer.conf by asking
 
 11.5 A test network with a copy of real data
 
@@ -407,11 +471,11 @@ mailers on the same mailbox send every mail twice.
     A setting is missing or wrong, the message tells which.
 
 "No database connection: ..."
-    Check the mysql section and the grant in 11.1. It tries again by itself.
+    Check the mysql settings and the grant in 11.1. It tries again by itself.
 
 "Mail server problem, trying again later: ..."
     The mail server could not be reached, the login failed, or the certificate
-    is not valid for the host (tls: true checks it). The mail stays waiting
+    is not valid for the host (smtptls: true checks it). The mail stays waiting
     and is sent when the server works again.
 
 "Failed: mail <id>, the server answered 554" (or another 5xx)

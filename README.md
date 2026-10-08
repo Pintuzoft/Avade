@@ -9,6 +9,20 @@ upcoming bahamut release.
 
 ./DreamHealer
 
+### Install
+
+You need Java 17, a bahamut hub and MariaDB (or MySQL). As the user that will
+run services:
+
+    git clone https://github.com/Pintuzoft/Avade.git
+    cd Avade
+    ./install.sh
+
+It puts everything in `~/avade/` and starts services. The first time it asks a
+few questions (your network, the hub, the database), writes `services.conf`
+for you and shows the lines the hub needs in its `ircd.conf`. Run it again in
+a newer version to upgrade. Everything else is in [INSTALL](INSTALL).
+
 ### Special features included in Avade:
 
 - Reconnecting to services hub

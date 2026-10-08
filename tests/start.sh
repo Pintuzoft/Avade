@@ -3,7 +3,11 @@
 #   MariaDB (docker) + bahamut hub + bahamut leaf + Avade built from this repo
 #
 # The database is created empty every time, so Avade runs all its DBChanges.
-# Use KEEP_DB=1 to keep the database from the last run.
+# Use KEEP_DB=1 to keep the database (and the configs) from the last run.
+#
+# services.conf and mailer.conf are written by the setup of Avade and of the
+# mailer, with the answers a person would type, and the hub gets the connect
+# block that the setup tells an admin to use.
 set -e
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 [ -n "$1" ] && IRCD_VERSION="$1" && IRCD="$WORK/ircd-$IRCD_VERSION"
@@ -32,6 +36,24 @@ for i in $(seq 1 60); do
     fi
     echo -n "."; sleep 1
 done
+
+### Avade config: written by "avade.jar setup" with the answers a person would type
+"$TESTS/avade.sh" build
+if [ -z "$KEEP_DB" ] || [ ! -f "$RUN/services.conf" ]; then
+    rm -f "$RUN/services.conf" "$RUN/hub-setup.txt"
+    cp -f "$REPO/template.conf" "$RUN/"
+    # network (name, domain, master), hub (name, address, port, password),
+    # database (host, port, name, user, password)
+    ( cd "$RUN" && printf '%s\n' TestNET test.net "$MASTER_NICK" "$HUB_NAME" 127.0.0.1 "$HUB_SERVER_PORT" "$LINK_PASS" \
+                                 127.0.0.1 "$DB_PORT" "$DB_NAME" "$DB_USER" "$DB_PASS" \
+          | java -cp "$WORK/classes:$REPO/lib/*" main.Main setup > "$WORK/setup.log" 2>&1 ) \
+        || { tail -20 "$WORK/setup.log"; exit 1; }
+    printf '\nvhostforbidden:\n  - "*admin*"\n  - "*oper*"\n' >> "$RUN/services.conf"
+    printf '\nuhmsalt: TestSalt1234567890abcdefGHIJ\nuhmprefix: avade\n' >> "$RUN/services.conf"
+fi
+# The connect block the setup tells the admin of the hub to use
+SERVICES_CONNECT=$(sed -n '/^    connect {/,/^    };/p' "$RUN/hub-setup.txt")
+[ -n "$SERVICES_CONNECT" ] || { echo "no connect block in hub-setup.txt"; exit 1; }
 
 ### ircd configs
 ircd_conf() {   # name, client port, server port, extra options, connect blocks
@@ -62,7 +84,7 @@ $5
 CONF
 }
 ircd_conf "$HUB_NAME" "$HUB_CLIENT_PORT" "$HUB_SERVER_PORT" "    servtype hub;" \
-"connect { name $SERVICES_NAME; host 127.0.0.1; apasswd $LINK_PASS; cpasswd $LINK_PASS; class servers; flags H; };
+"$SERVICES_CONNECT
 connect { name $LEAF_NAME; host 127.0.0.1; apasswd $LINK_PASS; cpasswd $LINK_PASS; class servers; };" > "$IRCD/ircd.conf"
 ircd_conf "$LEAF_NAME" "$LEAF_CLIENT_PORT" "$LEAF_SERVER_PORT" "" \
 "connect { name $HUB_NAME; host 127.0.0.1; port $HUB_SERVER_PORT; apasswd $LINK_PASS; cpasswd $LINK_PASS; class servers; flags H; };" > "$WORK/leaf/ircd.conf"
@@ -79,44 +101,25 @@ if [ "${IFVER:-0}" -ge 1011 ]; then
     echo 'modules { path modules; autoload avade_uhm; };' >> "$WORK/leaf/ircd.conf"
 fi
 
-### Avade config, from the template in the repo
-sed -e "s/^name: .*/name: $SERVICES_NAME/" \
-    -e "s/^domain: .*/domain: test.net/" \
-    -e "s/^stats: .*/stats: $STATS_NAME/" \
-    -e "s/^master: .*/master: $MASTER_NICK/" \
-    -e "s/^hubname: .*/hubname: $HUB_NAME/" \
-    -e "s/^hubhost: .*/hubhost: 127.0.0.1/" \
-    -e "s/^hubport: .*/hubport: $HUB_SERVER_PORT/" \
-    -e "s/^hubpass: .*/hubpass: $LINK_PASS/" \
-    -e "s/^mysqlhost: .*/mysqlhost: 127.0.0.1/" \
-    -e "s/^mysqlport: .*/mysqlport: $DB_PORT/" \
-    -e "s/^mysqluser: .*/mysqluser: $DB_USER/" \
-    -e "s/^mysqlpass: .*/mysqlpass: $DB_PASS/" \
-    -e "s/^mysqldb: .*/mysqldb: $DB_NAME/" \
-    "$REPO/template.conf" > "$RUN/services.conf"
-printf '\nvhostforbidden:\n  - "*admin*"\n  - "*oper*"\n' >> "$RUN/services.conf"
-printf '\nuhmsalt: TestSalt1234567890abcdefGHIJ\nuhmprefix: avade\n' >> "$RUN/services.conf"
-
-### AvadeMailer config, from the template in the repo, sending to tests/smtp.py
-mkdir -p "$WORK/mailer" && rm -rf "$WORK/mailer/smtp"
-sed -e "s/^send: .*/send: true/" \
-    -e "s/^interval: .*/interval: 1/" \
-    -e "s/^rate: .*/rate: 50/" \
-    -e "s/^retries: .*/retries: 2/" \
-    -e "s/^  host: localhost/  host: 127.0.0.1/" \
-    -e "s/^  port: 3306/  port: $DB_PORT/" \
-    -e "s/^  user: mailer/  user: $DB_USER/" \
-    -e "s/^  pass: mailerpass/  pass: $DB_PASS/" \
-    -e "s/^  db: avade/  db: $DB_NAME/" \
-    -e "s/^  host: email-smtp.*/  host: 127.0.0.1/" \
-    -e "s/^  port: 587/  port: $SMTP_PORT/" \
-    -e "s/^  tls: true/  tls: false/" \
-    -e "s/^  auth: true/  auth: false/" \
-    -e "s/^  from: .*/  from: services@test.net/" \
-    "$REPO/mailer-template.conf" > "$WORK/mailer/mailer.conf"
-
 "$TESTS/ircd.sh" start
-"$TESTS/avade.sh" start
-"$TESTS/mailer.sh" start
+"$TESTS/avade.sh" restart
 "$TESTS/wait-link.sh" || exit 1
+
+### AvadeMailer: its setup writes mailer.conf, and sends its test mail to tests/smtp.py
+M="$WORK/mailer"
+"$TESTS/mailer.sh" build
+if [ -z "$KEEP_DB" ] || [ ! -f "$M/mailer.conf" ]; then
+    mkdir -p "$M" && rm -rf "$M/smtp" "$M/mailer.conf"
+    cp -f "$REPO/mailer-template.conf" "$M/"
+    "$TESTS/mailer.sh" smtp
+    # database (host, port, name, user, password), mail server (host, port, no STARTTLS,
+    # no login, sender), a test mail, and yes to sending for real
+    printf '%s\n' 127.0.0.1 "$DB_PORT" "$DB_NAME" "$DB_USER" "$DB_PASS" \
+                  127.0.0.1 "$SMTP_PORT" "" "" services@test.net setup@test.net "" \
+        | "$TESTS/mailer.sh" cmd setup > "$WORK/mailer-setup.log" 2>&1 \
+        || { tail -20 "$WORK/mailer-setup.log"; exit 1; }
+    # the tests should not wait for the pace of a real network
+    sed -i -e "s/^interval: .*/interval: 1/" -e "s/^rate: .*/rate: 50/" -e "s/^retries: .*/retries: 2/" "$M/mailer.conf"
+fi
+"$TESTS/mailer.sh" restart
 echo "test network is up: bahamut $IRCD_VERSION, hub 127.0.0.1:$HUB_CLIENT_PORT, leaf 127.0.0.1:$LEAF_CLIENT_PORT"

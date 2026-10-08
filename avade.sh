@@ -3,7 +3,11 @@
 # Control script for Avade IRC Services and AvadeMailer. Lives next to
 # avade.jar and services.conf (./make.sh install puts it in ~/avade/).
 #
-#   ./avade.sh start      start in the background
+#   ./avade.sh start      start in the background. The first time, when there
+#                         is no services.conf yet, it asks a few questions and
+#                         writes it for you
+#   ./avade.sh setup      only that: write services.conf, or with one that is
+#                         already there, add the commands a new version brought
 #   ./avade.sh stop       stop, pending changes are written to the database first
 #   ./avade.sh restart
 #   ./avade.sh status
@@ -14,8 +18,12 @@
 #
 # The mailer (mailer.jar and mailer.conf, see "Mail" in INSTALL):
 #   ./avade.sh mailer start|stop|restart|status|log
+#                                            (start asks for the mail server and
+#                                            writes mailer.conf the first time)
+#   ./avade.sh mailer setup                  only that
 #   ./avade.sh mailer queue                  mails in the mailbox per status
 #   ./avade.sh mailer resend <id|failed>     send a mail, or all failed ones, again
+#   ./avade.sh mailer test <address>         send a test mail
 #
 # Cron, to bring services back after a reboot or a crash:
 #   */5 * * * * $HOME/avade/avade.sh check
@@ -37,11 +45,11 @@ use() {
     if [ "$1" == "mailer" ]; then
         NAME="AvadeMailer"; JAR="$DIR/mailer.jar"; CONF="$DIR/mailer.conf"
         PIDFILE="$DIR/mailer.pid"; OUT="$DIR/mailer.out"; MATCH='mailer\.jar'
-        ARGS="run"; STOPWAIT=30
+        ARGS="run"; STOPWAIT=30; SETUPCMD="mailer setup"
     else
         NAME="Avade"; JAR="$DIR/avade.jar"; CONF="$DIR/services.conf"
         PIDFILE="$DIR/avade.pid"; OUT="$DIR/avade.out"; MATCH='avade\.jar'
-        ARGS=""; STOPWAIT=90
+        ARGS=""; STOPWAIT=90; SETUPCMD="setup"
     fi
 }
 
@@ -71,15 +79,23 @@ start() {
         echo "$NAME is already running (pid $pid)."
         return 0
     fi
-    for f in "$JAR" "$CONF"; do
-        if [ ! -f "$f" ]; then
-            echo "Error: $f is missing."
-            return 1
-        fi
-    done
+    if [ ! -f "$JAR" ]; then
+        echo "Error: $JAR is missing."
+        return 1
+    fi
     if ! command -v "$JAVA" > /dev/null 2>&1; then
         echo "Error: java not found, set JAVA=/path/to/java"
         return 1
+    fi
+    if [ ! -f "$CONF" ]; then
+        # The first start: ask what is needed. Never from cron, it has nobody to ask
+        if [ -t 0 ] && [ -t 1 ]; then
+            setup || return 1
+        fi
+        if [ ! -f "$CONF" ]; then
+            echo "Error: $CONF is missing. Run: $0 $SETUPCMD"
+            return 1
+        fi
     fi
     rotate
     # the config is read from the current directory
@@ -96,6 +112,37 @@ start() {
         return 1
     fi
     echo "$NAME started (pid $pid), output in $OUT"
+    [ "$NAME" == "Avade" ] && linked
+}
+
+# Did services link to the hub? Says what is in the way when they did not
+linked() {
+    local i line=""
+    for (( i = 0; i < 25; i++ )); do
+        if grep -a -q 'Link with .* established' "$OUT" 2>/dev/null; then
+            echo "ok: linked to the hub."
+            return 0
+        fi
+        line=$(grep -a -m 1 -E 'Hub sent: ERROR|Could not connect to the hub|Database not available|Change FAILED to apply' "$OUT" 2>/dev/null)
+        [ -n "$line" ] && break
+        [ -z "$(running_pid)" ] && break
+        sleep 1
+    done
+    case "$line" in
+        *"Could not connect to the hub"*)
+            echo "Not linked yet: the hub does not answer on the address and port in services.conf."
+            echo "Services keep trying. Is the hub running, and does it listen on that port?" ;;
+        *"Hub sent: ERROR"*)
+            echo "Not linked yet, the hub closed the link: ${line##*ERROR :}"
+            echo "Services keep trying. What the hub needs in its ircd.conf is in $DIR/hub-setup.txt" ;;
+        *"Database not available"*)
+            echo "Waiting for the database: services can not log in to it. Check the mysql settings in"
+            echo "services.conf. Services link to the hub as soon as the database answers." ;;
+        *"Change FAILED"*)
+            echo "The upgrade of the database failed, see $OUT" ;;
+        *)
+            echo "Not linked to the hub yet. Follow it with: $0 log" ;;
+    esac
 }
 
 stop() {
@@ -137,6 +184,19 @@ status() {
     echo "$NAME is running (pid $pid, started $(ps -o lstart= -p "$pid"))."
 }
 
+# Ask what is needed and write the config (services.conf or mailer.conf)
+setup() {
+    if [ ! -f "$JAR" ]; then
+        echo "Error: $JAR is missing."
+        return 1
+    fi
+    if ! command -v "$JAVA" > /dev/null 2>&1; then
+        echo "Error: java not found, set JAVA=/path/to/java"
+        return 1
+    fi
+    ( cd "$DIR" && "$JAVA" -jar "$JAR" setup )
+}
+
 # A one time mailer command (queue, resend): needs the jar and the config, not a running mailer
 mailer_cmd() {
     for f in "$JAR" "$CONF"; do
@@ -153,10 +213,12 @@ if [ "${1,,}" == "mailer" ]; then
         restart) stop && start ;;
         status)  status ;;
         log)     tail -n 50 -f "$OUT" ;;
+        setup)   setup ;;
         queue)   mailer_cmd status ;;
         resend)  mailer_cmd resend "$3" ;;
+        test)    mailer_cmd test "$3" ;;
         *)
-            echo "Syntax: $0 mailer <start|stop|restart|status|log|queue|resend <id|failed>>"
+            echo "Syntax: $0 mailer <start|stop|restart|status|log|setup|queue|resend <id|failed>|test <address>>"
             exit 1
             ;;
     esac
@@ -169,6 +231,7 @@ case "${1,,}" in
     stop)    stop ;;
     restart) stop && start ;;
     status)  status ;;
+    setup)   setup ;;
     check)
         [ -n "$(running_pid)" ] || start
         use mailer
@@ -179,7 +242,7 @@ case "${1,,}" in
     log)     tail -n 50 -f "$OUT" ;;
     gensalt) LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 48; echo ;;
     *)
-        echo "Syntax: $0 <start|stop|restart|status|check|log|gensalt|mailer ...>"
+        echo "Syntax: $0 <start|stop|restart|status|setup|check|log|gensalt|mailer ...>"
         exit 1
         ;;
 esac
