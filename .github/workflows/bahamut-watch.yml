@@ -1,0 +1,228 @@
+name: bahamut watch
+
+# Once a week: is there a new bahamut release? Then the test suite runs
+# against it and Claude reads what changed in bahamut.
+#  - Tests pass and nothing new for services to control: Avade is released
+#    with that bahamut version as supported.
+#  - New things to control, or tests that fail: Claude writes the support on
+#    a branch and opens a pull request, and an issue tells what happened.
+# Setup: docs/BAHAMUT-BEVAKNING.md
+
+on:
+  schedule:
+    - cron: '17 5 * * 1'            # Mondays 05:17 UTC
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'bahamut version to test, e.g. 2.2.5 (empty: the latest release)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Only test and analyse: no release, branch, pull request or issue'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+
+concurrency:
+  group: bahamut-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+      HAS_CLAUDE: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN != '' || secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: New bahamut release?
+        id: find
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          current=$(grep -oE '"bahamut-[0-9.]+"' src/core/Version.java | tr -d '"' | cut -d- -f2)
+          version=${INPUT_VERSION:-$(.github/scripts/bahamut-latest.sh)}
+          newest=$(printf '%s\n%s\n' "$current" "$version" | sort -V | tail -1)
+          run=false
+          if [ -n "$INPUT_VERSION" ]; then
+            run=true
+          elif [ "$version" != "$current" ] && [ "$newest" == "$version" ]; then
+            # Handled before (a pull request or an issue about it): wait for a person
+            seen=$(gh issue list --state all --search "\"bahamut $version\" in:title" --json number --jq 'length')
+            [ "$seen" == "0" ] && run=true
+          fi
+          major_ok=false
+          [ "${version%%.*}" == "${current%%.*}" ] && major_ok=true
+          echo "current=$current version=$version run=$run major_ok=$major_ok"
+          {
+            echo "current=$current"
+            echo "version=$version"
+            echo "run=$run"
+            echo "major_ok=$major_ok"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        if: steps.find.outputs.run == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Tools for building bahamut
+        if: steps.find.outputs.run == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q autoconf automake gcc make libssl-dev zlib1g-dev
+
+      - name: Test suite against bahamut ${{ steps.find.outputs.version }}
+        id: tests
+        if: steps.find.outputs.run == 'true'
+        env:
+          VERSION: ${{ steps.find.outputs.version }}
+        run: |
+          set +e
+          tests/start.sh "$VERSION" > start.log 2>&1
+          if [ $? -eq 0 ]; then
+            tests/run_tests.py > tests.log 2>&1
+            result=$?
+          else
+            result=2
+            cp start.log tests.log
+          fi
+          tests/stop.sh > /dev/null 2>&1
+          tail -40 tests.log
+          echo "result=$result" >> "$GITHUB_OUTPUT"
+          {
+            echo 'summary<<SUMMARY_END'
+            grep -E '^[0-9]+ checks|^  FAIL' tests.log | head -40
+            [ $result -eq 2 ] && tail -20 start.log
+            echo 'SUMMARY_END'
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.find.outputs.run == 'true'
+        with:
+          name: test-logs-bahamut-${{ steps.find.outputs.version }}
+          path: |
+            start.log
+            tests.log
+            tests/.work/run/avade.out
+            tests/.work/run/services.log
+          if-no-files-found: ignore
+
+      - name: Claude reads what changed in bahamut
+        id: claude
+        if: steps.find.outputs.run == 'true' && env.HAS_CLAUDE == 'true'
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            A new bahamut release is out: ${{ steps.find.outputs.version }}. Avade supports
+            bahamut ${{ steps.find.outputs.current }} today. The test suite of the current code
+            against ${{ steps.find.outputs.version }} ended with exit code ${{ steps.tests.outputs.result }}
+            (0 = all passed). The full output is in tests.log, the summary:
+
+            ${{ steps.tests.outputs.summary }}
+
+            DRY RUN (no branch, push or pull request): ${{ env.DRY_RUN }}
+
+            1. Read what changed in bahamut between v${{ steps.find.outputs.current }} and
+               v${{ steps.find.outputs.version }}: clone https://github.com/DALnet/bahamut into
+               /tmp/bahamut, read CHANGES and `git diff`. Look for what touches services: the
+               server protocol (NICK, SJOIN, MODE, TOPIC, CAPAB, numerics), SVS* commands,
+               user and channel modes, chanflags (SVSXCF), anything services can or must
+               control, and changes that explain failing tests.
+            2. Decide if Avade needs changes: protocol changes it must follow, or new things
+               the network wants to control through services.
+            3. If no change is needed and the tests passed, change nothing.
+            4. Otherwise build it as CLAUDE.md describes: commands, config and access levels
+               (template.conf and reference.conf), help pages, logs and snoop, DBChanges for
+               database changes, checks in tests/run_tests.py, and a line in
+               docs/AUDIT-2026-09.md. Do not change the bahamut version in Version.java or
+               tests/env.sh, the release does that. Run the test suite against
+               ${{ steps.find.outputs.version }} (tests/start.sh ${{ steps.find.outputs.version }},
+               tests/run_tests.py, tests/stop.sh) until it passes. Rebuild dist/Avade.jar.
+               Unless it is a dry run: commit on a new branch bahamut-${{ steps.find.outputs.version }},
+               push it, and open a pull request to the default branch with gh. Never push to the
+               default branch itself. Write the pull
+               request in Swedish: what changed in bahamut, what you built and why, the test result,
+               and what a person must check before merging.
+            5. Answer with the structured output. summary: 2-6 sentences in Swedish.
+          claude_args: |
+            --model claude-opus-5-5
+            --max-turns 300
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash"
+            --json-schema '{"type":"object","properties":{"needs_change":{"type":"boolean"},"pr_url":{"type":"string"},"summary":{"type":"string"}},"required":["needs_change","summary"]}'
+
+      - name: Release Avade with bahamut ${{ steps.find.outputs.version }}
+        id: release
+        if: >-
+          steps.find.outputs.run == 'true' && env.DRY_RUN != 'true' &&
+          steps.tests.outputs.result == '0' && steps.find.outputs.major_ok == 'true' &&
+          ( env.HAS_CLAUDE != 'true' ||
+            ( steps.claude.outcome == 'success' && fromJSON(steps.claude.outputs.structured_output || '{}').needs_change == false ) )
+        env:
+          VERSION: ${{ steps.find.outputs.version }}
+          SUMMARY: ${{ steps.tests.outputs.summary }}
+          ANALYSIS: ${{ fromJSON(steps.claude.outputs.structured_output || '{}').summary || 'Ingen analys av ändringarna i bahamut (ingen Claude-nyckel).' }}
+        run: |
+          branch=${{ github.event.repository.default_branch }}
+          git checkout -f "$branch"
+          git reset --hard "origin/$branch"
+          avade=$(.github/scripts/bahamut-support.sh "$VERSION")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add src/core/Version.java tests/env.sh dist/Avade.jar
+          git commit -q -m "Support bahamut $VERSION" -m "The test suite passed against bahamut $VERSION: $(echo "$SUMMARY" | head -1)"
+          git tag "v$avade"
+          git push origin "HEAD:$branch" "v$avade"
+          printf '%s\n\n%s\n\n%s\n' \
+            "Stöd för bahamut $VERSION. Testsviten gick igenom mot den: $(echo "$SUMMARY" | head -1)." \
+            "$ANALYSIS" \
+            "Släppt automatiskt av bahamut watch: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" > notes.md
+          gh release create "v$avade" --title "$avade" --notes-file notes.md
+          echo "avade=$avade" >> "$GITHUB_OUTPUT"
+
+      - name: Issue about bahamut ${{ steps.find.outputs.version }}
+        if: >-
+          always() && steps.find.outputs.run == 'true' && env.DRY_RUN != 'true' &&
+          steps.release.outcome != 'success'
+        env:
+          VERSION: ${{ steps.find.outputs.version }}
+          CURRENT: ${{ steps.find.outputs.current }}
+          RESULT: ${{ steps.tests.outputs.result }}
+          SUMMARY: ${{ steps.tests.outputs.summary }}
+          MAJOR_OK: ${{ steps.find.outputs.major_ok }}
+          CLAUDE: ${{ steps.claude.outcome }}
+          OUTPUT: ${{ steps.claude.outputs.structured_output }}
+        run: |
+          [ -n "$OUTPUT" ] || OUTPUT='{}'
+          pr=$(echo "$OUTPUT" | jq -r '.pr_url // empty' 2>/dev/null)
+          analysis=$(echo "$OUTPUT" | jq -r '.summary // empty' 2>/dev/null)
+          if [ "$RESULT" == "0" ]; then status="testerna går igenom"; else status="testerna går inte igenom"; fi
+          {
+            echo "bahamut $VERSION är släppt (Avade stöder $CURRENT). Avade släpptes inte automatiskt."
+            echo
+            echo "**Testsviten mot $VERSION:** $status"
+            echo '```'
+            echo "$SUMMARY"
+            echo '```'
+            [ "$MAJOR_OK" != "true" ] && echo "Ny huvudversion: släpps aldrig automatiskt." && echo
+            if [ -n "$analysis" ]; then echo "**Claude:** $analysis"; echo; fi
+            [ -n "$pr" ] && echo "**Pull request:** $pr" && echo
+            [ "$CLAUDE" == "failure" ] && echo "Claude-steget misslyckades, se körningen." && echo
+            [ "$HAS_CLAUDE" != "true" ] && echo "Ingen analys av ändringarna (ingen Claude-nyckel)." && echo
+            echo "Ändringar i bahamut: https://github.com/DALnet/bahamut/compare/v$CURRENT...v$VERSION"
+            echo "Körningen, med loggar: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } > issue.md
+          gh issue create --title "bahamut $VERSION: $status" --body-file issue.md
