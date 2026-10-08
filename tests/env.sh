@@ -32,6 +32,9 @@ DB_NAME=avade
 DB_USER=avade
 DB_PASS=avadepw
 
+# The SMTP server the mailer sends to (tests/smtp.py)
+SMTP_PORT=2525
+
 # Avade
 MASTER_NICK=TestMaster
 RUN="$WORK/run"

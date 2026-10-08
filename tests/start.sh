@@ -97,7 +97,26 @@ sed -e "s/^name: .*/name: $SERVICES_NAME/" \
 printf '\nvhostforbidden:\n  - "*admin*"\n  - "*oper*"\n' >> "$RUN/services.conf"
 printf '\nuhmsalt: TestSalt1234567890abcdefGHIJ\nuhmprefix: avade\n' >> "$RUN/services.conf"
 
+### AvadeMailer config, from the template in the repo, sending to tests/smtp.py
+mkdir -p "$WORK/mailer" && rm -rf "$WORK/mailer/smtp"
+sed -e "s/^send: .*/send: true/" \
+    -e "s/^interval: .*/interval: 1/" \
+    -e "s/^rate: .*/rate: 50/" \
+    -e "s/^retries: .*/retries: 2/" \
+    -e "s/^  host: localhost/  host: 127.0.0.1/" \
+    -e "s/^  port: 3306/  port: $DB_PORT/" \
+    -e "s/^  user: mailer/  user: $DB_USER/" \
+    -e "s/^  pass: mailerpass/  pass: $DB_PASS/" \
+    -e "s/^  db: avade/  db: $DB_NAME/" \
+    -e "s/^  host: email-smtp.*/  host: 127.0.0.1/" \
+    -e "s/^  port: 587/  port: $SMTP_PORT/" \
+    -e "s/^  tls: true/  tls: false/" \
+    -e "s/^  auth: true/  auth: false/" \
+    -e "s/^  from: .*/  from: services@test.net/" \
+    "$REPO/mailer-template.conf" > "$WORK/mailer/mailer.conf"
+
 "$TESTS/ircd.sh" start
 "$TESTS/avade.sh" start
+"$TESTS/mailer.sh" start
 "$TESTS/wait-link.sh" || exit 1
 echo "test network is up: bahamut $IRCD_VERSION, hub 127.0.0.1:$HUB_CLIENT_PORT, leaf 127.0.0.1:$LEAF_CLIENT_PORT"

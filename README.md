@@ -77,9 +77,10 @@ Something that has shown to have been working poorly in different versions of
 services is how mailing is handled when there is a problem with the smtp server. 
 This has been known to be causing services to sit and wait for a timeout or some 
 other error during which it perhaps isnt doing anything else. This has been 
-resolved by lifting out the mailing funcitonality to its own small software. All 
-this feature needs is a database connection, and as its java based aswell it can 
-run offsite from services keeping the location of services hopefully a secret.
+resolved by lifting out the mailing funcitonality to its own small software,
+AvadeMailer (`mailer/`). Services only put each mail in the database, and the
+mailer sends it. All the mailer needs is a database connection, so it can be
+restarted on its own or run on another machine. See "Mail" in INSTALL.
 
 
 #### Server command
@@ -137,6 +138,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Identify       - Identify nick
 - SIdentify      - Silently identify nick
 - Ghost          - Kill ghost nick
+- ResetPass      - New password with a code sent to the confirmed email
 - SET            - Set nick options
 - Drop           - Drop registered nick
   
@@ -147,7 +149,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Freeze         - OperFlag to freeze a nick from being used
 - Hold           - OperFlag to deny a nick from expiring
 - NoGhost        - OperFlag to deny a nick from being ghosted
-- Getpass        - Show password log for nick
+- Setpass        - Set a new password (nobody can see the old one)
 - Getemail       - Show email log for nick
 - Delete         - Force drop a nick
 
@@ -161,6 +163,8 @@ been violated network rules or other types of abuse using the channel topic.
 - Info           - Show info about a nick
 - AOP            - Manage AOP list
 - SOP            - Manage SOP list
+- HOP            - Manage HOP (halfop) list
+- VOP            - Manage VOP (voice) list
 - AKICK          - Manage AKICK list
 - Op             - Op nick
 - Deop           - Deop nick
@@ -183,7 +187,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Close          - Close channel
 - Hold           - Deny channel from expiring
 - Auditorium     - Makes a channel an auditorium
-- Getpass        - Show password log
+- Setpass        - Set a new channel password
 - Delete         - Force drop a channel
   
   

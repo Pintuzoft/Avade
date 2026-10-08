@@ -45,7 +45,8 @@ import java.util.regex.Pattern;
     private static final int MAXPASS = 63;
     private NSSnoop                 snoop;
     private TextFormat              f;
-    private static final Pattern    VALID_EMAIL_ADDRESS_REGEX = Pattern.compile ( "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE );
+    /* Top level domains are 2-63 letters (.se, .online, .stockholm) */
+    private static final Pattern    VALID_EMAIL_ADDRESS_REGEX = Pattern.compile ( "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,63}$", Pattern.CASE_INSENSITIVE );
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     /**
@@ -1172,6 +1173,10 @@ import java.util.regex.Pattern;
      * @return
      */
     public static boolean validEmail ( String email )  {
+        /* 254 is the longest address there can be, and fits encrypted in maillog.mail */
+        if ( email == null || email.length ( ) > 254 ) {
+            return false;
+        }
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher ( email );
         return matcher.find ( );
     }

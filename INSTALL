@@ -49,9 +49,11 @@ proper database login information into the services.conf file
 
 Dont forget to set network name and change the salt to something completely 
 random. After setting the salt value please save it in a secure place perhaps in
-keepass or similar software. Avade uses the salt to encrypt and decrypt password
-and email information stored in the database so if you loose the salt value you 
-will loose your ability to encrypt/decrypt passwords and emails.
+keepass or similar software. Avade uses the salt to encrypt and decrypt the email
+addresses stored in the database, so if you loose the salt value you will loose
+the email addresses. Passwords are stored as one way hashes that nobody can read
+back; the salt is only needed once for them, when a database from before
+1.2609-8 is upgraded.
 
 Set the master nick correctly. This should be the nick you are using on the
 server.
@@ -298,6 +300,126 @@ The two TEST commands in 10.5 give different masks
     The salt has other characters than letters and digits, is shorter than 16
     or longer than 128, or is the same as secretsalt. The prefix is 1 to 16
     letters and digits.
+
+
+11. Mail
+
+Avade mails users to confirm the mail address of a new nick, a new address or
+a new password (SET EMAIL, SET PASSWD), and to send a code with which a lost
+password can be replaced (/NickServ RESETPASS).
+
+How it works:
+
+    Avade --(insert, status 1)--> mailbox table <--(read, set status)-- AvadeMailer --> mail server
+
+- Avade never talks to a mail server. It puts every mail in the mailbox table
+  of the database and goes on, so services never wait for a slow or broken
+  mail server.
+- AvadeMailer (mailer.jar) is a program of its own. It looks in the mailbox
+  every few seconds, sends what is waiting and sets the status. It can be
+  stopped, restarted or moved to another machine without touching services,
+  it only needs the database.
+- The mail addresses are kept encrypted with secretsalt (table maillog). The
+  mailbox has the address of each mail in clear, so the mailer does not need
+  the salt, and should not have it.
+- Finished mails (sent, not sent, failed) are removed from the mailbox after
+  14 days: they hold addresses and codes in clear.
+
+The status of a mail in the mailbox:
+
+    1    waiting, put there by Avade
+    2    being sent right now
+    0    sent
+    3    not sent, because mailer.conf has "send: false"
+    500  failed: the mail server refused it (5xx), or turned it away for now
+         (4xx) more times than "retries", or the mailer stopped while sending it
+
+A mail is never sent twice by itself. A mail that was being sent when the
+mailer stopped may or may not have gone out, so it is marked failed and is
+only sent again with "resend".
+
+11.1 A database user for the mailer
+
+The mailer only needs the mailbox table:
+
+    grant select, update, delete on avade.mailbox to 'mailer'@'localhost' identified by 'MAILERPASS';
+
+Use the host the mailer connects from instead of localhost when it runs on
+another machine.
+
+11.2 mailer.conf
+
+./make.sh install puts mailer.jar and mailer-template.conf in ~/avade/.
+
+    cd ~/avade
+    cp mailer-template.conf mailer.conf
+    chmod 600 mailer.conf
+
+Set the database user from 11.1, the mail server, and "send: true". Every
+setting is explained in the file.
+
+With Amazon SES:
+- host email-smtp.<region>.amazonaws.com (for example eu-north-1), port 587,
+  tls: true, auth: true.
+- user and pass are the SMTP credentials made in the SES console, not the AWS
+  access keys.
+- from must be a verified address, or an address in a verified domain.
+- A new SES account is in the sandbox: it only sends to verified addresses,
+  one mail a second. Ask AWS for production access before going live.
+
+With a mail server on the same machine (postfix, sendmail): host localhost,
+port 25, tls: false, auth: false.
+
+11.3 Starting and checking
+
+    ./avade.sh mailer start
+    ./avade.sh mailer queue         # mails per status
+    ./avade.sh mailer log           # follow the output
+
+mailer.log has one line per mail: its id and subject, never the address or
+the text. To find the address of a mail, look it up by id in the mailbox.
+
+./avade.sh check (the cron line in 6.) also starts the mailer when it is not
+running, as soon as mailer.conf exists.
+
+11.4 Commands
+
+    ./avade.sh mailer start|stop|restart|status|log
+    ./avade.sh mailer queue                 mails in the mailbox per status
+    ./avade.sh mailer resend <id>           send that mail again
+    ./avade.sh mailer resend failed         send all failed mails again
+
+11.5 A test network with a copy of real data
+
+The addresses in a copy of a production database belong to real people. Set
+"send: false": every mail is marked not sent (3) and logged, nothing leaves
+the machine. Never run a mailer with "send: true" against such a copy.
+
+11.6 Moving from an older mailer
+
+AvadeMailer uses the same statuses as the mailers before it (1 waiting, 0
+sent, 500 failed). Stop the old mailer first, then start this one: two
+mailers on the same mailbox send every mail twice.
+
+11.7 When something is wrong
+
+"Config error: ..." when the mailer starts
+    A setting is missing or wrong, the message tells which.
+
+"No database connection: ..."
+    Check the mysql section and the grant in 11.1. It tries again by itself.
+
+"Mail server problem, trying again later: ..."
+    The mail server could not be reached, the login failed, or the certificate
+    is not valid for the host (tls: true checks it). The mail stays waiting
+    and is sent when the server works again.
+
+"Failed: mail <id>, the server answered 554" (or another 5xx)
+    The mail server refused the mail. With SES this is often a sender that is
+    not verified, or a recipient that is not verified while in the sandbox.
+
+Mails stay at status 1
+    The mailer is not running: ./avade.sh mailer status
 
 
 ############

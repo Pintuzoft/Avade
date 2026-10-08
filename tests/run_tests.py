@@ -18,13 +18,18 @@ import sys
 import time
 import traceback
 
-from irctest import (Client, ENV, SERVICES, close_all, MASTER, LEAF_PORT, avade, avade_log, auth_code, db, ircd,
-                     ircd_version, link_count, wait_db, wait_relink)
+from irctest import (Client, ENV, SERVICES, WORK, close_all, MASTER, LEAF_PORT, avade, avade_log, auth_code,
+                     db, ircd, ircd_version, link_count, wait_db, wait_relink)
+import email
+import glob
+import subprocess
+from email import policy
 
 USERS = ['Alice', 'Bob', 'Carol', 'Dave', 'Erin', 'Zed', MASTER]
 UNAUTHED = 'Nomail'             # registered, email never confirmed
 HALFOPS = ircd_version() >= (2, 1, 5)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 results = []                    # (test, ok, text)
 current = ['']
 
@@ -165,7 +170,8 @@ def test_topic_sync():
     check(row.split('\t')[0] == text, 'topic is stored as it was set (no extra colon, utf-8)', row)
     m = a.mark()
     a.send('TOPIC ' + chan)
-    who = a.wait(r' 333 ', 5, m).split()
+    # bahamut holds back a client that sent many commands (2 s each, up to 10 s ahead)
+    who = a.wait(r' 333 ', 20, m).split()
     check(row.split('\t')[-1] == who[-1], 'the IRC timestamp of the topic is stored', (row, who))
 
     b = login('Bob')
@@ -181,7 +187,7 @@ def test_topic_sync():
     check(a.saw(r'^:ChanServ!\S+ TOPIC %s :%s' % (chan, 'hej'), m, 5), 'KEEPTOPIC restores the topic in a recreated channel')
     m = a.mark()
     a.send('TOPIC ' + chan)
-    who2 = a.wait(r' 333 ', 5, m).split()
+    who2 = a.wait(r' 333 ', 20, m).split()
     check(who2[-1] == who[-1] and who2[-2].startswith('Alice'), 'with the original setter and time', who2)
 
     # A restart must not touch the topic of a channel that exists, but still know it
@@ -495,6 +501,8 @@ def test_nick_privacy_and_mail():
     r = c.svc('NickServ', 'SET EMAIL %s carol-new@test.net' % pw('Carol'))
     mail = wait_db("select subject from mailbox where mail = 'carol-new@test.net'", 150)
     check(mail != '', 'SET EMAIL sends a confirmation mail to the new address', (r, mail))
+    r = c.svc('NickServ', 'SET EMAIL %s carol@test.online' % pw('Carol'))
+    check(not has(r, 'not a valid'), 'an address with a long top level domain (.online) is valid', r)
     close(a, c)
 
 
@@ -823,6 +831,78 @@ def test_passwords():
     close(a, b, e, m)
 
 
+def test_mailer():
+    """AvadeMailer sends what Avade puts in the mailbox, here to tests/smtp.py."""
+    smtp = os.path.join(WORK, 'mailer', 'smtp')
+
+    def received():
+        out = {}
+        for f in glob.glob(os.path.join(smtp, '*.eml')):
+            m = email.message_from_binary_file(open(f, 'rb'), policy=policy.default)
+            out.setdefault(m['X-Avade-Mail-Id'], []).append(m)
+        return out
+
+    def add(to, subject, body):
+        db("insert into mailbox (mail, subject, body, stamp, status) values ('%s', '%s', '%s', unix_timestamp(), 1)"
+           % (to, subject, body))
+        return db("select max(id) from mailbox where mail = '%s'" % to)
+
+    def status(mail_id, want, timeout=20):
+        return wait_db("select status from mailbox where id = %s and status = %d" % (mail_id, want), timeout) != ''
+
+    def tried(addr):
+        try:
+            return open(os.path.join(smtp, 'rcpt.log')).read().split().count(addr)
+        except OSError:
+            return 0
+
+    def mailer(*args):
+        return subprocess.run([os.path.join(HERE, 'mailer.sh'), 'cmd'] + list(args), capture_output=True, text=True).stdout
+
+    x = Client('Mailtest')
+    x.svc('NickServ', 'RESETPASS Dave')
+    close(x)
+    mid = wait_db("select max(id) from mailbox where mail = 'dave@test.net' and subject = 'Reset your password'", 30)
+    check(mid and mid != 'NULL' and status(mid, 0), 'a mail from services is sent and marked sent', mid)
+    got = received().get(mid, [])
+    check(len(got) == 1 and 'RESETPASS Dave' in got[0].get_content(), 'the mail server gets it once, with its text')
+
+    mid = add('utf8@test.net', 'Hej \u00e5\u00e4\u00f6 \u2615', 'R\u00e4ksm\u00f6rg\u00e5s \U0001f990\\n.\\nslut')
+    status(mid, 0)
+    got = received().get(mid, [])
+    check(got and got[0]['Subject'] == 'Hej \u00e5\u00e4\u00f6 \u2615', 'subject in UTF-8', got and got[0]['Subject'])
+    check(got and got[0].get_content() == 'R\u00e4ksm\u00f6rg\u00e5s \U0001f990\n.\nslut\n',
+          'text in UTF-8, a line with only a dot survives', got and got[0].get_content())
+
+    rejects, laters = tried('reject@test.net'), tried('later@test.net')
+    mid = add('reject@test.net', 'refused', 'x')
+    check(status(mid, 500), 'a mail the server refuses (550) is marked failed')
+    mid2 = add('later@test.net', 'later', 'y')
+    check(status(mid2, 500, 30) and tried('later@test.net') - laters == 2,
+          'a mail the server turns away for now (451) is tried twice (retries: 2), then failed',
+          tried('later@test.net') - laters)
+    check('1 mails will be sent again' in mailer('resend', mid), 'resend puts a failed mail back')
+    check(status(mid, 500) and tried('reject@test.net') - rejects == 2, 'and it is tried again',
+          tried('reject@test.net') - rejects)
+
+    # send: false, a test network with real addresses
+    subprocess.run([os.path.join(HERE, 'mailer.sh'), 'stop'], capture_output=True)
+    conf = os.path.join(WORK, 'mailer', 'mailer.conf')
+    dry = os.path.join(WORK, 'mailer', 'dry.conf')
+    open(dry, 'w').write(open(conf).read().replace('send: true', 'send: false'))
+    before = len(glob.glob(os.path.join(smtp, '*.eml')))
+    mid = add('dry@test.net', 'not sent', 'z')
+    mailer('-c', 'dry.conf', 'once')
+    check(status(mid, 3, 5) and len(glob.glob(os.path.join(smtp, '*.eml'))) == before,
+          'send: false sends nothing and marks the mail not sent (3)')
+    subprocess.run([os.path.join(HERE, 'mailer.sh'), 'restart'], capture_output=True)
+
+    dup = [i for i, ms in received().items() if len(ms) > 1]
+    check(not dup, 'no mail is sent twice', dup)
+    out = open(os.path.join(WORK, 'mailer', 'mailer.out')).read() + open(os.path.join(WORK, 'mailer', 'mailer.log')).read()
+    check(ENV['DB_PASS'] not in out and 'RESETPASS Dave' not in out, 'the log has no password and no mail text')
+
+
 def test_log_file():
     log = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.work', 'run', 'services.log'),
                errors='replace').read()
@@ -907,7 +987,7 @@ TESTS = [test_identify, test_throttle, test_access_security, test_topic_sync, te
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_log_file, test_bans,
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 
 

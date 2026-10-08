@@ -115,6 +115,7 @@ jobs:
             tests.log
             tests/.work/run/avade.out
             tests/.work/run/services.log
+            tests/.work/mailer/mailer.out
           if-no-files-found: ignore
 
       - name: Claude reads what changed in bahamut

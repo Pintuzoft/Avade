@@ -21,6 +21,16 @@ the bahamut ircd, written in Java 17. MariaDB holds the data.
   test to `TESTS`). The last check fails on any `java.lang.` exception in
   `.work/run/avade.out`, so a caught NPE is a failure.
 
+## Mail
+
+Avade never talks to a mail server: it puts each mail in the `mailbox` table
+with status 1 (`mail/MXDatabase.sendMail`). `mailer/` is AvadeMailer, a
+program of its own that sends them (Jakarta Mail, its jars in `lib/mail/`) and
+sets the status (0 sent, 2 being sent, 3 not sent because `send: false`, 500
+failed). `mailer/build.sh` builds `dist/AvadeMailer.jar`, which is committed
+like `dist/Avade.jar`. Config: `mailer-template.conf`, docs: "Mail" in
+`INSTALL`. In the tests it sends to `tests/smtp.py`.
+
 ## Code style
 
 - Spaced, aligned syntax everywhere: `foo ( bar )`, `if ( x ) {`,

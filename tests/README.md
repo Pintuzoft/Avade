@@ -1,7 +1,10 @@
 # Tests
 
-Runs Avade against a real bahamut: a hub, a leaf, MariaDB (Docker) and Avade
-built from `src/`, all on localhost with an empty database.
+Runs Avade against a real bahamut: a hub, a leaf, MariaDB (Docker), Avade
+built from `src/` and AvadeMailer built from `mailer/src/`, all on localhost
+with an empty database. The mailer sends to `smtp.py`, a small SMTP server that
+saves every mail in `.work/mailer/smtp/` (it refuses addresses with "reject"
+and turns away those with "later", to test failures).
 
 Needs: Docker, Java 17+, python3, git, gcc, make, autoconf and the OpenSSL headers.
 
@@ -17,7 +20,8 @@ about five minutes since Avade writes to the database once a minute.
 Run one `run_tests.py` at a time, they share the network.
 
 Everything generated ends up in `.work/` (ignored by git): the bahamut builds,
-configs and the logs. Avade's output is `.work/run/avade.out`.
+configs and the logs. Avade's output is `.work/run/avade.out`, the mailer's
+`.work/mailer/mailer.out`.
 
 `KEEP_DB=1 ./start.sh` keeps the database from the previous run.
 
@@ -25,6 +29,7 @@ configs and the logs. Avade's output is `.work/run/avade.out`.
 |---|---|
 | `env.sh` | names, ports and passwords |
 | `build-ircd.sh` | fetch and build a bahamut version |
-| `ircd.sh`, `avade.sh` | start/stop the parts one at a time |
+| `ircd.sh`, `avade.sh`, `mailer.sh` | start/stop the parts one at a time |
+| `smtp.py` | the SMTP server the mailer sends to |
 | `irctest.py` | small IRC client and helpers |
 | `run_tests.py` | the tests |
