@@ -45,6 +45,7 @@ public class CMDDatabase extends Database {
         Command command;
     
         LinkedList<Command> cList = new LinkedList<> ( );
+        LinkedList<String> unusable = new LinkedList<> ( );
         if ( ! activateConnection ( )  )  {
             return cList;
         }
@@ -59,7 +60,7 @@ public class CMDDatabase extends Database {
                
                 HashString type = new HashString ( res.getString(3) ); 
 
-                if ( type.is(NICKINFO) &&
+                if ( type.is(NICKINFO) && res.getString ( 2 ) != null &&
                      ( ni = NickServ.findNick ( res.getString ( 2 ) ) ) != null ) {
                         cList.add ( 
                         new Command ( 
@@ -71,12 +72,20 @@ public class CMDDatabase extends Database {
                             res.getString(6)
                         )
                     );
+                } else {
+                    /* Nothing we can do with it (no such nick, an empty
+                       field): it would be read again every five seconds */
+                    unusable.add ( res.getString ( 1 ) );
                 }
                 
             }  
             res.close ( );
             preparedStmt.close ( ); 
             idleUpdate ( "getCommands ( )" ); 
+            for ( String id : unusable ) {
+                Proc.log ( "Web command "+id+" names no registered nick, removed" );
+                deleteCommand ( id );
+            }
          
         } catch  ( SQLException ex )  {
             Proc.log ( CMDDatabase.class.getName ( ), ex );

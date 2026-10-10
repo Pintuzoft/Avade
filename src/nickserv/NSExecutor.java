@@ -26,6 +26,7 @@ import static core.HashNumeric.SRA;
 import core.HashString;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import mail.MailLimit;
 import mail.SendMail;
 import security.Hash;
 import server.ServSock;
@@ -183,6 +184,12 @@ import java.util.regex.Pattern;
                 return;             
         }
           
+        if ( MailLimit.reached ( user ) ) {
+            this.service.sendMsg ( user, "Error: Too many mails have been asked for from your address. Try again in an hour." );
+            this.snoop.msg ( false, IS_THROTTLED, user.getName ( ), user, cmd );
+            return;
+        }
+        MailLimit.count ( user );
         NickInfo ni = new NickInfo ( user, pass );
         NSAuth auth = new NSAuth ( MAIL, ni.getName(), mail );
         NickServ.addNewAuth ( auth );
@@ -981,6 +988,9 @@ import java.util.regex.Pattern;
                 this.service.sendMsg ( user, output ( NO_AUTH_FOUND, "" ) );
                 this.snoop.msg ( false, NO_AUTH_FOUND, user.getName(), user, cmd );
                 return;            
+        } else if ( result.is(DB_ERROR) ) {
+                this.service.sendMsg ( user, "Error: Database not available, the code can not be checked right now. Try again later." );
+                return;            
         } else if ( result.is(IS_MARKED) ) {
                 this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
                 this.snoop.msg (false, IS_MARKED, result.getNick().getNameStr(), user, cmd );
@@ -1103,6 +1113,12 @@ import java.util.regex.Pattern;
         NSLogEvent log;
         
         if ( command.is(SETEMAIL) ) {
+                if ( MailLimit.reached ( user ) ) {
+                    this.service.sendMsg ( user, "Error: Too many mails have been asked for from your address. Try again in an hour." );
+                    this.snoop.msg ( false, IS_THROTTLED, ni.getName ( ), user, cmd );
+                    return;
+                }
+                MailLimit.count ( user );
                 auth = new NSAuth ( MAIL, ni.getName(), value );
                 NickServ.addNewAuth ( auth );
                 NickServ.addToWorkList ( CHANGE, ni );
@@ -1327,7 +1343,8 @@ import java.util.regex.Pattern;
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED ); 
                 } else if ( ( auth = NSDatabase.fetchAuth ( user, cmd[4] ) ) == null ) {
-                    result.setStatus ( NO_AUTH_FOUND );
+                    /* the codes are in the database only */
+                    result.setStatus ( NSDatabase.checkConn ( ) ? NO_AUTH_FOUND : DB_ERROR );
                 } else {
                     result.setAuth ( auth );
                     result.setNick ( ni );

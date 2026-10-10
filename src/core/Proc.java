@@ -18,7 +18,12 @@ package core;
 
 import chanserv.ChanServ;
 import server.ServSock;
+import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.sql.SQLException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -394,6 +399,7 @@ public class Proc extends HashNumeric {
         Logger.getLogger(className).log ( Level.SEVERE, null, e );
         if ( e instanceof SQLException ) {
             String state = ((SQLException)e).getSQLState();
+            Database.setLastError ( state );
             if ( e instanceof java.sql.SQLTimeoutException || 
                  e instanceof java.sql.SQLRecoverableException ||
                  e instanceof java.sql.SQLNonTransientConnectionException ||
@@ -420,6 +426,43 @@ public class Proc extends HashNumeric {
      * @param message
      */
     public static void log ( String message )   { logger.out ( message );   }
+
+    /* avade.out is where the start script sends everything that is printed:
+       every line from the hub, the log and the errors. The script only
+       rotates it at a start, and services run for months. So when it is big
+       it is copied aside and emptied here (the script opened it for append,
+       the next line lands at the new end). The script says where it is with
+       -Davade.out, without that nothing is done. */
+    private static final long   OUTMAX  = Long.getLong ( "avade.outmax", 20L * 1024 * 1024 );
+    private static final int    OUTKEEP = 5;    /* old files, like KEEP in avade.sh */
+
+    /**
+     * Called every minute
+     */
+    public static void rotateOutput ( ) {
+        String path = System.getProperty ( "avade.out" );
+        if ( path == null || path.isEmpty ( ) ) {
+            return;
+        }
+        File out = new File ( path );
+        if ( out.length ( ) < OUTMAX ) {
+            return;
+        }
+        try {
+            for ( int i = OUTKEEP - 1; i >= 1; i-- ) {
+                File old = new File ( path+"."+i );
+                if ( old.exists ( ) ) {
+                    Files.move ( old.toPath ( ), new File ( path+"."+( i + 1 ) ).toPath ( ), StandardCopyOption.REPLACE_EXISTING );
+                }
+            }
+            Files.copy ( out.toPath ( ), new File ( path+".1" ).toPath ( ), StandardCopyOption.REPLACE_EXISTING );
+            try ( FileChannel channel = FileChannel.open ( out.toPath ( ), StandardOpenOption.WRITE ) ) {
+                channel.truncate ( 0 );
+            }
+        } catch ( IOException ex ) {
+            Proc.log ( "Could not rotate "+path+": "+ex.getMessage ( ) );
+        }
+    }
 
     /**
      *

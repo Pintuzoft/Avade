@@ -393,6 +393,7 @@ public class CSExecutor extends Executor {
         this.service.sendMsg ( user, output ( REGISTER_DONE, ci.getNameStr()  )  );
         this.service.sendMsg ( user, f.b ( ) +output ( REGISTER_SEC, "" ) +f.b ( )  );
         user.getSID().add ( ci ); /* identified to the channel */
+        Handler.addUpdateSID ( user.getSID ( ) );
         cmd[5] = "pass_redacted";
         this.snoop.msg ( true, REGISTER_DONE, ci.getName ( ), user, cmd );
         ci.changed(LASTUSED);
@@ -433,6 +434,7 @@ public class CSExecutor extends Executor {
         ChanInfo ci = result.getChanInfo ( );
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ci.getNameStr()  )  ); 
         user.getSID().add ( ci );
+        Handler.addUpdateSID ( user.getSID ( ) );   /* kept over a restart, like a nick */
         this.snoop.msg ( true, PASSWD_ACCEPTED, ci.getName(), user, cmd );
         ci.changed(LASTUSED);          
     } 

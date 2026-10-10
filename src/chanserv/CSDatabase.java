@@ -143,7 +143,7 @@ public class CSDatabase extends Database {
                 commit ( );
                 
                 idleUpdate ( "createChan ( ) " );
-            } catch  ( SQLException ex )  {
+            } catch  ( SQLException | RuntimeException ex )  {
                 rollback ( );
                 Proc.log ( CSDatabase.class.getName ( ), ex );
                 return -1;
@@ -542,7 +542,7 @@ public class CSDatabase extends Database {
             if ( ok ) {
                 commit ( );
             }
-        } catch ( SQLException ex ) {
+        } catch ( SQLException | RuntimeException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
             ok = false;
         }

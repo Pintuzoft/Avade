@@ -183,13 +183,17 @@ public class CSSnoop extends Snoop {
         //   0      1          2            3    4     5    6
         switch ( commandOf ( arr ) ) {
             case "REGISTER" :
+                /* REGISTER #chan <pass> <description> */
+                return mask ( arr, 5 );
             case "IDENTIFY" :
             case "DROP" :
             case "SETPASS" :
-                return mask ( arr, 5 );
+                /* (everything after the channel: a password with a space in
+                   it, or one more word, is not shown either) */
+                return maskFrom ( arr, 5 );
             case "SET" :
                 if ( arr.length > 5 && arr[5].toUpperCase().startsWith ( "PASS" ) ) {
-                    return mask ( arr, 6, 7 );
+                    return maskFrom ( arr, 6 );
                 }
                 return arr;
             default :

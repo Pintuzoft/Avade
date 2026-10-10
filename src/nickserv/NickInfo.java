@@ -568,6 +568,19 @@ public class NickInfo extends HashNumeric {
     public void addToAccessList ( HashString list, ChanInfo ci ) {
         this.getChanAccess(list).add ( ci );
     }
+
+    /**
+     * Forget every channel this nick is the founder of or is listed in,
+     * before the channels are loaded (again)
+     */
+    public void clearChanAccess ( ) {
+        this.founderList.clear ( );
+        this.sopList.clear ( );
+        this.aopList.clear ( );
+        this.hopList.clear ( );
+        this.vopList.clear ( );
+        this.akickList.clear ( );
+    }
     
     /**
      *

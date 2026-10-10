@@ -61,7 +61,7 @@ public class Snoop extends HashNumeric {
      */
     public String fixArray ( boolean ok, User user, String[] arr )  {
          
-        arr = this.redact ( arr );
+        arr = this.redact ( words ( arr ) );
         String str = "";
         int index = 3;
         int start = 3;
@@ -109,6 +109,45 @@ public class Snoop extends HashNumeric {
             }
         }
         return copy;
+    }
+
+    /**
+     * Returns a copy of arr where everything from the given index on is
+     * masked: for commands where a secret follows, whatever comes after it
+     * or instead of it (arguments in the wrong order) is not shown either
+     * @param arr
+     * @param from
+     * @return
+     */
+    protected static String[] maskFrom ( String[] arr, int from ) {
+        String[] copy = arr.clone ( );
+        for ( int index = Math.max ( from, 4 ); index < copy.length; index++ ) {
+            copy[index] = "<redacted>";
+        }
+        return copy;
+    }
+
+    /* The text as the words it has. It was split at every space, so two
+       spaces in a row give an empty word, and that would move a password to
+       a place that is not masked. */
+    private static String[] words ( String[] arr ) {
+        if ( arr == null || arr.length < 4 ) {
+            return arr;
+        }
+        ArrayList<String> list = new ArrayList<> ( );
+        for ( int index = 0; index < arr.length; index++ ) {
+            String word = arr[index];
+            if ( index == 3 && word.startsWith ( ":" ) ) {
+                word = word.substring ( 1 );
+            }
+            if ( index < 3 || ( word != null && ! word.isEmpty ( ) ) ) {
+                list.add ( word );
+            }
+        }
+        if ( list.size ( ) < 4 ) {
+            list.add ( "" );    /* a text of nothing but spaces */
+        }
+        return list.toArray ( new String[0] );
     }
 
     /**

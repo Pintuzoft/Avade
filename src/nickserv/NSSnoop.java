@@ -117,23 +117,25 @@ public class NSSnoop extends Snoop {
         switch ( commandOf ( arr ) ) {
             case "IDENTIFY" :
             case "SIDENTIFY" :
-                return ( arr.length > 5 ? mask ( arr, 5 ) : mask ( arr, 4 ) );
+                /* [nick] <pass>: the nick is shown when it is one, anything
+                   else can be the password (given first by mistake) */
+                return ( arr.length == 6 && NickServ.findNick ( arr[4] ) != null ? mask ( arr, 5 ) : maskFrom ( arr, 4 ) );
             case "REGISTER" :
-                return mask ( arr, 4, 5 );
             case "DROP" :
             case "AUTH" :
-                return mask ( arr, 4, 5 );
+                return maskFrom ( arr, 4 );
             case "GHOST" :
+                /* GHOST <nick> <pass> */
+                return ( arr.length == 6 && NickServ.findNick ( arr[4] ) != null ? mask ( arr, 5 ) : maskFrom ( arr, 4 ) );
             case "SETPASS" :
-                return mask ( arr, 5 );
             case "RESETPASS" :
-                /* RESETPASS <nick> <code> <newpass> */
-                return mask ( arr, 5, 6 );
+                /* SETPASS <nick> <pass>, RESETPASS <nick> <code> <newpass> */
+                return maskFrom ( arr, 5 );
             case "SET" :
                 /* SET PASSWD <pass> <newpass> and SET EMAIL <pass> <email> */
                 if ( arr.length > 4 && ( arr[4].toUpperCase().startsWith ( "PASS" ) ||
                                          arr[4].toUpperCase().startsWith ( "EMAIL" ) ) ) {
-                    return mask ( arr, 5, 6 );
+                    return maskFrom ( arr, 5 );
                 }
                 return arr;
             default :

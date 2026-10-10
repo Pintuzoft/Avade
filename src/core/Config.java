@@ -42,6 +42,7 @@ public class Config extends HashNumeric {
     private ArrayList<String> vhostForbidden = new ArrayList<>();
     private String uhmSalt;     /* host-masking salt, null when the network does not use the module */
     private String uhmPrefix;
+    private int mailLimit = 10;
     private HashMap<BigInteger,Integer> commands;
     private static final HashString[] cList = { 
         STOP,REHASH,BAHAMUT,SPAMFILTER,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,CLIST,SLIST,JUPE,
@@ -207,6 +208,19 @@ public class Config extends HashNumeric {
                 }
             }
 
+            /* Mails to an address the user types (REGISTER, SET EMAIL) that
+               are taken from one ip address in an hour, 0 for no limit */
+            Object limit = result.get ( "maillimit" );
+            try {
+                this.mailLimit = ( limit != null ? Integer.parseInt ( limit.toString().trim ( ) ) : 10 );
+            } catch ( NumberFormatException ex ) {
+                this.mailLimit = -1;
+            }
+            if ( this.mailLimit < 0 ) {
+                System.out.println ( "ConfigError: maillimit must be a number, 0 or more" );
+                throw new IllegalStateException ( "ConfigError: maillimit" );
+            }
+
             /* COMMANDS */
             HashString[] accesses = { SRA, CSOP, SA, IRCOP };
             for ( HashString access : accesses ) {
@@ -270,6 +284,10 @@ public class Config extends HashNumeric {
     /**
      * @return the prefix of masked host names ("prefix-hash.isp.net")
      */
+    public int getMailLimit ( ) {
+        return this.mailLimit;
+    }
+
     public String getUhmPrefix ( ) {
         return this.uhmPrefix;
     }

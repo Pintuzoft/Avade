@@ -47,7 +47,7 @@ public class WorkGuard {
      * @return true if the item should be given up on
      */
     public static boolean failedKey ( String key, String what ) {
-        if ( ! Database.checkConn ( ) ) {
+        if ( ! Database.lastErrorWasData ( ) || ! Database.checkConn ( ) ) {
             return false;
         }
         int count = keyFailures.getOrDefault ( key, 0 ) + 1;
@@ -74,8 +74,10 @@ public class WorkGuard {
      * @return true if the item should be dropped from its queue
      */
     public static boolean failed ( Object item, String what ) {
-        if ( ! Database.checkConn ( ) ) {
-            /* Database is down, keep it and try again when it is back */
+        if ( ! Database.lastErrorWasData ( ) || ! Database.checkConn ( ) ) {
+            /* Database is down, or up and not able to write (shutting down,
+               read only, disk full): keep it and try again when it is back.
+               Only an item the database refuses for what is in it counts. */
             return false;
         }
         int count = failures.getOrDefault ( item, 0 ) + 1;

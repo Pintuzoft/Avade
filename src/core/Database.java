@@ -155,6 +155,28 @@ public class Database extends HashNumeric {
     /* All or nothing for a register that is several inserts: without it a
        failure half way leaves a row that makes every retry fail on the
        primary key, and a nick or channel that cannot be loaded */
+    /* The SQLState of the last error, for WorkGuard: it tells an item the
+       database will never take from a server that can not write right now */
+    private static String lastError = null;
+
+    public static void setLastError ( String state ) {
+        lastError = ( state != null ? state : "" );
+    }
+
+    /**
+     * @return true when the last failed write, if it gave an error at all,
+     *         was about the data (too long, a duplicate, a missing column):
+     *         SQLState classes 21, 22, 23 and 42. Anything else is the
+     *         server (shutting down, read only, disk full, a lock), where
+     *         the same write works later. Asking forgets the error.
+     */
+    public static boolean lastErrorWasData ( ) {
+        String state = lastError;
+        lastError = null;
+        return state == null || state.startsWith ( "21" ) || state.startsWith ( "22" ) ||
+               state.startsWith ( "23" ) || state.startsWith ( "42" );
+    }
+
     protected static void begin ( ) throws SQLException {
         sql.setAutoCommit ( false );
     }

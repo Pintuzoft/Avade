@@ -43,7 +43,8 @@ public class ServicesID extends HashNumeric {
     private BigInteger              code;
     private ArrayList<NickInfo>     niList;    /* List of identified nicks from this serviceid */
     private ArrayList<ChanInfo>     ciList;    /* List of identified chans from this serviceid */
-    private Random                  rand;
+    /* One for all: there is an ID for every connection, kept for days */
+    private static final Random     rand = new Random ( );
     private User                    user;      /* the owner of this servicesid */
     private long                    stamp;     /* timestamp  ( seconds )  lastseen */
     private boolean                 stored;    /* has a row in the servicesid table */
@@ -54,7 +55,6 @@ public class ServicesID extends HashNumeric {
      *
      */
     public ServicesID ( )  {
-        this.rand       = new Random ( );
         this.id         = this.getUniqueID ( );
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
@@ -68,7 +68,6 @@ public class ServicesID extends HashNumeric {
      * @param id
      */
     public ServicesID ( long id )  {
-        this.rand       = new Random ( );
         this.id         = id;
         this.stored     = true;     /* this one is read from the database */
         this.niList     = new ArrayList<>( );
@@ -81,7 +80,7 @@ public class ServicesID extends HashNumeric {
     private long getUniqueID ( ) {
         long idVal;
         while ( true ) {
-            idVal = this.rand.nextInt ( ) + (long) ( 1L << 31 );
+            idVal = rand.nextInt ( ) + (long) ( 1L << 31 );
             if ( this.isUnique (idVal ) ) {
                 return idVal;
             }
@@ -367,7 +366,16 @@ public class ServicesID extends HashNumeric {
      * @param ci
      */
     public void unIdentify ( ChanInfo ci ) {
-        ciList.remove ( ci );
+        ChanInfo found = null;
+        for ( ChanInfo chan : this.ciList ) {
+            if ( chan.is ( ci ) ) {
+                found = chan;
+            }
+        }
+        if ( found != null ) {
+            this.ciList.remove ( found );
+            Handler.addUpdateSID ( this );  /* the row lists the channels too */
+        }
     }
 
     /**
@@ -375,7 +383,10 @@ public class ServicesID extends HashNumeric {
      * @param ni
      */
     public void unIdentify ( NickInfo ni ) {
-        niList.remove ( ni );
+        if ( ! this.isIdentified ( ni ) ) {
+            return;
+        }
+        this.del ( ni );    /* by name, like isIdentified */
         Handler.addUpdateSID ( this );
     }
     

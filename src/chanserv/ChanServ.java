@@ -156,6 +156,13 @@ public class ChanServ extends Service {
             /* Founders and access lists point at nicks */
             return;
         }
+        /* The load puts every channel in the lists of its founder and of the
+           nicks with access. When it is tried again (the access lists could
+           not be read) they would get them all a second time, and keep the
+           channels of the first try for ever. */
+        for ( NickInfo ni : NickServ.getNicks ( ) ) {
+            ni.clearChanAccess ( );
+        }
         HashMap<BigInteger,ChanInfo> chans = CSDatabase.getAllChans ( );
         if ( chans == null ) {
             Proc.log ( "ChanServ: could not load the channels from the database" );
@@ -201,7 +208,9 @@ public class ChanServ extends Service {
             return; /* no command */
         }
         
-//        user.getUserFlood().incCounter ( this );
+        if ( user.getUserFlood().tooFast ( this ) ) {
+            return;
+        }
          
         cmd[3] = cmd[3].substring ( 1 );
         HashString command = new HashString ( cmd[3] );
@@ -267,7 +276,8 @@ public class ChanServ extends Service {
                 if ( ci.isAtleastAop ( user ) ) {
                     Handler.getChanServ().opUser ( c, user );
                 } else {
-                    banUser ( c, user, "*!*@"+user.getHost() );
+                    /* (on the host everyone sees, a ban shows it to the channel) */
+                    banUser ( c, user, "*!*@"+shownOrReal ( user ) );
                     kickUser ( c, user, "Restricted for "+c.getRelay()+" staff" );
                 }
             }
@@ -1104,6 +1114,7 @@ public class ChanServ extends Service {
             this.sendMsg ( user, "You have now been unidentified from channel: "+ci.getName());
             user.unIdentify ( ci );
         }
+        Handler.unIdentifyAll ( ci );   /* and the sessions that are not here now */
         uList.addAll ( Handler.findUsersByNick ( ci.getFounder() ) );
         for ( User user : uList ) {
             this.sendMsg ( user, "Channel "+ci.getName()+" which you have been found to be associated with has now been dropped");

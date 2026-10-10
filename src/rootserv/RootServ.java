@@ -30,6 +30,7 @@ import nickserv.NickInfo;
 import nickserv.NickServ;
 import operserv.OSLogEvent;
 import operserv.OSDatabase;
+import operserv.OperServ;
 import operserv.Oper;
 import user.User;
 
@@ -262,12 +263,12 @@ public class RootServ extends Service {
             for ( NickInfo old : nList ) {
                 old.setOper ( new Oper ( old.getNameStr(), 4, "Services config" ) );
                 log = new OSLogEvent ( old.getName(), DELMASTER, "new!master@services", "Services config" );
-                OSDatabase.logEvent ( log );
+                OperServ.addLogEvent ( log );
                 log = new OSLogEvent ( old.getName(), ADDSRA, "new!master@services", "Services config" );
-                OSDatabase.logEvent ( log );
+                OperServ.addLogEvent ( log );
             }
             log = new OSLogEvent ( ni.getName(), ADDMASTER, "new!master@services", "Services config" );
-            OSDatabase.logEvent ( log );
+            OperServ.addLogEvent ( log );
             /* Also when the master is not online right now, or the role would
                only start to work after the next restart */
             ni.setOper ( new Oper ( ni.getNameStr(), 5, "Services config" ) );

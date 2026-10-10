@@ -90,6 +90,8 @@ before a join and services decide: `ChanServ.joinRequest`. `Chan.joinRefusal`
 is bahamut's `can_join` (`src/channel.c`), so a new channel mode or a changed
 check there has to be followed here. The ircd does not send services' own
 changes back (modes, bans, an `AJ` join): update `Chan` where they are sent.
+The same goes for a `KILL` (`Handler.deleteUser` right after it, or the user
+stays for ever) and for `CHANKILL` (`ChanInfo.kickAll`).
 
 ## Database
 
@@ -98,5 +100,10 @@ changes back (modes, bans, an `AJ` join): update `Chan` where they are sent.
   `Version.java` (builds 1-9 per month). Never change a step that has shipped.
   It must give the right result both when upgrading and on an empty database.
 - AES encrypted columns (mail addresses) are `varbinary`.
+- Services work without the database. A command changes memory and puts the
+  change in a work list (`NickServ`, `ChanServ`, `OperServ`, `MemoServ`,
+  `MXDatabase` for mails); `Handler.runSecMaintenance` writes the lists every
+  second when the database is there, nicks first. No command writes to the
+  database itself. `test_database_down` stops the database and checks it.
 - Until `Handler.isDataLoaded ( )`, nothing may touch anyone's access or
   identification (no -r, guest nicks, deop or kick).

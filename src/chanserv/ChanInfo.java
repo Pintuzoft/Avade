@@ -900,7 +900,14 @@ public class ChanInfo extends HashNumeric {
         if ( c == null ) {
             return; /* nobody is in the channel */
         }
+        /* CHANKILL removes everyone and with them the channel, and the ircd
+           sends nothing back: forget it here too, with its modes, bans and
+           TS. A new channel of this name starts from nothing. */
+        for ( User u : c.getList ( ALL ) ) {
+            u.remChan ( c );
+        }
         c.clearUsers ( );
+        Handler.deleteEmpty ( c );
         Handler.getChanServ().sendCmd ( "SVSHOLD "+c.getString ( NAME ) +" 60 :"+reason );
         Handler.getChanServ().sendCmd ( "CHANKILL "+c.getString ( NAME ) +" :"+reason );
     }
