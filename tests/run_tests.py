@@ -1405,7 +1405,7 @@ def test_database_down():
                                'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "%s"' % query], capture_output=True)
 
     mm, a, b = master(), login('Alice'), login('Bob')
-    for nick in ('Dbdownnick', 'Dbdownre', 'Dbdownro'):
+    for nick in ('Dbdownnick', 'Dbdownre', 'Dbdownro', 'Dbdownna'):
         mm.svc('NickServ', 'DELETE ' + nick)        # whatever a run that was stopped left behind
     register_chan(a, chan)
     register_chan(a, old, 'gammalpw1')
@@ -1517,6 +1517,28 @@ def test_database_down():
     finally:
         root('set global read_only = 0')
     check(wait_db("select name from nick where name = 'Dbdownro'", 30) != '', 'and it is written when the database takes writes again')
+
+    # The same when the account of services may not write for a while (a grant that was taken away)
+    def reconnect():
+        """Privileges of a database are read when a connection is made: end the ones services have."""
+        ids = subprocess.run(['docker', 'exec', ENV['DB_CONTAINER'], 'sh', '-c',
+                              'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "select id from information_schema.processlist '
+                              "where user = '%s' and command = 'Sleep'\"" % ENV['DB_USER']], capture_output=True).stdout.decode().split()
+        for i in ids:
+            root('kill %s' % i)
+
+    root("revoke insert, update, delete on %s.* from '%s'@'%%'" % (ENV['DB_NAME'], ENV['DB_USER']))
+    reconnect()
+    try:
+        na = Client('Dbdownna')
+        check(has(na.svc('NickServ', 'REGISTER rattpw12345 noaccess@test.net'), 'successfully registered'),
+              'a nick is registered while services may not write to the database')
+        time.sleep(40)                      # the new connection, and more than five tries on it
+        check(db("select count(*) from nick where name = 'Dbdownna'") == '0', '(it can not be written)')
+    finally:
+        root("grant all privileges on %s.* to '%s'@'%%'" % (ENV['DB_NAME'], ENV['DB_USER']))
+        reconnect()
+    check(wait_db("select name from nick where name = 'Dbdownna'", 90) != '', 'and it is written when the access is back')
     lost = [l for l in avade_log().split('\n') if 'giving up on' in l]
     check(not lost, 'nothing was given up on', lost[:3])
 
@@ -1524,10 +1546,10 @@ def test_database_down():
     a.svc('ChanServ', 'DROP %s nykanalpw1' % new)
     mm.svc('OperServ', 'AKILL DEL *!*@203.0.113.99')
     mm.svc('OperServ', 'SJR OFF')
-    for nick in ('Dbdownnick', 'Dbdownre', 'Dbdownro'):
+    for nick in ('Dbdownnick', 'Dbdownre', 'Dbdownro', 'Dbdownna'):
         mm.svc('NickServ', 'DELETE ' + nick)
     b.svc('MemoServ', 'DEL 1')
-    close(mm, a, b, c, n, o, ro)
+    close(mm, a, b, c, n, o, ro, na)
 
 
 def test_flood_protection():

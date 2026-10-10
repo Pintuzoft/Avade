@@ -76,8 +76,9 @@ public class WorkGuard {
     public static boolean failed ( Object item, String what ) {
         if ( ! Database.lastErrorWasData ( ) || ! Database.checkConn ( ) ) {
             /* Database is down, or up and not able to write (shutting down,
-               read only, disk full): keep it and try again when it is back.
-               Only an item the database refuses for what is in it counts. */
+               read only, disk full, no access): keep it and try again when
+               it is back. Only an item the database refuses for what is in
+               it counts. */
             return false;
         }
         int count = failures.getOrDefault ( item, 0 ) + 1;

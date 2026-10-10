@@ -155,26 +155,49 @@ public class Database extends HashNumeric {
     /* All or nothing for a register that is several inserts: without it a
        failure half way leaves a row that makes every retry fail on the
        primary key, and a nick or channel that cannot be loaded */
-    /* The SQLState of the last error, for WorkGuard: it tells an item the
-       database will never take from a server that can not write right now */
-    private static String lastError = null;
+    /* The last error of the database, for WorkGuard: it tells an item the
+       database will never take from a server that can not do it right now */
+    private static String lastState = null;
+    private static int    lastCode  = 0;
+    /* Errors of MariaDB that are about the server and not about what was
+       sent: disk full, storage engine, too many connections, out of memory,
+       shutdown, table full, lock wait and lock table, read only (three of
+       them), and no access (database, login, table, column, privilege,
+       locked account). The same write works when that has passed. */
+    private static final int[] SERVERERRORS = {
+        1021, 1030, 1040, 1041, 1053, 1114, 1205, 1206, 1290, 1792, 1836,
+        1044, 1045, 1142, 1143, 1227, 4151
+    };
 
-    public static void setLastError ( String state ) {
-        lastError = ( state != null ? state : "" );
+    public static void setLastError ( String state, int code ) {
+        lastState = ( state != null ? state : "" );
+        lastCode  = code;
     }
 
     /**
-     * @return true when the last failed write, if it gave an error at all,
-     *         was about the data (too long, a duplicate, a missing column):
-     *         SQLState classes 21, 22, 23 and 42. Anything else is the
-     *         server (shutting down, read only, disk full, a lock), where
-     *         the same write works later. Asking forgets the error.
+     * @return true when the last failed write was about the item (too long,
+     *         a duplicate, a missing column, or it failed without an error).
+     *         False when it was the connection (SQLState 08), a deadlock
+     *         (40) or one of the server errors above: the item is fine and
+     *         is kept. Asking forgets the error.
      */
     public static boolean lastErrorWasData ( ) {
-        String state = lastError;
-        lastError = null;
-        return state == null || state.startsWith ( "21" ) || state.startsWith ( "22" ) ||
-               state.startsWith ( "23" ) || state.startsWith ( "42" );
+        String state = lastState;
+        int code     = lastCode;
+        lastState    = null;
+        lastCode     = 0;
+        if ( state == null ) {
+            return true;
+        }
+        if ( state.startsWith ( "08" ) || state.startsWith ( "40" ) ) {
+            return false;
+        }
+        for ( int server : SERVERERRORS ) {
+            if ( code == server ) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected static void begin ( ) throws SQLException {

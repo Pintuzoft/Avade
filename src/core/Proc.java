@@ -399,7 +399,7 @@ public class Proc extends HashNumeric {
         Logger.getLogger(className).log ( Level.SEVERE, null, e );
         if ( e instanceof SQLException ) {
             String state = ((SQLException)e).getSQLState();
-            Database.setLastError ( state );
+            Database.setLastError ( state, ((SQLException)e).getErrorCode ( ) );
             if ( e instanceof java.sql.SQLTimeoutException || 
                  e instanceof java.sql.SQLRecoverableException ||
                  e instanceof java.sql.SQLNonTransientConnectionException ||
