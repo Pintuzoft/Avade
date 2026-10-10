@@ -31,6 +31,15 @@ import java.util.concurrent.ScheduledFuture;
  * @author DreamHealer
  */
 public class ServicesID extends HashNumeric {
+    /* How long an ID that nobody uses is remembered, in seconds. One with
+       a nick or a channel identified is kept three days: the users of a
+       server that was split away, also over a weekend, are still identified
+       when it comes back, and are not all sent to guest nicks at once. One
+       with nothing to give back is kept a day, as before. (The tests start
+       services with -Davade.sidexpire, these times are too long to wait for.) */
+    private static final long       EXPIRE       = Long.getLong ( "avade.sidexpire", 3*24*60*60 );
+    private static final long       EXPIRE_EMPTY = Math.min ( EXPIRE, 24*60*60 );
+    
     private long                    id;
     private BigInteger              code;
     private ArrayList<NickInfo>     niList;    /* List of identified nicks from this serviceid */
@@ -38,6 +47,7 @@ public class ServicesID extends HashNumeric {
     private Random                  rand;
     private User                    user;      /* the owner of this servicesid */
     private long                    stamp;     /* timestamp  ( seconds )  lastseen */
+    private boolean                 stored;    /* has a row in the servicesid table */
     private ScheduledFuture<?>      timer;      /* guest nick change */
     private ScheduledFuture<?>      adTimer;    /* identify reminder */
     
@@ -61,6 +71,7 @@ public class ServicesID extends HashNumeric {
     public ServicesID ( long id )  {
         this.rand       = new Random ( );
         this.id         = id;
+        this.stored     = true;     /* this one is read from the database */
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
         this.stamp      = System.currentTimeMillis() / 1000;
@@ -106,11 +117,25 @@ public class ServicesID extends HashNumeric {
      * @return
      */
     public boolean hasExpired ( )  {
-        long dayAgo =  ( long ) ( System.currentTimeMillis ( ) /1000 ) - ( 60*60*24 );
-        if ( this.user == null && this.stamp < dayAgo ) {
-            return true;
+        if ( this.user != null ) {
+            return false;
         }
-        return false; 
+        long keep = ( this.niList.isEmpty ( ) && this.ciList.isEmpty ( ) ? EXPIRE_EMPTY : EXPIRE );
+        return this.stamp < System.currentTimeMillis ( ) / 1000 - keep;
+    }
+
+    /**
+     * @return true when this ID has a row in the database
+     */
+    public boolean isStored ( ) {
+        return this.stored;
+    }
+
+    /**
+     * @param stored
+     */
+    public void setStored ( boolean stored ) {
+        this.stored = stored;
     }
     
     /**

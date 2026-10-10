@@ -1,5 +1,6 @@
 #!/bin/bash
-# tests/avade.sh start|stop|restart|build     (start and restart build first)
+# tests/avade.sh start|stop|restart|build     (start builds first)
+# AVADE_JAVA_OPTS: extra options for the JVM, a test uses it to shorten a time
 source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 
 avade_pids() {
@@ -18,7 +19,7 @@ stop() {
 }
 start() {
     mkdir -p "$RUN"
-    ( cd "$RUN" && exec setsid java -cp "$WORK/classes:$REPO/lib/*" main.Main < /dev/null > "$RUN/avade.out" 2>&1 ) > /dev/null 2>&1 &
+    ( cd "$RUN" && exec setsid java $AVADE_JAVA_OPTS -cp "$WORK/classes:$REPO/lib/*" main.Main < /dev/null > "$RUN/avade.out" 2>&1 ) > /dev/null 2>&1 &
 }
 case "$1" in
     build)   build ;;

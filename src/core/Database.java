@@ -520,7 +520,36 @@ public class Database extends HashNumeric {
             Proc.log ( Database.class.getName ( ) , ex );
             return false;
         }
+        sid.setStored ( true );
         return true;             
+    }
+
+    /**
+     * Remove the rows of services IDs that nobody uses any more
+     * @param sids a few hundred at most, they go in one statement
+     * @return false if they could not be removed
+     */
+    public static boolean deleteServicesIDs ( ArrayList<ServicesID> sids ) {
+        if ( sids.isEmpty ( ) ) {
+            return true;
+        }
+        if ( ! activateConnection ( ) ) {
+            return false;
+        }
+        StringBuilder marks = new StringBuilder ( "?" );
+        for ( int i = 1; i < sids.size ( ); i++ ) {
+            marks.append ( ",?" );
+        }
+        try ( PreparedStatement del = sql.prepareStatement ( "delete from servicesid where id in ("+marks+")" ) ) {
+            for ( int i = 0; i < sids.size ( ); i++ ) {
+                del.setLong ( i + 1, sids.get ( i ).getID ( ) );
+            }
+            del.executeUpdate ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( Database.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
     }
 
     /**

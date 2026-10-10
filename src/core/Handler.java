@@ -1336,16 +1336,33 @@ public class Handler extends HashNumeric {
 //    }
 
     
+    /* A services ID that nobody has used for a day is forgotten, and its
+       row in the database goes with it. The table got a row per identified
+       connection, all of them were read at every start, and nothing ever
+       removed one */
     private void sidCleaner ( )  {
         try {
-            ArrayList<ServicesID> buf2 = new ArrayList<> ( );
+            ArrayList<ServicesID> expired = new ArrayList<> ( );
+            ArrayList<ServicesID> rows = new ArrayList<> ( );
             for ( ServicesID s : sidList.values() )  {
                 if ( s.hasExpired ( )  )  {
-                    buf2.add ( s );
+                    expired.add ( s );
+                    if ( s.isStored ( ) ) {
+                        rows.add ( s );
+                    }
+                    if ( rows.size ( ) >= 500 ) {
+                        break;      /* the rest next minute, never one long statement */
+                    }
                 }
             }
-            for ( ServicesID r : buf2 )  {
+            if ( ! Database.deleteServicesIDs ( rows ) ) {
+                /* The database is down. Forgotten here they would never be
+                   removed there, so they stay until it is back */
+                expired.removeAll ( rows );
+            }
+            for ( ServicesID r : expired )  {
                 sidList.remove ( r.getCode() );
+                updServicesID.remove ( r );
             }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );

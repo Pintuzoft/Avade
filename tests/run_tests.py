@@ -373,6 +373,28 @@ def test_sessions_survive_restart():
     close(a)
 
 
+def test_services_id_purge():
+    """The servicesid table got a row for every identified connection, and none was ever removed."""
+    b = login('Bob')
+    time.sleep(3)                           # let the services id be written
+    close(b)
+    before = int(db("select count(*) from servicesid") or 0)
+    check(before >= 1, '(there are services ids of users who have left)', before)
+    os.environ['AVADE_JAVA_OPTS'] = '-Davade.sidexpire=5'       # an unused id is kept for a day
+    try:
+        avade('restart')
+        a = login('Alice')
+        gone = wait_db("select 1 from dual where (select count(*) from servicesid) = 1", 200)
+        left = db("select nicks from servicesid")
+        check(gone == '1' and left == 'Alice', 'the ids nobody uses are removed from the database, the one in use is kept',
+              (before, left))
+    finally:
+        del os.environ['AVADE_JAVA_OPTS']
+        avade('restart')
+    check(has(a.svc('NickServ', 'INFO Alice'), 'Hostmask'), 'and its user is still identified after a restart')
+    close(a)
+
+
 def test_vop_hop():
     chan = '#t_xop'
     a, b, ca, e = login('Alice'), login('Bob'), login('Carol'), login('Erin')
@@ -1280,6 +1302,23 @@ def test_drop_and_hold():
     close(a, mm)
 
 
+def test_split_keeps_identification():
+    """The users of a server that was split away are still identified when it comes back."""
+    mm = master()
+    link_leaf(mm)
+    d = login('Dave', port=LEAF_PORT, host='::1')    # see test_host_masking about the throttle
+    time.sleep(3)                           # let the services id be written
+    m = d.mark()
+    mm.send('SQUIT %s :split test' % ENV['LEAF_NAME'])
+    time.sleep(5)
+    check(has(mm.svc('OperServ', 'UINFO Dave'), 'offline'), '(the leaf is split away, services have removed its users)')
+    link_leaf(mm)
+    check(not has(mm.svc('OperServ', 'UINFO Dave'), 'offline'), '(and is linked again)')
+    check(not d.saw(r' MODE Dave :-\S*r', m, 3), 'a user who comes back after a netsplit keeps +r')
+    check(has(d.svc('NickServ', 'INFO Dave'), 'Hostmask'), 'and is still identified, without a new IDENTIFY')
+    close(mm, d)
+
+
 def test_leaf_split():
     chan = '#t_split'
     mm = master()
@@ -1323,11 +1362,11 @@ def test_hub_restart():
 
 
 TESTS = [test_config_files, test_setup, test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
-         test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
+         test_sessions_survive_restart, test_services_id_purge, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_join_requests, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_common_errors, test_mask_rank, test_dash_in_channel_name, test_memo, test_memo_limits, test_nick_privacy_and_mail,
          test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file, test_bans,
-         test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
+         test_drop_and_hold, test_split_keeps_identification, test_leaf_split, test_services_relink, test_hub_restart]
 
 
 def main():
