@@ -939,6 +939,11 @@ public class NickServ extends Service {
      *
      * @return
      */
+    /* What waits for the database, for the notice of OperServ */
+    public static int waitingDeletes ( )    { return deleteList.size ( );                               }
+    public static int waitingAuths ( )      { return newAuthList.size ( ) + newFullAuthList.size ( );   }
+    public static int waitingLogs ( )       { return logs.size ( );                                     }
+
     public int getNickRegStats ( ) {
         return regList.size ( );
     }

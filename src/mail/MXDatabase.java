@@ -55,6 +55,13 @@ public class MXDatabase extends Database {
     }
 
     /**
+     * @return the mails that wait for the database
+     */
+    public static int waiting ( ) {
+        return waiting.size ( );
+    }
+
+    /**
      * Put the mails that wait in the mailbox
      * @return how many still wait
      */

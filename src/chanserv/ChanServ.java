@@ -1230,6 +1230,17 @@ public class ChanServ extends Service {
      *
      * @return
      */
+    /* What waits for the database, for the notice of OperServ */
+    public static int waitingDeletes ( )    { return deleteList.size ( );                   }
+    public static int waitingLogs ( )       { return logs.size ( ) + accessLogs.size ( );   }
+    public static int waitingAccess ( ) {
+        int count = 0;
+        for ( ChanInfo ci : ciList.values ( ) ) {
+            count += ci.waitingAccess ( );
+        }
+        return count;
+    }
+
     public int getChanRegStats() {
         return regList.size();
     }

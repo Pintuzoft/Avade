@@ -16,6 +16,10 @@
  */
 package core;
 
+import operserv.OperServ;
+import monitor.Snoop;
+import memoserv.MemoServ;
+import mail.MXDatabase;
 import chanserv.CSDatabase;
 import chanserv.ChanInfo;
 import chanserv.ChanServ;
@@ -112,7 +116,7 @@ public class Database extends HashNumeric {
                     lastValidated = System.currentTimeMillis();
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
+                        Handler.getOperServ().sendGlobOp ( "Database connection established. To be written: "+getServiceStats ( ) );
                     }
                 } 
        
@@ -127,7 +131,7 @@ public class Database extends HashNumeric {
                     }
                 } else {
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database re-connection attempt failed - "+getServiceStats ( ) );
+                        Handler.getOperServ().sendGlobOp ( "Database is not reachable, services work from memory. Waiting to be written: "+getServiceStats ( ) );
                     }
                 }
                 lastGlobops = System.currentTimeMillis();
@@ -137,15 +141,31 @@ public class Database extends HashNumeric {
     }
 
     /**
-     *
-     * @return
+     * @return what waits to be written, in words for the staff:
+     *         "1 new nick, 2 changed channels, 1 memo", or "nothing"
      */
     protected static String getServiceStats ( ) {
-        int chanRegs = Handler.getChanServ().getChanRegStats ( );
-        int chanChanges = Handler.getChanServ().getChangesStats ( );
-        int nickRegs = Handler.getNickServ().getNickRegStats ( );
-        int nickChanges = Handler.getNickServ().getChangesStats ( );
-        return "(new/changed): Channels:"+chanRegs+"/"+chanChanges+" Nicks:"+nickRegs+"/"+nickChanges;
+        StringBuilder text = new StringBuilder ( );
+        count ( text, Handler.getNickServ().getNickRegStats ( ),    "new nick" );
+        count ( text, Handler.getNickServ().getChangesStats ( ),    "changed nick" );
+        count ( text, NickServ.waitingDeletes ( ),                  "dropped nick" );
+        count ( text, NickServ.waitingAuths ( ),                    "mail or password change" );
+        count ( text, Handler.getChanServ().getChanRegStats ( ),    "new channel" );
+        count ( text, Handler.getChanServ().getChangesStats ( ),    "changed channel" );
+        count ( text, ChanServ.waitingDeletes ( ),                  "dropped channel" );
+        count ( text, ChanServ.waitingAccess ( ),                   "access change" );
+        count ( text, MemoServ.waiting ( ),                         "memo" );
+        count ( text, MXDatabase.waiting ( ),                       "mail" );
+        count ( text, OperServ.waiting ( ),                         "oper change" );
+        count ( text, Handler.waitingSIDs ( ),                      "session" );
+        count ( text, NickServ.waitingLogs ( ) + ChanServ.waitingLogs ( ) + OperServ.waitingLogs ( ) + Snoop.waiting ( ), "log row" );
+        return ( text.length ( ) > 0 ? text.toString ( ) : "nothing" );
+    }
+
+    private static void count ( StringBuilder text, int count, String what ) {
+        if ( count > 0 ) {
+            text.append ( text.length ( ) > 0 ? ", " : "" ).append ( count ).append ( " " ).append ( what ).append ( count == 1 ? "" : "s" );
+        }
     }
     
     /**

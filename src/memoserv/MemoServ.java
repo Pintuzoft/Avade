@@ -99,6 +99,13 @@ public class MemoServ extends Service {
      */
 
     
+    /**
+     * @return the memos that wait for the database (new, read and deleted)
+     */
+    public static int waiting ( ) {
+        return newMemos.size ( ) + readMemos.size ( ) + delMemos.size ( );
+    }
+
     public static void addNewMemo ( MemoInfo memo ) {
         newMemos.add ( memo );
     }

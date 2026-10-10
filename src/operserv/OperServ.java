@@ -1412,6 +1412,23 @@ public class OperServ extends Service {
         logs.add ( log );
     }
 
+    /**
+     * @return the bans, spam filters, staff, servers and settings that wait
+     *         for the database
+     */
+    public static int waiting ( ) {
+        return addServicesBans.size ( ) + remServicesBans.size ( ) + addSpamFilters.size ( ) + remSpamFilters.size ( ) +
+               addStaff.size ( ) + remStaff.size ( ) + addServers.size ( ) + remServers.size ( ) + updServers.size ( ) +
+               newSettings.size ( );
+    }
+
+    /**
+     * @return the log rows that wait for the database
+     */
+    public static int waitingLogs ( ) {
+        return logs.size ( ) + addLogServicesBans.size ( ) + delLogServicesBans.size ( );
+    }
+
     /* Settings that wait for the database (the last value of each) */
     private static final LinkedHashMap<String,String> newSettings = new LinkedHashMap<> ( );
 

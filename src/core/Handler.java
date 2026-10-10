@@ -1350,6 +1350,13 @@ public class Handler extends HashNumeric {
      *
      * @param servicesId
      */
+    /**
+     * @return the sessions (services IDs) that wait for the database
+     */
+    public static int waitingSIDs ( ) {
+        return updServicesID.size ( );
+    }
+
     public static void addUpdateSID ( ServicesID servicesId ) {
         for ( ServicesID sid : updServicesID ) {
             if ( sid.getID() == servicesId.getID() ) {

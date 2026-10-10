@@ -162,6 +162,13 @@ public class Snoop extends HashNumeric {
         return arr[3].replaceFirst ( "^:", "" ).toUpperCase ( );
     }
 
+    /**
+     * @return the snoop log rows that wait for the database
+     */
+    public static int waiting ( ) {
+        return logs.size ( );
+    }
+
     public int maintenance ( ) {
         int todoAmount = 0;
         todoAmount += writeLogs ( );

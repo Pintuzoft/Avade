@@ -142,6 +142,13 @@ public class ChanInfo extends HashNumeric {
     }
 
     
+    /**
+     * @return the changes to the access lists that are not written yet
+     */
+    public int waitingAccess ( ) {
+        return this.addAccList.size ( ) + this.remAccList.size ( ) + this.updAccList.size ( );
+    }
+
     private void updateAccessChanges ( ) {
         if ( ! CSDatabase.checkConn() ) {
             return;

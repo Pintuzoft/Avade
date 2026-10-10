@@ -1424,6 +1424,7 @@ def test_database_down():
     memos = int(db("select count(*) from memo where name = 'Bob'") or 0)
     mails = int(db("select count(*) from mailbox where mail = 'bob@test.net'") or 0)
 
+    mg = mm.mark()
     subprocess.run(['docker', 'stop', ENV['DB_CONTAINER']], capture_output=True)
     try:
         time.sleep(3)
@@ -1469,9 +1470,21 @@ def test_database_down():
         t0 = time.time()
         r = a.svc('NickServ', 'INFO Alice')
         check(has(r, 'Hostmask') and time.time() - t0 < 4, 'and services still answer at once after all that', time.time() - t0)
+        # the staff are told what waits, in words
+        told = ''
+        end = time.time() + 40
+        while time.time() < end:
+            lines = [l for l in mm.since(mg) if 'Waiting to be written' in l and 'new channel' in l]
+            if lines:
+                told = lines[-1]
+                break
+            time.sleep(1)
+        check(all(w in told for w in ('new nick', 'new channel', 'dropped channel', 'access change', 'memo', 'mail', 'oper change')),
+              'the notice to the staff says what waits to be written', told[-220:])
     finally:
         subprocess.run(['docker', 'start', ENV['DB_CONTAINER']], capture_output=True)
     check(wait_db("select 1", 60) == '1', '(the database is back)')
+    check(mm.saw(r'Database connection established', mg, 45), 'and that the database is back')
 
     check(wait_db("select name from nick where name = 'Dbdownnick'", 60) != '', 'the new nick is written when the database is back')
     check(wait_db("select count(*) from passlog where nick = 'Dbdownnick' having count(*) > 0", 30) != '', 'with its password')
