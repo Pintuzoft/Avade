@@ -360,6 +360,13 @@ been violated network rules or other types of abuse using the channel topic.
   
   
 
+## License
+
+Avade is free software under the GNU General Public License, version 2 or
+(at your option) any later version. The text is in `LICENSE`. The libraries
+it comes with are the work of others under their own licenses, listed in
+`lib/README.md`.
+
 ## Contributing to the project
 
 ### Code
