@@ -1474,13 +1474,13 @@ def test_database_down():
         told = ''
         end = time.time() + 40
         while time.time() < end:
-            lines = [l for l in mm.since(mg) if 'Database down, waiting:' in l and 'chans +' in l]
+            lines = [l for l in mm.since(mg) if 'Database down, waiting:' in l and ' oper ' in l]
             if lines:
                 told = lines[-1]
                 break
             time.sleep(1)
-        check(re.search(r'waiting: nicks \+\d+.* -\d+, chans \+\d+.* -\d+, access \d+, memos \d+, mails \d+, oper \d+, other \d+$', told)
-              and len(told.split('waiting:')[-1]) < 100,
+        check(re.search(r'waiting: nicks \d+, chans \d+, access \d+, memos \d+, mails \d+, oper \d+, other \d+$', told)
+              and len(told.split('waiting:')[-1]) < 80,
               'the notice to the staff says what waits to be written, in one short line', told[-160:])
     finally:
         subprocess.run(['docker', 'start', ENV['DB_CONTAINER']], capture_output=True)

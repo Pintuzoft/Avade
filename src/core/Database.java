@@ -143,15 +143,15 @@ public class Database extends HashNumeric {
     /**
      * @return what waits to be written, in one short line for the staff (it
      *         is sent every 30 seconds while the database is away):
-     *         "nicks +1 ~2, chans ~1 -1, access 3, memos 1, other 14".
-     *         + is new, ~ changed, - dropped. What is zero is left out.
-     *         "other" is the small things: mail and password codes,
-     *         sessions and log rows.
+     *         "nicks 3, chans 1, access 3, memos 1, mails 1, other 14".
+     *         One number for each kind: new, changed and dropped together.
+     *         What is zero is left out. "other" is the small things: mail
+     *         and password codes, sessions and log rows.
      */
     protected static String getServiceStats ( ) {
         StringBuilder text = new StringBuilder ( );
-        group ( text, "nicks", Handler.getNickServ().getNickRegStats ( ), Handler.getNickServ().getChangesStats ( ), NickServ.waitingDeletes ( ) );
-        group ( text, "chans", Handler.getChanServ().getChanRegStats ( ), Handler.getChanServ().getChangesStats ( ), ChanServ.waitingDeletes ( ) );
+        count ( text, "nicks",  Handler.getNickServ().getNickRegStats ( ) + Handler.getNickServ().getChangesStats ( ) + NickServ.waitingDeletes ( ) );
+        count ( text, "chans",  Handler.getChanServ().getChanRegStats ( ) + Handler.getChanServ().getChangesStats ( ) + ChanServ.waitingDeletes ( ) );
         count ( text, "access", ChanServ.waitingAccess ( ) );
         count ( text, "memos",  MemoServ.waiting ( ) );
         count ( text, "mails",  MXDatabase.waiting ( ) );
@@ -159,15 +159,6 @@ public class Database extends HashNumeric {
         count ( text, "other",  NickServ.waitingAuths ( ) + Handler.waitingSIDs ( ) + NickServ.waitingLogs ( ) +
                                 ChanServ.waitingLogs ( ) + OperServ.waitingLogs ( ) + Snoop.waiting ( ) );
         return ( text.length ( ) > 0 ? text.toString ( ) : "nothing" );
-    }
-
-    private static void group ( StringBuilder text, String what, int added, int changed, int dropped ) {
-        if ( added + changed + dropped > 0 ) {
-            text.append ( text.length ( ) > 0 ? ", " : "" ).append ( what )
-                .append ( added   > 0 ? " +"+added   : "" )
-                .append ( changed > 0 ? " ~"+changed : "" )
-                .append ( dropped > 0 ? " -"+dropped : "" );
-        }
     }
 
     private static void count ( StringBuilder text, String what, int count ) {
