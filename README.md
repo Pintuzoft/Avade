@@ -4,19 +4,23 @@
 The Avade IRC Services is a project made in Java solely for IRC networks running 
 the bahamut IRCd. As Avade has been developed only for bahamut it the network 
 will be able to get builtin features for the features bahamut offers. This 
-includes the AKill, SQline, SGline, Auditorium mode and also new features in the 
-upcoming bahamut release.
+includes the AKill, SQline, SGline and Auditorium mode, and what bahamut 2.2 brought: 
+halfops, channel flags, clone limits, spam filters, host-masking and join requests.
 
 ./DreamHealer
 
 ### Install
 
-You need Java 17, a bahamut hub and MariaDB (or MySQL). As the user that will
-run services:
+You need Java 17, a bahamut hub and MariaDB (or MySQL). Download
+`Avade-<version>.tar.gz` from the [latest release](https://github.com/Pintuzoft/Avade/releases/latest),
+and as the user that will run services:
 
-    git clone https://github.com/Pintuzoft/Avade.git
-    cd Avade
+    tar xzf Avade-<version>.tar.gz
+    cd Avade-<version>
     ./install.sh
+
+With git instead: `git clone https://github.com/Pintuzoft/Avade.git`, `cd Avade`
+and `./install.sh`.
 
 It puts everything in `~/avade/` and starts services. The first time it asks a
 few questions (your network, the hub, the database), writes `services.conf`
@@ -33,8 +37,18 @@ a newer version to upgrade. Everything else is in [INSTALL](INSTALL).
 - External mailing functionality
 - NoGhost nickflag
 - Auditorium channel option / mode
+- Join requests
+- Host-masking
+- Vhosts
+- Passwords stored as hashes
+- VOP and HOP access levels
+- Channel flags
+- Clone limits
+- Spam filters
+- Memo limits
 - Audit staff
 - Topic logs
+- Tested against a real bahamut
 
 #### Reconnecting to services hub
 
@@ -71,6 +85,10 @@ after a split or services restart and only trust usermode +r and automatically
 identify current nick only. Avade IRC Services will not work like these other 
 services and rather trust the services id set on a user making Avade alot more 
 user friendly.
+
+A user who disappears in a split is remembered for three days. When the server 
+comes back its users are still identified, and are not all sent to guest nicks 
+at once.
 
 
 #### Excessive logging / list missing servers
@@ -134,6 +152,75 @@ stopped before the join and not kicked after it, and the channel never sees the 
 The key, the limit, bans, exception and invite lists and the other modes are checked 
 by Avade the way the ircd does. The staff turn it on for the network 
 (/OperServ SJR ON), a founder for a channel (/ChanServ CHANFLAG #channel SJR ON).
+
+#### Host-masking
+
+Avade can hide the real host of users from other users, together with the 
+`avade_uhm` module for bahamut that comes with Avade (`bahamut-module/`). bahamut 
+itself is not changed.
+
+    c-83-233-12-7.bredband.telia.com  ->  mynet-0cabd86f.bredband.telia.com
+    192.0.2.44                        ->  6c13e277.8057c675.1b690abc.ip
+
+The same address always gets the same mask, so a ban on a mask holds, and IRC 
+operators still see the real host. Avade does the same calculation as the module 
+and always knows which host a user is shown with: AKICKs and access masks match it, 
+and a ban follows the person who gets another host. A user who wants to show the 
+real host sets `/NickServ SET SHOWHOST ON`. It is turned on for the network with 
+`/OperServ UHM`, see "Host-masking" in INSTALL.
+
+#### Vhosts
+
+A user with a confirmed email can choose the host that is shown: 
+`/NickServ SET VHOST my.own.host`. It is set at every identify. An ip address, the 
+names of the network and the words in `vhostforbidden` in the config are refused, 
+and it can be changed once per ten minutes. Staff set or remove the vhost of any 
+nick with `/OperServ VHOST`.
+
+#### Passwords stored as hashes
+
+Passwords of nicks and channels are stored as one way hashes (PBKDF2). Nobody can 
+read them, not the staff and not someone who gets hold of the database. A user who 
+lost a password gets a code by mail with `/NickServ RESETPASS <nick>` and sets a new 
+one with it. Staff can set a new password with SETPASS, without seeing the old one.
+
+#### VOP and HOP access levels
+
+Next to SOP and AOP a channel has a HOP list (halfop) and a VOP list (voice): 
+`/ChanServ HOP #channel ADD nick` and `/ChanServ VOP #channel ADD nick`. The nick 
+gets +h or +v when it joins.
+
+#### Channel flags
+
+bahamut has extended channel flags against floods and spam: how long a user must 
+have been connected to join or talk, how many messages in how many seconds, no 
+CTCPs or notices, no nick changes, a greeting for those who join, and more. The 
+ircd forgets them when the channel goes empty. With `/ChanServ CHANFLAG` the founder 
+sets them, and ChanServ puts them back every time the channel is created.
+
+#### Clone limits
+
+`/OperServ CLONE ADD <ip|a.b.c.*> <limit>` sets how many clients may connect from an 
+ip or a range on the whole network, for example a school behind one address. The 
+servers enforce it, and it replaces the clone trigger of services for that address.
+
+#### Spam filters
+
+`/OperServ SPAMFILTER` adds patterns that the servers match against messages, with 
+what should happen on a match: warn the opers, block the message, kill or akill the 
+sender. A filter can be limited to one channel or nick, and has an id, so it can be 
+seen which filter stopped a message.
+
+#### Memo limits
+
+A nick holds 30 memos, and 5 unread ones from the same sender. Every memo is also a 
+mail to the receiver, so one user can not fill the memo box or the inbox of another.
+
+#### Tested against a real bahamut
+
+`tests/` starts a network of its own, a bahamut hub and leaf, MariaDB, Avade and the 
+mailer, and goes through the features as a user and an oper would: about 300 checks. 
+A weekly job runs the same suite against a new bahamut release when one comes out.
 
 #### Audit staff
 
