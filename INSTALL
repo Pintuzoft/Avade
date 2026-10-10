@@ -114,7 +114,9 @@ is in the way (the hub does not answer, the hub closed the link and why, or
 the database can not be reached). Services keep trying by themselves.
 
 Other actions: stop, restart, status, setup, check and log. The output of
-services ends up in ~/avade/avade.out (the five latest are kept).
+services ends up in ~/avade/avade.out. It has every line from the hub, so it
+is moved aside at every start and when it is over 20 MB (avade.out.1 to
+avade.out.5 are kept), and only the user running services can read it.
 
 To bring services back after a reboot or a crash, add this to the crontab of
 the user running services (crontab -e):

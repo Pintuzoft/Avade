@@ -12,8 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package memoserv;
 
@@ -50,14 +49,16 @@ public class MSDatabase extends Database {
         }
         
         try {
+            /* The time it was sent: a memo can wait for the database */
             String query = "INSERT INTO memo  ( name,sender,message,stamp,readflag )  "
-                         + "VALUES  ( ?, ?, ?, UNIX_TIMESTAMP ( ) , ? ) ";
+                         + "VALUES  ( ?, ?, ?, ?, ? ) ";
 
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, memo.getName ( )  );
             ps.setString   ( 2, memo.getSender ( )  );
             ps.setString   ( 3, memo.getMessage ( )  );
-            ps.setInt      ( 4, memo.isRead ( ) ?1:0 );
+            ps.setLong     ( 4, memo.getStamp ( ) > 0 ? memo.getStamp ( ) : System.currentTimeMillis ( ) / 1000 );
+            ps.setInt      ( 5, memo.isRead ( ) ?1:0 );
             ps.execute ( );
             ps.close ( );
 

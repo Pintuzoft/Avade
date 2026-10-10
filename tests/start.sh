@@ -51,6 +51,8 @@ if [ -z "$KEEP_DB" ] || [ ! -f "$RUN/services.conf" ]; then
     printf '\nvhostforbidden:\n  - "*admin*"\n  - "*oper*"\n' >> "$RUN/services.conf"
     printf '\nuhmsalt: TestSalt1234567890abcdefGHIJ\nuhmprefix: avade\n' >> "$RUN/services.conf"
 fi
+# All test users come from the same address: no limit on their mails here
+grep -q '^maillimit:' "$RUN/services.conf" || printf '\nmaillimit: 1000\n' >> "$RUN/services.conf"
 # The connect block the setup tells the admin of the hub to use
 SERVICES_CONNECT=$(sed -n '/^    connect {/,/^    };/p' "$RUN/hub-setup.txt")
 [ -n "$SERVICES_CONNECT" ] || { echo "no connect block in hub-setup.txt"; exit 1; }

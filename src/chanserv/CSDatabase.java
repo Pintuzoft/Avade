@@ -12,8 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package chanserv;
 
@@ -144,7 +143,7 @@ public class CSDatabase extends Database {
                 commit ( );
                 
                 idleUpdate ( "createChan ( ) " );
-            } catch  ( SQLException ex )  {
+            } catch  ( SQLException | RuntimeException ex )  {
                 rollback ( );
                 Proc.log ( CSDatabase.class.getName ( ), ex );
                 return -1;
@@ -543,7 +542,7 @@ public class CSDatabase extends Database {
             if ( ok ) {
                 commit ( );
             }
-        } catch ( SQLException ex ) {
+        } catch ( SQLException | RuntimeException ex ) {
             Proc.log ( CSDatabase.class.getName ( ) , ex );
             ok = false;
         }
@@ -598,13 +597,14 @@ public class CSDatabase extends Database {
         
         try {
             String query = "insert into chanacclog ( name, target, access, instater, usermask, stamp ) "+
-                           "values ( ?, ?, ?, ?, ?, now() ) ";
+                           "values ( ?, ?, ?, ?, ?, coalesce ( ?, now() ) ) ";
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, log.getNameStr() );
             ps.setString   ( 2, log.getTarget() );
             ps.setString   ( 3, log.getFlagStr() );
             ps.setString   ( 4, log.getInstater() );
             ps.setString   ( 5, log.getUsermask() );
+            ps.setString   ( 6, log.getStamp() );   /* when it happened, the row can wait for the database */
             ps.execute ( );
             ps.close ( ); 
             return true;

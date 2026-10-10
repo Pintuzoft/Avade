@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer - avade.net
  *
- * This program isSet free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program isSet distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package chanserv;
 
@@ -157,6 +156,13 @@ public class ChanServ extends Service {
             /* Founders and access lists point at nicks */
             return;
         }
+        /* The load puts every channel in the lists of its founder and of the
+           nicks with access. When it is tried again (the access lists could
+           not be read) they would get them all a second time, and keep the
+           channels of the first try for ever. */
+        for ( NickInfo ni : NickServ.getNicks ( ) ) {
+            ni.clearChanAccess ( );
+        }
         HashMap<BigInteger,ChanInfo> chans = CSDatabase.getAllChans ( );
         if ( chans == null ) {
             Proc.log ( "ChanServ: could not load the channels from the database" );
@@ -202,7 +208,9 @@ public class ChanServ extends Service {
             return; /* no command */
         }
         
-//        user.getUserFlood().incCounter ( this );
+        if ( user.getUserFlood().tooFast ( this ) ) {
+            return;
+        }
          
         cmd[3] = cmd[3].substring ( 1 );
         HashString command = new HashString ( cmd[3] );
@@ -268,7 +276,8 @@ public class ChanServ extends Service {
                 if ( ci.isAtleastAop ( user ) ) {
                     Handler.getChanServ().opUser ( c, user );
                 } else {
-                    banUser ( c, user, "*!*@"+user.getHost() );
+                    /* (on the host everyone sees, a ban shows it to the channel) */
+                    banUser ( c, user, "*!*@"+shownOrReal ( user ) );
                     kickUser ( c, user, "Restricted for "+c.getRelay()+" staff" );
                 }
             }
@@ -1105,6 +1114,7 @@ public class ChanServ extends Service {
             this.sendMsg ( user, "You have now been unidentified from channel: "+ci.getName());
             user.unIdentify ( ci );
         }
+        Handler.unIdentifyAll ( ci );   /* and the sessions that are not here now */
         uList.addAll ( Handler.findUsersByNick ( ci.getFounder() ) );
         for ( User user : uList ) {
             this.sendMsg ( user, "Channel "+ci.getName()+" which you have been found to be associated with has now been dropped");
@@ -1220,6 +1230,17 @@ public class ChanServ extends Service {
      *
      * @return
      */
+    /* What waits for the database, for the notice of OperServ */
+    public static int waitingDeletes ( )    { return deleteList.size ( );                   }
+    public static int waitingLogs ( )       { return logs.size ( ) + accessLogs.size ( );   }
+    public static int waitingAccess ( ) {
+        int count = 0;
+        for ( ChanInfo ci : ciList.values ( ) ) {
+            count += ci.waitingAccess ( );
+        }
+        return count;
+    }
+
     public int getChanRegStats() {
         return regList.size();
     }

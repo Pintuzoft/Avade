@@ -12,8 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package core;
 
@@ -48,7 +47,7 @@ public class WorkGuard {
      * @return true if the item should be given up on
      */
     public static boolean failedKey ( String key, String what ) {
-        if ( ! Database.checkConn ( ) ) {
+        if ( ! Database.lastErrorWasData ( ) || ! Database.checkConn ( ) ) {
             return false;
         }
         int count = keyFailures.getOrDefault ( key, 0 ) + 1;
@@ -75,8 +74,11 @@ public class WorkGuard {
      * @return true if the item should be dropped from its queue
      */
     public static boolean failed ( Object item, String what ) {
-        if ( ! Database.checkConn ( ) ) {
-            /* Database is down, keep it and try again when it is back */
+        if ( ! Database.lastErrorWasData ( ) || ! Database.checkConn ( ) ) {
+            /* Database is down, or up and not able to write (shutting down,
+               read only, disk full, no access): keep it and try again when
+               it is back. Only an item the database refuses for what is in
+               it counts. */
             return false;
         }
         int count = failures.getOrDefault ( item, 0 ) + 1;

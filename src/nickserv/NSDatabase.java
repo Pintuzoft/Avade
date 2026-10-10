@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program hasAccess free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program hasAccess distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package nickserv;
 
@@ -106,7 +105,9 @@ public class NSDatabase extends Database {
             commit ( );
 
             idleUpdate ( "createNick ( ) " );
-        } catch  ( SQLException ex )  {
+        } catch  ( SQLException | RuntimeException ex )  {
+            /* (any error: a transaction left open would take everything
+               written after it along when it is rolled back) */
             rollback ( );
             Proc.log ( NSDatabase.class.getName ( ) , ex );
             return -1;
@@ -363,24 +364,30 @@ public class NSDatabase extends Database {
         String query;
         HashString salt = Proc.getConf().get ( SECRETSALT );
         try {
+            /* Only a code of this registration: the name can have had an
+               owner before, who still has the codes that were mailed then */
             query = "select nick,aes_decrypt(mail,?) as mail,null as pass,auth,stamp "+
                     "from maillog "+
                     "where auth = ? "+
                     "and nick = ? "+
+                    "and stamp >= ( select regstamp from nick where name = ? ) "+
                     
                     "union "+
                     
                     "select nick,null as mail,pass,auth,stamp "+
                     "from passlog "+
                     "where auth = ? "+
-                    "and nick = ?";
+                    "and nick = ? "+
+                    "and stamp >= ( select regstamp from nick where name = ? )";
             
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, salt.getString() );
             ps.setString ( 2, code );
             ps.setString ( 3, user.getNameStr() );
-            ps.setString ( 4, code );
-            ps.setString ( 5, user.getNameStr() );
+            ps.setString ( 4, user.getNameStr() );
+            ps.setString ( 5, code );
+            ps.setString ( 6, user.getNameStr() );
+            ps.setString ( 7, user.getNameStr() );
             res2 = ps.executeQuery ( );
             
             if ( res2.next() ) {
@@ -421,6 +428,15 @@ public class NSDatabase extends Database {
             ps.setString  ( 1, ni.getNameStr() );
             ps.execute ( );
             ps.close ( ); 
+            /* Nor the codes that were mailed and never used: they would
+               change the password or the mail of that next owner */
+            for ( String table : new String[] { "maillog", "passlog" } ) {
+                query = "delete from "+table+" where nick = ? and auth is not null";
+                ps = sql.prepareStatement ( query );
+                ps.setString  ( 1, ni.getNameStr() );
+                ps.execute ( );
+                ps.close ( ); 
+            }
             return true;
         } catch ( SQLException e )  {
             Proc.log ( NSDatabase.class.getName ( ), e );
@@ -589,13 +605,16 @@ public class NSDatabase extends Database {
         }
         String query;
         try {
+            /* (only a code of this registration, see fetchAuth) */
             query = "update maillog "+
                     "set auth = null "+
                     "where nick = ? "+
-                    "and auth = ?";
+                    "and auth = ? "+
+                    "and stamp >= ( select regstamp from nick where name = ? )";
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, command.getExtra ( ) );
+            ps.setString ( 3, ni.getNameStr() );
             int updated = ps.executeUpdate ( );
             ps.close ( );
             if ( updated == 0 ) {
@@ -623,13 +642,16 @@ public class NSDatabase extends Database {
         }
         String query;
         try {
+            /* (only a code of this registration, see fetchAuth) */
             query = "update passlog "+
                     "set auth = null "+
                     "where nick = ? "+
-                    "and auth = ?";
+                    "and auth = ? "+
+                    "and stamp >= ( select regstamp from nick where name = ? )";
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, command.getExtra ( ) );
+            ps.setString ( 3, ni.getNameStr() );
             int updated = ps.executeUpdate ( );
             ps.close ( );
             if ( updated == 0 ) {

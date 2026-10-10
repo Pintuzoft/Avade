@@ -139,7 +139,7 @@ def test_config_files():
         return out
 
     t, r = read('template.conf'), read('reference.conf')
-    optional = {'vhostforbidden', 'uhmsalt', 'uhmprefix'}
+    optional = {'vhostforbidden', 'uhmsalt', 'uhmprefix', 'maillimit'}
     check(set(t) - optional == set(r) - optional, 'template.conf and reference.conf have the same settings',
           sorted(set(t) ^ set(r)))
     lists = ('sra', 'csop', 'sa', 'ircop')
@@ -380,7 +380,11 @@ def test_services_id_purge():
     close(b)
     before = int(db("select count(*) from servicesid") or 0)
     check(before >= 1, '(there are services ids of users who have left)', before)
-    os.environ['AVADE_JAVA_OPTS'] = '-Davade.sidexpire=5'       # an unused id is kept for a day
+    # The same restart shows that a big output file is moved aside (avade.sh says where it is)
+    out = os.path.join(WORK, 'run', 'rotate-test.out')
+    with open(out, 'w') as f:
+        f.write('old line\n' * 500)
+    os.environ['AVADE_JAVA_OPTS'] = '-Davade.sidexpire=5 -Davade.out=%s -Davade.outmax=1000' % out   # an unused id is kept for a day
     try:
         avade('restart')
         a = login('Alice')
@@ -388,6 +392,9 @@ def test_services_id_purge():
         left = db("select nicks from servicesid")
         check(gone == '1' and left == 'Alice', 'the ids nobody uses are removed from the database, the one in use is kept',
               (before, left))
+        check(os.path.getsize(out) == 0 and os.path.exists(out + '.1') and os.path.getsize(out + '.1') == 4500,
+              'an output file that got big is copied aside and emptied while services run',
+              (os.path.getsize(out), os.path.exists(out + '.1')))
     finally:
         del os.environ['AVADE_JAVA_OPTS']
         avade('restart')
@@ -1274,6 +1281,343 @@ def test_log_file():
     check(log.count('\n') > 3, 'services.log is written, one line per entry', log[:200])
 
 
+def test_services_own_kill():
+    """A user that services kill themselves stayed for ever: the ircd does not send such a kill back."""
+    chan = '#t_ownkill'
+    mm = master()
+    v = Client('Gecosvic')                  # its realname is "Gecosvic test"
+    v.join(chan)
+    time.sleep(1)
+    check(has(mm.svc('OperServ', 'CINFO ' + chan), 'Gecosvic'), '(services know the user and the channel it made)')
+    mm.svc('OperServ', 'SGLINE TIME 10m Gecosvic* test of a kill by services', wait=3)
+    check(v.saw(r'(Closing Link| KILL )', 0, 8), 'SGLINE kills the users it matches', v.since(0)[-2:])
+    check(has(mm.svc('OperServ', 'UINFO Gecosvic'), 'offline'), 'and services have removed the user')
+    check(not has(mm.svc('OperServ', 'CINFO ' + chan), 'Name:'), 'and the channel it was alone in')
+    mm.svc('OperServ', 'SGLINE DEL Gecosvic*')
+    close(mm)
+
+
+def test_codes_of_a_former_owner():
+    """A code that was mailed for a nick still worked when the nick had been dropped and registered by someone else."""
+    t = Client('Oldowner')
+    t.svc('NickServ', 'REGISTER oldpw1234 oldowner@test.net')
+    check(wait_db("select name from nick where name = 'Oldowner'", 15) != '', 'a registration is written within seconds')
+    check(wait_db("select auth from maillog where nick = 'Oldowner' and auth is not null", 15) != '', '(its mail code is waiting)')
+    t.svc('NickServ', 'DROP oldpw1234')
+    left = '1'
+    for i in range(20):
+        left = db("select count(*) from maillog where nick = 'Oldowner' and auth is not null")
+        if left == '0':
+            break
+        time.sleep(1)
+    check(left == '0', 'the unused codes of a dropped nick are removed with it', left)
+    close(t)
+    # A code from before the nick was registered (its former owner still has the mail) does nothing
+    code = '0000111122223333444455556666ffff'
+    db("insert into passlog (nick,pass,auth,stamp) values ('Alice','pbkdf2-sha256$1$AAAA$AAAA','%s','2001-01-01 00:00:00')" % code)
+    a = login('Alice', identify=False)
+    r = a.svc('NickServ', 'AUTH ' + code)
+    check(has(r, 'did not match') and not has(r, 'fully authed'), 'a code that is older than the registration is refused', r)
+    check(has(a.svc('NickServ', 'IDENTIFY ' + pw('Alice')), 'Password accepted'), 'and the password of the nick is what it was')
+    db("delete from passlog where auth = '%s'" % code)
+    close(a)
+
+
+def test_channel_identify_is_stored():
+    """An identification to a channel was not written to the session, and a drop left it in the sessions that were stored."""
+    chan = '#t_cident'
+    a, b = login('Alice'), login('Bob')
+    register_chan(a, chan, 'cidentpw1')
+    check(has(b.svc('ChanServ', 'IDENTIFY %s cidentpw1' % chan), 'Password accepted'), '(a user identifies to a channel)')
+    row = wait_db("select chans from servicesid where nicks like '%%Bob%%' and chans like '%%%s%%'" % chan, 15)
+    check(row != '', 'the session in the database has the channel, it is kept over a restart', row)
+    a.svc('ChanServ', 'DROP %s cidentpw1' % chan)
+    left = '1'
+    for i in range(20):
+        left = db("select count(*) from servicesid where chans like '%%%s%%'" % chan)
+        if left == '0':
+            break
+        time.sleep(1)
+    check(left == '0', 'and no session is identified to a channel that is dropped', left)
+    close(a, b)
+
+
+def test_web_command_without_nick():
+    """A row in the web command table that named no nick ended the main loop of services."""
+    db("insert into command (target,targettype,command,extra) values (NULL,'NICKINFO','AUTH','x'), ('Nosuchnick77','NICKINFO','AUTH','x')")
+    left = '2'
+    for i in range(20):
+        left = db("select count(*) from command")
+        if left == '0':
+            break
+        time.sleep(1)
+    check(left == '0', 'web commands that name no registered nick are removed', left)
+    a = login('Alice')
+    check(has(a.svc('NickServ', 'INFO Alice'), 'Hostmask'), 'and services still answer')
+    close(a)
+
+
+def test_snoop_hides_passwords():
+    """More than one space, or the arguments the wrong way round, put a password where the snoop did not mask it."""
+    mm = master()
+    mm.join('#Snoop')
+    time.sleep(1)
+    m = mm.mark()
+    u = Client('Snooper1')
+    u.svc('NickServ', 'IDENTIFY   hemligt91ord')                # three spaces
+    u.svc('NickServ', 'IDENTIFY hemligt92ord Alice')            # password first
+    u.svc('NickServ', 'GHOST hemligt93ord Alice')
+    u.svc('NickServ', ' IDENTIFY hemligt94ord')                 # a space before the command
+    u.svc('ChanServ', 'IDENTIFY #t_topic hemligt95 ord')        # a password in two words
+    u.svc('ChanServ', 'IDENTIFY  #t_topic  hemligt96ord')       # two spaces
+    time.sleep(2)
+    lines = [l for l in mm.since(m) if ' PRIVMSG #Snoop ' in l and 'Snooper1' in l]
+    check(len(lines) >= 5, '(the snoop channel shows what the user did)', lines)
+    leaked = [l for l in lines if 'hemligt9' in l]
+    check(not leaked, 'no password is shown in the snoop channel', leaked)
+    check(any('#t_topic' in l for l in lines), 'what is not secret is still shown', lines[-2:])
+    close(mm, u)
+
+
+def test_mkick_forgets_channel():
+    """After MKICK and CLOSE the channel is gone in the ircd, services kept it with its key and bans."""
+    chan = '#t_mkick'
+    mm, a, b = master(), login('Alice'), login('Bob')
+    register_chan(a, chan)
+    b.join(chan)
+    a.send('MODE %s +k nyckel' % chan)
+    time.sleep(1)
+    check(has(mm.svc('OperServ', 'CINFO ' + chan), 'Name:'), '(services know the channel)')
+    m = b.mark()
+    a.svc('ChanServ', 'MKICK ' + chan)
+    check(b.saw(r' KICK %s Bob ' % chan, m, 5), '(MKICK removes everyone)')
+    r = mm.svc('OperServ', 'CINFO ' + chan)
+    check(not has(r, 'Name:'), 'services have forgotten the channel that MKICK emptied', r)
+    close(mm, a, b)
+
+
+def test_database_down():
+    """Services work from memory while the database is away, and write every change when it is back."""
+    chan, old, new = '#t_dbdown', '#t_dbdown_old', '#t_dbdown_new'
+
+    def root(query):
+        return subprocess.run(['docker', 'exec', ENV['DB_CONTAINER'], 'sh', '-c',
+                               'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "%s"' % query], capture_output=True)
+
+    mm, a, b = master(), login('Alice'), login('Bob')
+    for nick in ('Dbdownnick', 'Dbdownre', 'Dbdownro', 'Dbdownna'):
+        mm.svc('NickServ', 'DELETE ' + nick)        # whatever a run that was stopped left behind
+    register_chan(a, chan)
+    register_chan(a, old, 'gammalpw1')
+    o = Client('Dbdownre')
+    o.svc('NickServ', 'REGISTER forstapw12 first@test.net')
+    for c in (chan, old):
+        check(wait_db("select name from chan where name = '%s'" % c, 30) != '', '(%s is in the database)' % c)
+    check(wait_db("select name from nick where name = 'Dbdownre'", 30) != '', '(a nick that will get a new owner is in the database)')
+    a.svc('NickServ', 'SET NOOP OFF')
+    a.svc('ChanServ', 'AOP %s DEL Bob' % chan)
+    a.svc('ChanServ', 'AKICK %s DEL Evil*!*@*' % chan)
+    mm.svc('OperServ', 'AKILL DEL *!*@203.0.113.99')
+    mm.svc('OperServ', 'SJR OFF')
+    b.svc('MemoServ', 'DEL 1')
+    time.sleep(3)
+    memos = int(db("select count(*) from memo where name = 'Bob'") or 0)
+    mails = int(db("select count(*) from mailbox where mail = 'bob@test.net'") or 0)
+
+    mg = mm.mark()
+    subprocess.run(['docker', 'stop', ENV['DB_CONTAINER']], capture_output=True)
+    try:
+        time.sleep(3)
+        t0 = time.time()
+        r = a.svc('NickServ', 'INFO Bob')
+        check(has(r, 'Bob') and time.time() - t0 < 4, 'services answer at once without the database', time.time() - t0)
+        # NickServ
+        n = Client('Dbdownnick')
+        check(has(n.svc('NickServ', 'REGISTER nerepw1234 dbdown@test.net'), 'successfully registered'), 'a nick is registered without the database')
+        check(has(a.svc('NickServ', 'SET NOOP ON'), 'NOOP'), 'a nick setting is changed')
+        c = login('Carol')
+        check(c is not None, 'a user identifies')
+        r = n.svc('NickServ', 'AUTH 00001111222233334444555566667777')
+        check(has(r, 'Database not available'), 'AUTH says that it needs the database, not that the code is wrong', r)
+        # a nick is dropped and registered by someone else, all while the database is away
+        check(has(o.svc('NickServ', 'DROP forstapw12'), 'dropped'), 'a nick is dropped')
+        close(o)
+        o = Client('Dbdownre')
+        check(has(o.svc('NickServ', 'REGISTER andrapw1234 second@test.net'), 'successfully registered'), 'and registered again by someone else')
+        # ChanServ
+        a.join(new)
+        check(has(a.svc('ChanServ', 'REGISTER %s nykanalpw1 made without the database' % new), 'successfully registered'), 'a channel is registered')
+        check(has(a.svc('ChanServ', 'AOP %s ADD Bob' % chan), 'added to the Aop'), 'an AOP is added')
+        when = int(time.time())
+        check(has(a.svc('ChanServ', 'AKICK %s ADD Evil*!*@*' % chan), 'added'), 'an AKICK is added')
+        a.send('TOPIC %s :satt utan databas' % chan)
+        m = b.mark()
+        b.join(chan)
+        check(b.saw(r' MODE %s \+o Bob' % chan, m, 5), 'the new AOP gets op: the change is in use at once')
+        check(has(a.svc('ChanServ', 'DROP %s gammalpw1' % old), 'dropped'), 'a channel is dropped')
+        # MemoServ
+        r = a.svc('MemoServ', 'SEND Bob skickat utan databas')
+        check(not has(r, 'rror') and not has(r, 'not available'), 'a memo is sent', r)
+        check(has(b.svc('MemoServ', 'LIST'), 'Alice'), 'the receiver has it')
+        check(has(b.svc('MemoServ', 'READ 1'), 'skickat utan databas'), 'and reads it')
+        a.svc('MemoServ', 'SEND Bob den har tas bort igen')
+        r = b.svc('MemoServ', 'DEL 2')
+        check(not has(r, 'rror'), 'a memo is deleted', r)
+        # OperServ
+        r = mm.svc('OperServ', 'AKILL TIME 10m *!*@203.0.113.99 test without the database', wait=3)
+        check(has(mm.svc('OperServ', 'AKILL LIST *203.0.113.99*'), '203.0.113.99'), 'an AKILL is added', r)
+        check(has(mm.svc('OperServ', 'SJR ON'), 'set join requests to ON'), 'join requests are turned on')
+        time.sleep(5)
+        t0 = time.time()
+        r = a.svc('NickServ', 'INFO Alice')
+        check(has(r, 'Hostmask') and time.time() - t0 < 4, 'and services still answer at once after all that', time.time() - t0)
+        # the staff are told what waits, in words
+        told = ''
+        end = time.time() + 40
+        while time.time() < end:
+            lines = [l for l in mm.since(mg) if 'Database down, waiting:' in l and ' oper ' in l]
+            if lines:
+                told = lines[-1]
+                break
+            time.sleep(1)
+        check(re.search(r'waiting: nicks \d+, chans \d+, access \d+, memos \d+, mails \d+, oper \d+, other \d+$', told)
+              and len(told.split('waiting:')[-1]) < 80,
+              'the notice to the staff says what waits to be written, in one short line', told[-160:])
+    finally:
+        subprocess.run(['docker', 'start', ENV['DB_CONTAINER']], capture_output=True)
+    check(wait_db("select 1", 60) == '1', '(the database is back)')
+    check(mm.saw(r'Database back, writing: ', mg, 45), 'and that the database is back')
+
+    check(wait_db("select name from nick where name = 'Dbdownnick'", 60) != '', 'the new nick is written when the database is back')
+    check(wait_db("select count(*) from passlog where nick = 'Dbdownnick' having count(*) > 0", 30) != '', 'with its password')
+    check(wait_db("select count(*) from maillog where nick = 'Dbdownnick' having count(*) > 0", 30) != '', 'and its mail code')
+    check(wait_db("select count(*) from mailbox where subject like '%%Dbdownnick%%' or body like '%%Dbdownnick%%' having count(*) > 0", 30) != '',
+          'the mail to confirm it is sent')
+    check(wait_db("select noop from nicksetting where name = 'Alice' and noop = 1", 30) == '1', 'the nick setting')
+    time.sleep(5)
+    row = db("select (select count(*) from nick where name = 'Dbdownre'), (select count(*) from nicksetting where name = 'Dbdownre'), "
+             "(select count(*) from maillog where nick = 'Dbdownre' and auth is not null), "
+             "(select count(*) from passlog where nick = 'Dbdownre' and stamp >= (select regstamp from nick where name = 'Dbdownre'))")
+    check(row.split() == ['1', '1', '1', '1'],
+          'the nick with a new owner has its row, its settings, its mail code and its password, the old ones are gone', row)
+    check(wait_db("select name from chan where name = '%s'" % new, 30) != '', 'the new channel')
+    check(wait_db("select access from chanaccess where name = '%s' and access = 'aop'" % chan, 30) == 'aop', 'the AOP')
+    check(wait_db("select access from chanaccess_mask where name = '%s' and access = 'akick'" % chan, 30) == 'akick', 'the AKICK')
+    check(wait_db("select topic from topiclog where name = '%s' and topic = 'satt utan databas'" % chan, 30) != '', 'the topic')
+    gone = '1'
+    for i in range(30):
+        gone = db("select count(*) from chan where name = '%s'" % old)
+        if gone == '0':
+            break
+        time.sleep(1)
+    check(gone == '0', 'the dropped channel is removed', gone)
+    row = wait_db("select count(*), max(readflag) from memo where name = 'Bob' and message = 'skickat utan databas'", 30)
+    check(row.split() == ['1', '1'], 'the memo is stored, as read', row)
+    check(db("select count(*) from memo where name = 'Bob'") == str(memos + 1), 'the memo that was deleted again is not', memos)
+    # what waited keeps the time it happened, not the time the database came back (a minute later)
+    late = db("select (select stamp from memo where name = 'Bob' and message = 'skickat utan databas') - %d, "
+              "(select unix_timestamp(max(stamp)) from chanacclog where name = '%s') - %d" % (when, chan, when))
+    check(len(late.split()) == 2 and all(abs(int(x)) < 30 for x in late.split()),
+          'the memo and the access log have the time they were made, not the time they were written', late)
+    check(wait_db("select count(*) from mailbox where mail = 'bob@test.net' having count(*) > %d" % mails, 30) != '',
+          'the mail about the new memo is sent')
+    check(wait_db("select mask from akill where mask like '%%203.0.113.99%%'", 30) != '', 'the AKILL')
+    check(wait_db("select value from settings where name = 'sjr' and value = '1'", 30) == '1', 'the join requests setting')
+    check(wait_db("select count(*) from servicesid where nicks like '%%Carol%%' having count(*) > 0", 30) != '',
+          'and the session of the user who identified')
+
+    # A database that is there but can not write (read only, disk full, shutting down):
+    # what waits must be kept, it used to be given up on after five tries
+    root('set global read_only = 1')
+    try:
+        ro = Client('Dbdownro')
+        check(has(ro.svc('NickServ', 'REGISTER skrivpw1234 readonly@test.net'), 'successfully registered'), 'a nick is registered while the database is read only')
+        time.sleep(12)
+        check(db("select count(*) from nick where name = 'Dbdownro'") == '0', '(it can not be written)')
+    finally:
+        root('set global read_only = 0')
+    check(wait_db("select name from nick where name = 'Dbdownro'", 30) != '', 'and it is written when the database takes writes again')
+
+    # The same when the account of services may not write for a while (a grant that was taken away)
+    def reconnect():
+        """Privileges of a database are read when a connection is made: end the ones services have."""
+        ids = subprocess.run(['docker', 'exec', ENV['DB_CONTAINER'], 'sh', '-c',
+                              'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -N -e "select id from information_schema.processlist '
+                              "where user = '%s' and command = 'Sleep'\"" % ENV['DB_USER']], capture_output=True).stdout.decode().split()
+        for i in ids:
+            root('kill %s' % i)
+
+    root("revoke insert, update, delete on %s.* from '%s'@'%%'" % (ENV['DB_NAME'], ENV['DB_USER']))
+    reconnect()
+    try:
+        na = Client('Dbdownna')
+        check(has(na.svc('NickServ', 'REGISTER rattpw12345 noaccess@test.net'), 'successfully registered'),
+              'a nick is registered while services may not write to the database')
+        time.sleep(40)                      # the new connection, and more than five tries on it
+        check(db("select count(*) from nick where name = 'Dbdownna'") == '0', '(it can not be written)')
+    finally:
+        root("grant all privileges on %s.* to '%s'@'%%'" % (ENV['DB_NAME'], ENV['DB_USER']))
+        reconnect()
+    check(wait_db("select name from nick where name = 'Dbdownna'", 90) != '', 'and it is written when the access is back')
+    lost = [l for l in avade_log().split('\n') if 'giving up on' in l]
+    check(not lost, 'nothing was given up on', lost[:3])
+
+    a.svc('NickServ', 'SET NOOP OFF')
+    a.svc('ChanServ', 'DROP %s nykanalpw1' % new)
+    mm.svc('OperServ', 'AKILL DEL *!*@203.0.113.99')
+    mm.svc('OperServ', 'SJR OFF')
+    for nick in ('Dbdownnick', 'Dbdownre', 'Dbdownro', 'Dbdownna'):
+        mm.svc('NickServ', 'DELETE ' + nick)
+    b.svc('MemoServ', 'DEL 1')
+    close(mm, a, b, c, n, o, ro, na)
+
+
+def test_flood_protection():
+    """Someone who is not identified gets a few commands at a time, and one address only so many mails in an hour."""
+    mm = master()
+    for nick in ('Floodnick', 'Floodnick2'):
+        mm.svc('NickServ', 'DELETE ' + nick)        # whatever a run that was stopped left behind
+    u = Client('Floodnick')
+    m = u.mark()
+    for i in range(20):
+        u.svc('NickServ', 'INFO Alice', wait=1.0)
+    told = [l for l in u.since(m) if 'too fast' in l]
+    answers = [l for l in u.since(m) if 'Hostmask' in l or 'is not online' in l or 'Last seen' in l]
+    check(len(told) >= 1, 'an unidentified user who sends command after command is told to slow down', len(told))
+    check(8 <= len(answers) < 20, 'the first commands are answered, the ones over the budget are not', len(answers))
+    time.sleep(9)
+    check(has(u.svc('NickServ', 'HELP'), 'IDENTIFY'), 'a few seconds later commands are answered again')
+    a = login('Alice')
+    m = a.mark()
+    for i in range(20):
+        a.svc('NickServ', 'INFO Bob', wait=1.0)
+    check(not any('too fast' in l for l in a.since(m)), 'someone who is identified is not limited by services')
+
+    # The mails: with a limit of one, an address that has had its mail gets no second one
+    conf = os.path.join(WORK, 'run', 'services.conf')
+    text = open(conf).read()
+    u2 = Client('Floodnick2')
+    try:
+        open(conf, 'w').write(re.sub(r'(?m)^maillimit:.*$', 'maillimit: 1', text))
+        mm.svc('RootServ', 'REHASH', wait=3)
+        u.svc('NickServ', 'REGISTER floodpw1234 flood@test.net')        # the one mail of this hour, if it was not used before
+        r = u2.svc('NickServ', 'REGISTER floodpw1234 flood2@test.net')
+        check(has(r, 'Too many mails') and not has(r, 'successfully registered'),
+              'REGISTER is refused when the address has asked for too many mails this hour', r)
+        r = a.svc('NickServ', 'SET EMAIL %s alice2@test.net' % pw('Alice'))
+        check(has(r, 'Too many mails'), 'and so is SET EMAIL', r)
+        time.sleep(3)
+        check(db("select count(*) from nick where name = 'Floodnick2'") == '0', 'no nick is made')
+    finally:
+        open(conf, 'w').write(text)
+        mm.svc('RootServ', 'REHASH', wait=3)
+    r = u2.svc('NickServ', 'REGISTER floodpw1234 flood2@test.net')
+    check(has(r, 'successfully registered'), 'with the limit of the test network the same user registers', r)
+    for nick in ('Floodnick', 'Floodnick2'):
+        mm.svc('NickServ', 'DELETE ' + nick)
+    close(mm, u, u2, a)
+
+
 def test_bans():
     mm = master()
     mm.svc('OperServ', 'AKILL TIME 60d *!*@203.0.113.7 test of 60 days')
@@ -1317,6 +1661,61 @@ def test_split_keeps_identification():
     check(not d.saw(r' MODE Dave :-\S*r', m, 3), 'a user who comes back after a netsplit keeps +r')
     check(has(d.svc('NickServ', 'INFO Dave'), 'Hostmask'), 'and is still identified, without a new IDENTIFY')
     close(mm, d)
+
+
+def test_changed_while_split():
+    """What changed while a server was split away: a nick that was frozen, a nick that got a new owner, a channel that was made again."""
+    chan = '#t_tsreset'
+    mm = master()
+    link_leaf(mm)
+    mm.svc('NickServ', 'DELETE Splitowner')     # whatever a run that was stopped left behind
+    mm.svc('NickServ', 'FREEZE -Dave')
+    mm.svc('OperServ', 'SJR ALL')           # services decide every join, with the key and the bans they know
+    d = login('Dave', port=LEAF_PORT, host='::1')    # see test_host_masking about the throttle
+    o = Client('Splitowner', LEAF_PORT)
+    check(has(o.svc('NickServ', 'REGISTER splitpw123 splitowner@test.net'), 'successfully registered'), '(a nick is registered on the leaf)')
+    d.send('JOIN ' + chan)
+    time.sleep(2)
+    mm.send('JOIN ' + chan)
+    time.sleep(3)                           # let the services ids be written
+    md = d.mark()
+    mm.send('SQUIT %s :split test' % ENV['LEAF_NAME'])
+    time.sleep(5)
+    check(has(mm.svc('OperServ', 'UINFO Dave'), 'offline'), '(the leaf is split away)')
+    # On the hub side: one nick is frozen, the other is deleted and registered by someone else
+    mm.svc('NickServ', 'FREEZE Dave')
+    mm.svc('NickServ', 'DELETE Splitowner')
+    n = Client('Splitowner')
+    check(has(n.svc('NickServ', 'REGISTER nyagarepw1 newowner@test.net'), 'successfully registered'), '(the deleted nick has a new owner)')
+    n.send('NICK Movedaway')                # no nick collision when the leaf is back
+    # and the channel is made again, with a key the other side does not have
+    mm.send('PART ' + chan)
+    time.sleep(2)
+    mm.send('JOIN ' + chan)
+    time.sleep(1)
+    mm.send('MODE %s +k nyckel' % chan)
+    mm.send('MODE %s +b *!*@banned.example.org' % chan)
+    time.sleep(1)
+    check(has(mm.svc('OperServ', 'CINFO ' + chan), 'k'), '(services know the key of the new channel)')
+    link_leaf(mm)
+    check(not has(mm.svc('OperServ', 'UINFO Dave'), 'offline'), '(and is linked again)')
+    check(d.saw(r' MODE Dave :-\S*r', md, 5), 'a nick that was frozen during the split loses +r when its user comes back')
+    check(not has(d.svc('NickServ', 'INFO Dave'), 'Hostmask'), 'and its user is not identified any more')
+    check(not has(o.svc('NickServ', 'INFO Splitowner'), 'Hostmask'),
+          'the old owner of a nick that was deleted and registered again is not identified to the new registration')
+    # The ircd dropped the key and the ban of the newer channel, services must not refuse on them
+    e = login('Erin')
+    m = e.mark()
+    e.send('JOIN ' + chan)
+    try:
+        line = e.wait(r'( JOIN :?%s\b| 47[1-7] \S+ %s )' % (re.escape(chan), re.escape(chan)), 8, m)
+    except TimeoutError:
+        line = 'nothing'
+    check(' JOIN ' in line, 'after a netjoin with an older channel, services have dropped the key like the ircd', line)
+    mm.svc('OperServ', 'SJR OFF')
+    mm.svc('NickServ', 'FREEZE -Dave')
+    mm.svc('NickServ', 'DELETE Splitowner')
+    close(mm, d, o, n, e)
 
 
 def test_leaf_split():
@@ -1365,8 +1764,10 @@ TESTS = [test_config_files, test_setup, test_identify, test_throttle, test_acces
          test_sessions_survive_restart, test_services_id_purge, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_join_requests, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_common_errors, test_mask_rank, test_dash_in_channel_name, test_memo, test_memo_limits, test_nick_privacy_and_mail,
-         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file, test_bans,
-         test_drop_and_hold, test_split_keeps_identification, test_leaf_split, test_services_relink, test_hub_restart]
+         test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file,
+         test_services_own_kill, test_codes_of_a_former_owner, test_channel_identify_is_stored, test_web_command_without_nick,
+         test_snoop_hides_passwords, test_mkick_forgets_channel, test_database_down, test_flood_protection, test_bans,
+         test_drop_and_hold, test_split_keeps_identification, test_changed_while_split, test_leaf_split, test_services_relink, test_hub_restart]
 
 
 def main():

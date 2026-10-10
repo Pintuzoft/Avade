@@ -12,8 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package chanserv;
 
@@ -184,13 +183,17 @@ public class CSSnoop extends Snoop {
         //   0      1          2            3    4     5    6
         switch ( commandOf ( arr ) ) {
             case "REGISTER" :
+                /* REGISTER #chan <pass> <description> */
+                return mask ( arr, 5 );
             case "IDENTIFY" :
             case "DROP" :
             case "SETPASS" :
-                return mask ( arr, 5 );
+                /* (everything after the channel: a password with a space in
+                   it, or one more word, is not shown either) */
+                return maskFrom ( arr, 5 );
             case "SET" :
                 if ( arr.length > 5 && arr[5].toUpperCase().startsWith ( "PASS" ) ) {
-                    return mask ( arr, 6, 7 );
+                    return maskFrom ( arr, 6 );
                 }
                 return arr;
             default :

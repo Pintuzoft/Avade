@@ -12,14 +12,15 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package mail;
 
 import core.Database;
 import core.Proc;
+import core.WorkGuard;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 /**
  *
@@ -35,11 +36,54 @@ public class MXDatabase extends Database {
      * @return
      */
 
+    /* Mails that could not be put in the mailbox table because the database
+       was away. They go there when it is back (flush, every second), so a
+       code that was promised in a mail is sent, only later. */
+    private static final ArrayList<Mail> waiting = new ArrayList<> ( );
+
+    /**
+     * @param mail
+     * @return 1 when the mail is in the mailbox, -2 when it waits for the database
+     */
     public static int sendMail ( Mail mail )  { 
-        if ( ! activateConnection ( ) )  {
+        if ( ! waiting.isEmpty ( ) || ! activateConnection ( ) || insert ( mail ) != 1 )  {
+            /* (behind the ones that already wait: they keep their order) */
+            waiting.add ( mail );
             return -2;
         }
-        /* Try add the nick */
+        return 1;
+    }
+
+    /**
+     * @return the mails that wait for the database
+     */
+    public static int waiting ( ) {
+        return waiting.size ( );
+    }
+
+    /**
+     * Put the mails that wait in the mailbox
+     * @return how many still wait
+     */
+    public static int flush ( ) {
+        if ( waiting.isEmpty ( ) || ! activateConnection ( ) ) {
+            return waiting.size ( );
+        }
+        while ( ! waiting.isEmpty ( ) ) {
+            Mail mail = waiting.get ( 0 );
+            if ( insert ( mail ) == 1 ) {
+                WorkGuard.done ( mail );
+                waiting.remove ( 0 );
+            } else if ( WorkGuard.failed ( mail, "mail to the mailbox" ) ) {
+                waiting.remove ( 0 );
+            } else {
+                break; /* the database said no, try again next time */
+            }
+        }
+        return waiting.size ( );
+    }
+
+    private static int insert ( Mail mail )  { 
         try {
             String query = "INSERT INTO mailbox  ( mail,subject,body,stamp,status )  "
                          + "VALUES  ( ?, ?, ?, UNIX_TIMESTAMP ( ) , ? );";

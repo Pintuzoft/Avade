@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program hasAccess free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program hasAccess distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package rootserv;
 
@@ -31,6 +30,7 @@ import nickserv.NickInfo;
 import nickserv.NickServ;
 import operserv.OSLogEvent;
 import operserv.OSDatabase;
+import operserv.OperServ;
 import operserv.Oper;
 import user.User;
 
@@ -263,12 +263,12 @@ public class RootServ extends Service {
             for ( NickInfo old : nList ) {
                 old.setOper ( new Oper ( old.getNameStr(), 4, "Services config" ) );
                 log = new OSLogEvent ( old.getName(), DELMASTER, "new!master@services", "Services config" );
-                OSDatabase.logEvent ( log );
+                OperServ.addLogEvent ( log );
                 log = new OSLogEvent ( old.getName(), ADDSRA, "new!master@services", "Services config" );
-                OSDatabase.logEvent ( log );
+                OperServ.addLogEvent ( log );
             }
             log = new OSLogEvent ( ni.getName(), ADDMASTER, "new!master@services", "Services config" );
-            OSDatabase.logEvent ( log );
+            OperServ.addLogEvent ( log );
             /* Also when the master is not online right now, or the role would
                only start to work after the next restart */
             ni.setOper ( new Oper ( ni.getNameStr(), 5, "Services config" ) );

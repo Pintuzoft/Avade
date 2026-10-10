@@ -1,22 +1,25 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program isSet free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program isSet distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package core;
 
+import operserv.OperServ;
+import monitor.Snoop;
+import memoserv.MemoServ;
+import mail.MXDatabase;
 import chanserv.CSDatabase;
 import chanserv.ChanInfo;
 import chanserv.ChanServ;
@@ -113,7 +116,7 @@ public class Database extends HashNumeric {
                     lastValidated = System.currentTimeMillis();
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
+                        Handler.getOperServ().sendGlobOp ( "Database back, writing: "+getServiceStats ( ) );
                     }
                 } 
        
@@ -128,7 +131,7 @@ public class Database extends HashNumeric {
                     }
                 } else {
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database re-connection attempt failed - "+getServiceStats ( ) );
+                        Handler.getOperServ().sendGlobOp ( "Database down, waiting: "+getServiceStats ( ) );
                     }
                 }
                 lastGlobops = System.currentTimeMillis();
@@ -138,24 +141,77 @@ public class Database extends HashNumeric {
     }
 
     /**
-     *
-     * @return
+     * @return what waits to be written, in one short line for the staff (it
+     *         is sent every 30 seconds while the database is away):
+     *         "nicks 3, chans 1, access 3, memos 1, mails 1, other 14".
+     *         One number for each kind: new, changed and dropped together.
+     *         What is zero is left out. "other" is the small things: mail
+     *         and password codes, sessions and log rows.
      */
     protected static String getServiceStats ( ) {
-        int chanRegs = Handler.getChanServ().getChanRegStats ( );
-        int chanChanges = Handler.getChanServ().getChangesStats ( );
-        int nickRegs = Handler.getNickServ().getNickRegStats ( );
-        int nickChanges = Handler.getNickServ().getChangesStats ( );
-        return "(new/changed): Channels:"+chanRegs+"/"+chanChanges+" Nicks:"+nickRegs+"/"+nickChanges;
+        StringBuilder text = new StringBuilder ( );
+        count ( text, "nicks",  Handler.getNickServ().getNickRegStats ( ) + Handler.getNickServ().getChangesStats ( ) + NickServ.waitingDeletes ( ) );
+        count ( text, "chans",  Handler.getChanServ().getChanRegStats ( ) + Handler.getChanServ().getChangesStats ( ) + ChanServ.waitingDeletes ( ) );
+        count ( text, "access", ChanServ.waitingAccess ( ) );
+        count ( text, "memos",  MemoServ.waiting ( ) );
+        count ( text, "mails",  MXDatabase.waiting ( ) );
+        count ( text, "oper",   OperServ.waiting ( ) );
+        count ( text, "other",  NickServ.waitingAuths ( ) + Handler.waitingSIDs ( ) + NickServ.waitingLogs ( ) +
+                                ChanServ.waitingLogs ( ) + OperServ.waitingLogs ( ) + Snoop.waiting ( ) );
+        return ( text.length ( ) > 0 ? text.toString ( ) : "nothing" );
     }
-    
+
+    private static void count ( StringBuilder text, String what, int count ) {
+        if ( count > 0 ) {
+            text.append ( text.length ( ) > 0 ? ", " : "" ).append ( what ).append ( " " ).append ( count );
+        }
+    }
+
+    /* The last error of the database, for WorkGuard: it tells an item the
+       database will never take from a server that can not do it right now */
+    private static String lastState = null;
+    private static int    lastCode  = 0;
+    /* Errors of MariaDB that are about the server and not about what was
+       sent: disk full, storage engine, too many connections, out of memory,
+       shutdown, table full, lock wait and lock table, read only (three of
+       them), and no access (database, login, table, column, privilege,
+       locked account). The same write works when that has passed. */
+    private static final int[] SERVERERRORS = {
+        1021, 1030, 1040, 1041, 1053, 1114, 1205, 1206, 1290, 1792, 1836,
+        1044, 1045, 1142, 1143, 1227, 4151
+    };
+
+    public static void setLastError ( String state, int code ) {
+        lastState = ( state != null ? state : "" );
+        lastCode  = code;
+    }
+
     /**
-     *
-     * @param where
+     * @return true when the last failed write was about the item (too long,
+     *         a duplicate, a missing column, or it failed without an error).
+     *         False when it was the connection (SQLState 08), a deadlock
+     *         (40) or one of the server errors above: the item is fine and
+     *         is kept. Asking forgets the error.
      */
-    /* All or nothing for a register that is several inserts: without it a
-       failure half way leaves a row that makes every retry fail on the
-       primary key, and a nick or channel that cannot be loaded */
+    public static boolean lastErrorWasData ( ) {
+        String state = lastState;
+        int code     = lastCode;
+        lastState    = null;
+        lastCode     = 0;
+        if ( state == null ) {
+            return true;
+        }
+        if ( state.startsWith ( "08" ) || state.startsWith ( "40" ) ) {
+            return false;
+        }
+        for ( int server : SERVERERRORS ) {
+            if ( code == server ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     protected static void begin ( ) throws SQLException {
         sql.setAutoCommit ( false );
     }

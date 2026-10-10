@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program isSet free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program isSet distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package memoserv;
 
@@ -154,13 +153,10 @@ import user.User;
             this.service.sendMsg ( user, "Error: "+to.getNameStr()+" has "+unread+" memos from you that are not read yet, the memo was not sent." );
             return;
         }
+        /* In memory at once, the database gets it when it is there */
         MemoInfo memo = new MemoInfo ( to.getNameStr(), from.getNameStr(), message );
-        memo = MSDatabase.storeMemo ( memo );
-        if ( memo == null ) {
-            /* Memos are stored in the database, nothing we can do without it */
-            this.service.sendMsg ( user, "Error: Memo to "+to.getNameStr()+" could not be sent, database not available. Try again later." );
-            return;
-        }
+        memo.setStamp ( System.currentTimeMillis ( ) / 1000 );
+        MemoServ.addNewMemo ( memo );
         this.service.sendMsg ( user, output ( MEMO_SENT, to.getNameStr() ) );
         to.addMemo ( memo );
         SendMail.sendNewMemo ( to, memo );
@@ -365,8 +361,9 @@ import user.User;
                     output ( MEMO_BODY, memo.getSender ( ),
                     memo.getMessage ( ) )
                 );
-                if ( MSDatabase.readMemo ( memo )  )  {
+                if ( ! memo.isRead ( ) ) {
                     memo.setRead ( );
+                    MemoServ.addReadMemo ( memo );
                 }
             }
         }
@@ -423,19 +420,12 @@ import user.User;
 
             } else {
                 /* we have a memo, lets print it */
-                if ( MSDatabase.delMemo ( memo )  )  {
-                    ni.delMemo ( memo );
-                    this.service.sendMsg ( 
-                        user, 
-                        output ( DEL_SUCCESS, ""+cmd[4] )
-                    );
-
-                } else {
-                    this.service.sendMsg ( 
-                        user, 
-                        output ( DEL_ERROR, "" )
-                    );
-                }
+                ni.delMemo ( memo );
+                MemoServ.addDelMemo ( memo );
+                this.service.sendMsg ( 
+                    user, 
+                    output ( DEL_SUCCESS, ""+cmd[4] )
+                );
             }
         }
     }

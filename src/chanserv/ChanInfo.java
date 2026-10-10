@@ -12,8 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package chanserv;
 
@@ -143,6 +142,13 @@ public class ChanInfo extends HashNumeric {
     }
 
     
+    /**
+     * @return the changes to the access lists that are not written yet
+     */
+    public int waitingAccess ( ) {
+        return this.addAccList.size ( ) + this.remAccList.size ( ) + this.updAccList.size ( );
+    }
+
     private void updateAccessChanges ( ) {
         if ( ! CSDatabase.checkConn() ) {
             return;
@@ -901,7 +907,14 @@ public class ChanInfo extends HashNumeric {
         if ( c == null ) {
             return; /* nobody is in the channel */
         }
+        /* CHANKILL removes everyone and with them the channel, and the ircd
+           sends nothing back: forget it here too, with its modes, bans and
+           TS. A new channel of this name starts from nothing. */
+        for ( User u : c.getList ( ALL ) ) {
+            u.remChan ( c );
+        }
         c.clearUsers ( );
+        Handler.deleteEmpty ( c );
         Handler.getChanServ().sendCmd ( "SVSHOLD "+c.getString ( NAME ) +" 60 :"+reason );
         Handler.getChanServ().sendCmd ( "CHANKILL "+c.getString ( NAME ) +" :"+reason );
     }

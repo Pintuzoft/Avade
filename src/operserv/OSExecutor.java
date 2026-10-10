@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program hasAccess free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program hasAccess distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received ban2 copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package operserv;
 
@@ -645,7 +644,7 @@ public class OSExecutor extends Executor {
         
         OSLogEvent log = new OSLogEvent ( new HashString ( "-" ), GLOBAL, user, user.getOper().getNick() );
         log.setData ( string );
-        OSDatabase.logEvent ( log );
+        OperServ.addLogEvent ( log );
         for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
             global.sendMsg ( entry.getValue(), "[Global Notice]: "+string );
         }
@@ -935,7 +934,7 @@ public class OSExecutor extends Executor {
         Handler.getOperServ().sendGlobOp ( string);
         OSLogEvent log = new OSLogEvent ( u.getName(), FORCENICK, user, user.getOper().getNick() );
         log.setData ( string );
-        OSDatabase.logEvent ( log );
+        OperServ.addLogEvent ( log );
         Handler.getOperServ().sendServ ( "SQLINE "+u.getName()+" :You cannot use this nick." );
         Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
         
@@ -1052,7 +1051,7 @@ public class OSExecutor extends Executor {
         this.service.sendGlobOp ( string );
         OSLogEvent log = new OSLogEvent ( user.getName ( ), UHM, user, user.getOper().getNick ( ) );
         log.setData ( string );
-        OSDatabase.logEvent ( log );
+        OperServ.addLogEvent ( log );
     }
     
     /* SJR [OFF|ON|ALL]
@@ -1078,10 +1077,7 @@ public class OSExecutor extends Executor {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SJR [OFF|ON|ALL]" ) );
             return;
         }
-        if ( ! OSDatabase.saveSetting ( "sjr", ""+mode ) ) {
-            this.service.sendMsg ( user, "Error: Database not available, try again later." );
-            return;
-        }
+        OperServ.saveSetting ( "sjr", ""+mode );    /* stored when the database is there */
         OperServ.setJoinRequests ( mode );
         Handler.getOperServ().sendJoinRequests ( null );
         String string = user.getOper().getNameStr()+" set join requests to "+sjrStr ( mode );
@@ -1089,7 +1085,7 @@ public class OSExecutor extends Executor {
         this.service.sendGlobOp ( string );
         OSLogEvent log = new OSLogEvent ( user.getName ( ), SJR, user, user.getOper().getNick ( ) );
         log.setData ( string );
-        OSDatabase.logEvent ( log );
+        OperServ.addLogEvent ( log );
     }
     
     private static String sjrStr ( int mode ) {
@@ -1152,7 +1148,7 @@ public class OSExecutor extends Executor {
         this.service.sendGlobOp ( string );
         OSLogEvent log = new OSLogEvent ( ni.getName(), VHOST, user, user.getOper().getNick() );
         log.setData ( host != null ? host : "OFF" );
-        OSDatabase.logEvent ( log );
+        OperServ.addLogEvent ( log );
     }
       
     private void doServer(User user, String[] cmd) {

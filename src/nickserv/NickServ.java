@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program isSet free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program isSet distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package nickserv;
 
@@ -37,9 +36,11 @@ import java.math.BigInteger;
 import server.ServSock;
 import user.User;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import mail.SendMail;
 import memoserv.MSDatabase;
+import memoserv.MemoServ;
 
 /**
  *
@@ -198,7 +199,9 @@ public class NickServ extends Service {
             return; 
         }
         
-        //user.getUserFlood().incCounter ( this );
+        if ( user.getUserFlood().tooFast ( this ) ) {
+            return;
+        }
         
         cmd[3] = cmd[3].substring ( 1 );
         HashString command = new HashString ( cmd[3] );
@@ -211,6 +214,13 @@ public class NickServ extends Service {
     }
       
     /* Registered entities */
+
+    /**
+     * @return every registered nick
+     */
+    public static Collection<NickInfo> getNicks ( ) {
+        return niList.values ( );
+    }
 
     /**
      *
@@ -338,11 +348,15 @@ public class NickServ extends Service {
     public static int maintenance ( ) {
         int todoAmount = 0;
         todoAmount += writeLogs ( );
+        /* Deletes first: after a long time without the database a name can
+           be dropped and registered again in the same round. The old rows
+           must go before the new ones come, in the other order the delete
+           takes the new owner's settings and mail code with it. */
+        todoAmount += handleDeletedNicks ( );
         todoAmount += handleRegNicks ( );
         todoAmount += handleChangedNicks ( );
         todoAmount += handleNewAuths ( );
         todoAmount += handleFullNewAuths ( );
-        todoAmount += handleDeletedNicks ( );
         return todoAmount;
     }
   
@@ -485,6 +499,29 @@ public class NickServ extends Service {
      * @param ni
      */
     public static void addToWorkList ( HashString list, NickInfo ni ) {
+        if ( list.is ( DELETE ) ) {
+            /* Nothing that still waits for this nick is written after it is
+               gone: its changes, its mail codes and its memos would land on
+               whoever registers the name next. And a nick that was never
+               written (registered and dropped while the database was away)
+               has no rows to delete. */
+            boolean unwritten = forget ( regList, ni );
+            forget ( changeList, ni );
+            for ( NSAuth auth : new ArrayList<> ( newAuthList ) ) {
+                if ( auth.getNick().is ( ni.getName ( ) ) ) {
+                    newAuthList.remove ( auth );
+                }
+            }
+            for ( NSAuth auth : new ArrayList<> ( newFullAuthList ) ) {
+                if ( auth.getNick().is ( ni.getName ( ) ) ) {
+                    newFullAuthList.remove ( auth );
+                }
+            }
+            MemoServ.forget ( ni.getName ( ) );
+            if ( unwritten ) {
+                return;
+            }
+        }
         for ( NickInfo ni2 : getWorkList ( list ) ) {
             if ( ni2.is(ni) ) {
                 return;
@@ -493,6 +530,18 @@ public class NickServ extends Service {
         getWorkList(list).add ( ni );
     }
   
+    /* Take the nick of this name out of a work list, true if it was there */
+    private static boolean forget ( ArrayList<NickInfo> list, NickInfo ni ) {
+        boolean found = false;
+        for ( NickInfo ni2 : new ArrayList<> ( list ) ) {
+            if ( ni2.is ( ni ) ) {
+                list.remove ( ni2 );
+                found = true;
+            }
+        }
+        return found;
+    }
+
     /* Handle LOGS */ 
 
     /**
@@ -851,7 +900,7 @@ public class NickServ extends Service {
         for ( ChanInfo ci : remList ) {
             Handler.getChanServ().dropChan ( ci );
             CSLogEvent log = new CSLogEvent ( ci.getName(), EXPIREFOUNDER, "", "" );
-            CSDatabase.logEvent ( log );
+            ChanServ.addLog ( log );
         }
         
         for ( HashString list : lists ) {
@@ -871,6 +920,7 @@ public class NickServ extends Service {
             this.sendMsg ( user, "Nick "+ni.getName()+" which you are identified to has now been dropped");
             user.unIdentify ( ni );
         }
+        Handler.unIdentifyAll ( ni );   /* and the sessions that are not here now */
 
         User user;
         if ( ( user = Handler.findUser ( ni.getName() ) ) != null ) {
@@ -889,6 +939,11 @@ public class NickServ extends Service {
      *
      * @return
      */
+    /* What waits for the database, for the notice of OperServ */
+    public static int waitingDeletes ( )    { return deleteList.size ( );                               }
+    public static int waitingAuths ( )      { return newAuthList.size ( ) + newFullAuthList.size ( );   }
+    public static int waitingLogs ( )       { return logs.size ( );                                     }
+
     public int getNickRegStats ( ) {
         return regList.size ( );
     }

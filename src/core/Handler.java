@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program isSet free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program isSet distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package core;
 
@@ -27,6 +26,7 @@ import chanserv.ChanInfo;
 import rootserv.RootServ;
 import operserv.CloneLimit;
 import operserv.OperServ;
+import mail.MXDatabase;
 import memoserv.MemoServ;
 import chanserv.ChanServ;
 import command.Queue;
@@ -223,6 +223,7 @@ public class Handler extends HashNumeric {
     }
 
     private static long lastLoadAttempt = 0;
+    private static long lastUnknownJoin = 0;    /* ms, the last time we told about one */
 
     /* Nicks or channels failed to load at start, try again every 30 seconds */
     private void retryLoadIfNeeded ( ) {
@@ -254,13 +255,22 @@ public class Handler extends HashNumeric {
             oper.sendJoinRequests ( null );
         }
         for ( User u : new ArrayList<> ( uList.values ( ) ) ) {
-            ServicesID sid;
-            if ( u.getServiceStamp ( ) > 999 && ( sid = findSid ( u.getServiceStamp ( ) ) ) != null ) {
+            ServicesID sid = null;
+            if ( u.getServiceStamp ( ) > 999 && ( sid = findSid ( u.getServiceStamp ( ) ) ) != null && sid != u.getSID ( ) ) {
+                /* The one the user got while the data was missing has no
+                   user any more: forget it, it would never expire */
+                if ( u.getSID ( ) != null ) {
+                    u.getSID().resetTimers ( );
+                    u.getSID().remUser ( );
+                    sidList.remove ( u.getSID().getCode ( ) );
+                    updServicesID.remove ( u.getSID ( ) );
+                }
                 u.setSID ( sid );
                 sid.addUser ( u );
             }
             NickInfo ni = NickServ.findNick ( u.getName ( ) );
-            if ( ni != null && u.getModes().is ( IDENT ) ) {
+            /* +r is trusted when we have nothing on the session, see doNick */
+            if ( ni != null && sid == null && u.getModes().is ( IDENT ) ) {
                 u.getSID().add ( ni );
             }
             NickServ.fixIdentState ( u );
@@ -355,8 +365,12 @@ public class Handler extends HashNumeric {
         NickInfo nBuf;
         this.data   = null; 
         this.data   = read.split ( " " ); 
-        /* Never echo private messages, they carry passwords for the services */
-        if ( this.data.length < 2 || ! this.data[1].equalsIgnoreCase ( "PRIVMSG" ) ) {
+        /* Never echo private messages or notices, they carry passwords for
+           the services, nor the password of the link */
+        if ( this.data.length < 2 || 
+             ! ( this.data[1].equalsIgnoreCase ( "PRIVMSG" ) || 
+                 this.data[1].equalsIgnoreCase ( "NOTICE" )  || 
+                 this.data[0].equalsIgnoreCase ( "PASS" ) ) ) {
             System.out.println ( read );
         }
          
@@ -432,6 +446,27 @@ public class Handler extends HashNumeric {
                     
                     this.command = new HashString ( this.data[1] );
                     
+                    if ( user == null && this.command.is(SJR) ) {
+                        /* Someone we have no record of (we never saw the NICK
+                           line, which must not happen) asks to join. We know
+                           no host to match bans with and can not tell what the
+                           user is identified to, so there is nothing to decide
+                           with: no way in, like for anyone we can not clear.
+                           Without an answer the ircd would say nothing at all,
+                           so tell the user what helps, and the staff that it
+                           happened. */
+                        if ( this.data.length > 3 ) {
+                            chan.sendServ ( "474 "+this.source+" "+this.data[3]+" :Cannot join channel (services have no record of your connection)" );
+                            long now = System.currentTimeMillis ( );
+                            if ( now - lastUnknownJoin > 60000 ) {
+                                lastUnknownJoin = now;
+                                chan.sendRaw ( "NOTICE "+this.source+" :Services have lost track of your connection and can not check your joins. Please reconnect to the network." );
+                                Proc.log ( "Join request from "+this.source+", who is unknown to services, for "+this.data[3]+": refused" );
+                                oper.sendGlobOp ( "Join request from "+this.source+", who is unknown to services: refused. Please report this, it should not happen." );
+                            }
+                        }
+                        return;
+                    }
                     if ( user == null && ! this.command.is(KILL) ) {
                         return; /* not a user we know of */
                     }
@@ -549,15 +584,26 @@ public class Handler extends HashNumeric {
         Chan c;
         ChanInfo ci;
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
+            boolean reset = false;
             try {
-                c.sawStamp ( Long.parseLong ( this.data[2] ) );
+                reset = c.lostTo ( Long.parseLong ( this.data[2] ) );
             } catch ( NumberFormatException ex ) {
                 /* keep the one we have */
             }
             c.addUserList(data, 5);
+            if ( reset ) {
+                /* Everyone lost their status: give it back to those with access */
+                c.addCheckUsers ( );
+            }
         } else {
             c = new Chan ( this.data );
             c.addUserList(data, 5);
+            if ( c.empty ( ) ) {
+                /* Nobody we know: the one who made it is gone already (killed
+                   by us while this line was on its way). Nothing would ever
+                   remove a channel without members. */
+                return;
+            }
             cList.put ( c.getName().getCode(), c );
             if ( check ) {
                 chan.checkSettings ( c );
@@ -704,6 +750,7 @@ public class Handler extends HashNumeric {
             Proc.log ( Handler.class.getName ( ), ex );
         }
         
+        boolean known = ( u.getSID ( ) != null );
         if ( u.getSID() == null ) {
             u.setSID ( new ServicesID ( ) );
             Handler.newSid ( u.getSID() );
@@ -712,8 +759,12 @@ public class Handler extends HashNumeric {
         
         NickInfo ni = NickServ.findNick ( u.getName ( ) );
         
-        /* Only services can set +r, so trust it for the current nick */
-        if ( ni != null && ( u.getModes().is ( IDENT ) || u.getSID().isIdentified ( ni ) ) ) {
+        /* Only services can set +r, so it is trusted for the current nick
+           when we have nothing on the session (its row was lost). A session
+           we know says itself what it is identified to: the nick can have
+           been dropped and registered by someone else while this user was
+           split away. */
+        if ( ni != null && ( u.getSID().isIdentified ( ni ) || ( ! known && u.getModes().is ( IDENT ) ) ) ) {
             u.getSID().add ( ni );
         } else if ( Handler.isDataLoaded ( ) ) {
             /* (without the registered nicks we can't tell, leave +r alone) */
@@ -721,8 +772,11 @@ public class Handler extends HashNumeric {
             u.getModes().set ( IDENT, false );
         }
         
-        NickServ.fixIdentState ( u );
+        /* Known from here on: what follows looks the user up (a frozen nick
+           unidentifies everyone on it), and a failure there must not leave
+           someone the ircd has that we do not */
         uList.put ( u.getName().getCode(), u );
+        NickServ.fixIdentState ( u );
         
         Server s = findServer ( this.data[7] );
         if ( s != null ) {
@@ -879,12 +933,20 @@ public class Handler extends HashNumeric {
         Chan c;
         ChanInfo ci;
         
-        if ( (c = findChan ( this.data[3] )) == null ) {
-            this.doChan ( true );
-        }
-        
-        if ( user == null || (c = findChan( this.data[3] )) == null ) {
+        if ( user == null ) {
             return;
+        }
+        if ( (c = findChan ( this.data[3] )) == null ) {
+            /* ":nick SJOIN ts #chan" for a channel we do not have. The ircd
+               sends that form for a channel that exists, so we missed it:
+               learn it from this join, its modes are not known */
+            String[] sjoin = { this.data[0], "SJOIN", this.data[2], this.data[3], "+", ":"+user.getNameStr ( ) };
+            c = new Chan ( sjoin );
+            cList.put ( c.getName().getCode(), c );
+            chan.checkSettings ( c );
+            if ( findChan ( this.data[3] ) == null ) {
+                return; /* a closed channel: everyone was removed from it */
+            }
         }
         if ( ! c.nickIsPresent ( user.getName ( ) ) ) {
             c.countJoin ( );
@@ -1154,7 +1216,8 @@ public class Handler extends HashNumeric {
     public static void removeUser ( User user ) {
         try {
             user.getSID().remUser();
-            uList.remove ( user.getName().getCode() );
+            /* (not whoever has the nick now, when this one is long gone) */
+            uList.remove ( user.getName().getCode(), user );
         } catch ( Exception e ) {
             Proc.log ( Handler.class.getName ( ) , e );
         }
@@ -1229,16 +1292,57 @@ public class Handler extends HashNumeric {
 
     public int runSecMaintenance() {
         int todoAmount = 0;
-        this.retryLoadIfNeeded ( );
-        this.cmdQueue.maintenance ( );  /* throttles itself to every 5 seconds */
-        for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
-            entry.getValue().secMaintenence ( );
+        /* Each part on its own: an error in one is logged and the others
+           still run. Nothing here may end the main loop. */
+        try {
+            this.retryLoadIfNeeded ( );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
         }
-        /* Database updates */
-        todoAmount += oper.secMaintenance ( );
-        todoAmount += ChanServ.secMaintenance ( );
-        todoAmount += NickServ.secMaintenance ( );
-        todoAmount += updateServicesIDs ( );
+        try {
+            this.cmdQueue.maintenance ( );  /* throttles itself to every 5 seconds */
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
+        try {
+            for ( User u : new ArrayList<> ( uList.values ( ) ) ) {
+                u.secMaintenence ( );
+            }
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
+        /* Database updates. Services work from memory, and everything that
+           changed waits in a list until the database takes it. The nicks go
+           first: staff, channel access and memos point at them, and after a
+           time without the database all of it is written in one round. */
+        try {
+            todoAmount += NickServ.secMaintenance ( );
+            /* Registrations, changes, mail codes and logs of NickServ */
+            todoAmount += NickServ.maintenance ( );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
+        try {
+            todoAmount += MemoServ.maintenance ( );
+            todoAmount += MXDatabase.flush ( );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
+        try {
+            todoAmount += oper.secMaintenance ( );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
+        try {
+            todoAmount += ChanServ.secMaintenance ( );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
+        try {
+            todoAmount += updateServicesIDs ( );
+        } catch ( Exception e ) {
+            Proc.log ( Handler.class.getName ( ), e );
+        }
         return todoAmount;
     }
       
@@ -1246,6 +1350,13 @@ public class Handler extends HashNumeric {
      *
      * @param servicesId
      */
+    /**
+     * @return the sessions (services IDs) that wait for the database
+     */
+    public static int waitingSIDs ( ) {
+        return updServicesID.size ( );
+    }
+
     public static void addUpdateSID ( ServicesID servicesId ) {
         for ( ServicesID sid : updServicesID ) {
             if ( sid.getID() == servicesId.getID() ) {
@@ -1284,6 +1395,7 @@ public class Handler extends HashNumeric {
             todoAmount += NickServ.maintenance ( );
             todoAmount += ChanServ.maintenance ( );
             this.sidCleaner ( );
+            Proc.rotateOutput ( );
         
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -1700,6 +1812,29 @@ public class Handler extends HashNumeric {
     
     private void reInitServices() {
         Proc.reConnect();
+    }
+
+    /**
+     * A nick is dropped: nobody stays identified to it. That goes for the
+     * services IDs without a user too (split away, or gone for less than the
+     * days an ID is kept): whoever registers the name next must not get the
+     * old sessions with it.
+     * @param ni
+     */
+    public static void unIdentifyAll ( NickInfo ni ) {
+        for ( ServicesID sid : sidList.values ( ) ) {
+            sid.unIdentify ( ni );
+        }
+    }
+
+    /**
+     * The same for a channel that is dropped
+     * @param ci
+     */
+    public static void unIdentifyAll ( ChanInfo ci ) {
+        for ( ServicesID sid : sidList.values ( ) ) {
+            sid.unIdentify ( ci );
+        }
     }
 
     /**

@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program hasAccess free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program hasAccess distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package memoserv;
 
@@ -21,6 +20,9 @@ import core.Handler;
 import core.HashString;
 import core.Service;
 import core.TextFormat;
+import core.WorkGuard;
+import java.util.ArrayList;
+import java.util.Arrays;
 import nickserv.NickInfo;
 import user.User;
 
@@ -30,6 +32,12 @@ import user.User;
  */
 public class MemoServ extends Service {
     private static boolean              state = false; 
+    /* Memos live in memory like everything else, the database gets them
+       when it is there: new ones, the ones that were read and the ones
+       that were deleted, written every second. */
+    private static final ArrayList<MemoInfo>    newMemos  = new ArrayList<> ( );
+    private static final ArrayList<MemoInfo>    readMemos = new ArrayList<> ( );
+    private static final ArrayList<MemoInfo>    delMemos  = new ArrayList<> ( );
     private MSExecutor                  executor;       /* Object that parse and execute commands */
     private MSHelper                    helper;         /* Object that parse and respond to help queries */
     private MSSnoop                     snoop;          /* Object that parse and respond to help queries */
@@ -66,7 +74,9 @@ public class MemoServ extends Service {
             return; 
         }
         
-        //user.getUserFlood().incCounter ( this );
+        if ( user.getUserFlood().tooFast ( this ) ) {
+            return;
+        }
         
         cmd[3] = cmd[3].substring ( 1 );
         HashString command = new HashString ( cmd[3] );
@@ -89,6 +99,84 @@ public class MemoServ extends Service {
      */
 
     
+    /**
+     * @return the memos that wait for the database (new, read and deleted)
+     */
+    public static int waiting ( ) {
+        return newMemos.size ( ) + readMemos.size ( ) + delMemos.size ( );
+    }
+
+    public static void addNewMemo ( MemoInfo memo ) {
+        newMemos.add ( memo );
+    }
+
+    /**
+     * The memo was read. One that is not stored yet is stored as read.
+     * @param memo
+     */
+    public static void addReadMemo ( MemoInfo memo ) {
+        if ( memo.getID ( ) > 0 && ! readMemos.contains ( memo ) ) {
+            readMemos.add ( memo );
+        }
+    }
+
+    /**
+     * The memo was deleted. One that is not stored yet is just never stored.
+     * @param memo
+     */
+    public static void addDelMemo ( MemoInfo memo ) {
+        readMemos.remove ( memo );
+        if ( ! newMemos.remove ( memo ) && memo.getID ( ) > 0 ) {
+            delMemos.add ( memo );
+        }
+    }
+
+    /**
+     * The nick is dropped: its memos go with it in the database, and the
+     * ones that still wait must not be stored for the next owner of the name
+     * @param nick
+     */
+    public static void forget ( HashString nick ) {
+        for ( ArrayList<MemoInfo> list : Arrays.asList ( newMemos, readMemos, delMemos ) ) {
+            for ( MemoInfo memo : new ArrayList<> ( list ) ) {
+                if ( nick.is ( new HashString ( memo.getName ( ) ) ) ) {
+                    list.remove ( memo );
+                }
+            }
+        }
+    }
+
+    /**
+     * Write what waits to the database, called every second after NickServ
+     * has written its nicks
+     * @return how much still waits
+     */
+    public static int maintenance ( ) {
+        if ( ( newMemos.isEmpty ( ) && readMemos.isEmpty ( ) && delMemos.isEmpty ( ) ) || ! MSDatabase.activateConnection ( ) ) {
+            return newMemos.size ( ) + readMemos.size ( ) + delMemos.size ( );
+        }
+        write ( newMemos, 0 );
+        write ( readMemos, 1 );
+        write ( delMemos, 2 );
+        return newMemos.size ( ) + readMemos.size ( ) + delMemos.size ( );
+    }
+
+    private static void write ( ArrayList<MemoInfo> list, int what ) {
+        for ( int i = getIndexFromSize ( list.size ( ) ); i > 0; i-- ) {
+            MemoInfo memo = list.get ( 0 );
+            boolean ok = ( what == 0 ? MSDatabase.storeMemo ( memo ) != null : 
+                           what == 1 ? MSDatabase.readMemo ( memo ) : MSDatabase.delMemo ( memo ) );
+            if ( ok ) {
+                WorkGuard.done ( memo );
+                list.remove ( 0 );
+            } else if ( WorkGuard.failed ( memo, "memo to "+memo.getName ( ) ) ) {
+                list.remove ( 0 );
+            } else {
+                break; /* the database said no, try again next time */
+            }
+        }
+    }
+
     public static void is ( boolean stateVal ) { 
         state = stateVal;
     }

@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer & avade.net
  *
- * This program hasAccess free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program hasAccess distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package channel;
 
@@ -488,6 +487,11 @@ public class Chan extends HashNumeric {
         String who   = user.getString ( NAME )+"!"+user.getString ( USER )+"@";
         String shown = user.getShownHost ( );
         String ip    = ( validIp ( user.getIp ( ) ) ? user.getIp ( ) : null );
+        if ( shown == null ) {
+            /* Someone who asked to show the real host (SET SHOWHOST) still
+               has the mask in the ircd, and it goes on matching bans on it */
+            shown = Handler.maskedHost ( user.getHost ( ), user.getIp ( ) );
+        }
         for ( String mask : masks ) {
             if ( StringMatch.matches ( who+user.getHost ( ), mask ) ||
                  ( ip != null && StringMatch.matches ( who+ip, mask ) ) ||
@@ -568,7 +572,7 @@ public class Chan extends HashNumeric {
                 return;
             }
             if ( ! this.members.contains ( user ) ) {
-                this.members.add ( user );
+                return; /* not here (any more): a status never makes a member */
             }
             if ( access.is ( mode ) ) {
                 if ( ! list.contains ( user ) ) {
@@ -831,5 +835,34 @@ public class Chan extends HashNumeric {
         if ( stamp > 0 && stamp < this.createdOn ) {
             this.createdOn = stamp;
         }
+    }
+
+    /**
+     * A server joins users with an older channel of this name (a netjoin
+     * after a split). The ircd then drops the modes, the key, the limit, the
+     * three lists and everyone's status on this side and takes what the other
+     * side has (m_sjoin), and services are told nothing but the SJOIN. Do
+     * the same, or joins would be refused on a key and bans that are gone.
+     * @param stamp the TS of the SJOIN
+     * @return true when the channel was reset
+     */
+    public boolean lostTo ( long stamp ) {
+        if ( stamp <= 0 || stamp >= this.createdOn ) {
+            return false;
+        }
+        this.createdOn  = stamp;
+        this.modes      = new ChanMode ( );
+        this.key        = null;
+        this.limit      = 0;
+        this.jrNum      = 8;
+        this.jrTime     = 6;
+        this.bans.clear ( );
+        this.excepts.clear ( );
+        this.invites.clear ( );
+        this.followBans.clear ( );
+        this.oList.clear ( );
+        this.hList.clear ( );
+        this.vList.clear ( );
+        return true;
     }
 }

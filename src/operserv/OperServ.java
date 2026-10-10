@@ -1,19 +1,18 @@
 /* 
  * Copyright (C) 2018 Fredrik Karlsson aka DreamHealer - avade.net
  *
- * This program hasAccess free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
  *
- * This program hasAccess distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * along with this program; if not, see <https://www.gnu.org/licenses/>.
  */
 package operserv;
 
@@ -27,6 +26,7 @@ import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
 import nickserv.NickInfo;
@@ -195,6 +195,7 @@ public class OperServ extends Service {
         todoAmount += this.checkAddStaff ( );
         todoAmount += this.checkRemStaff ( );
         todoAmount += this.checkLogEvents ( );
+        todoAmount += this.checkSettings ( );
         todoAmount += this.checkaddLogServicesBans ( );
         todoAmount += this.checkdelLogServicesBans ( );
          
@@ -452,16 +453,18 @@ public class OperServ extends Service {
         ServicesBan ban;
         String newName;
         ArrayList<User> checked = new ArrayList<>();
-        if ( ! OSDatabase.checkConn() ) {
-            return;
-        }
-        
+        /* (the ban lists are in memory: this works without the database,
+           and the list must not grow for as long as it is away) */
         HashString[] commands = { AKILL, SGLINE, SQLINE };
         Random rand = new Random ( );
         
-        /* this looks unnecessary? */
         for ( User u : this.chList ) {
             ban = null;
+            if ( Handler.findUser ( u.getName ( ) ) != u ) {
+                /* Left, or changed nick (and was added again as that), since */
+                checked.add ( u );
+                continue;
+            }
             for ( HashString command : commands ) {
                 if ( ban == null ) {
                             
@@ -541,7 +544,9 @@ public class OperServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
-        user.getUserFlood().incCounter ( this );
+        if ( user.getUserFlood().incCounter ( this ) ) {
+            return; /* killed for flooding */
+        }
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
             return; 
         }
@@ -718,10 +723,12 @@ public class OperServ extends Service {
             } else if ( ban.is(SGLINE) ) {
                 this.unBan ( ban );
                 this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
-                for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
-                    u = entry.getValue();
-                    if ( StringMatch.matches ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
-                        this.sendServ ( "KILL "+u.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
+                /* (a copy: the users that are killed leave the list) */
+                for ( User hit : new ArrayList<> ( Handler.getUserList().values ( ) ) ) {
+                    if ( StringMatch.matches ( hit.getString ( REALNAME ), ban.getMask().getString() ) ) {
+                        this.sendServ ( "KILL "+hit.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
+                        /* The ircd never tells us about a kill of our own */
+                        Handler.deleteUser ( hit );
                     }
                 }                
             }
@@ -1403,6 +1410,48 @@ public class OperServ extends Service {
      */
     public static void addLogEvent ( OSLogEvent log ) {
         logs.add ( log );
+    }
+
+    /**
+     * @return the bans, spam filters, staff, servers and settings that wait
+     *         for the database
+     */
+    public static int waiting ( ) {
+        return addServicesBans.size ( ) + remServicesBans.size ( ) + addSpamFilters.size ( ) + remSpamFilters.size ( ) +
+               addStaff.size ( ) + remStaff.size ( ) + addServers.size ( ) + remServers.size ( ) + updServers.size ( ) +
+               newSettings.size ( );
+    }
+
+    /**
+     * @return the log rows that wait for the database
+     */
+    public static int waitingLogs ( ) {
+        return logs.size ( ) + addLogServicesBans.size ( ) + delLogServicesBans.size ( );
+    }
+
+    /* Settings that wait for the database (the last value of each) */
+    private static final LinkedHashMap<String,String> newSettings = new LinkedHashMap<> ( );
+
+    /**
+     * Store a setting. It is in use at once, the database gets it when it
+     * is there.
+     * @param name
+     * @param value
+     */
+    public static void saveSetting ( String name, String value ) {
+        newSettings.put ( name, value );
+    }
+
+    private int checkSettings ( ) {
+        if ( newSettings.isEmpty ( ) || ! OSDatabase.checkConn ( ) ) {
+            return newSettings.size ( );
+        }
+        for ( String name : new ArrayList<> ( newSettings.keySet ( ) ) ) {
+            if ( OSDatabase.saveSetting ( name, newSettings.get ( name ) ) ) {
+                newSettings.remove ( name );
+            }
+        }
+        return newSettings.size ( );
     }
     
     /**

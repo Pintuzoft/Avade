@@ -100,7 +100,13 @@ start() {
     rotate
     # the config is read from the current directory
     cd "$DIR" || return 1
-    nohup "$JAVA" -jar "$JAR" $ARGS < /dev/null >> "$OUT" 2>&1 &
+    # the output and the logs are for this user only: they have the real
+    # hosts of everyone, and what users type to the services by mistake
+    umask 077
+    touch "$OUT" && chmod 600 "$OUT" "$OUT".[0-9]* 2> /dev/null
+    # -Davade.out: services rotate the file themselves when it gets big,
+    # they run for months and this script only rotates it at a start
+    nohup "$JAVA" -Davade.out="$OUT" -jar "$JAR" $ARGS < /dev/null >> "$OUT" 2>&1 &
     pid=$!
     echo "$pid" > "$PIDFILE"
     # a wrong config or an unreachable database makes it exit right away
