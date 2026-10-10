@@ -23,16 +23,17 @@ import core.Handler;
 import core.HashNumeric;
 import core.HashString;
 import core.Throttle;
-import memoserv.MSDatabase;
 import memoserv.MemoInfo;
 import operserv.Oper;
+import security.Hash;
 import user.User;
-import java.net.InetAddress;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Random;
+import java.util.Locale;
 
 
 /**
@@ -44,10 +45,11 @@ public class NickInfo extends HashNumeric {
     private HashString              user;
     private HashString              host;
     private HashString              ip;
-    private InetAddress             iNet; 
     private HashString              hashMask;       /* Integer representation of user@mask */ 
-    private String                  pass;
+    private String                  pass;           /* hash, see security.Hash */
     private String                  mail; 
+    private String                  vhost;              /* host shown instead of the real one */
+    private long                    vhostChanged = 0;   /* ms, when the user last changed it */
     private NickSetting             settings;
     private String                  regTime;
     private String                  lastUsed; 
@@ -57,11 +59,18 @@ public class NickInfo extends HashNumeric {
     private Expire                  exp;
     private NSChanges               changes;
     private Throttle                throttle;       /* throttle login attempts */
+    private String                  resetCode;      /* RESETPASS: the code sent by mail */
+    private long                    resetExpire;    /* ms, when the code stops working */
+    private long                    resetSent;      /* ms, when the last code was sent */
     private ArrayList<ChanInfo>     akickList = new ArrayList<>();
     private ArrayList<ChanInfo>     aopList = new ArrayList<>();
+    private ArrayList<ChanInfo>     hopList = new ArrayList<>();
+    private ArrayList<ChanInfo>     vopList = new ArrayList<>();
     private ArrayList<ChanInfo>     sopList = new ArrayList<>();
     private ArrayList<ChanInfo>     founderList = new ArrayList<>();
     private DateFormat  dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    private static final long       RESETWAIT  = 15 * 60 * 1000L;      /* between two RESETPASS mails */
+    private static final long       RESETVALID = 2 * 60 * 60 * 1000L;  /* how long a code works */
 
     /* DATABASE */
 
@@ -101,7 +110,7 @@ public class NickInfo extends HashNumeric {
     /**
      *
      * @param user
-     * @param pass
+     * @param pass the password in clear, it is stored hashed
      */
 
     public NickInfo ( User user, String pass )  {
@@ -110,8 +119,8 @@ public class NickInfo extends HashNumeric {
         this.user       = new HashString ( user.getString ( USER ) );
         this.host       = new HashString ( user.getString ( HOST ) );
         this.ip         = new HashString ( user.getString ( IP ) );
-        this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(IP) ); 
-        this.pass       = pass;
+        this.hashMask   = new HashString ( user.getString(USER)+"@"+user.getString(HOST) ); 
+        this.pass       = Hash.password ( pass );
         this.mail       = ""; 
         this.settings   = new NickSetting ( );
         String date = this.dateFormat.format ( new Date ( ) );
@@ -119,6 +128,7 @@ public class NickInfo extends HashNumeric {
         this.lastUsed   = date; 
         this.date       = new Date ( );
         this.oper       = new Oper ( );
+        this.exp        = new Expire ( );
         this.changes    = new NSChanges ( );
         this.throttle   = new Throttle ( );
         this.userIdent ( user );
@@ -133,15 +143,15 @@ public class NickInfo extends HashNumeric {
      */
     public NickInfo ( String name ) {
         User u          = Handler.findUser ( name );
-        Random random   = new Random ( );
         if ( u != null ) {
-            String passwd   = "Master" + random.nextInt ( 9800 ) + 100;
+            /* Not guessable: this is the nick with the highest access */
+            String passwd   = "Master" + new BigInteger ( 80, new SecureRandom ( ) ).toString ( 36 );
             this.name       = new HashString ( name );
-            this.pass       = passwd;
+            this.pass       = Hash.password ( passwd );
             this.ip         = new HashString ( u.getString ( IP ) );
             this.user       = new HashString ( u.getString ( USER ) );
             this.host       = new HashString ( u.getString ( HOST ) );
-            this.hashMask   = new HashString ( this.user+"@"+this.ip ); 
+            this.hashMask   = new HashString ( this.user+"@"+this.host ); 
             this.mail       = "master@localhost";
             String date = this.dateFormat.format ( new Date ( ) );
             this.regTime    = date;
@@ -279,11 +289,71 @@ public class NickInfo extends HashNumeric {
             return false;
         }
         
-        if ( this.pass.compareTo ( pass ) == 0 )  {
-            this.changes.hasChanged ( LASTUSED );
+        if ( this.throttle.isThrottled ( ) ) {
+            return false;
+        }
+        if ( Hash.verify ( pass, this.pass ) )  {
+            this.throttle.reset ( );
+            if ( Hash.needsRehash ( this.pass ) ) {
+                /* made with fewer iterations than new hashes get */
+                this.setNewPass ( pass );
+            }
             return true;
         }
+        this.throttle.hit ( );
         return false;
+    }
+
+    /**
+     * A password that works at once, without a confirmation mail
+     * (RESETPASS, SETPASS by staff)
+     * @param pass the password in clear
+     */
+    public void setNewPass ( String pass ) {
+        this.pass = Hash.password ( pass );
+        NickServ.addNewAuth ( new NSAuth ( PASS, this.name, this.pass, null, null ) );
+    }
+
+    /**
+     * RESETPASS: a new code to mail to the owner. A new code replaces the old one
+     * @return the code, null when one was sent less than RESETWAIT ago
+     */
+    public String newResetCode ( ) {
+        long now = System.currentTimeMillis ( );
+        if ( now - this.resetSent < RESETWAIT ) {
+            return null;
+        }
+        this.resetSent      = now;
+        this.resetExpire    = now + RESETVALID;
+        this.resetCode      = Hash.code ( 12 );
+        return this.resetCode;
+    }
+
+    /**
+     * @param code
+     * @return true if it is the code that was sent and it still works.
+     *         A wrong code counts as a failed IDENTIFY
+     */
+    public boolean isResetCode ( String code ) {
+        if ( code == null || this.resetCode == null || this.throttle.isThrottled ( ) ) {
+            return false;
+        }
+        if ( System.currentTimeMillis ( ) > this.resetExpire ) {
+            this.resetCode = null;
+            return false;
+        }
+        if ( Hash.same ( this.resetCode, code.toLowerCase ( Locale.ROOT ) ) ) {
+            return true;
+        }
+        this.throttle.hit ( );
+        return false;
+    }
+
+    /**
+     * The code has been used
+     */
+    public void clearResetCode ( ) {
+        this.resetCode = null;
     }
     
     /* hasAccess commands */
@@ -317,27 +387,15 @@ public class NickInfo extends HashNumeric {
     
     /**
      *
-     * @param newPass
+     * @param newPass a hash from security.Hash (a confirmed SET PASSWD)
      */
     public void setPass ( String newPass ) {
         this.pass = newPass;
     }
-      
-    /**
-     *
-     * @param pass
-     * @return bool
-     */
-    public boolean isPass ( String pass )  {
-        if ( pass == null ) {
-            return false;
-        }
-        return ( this.pass.compareTo ( pass ) == 0 );
-    }
  
     /**
      *
-     * @return pass
+     * @return the hash of the password, for the database
      */
     public String getPass ( )  {
         return this.pass;
@@ -373,14 +431,6 @@ public class NickInfo extends HashNumeric {
      */
     public Oper getOper ( ) {
         return this.oper;
-    }
-    
-    /**
-     *
-     * @return str
-     */
-    public String getIDOper ( ) {
-        return  ( this.oper != null ) ? this.oper.getString ( NAME ) : null;
     }
 
     /**
@@ -448,15 +498,6 @@ public class NickInfo extends HashNumeric {
     public void setOper ( Oper oper ) {
         this.oper = oper;
     }
-    
-    /**
-     *
-     * @param setting
-     * @return bool
-     */
-    public boolean isSetting ( HashString setting ) {
-        return this.settings.is ( setting );
-    }
 
     /**
      *
@@ -470,6 +511,34 @@ public class NickInfo extends HashNumeric {
      *
      * @param mail
      */
+    /**
+     * @return the vhost of the nick or null
+     */
+    public String getVhost ( ) {
+        return this.vhost;
+    }
+
+    /**
+     * @param vhost the vhost or null to remove it
+     */
+    public void setVhost ( String vhost ) {
+        this.vhost = vhost;
+    }
+
+    /**
+     * @return when the vhost was last changed by the user (ms)
+     */
+    public long getVhostChanged ( ) {
+        return this.vhostChanged;
+    }
+
+    /**
+     *
+     */
+    public void vhostChanged ( ) {
+        this.vhostChanged = System.currentTimeMillis ( );
+    }
+
     public void setEmail ( String mail ) {
         this.mail = mail;
         this.settings.set ( AUTH, true );
@@ -484,6 +553,8 @@ public class NickInfo extends HashNumeric {
         if      ( it.is(FOUNDER) )          { return founderList;               }
         else if ( it.is(SOP) )              { return sopList;                   }
         else if ( it.is(AOP) )              { return aopList;                   }
+        else if ( it.is(HOP) )              { return hopList;                   }
+        else if ( it.is(VOP) )              { return vopList;                   }
         else if ( it.is(AKICK) )            { return akickList;                 }
         else {
             return new ArrayList<>();
@@ -556,7 +627,8 @@ public class NickInfo extends HashNumeric {
      * @return bool
      */
     public boolean isMask ( User user ) {
-        return this.host.is ( user.getMask() );
+        /* user@host of the last login against user@host of this user */
+        return this.hashMask != null && this.hashMask.is ( user.getMask ( ) );
     }
     
     /**

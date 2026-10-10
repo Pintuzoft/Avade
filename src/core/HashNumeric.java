@@ -369,6 +369,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString JOIN = new HashString ( "JOIN" );
+
+    /**
+     *
+     */
     public static HashString KICK = new HashString ( "KICK" );
 
     /**
@@ -769,6 +774,52 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString HALFOP = new HashString ( "HALFOP" );
+
+    /**
+     *
+     */
+    public static HashString VHOST = new HashString ( "VHOST" );
+
+    /**
+     *
+     */
+    public static HashString SVSUHM = new HashString ( "SVSUHM" );
+
+    /**
+     *
+     */
+    public static HashString CLONE = new HashString ( "CLONE" );
+
+    /**
+     *
+     */
+    public static HashString UHM = new HashString ( "UHM" );
+
+    /**
+     *
+     */
+    public static HashString USER_VERBOSE = new HashString ( "USER_VERBOSE" );
+
+    /**
+     *
+     */
+    public static HashString OPER_VERBOSE = new HashString ( "OPER_VERBOSE" );
+
+    /**
+     * Services join requests: the command from the ircd, the chanflag and
+     * the OperServ command
+     */
+    public static HashString SJR = new HashString ( "SJR" );
+
+    /**
+     * Usermode +S, the user is connected with SSL
+     */
+    public static HashString SSL = new HashString ( "SSL" );
+
+    /**
+     *
+     */
     public static HashString ALL = new HashString ( "ALL" );
 
     /**
@@ -785,6 +836,16 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString AOP = new HashString ( "AOP" );
+
+    /**
+     *
+     */
+    public static HashString HOP = new HashString ( "HOP" );
+
+    /**
+     *
+     */
+    public static HashString VOP = new HashString ( "VOP" );
 
     /**
      *
@@ -895,6 +956,26 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString DELAKICK = new HashString ( "AKICK-" );
+
+    /**
+     *
+     */
+    public static HashString ADDHOP = new HashString ( "HOP+" );
+
+    /**
+     *
+     */
+    public static HashString DELHOP = new HashString ( "HOP-" );
+
+    /**
+     *
+     */
+    public static HashString ADDVOP = new HashString ( "VOP+" );
+
+    /**
+     *
+     */
+    public static HashString DELVOP = new HashString ( "VOP-" );
 
     /**
      *
@@ -1165,6 +1246,16 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString SENDPASS = new HashString ( "SENDPASS" );
+
+    /**
+     * NickServ: a new password with a code sent to the confirmed mail
+     */
+    public static HashString RESETPASS = new HashString ( "RESETPASS" );
+
+    /**
+     * NickServ/ChanServ: staff sets a new password
+     */
+    public static HashString SETPASS = new HashString ( "SETPASS" );
 
     /**
      *
@@ -1829,6 +1920,11 @@ public abstract class HashNumeric extends TextFormat {
     /**
      *
      */
+    public static HashString ACCESS_DENIED_SETPASS_OPER = new HashString ( "ACCESS_DENIED_SETPASS_OPER" );
+
+    /**
+     *
+     */
     public static HashString NICK_GETPASS = new HashString ( "NICK_GETPASS" );
 
     /**
@@ -2170,6 +2266,11 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static HashString SET_MODELOCK = new HashString ( "SET_MODELOCK" );
+
+    /**
+     *
+     */
+    public static HashString SET_PASSWD = new HashString ( "SET_PASSWD" );
 
     /**
      *
@@ -2661,6 +2762,11 @@ public abstract class HashNumeric extends TextFormat {
      */
     public static final int MODE_v                      = 118;
 
+    /**
+     *
+     */
+    public static final int MODE_S                      = 83;
+
         /* CHANNEL */
 
     /**
@@ -2767,14 +2873,4 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public final static HashString TRUE = new HashString ( "TRUE" );
-
-    /**
-     *
-     * @param str1
-     * @param str2
-     * @return bool
-     */
-    public boolean iCmp ( String str1, String str2 )  {
-        return  ( str1.equalsIgnoreCase ( str2 ) );
-    }
 }

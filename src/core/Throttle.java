@@ -44,46 +44,48 @@ public class Throttle {
     /**
      *
      */
-    protected static int range      = 5;      /* seconds until out of range */
-
-    /**
-     *
-     */
-    protected static int maxtime    = 300;    /* seconds until throttle is removed */
+    protected static int maxtime    = 300;    /* seconds a failure is remembered / throttle lasts */
     
     /**
      *
      */
     public Throttle ( ) { 
-        this.lastHit = System.currentTimeMillis();
+        this.lastHit = 0;
         this.hits = 0;
     } 
     
     /**
-     *
+     * Check if throttled. Does not count as an attempt.
      * @return
      */
     public boolean isThrottled ( ) {
-        /* Is it throttled return true */
-        if ( this.hits > maxhits ) {
-            this.lastHit = now ( );
-            return true;
-        }
-        
-        /* maxtime was reach so we reset it */
-        if ( now ( ) - this.lastHit > ( maxtime * 1000 ) ) {
+        this.expire ( );
+        return this.hits > maxhits;
+    }
+    
+    /**
+     * Register a failed attempt.
+     */
+    public void hit ( ) {
+        this.expire ( );
+        this.hits++;
+        this.lastHit = now ( );
+    }
+    
+    /**
+     * Reset after a successful attempt.
+     */
+    public void reset ( ) {
+        this.hits = 0;
+    }
+    
+    /* Forget failures older than maxtime */
+    private void expire ( ) {
+        if ( now ( ) - this.lastHit > ( maxtime * 1000L ) ) {
             this.hits = 0;
         }
-        
-        /* add a hit if time since lastHit hit was within range */
-        if (  - this.lastHit < ( range * 1000 ) ) {
-            this.hits++;
-        }
-        
-        /* return false to indicate its not throttled */
-        this.lastHit = now ( );
-        return false;
     }
+    
     private long now ( ) {
         return System.currentTimeMillis();
     }

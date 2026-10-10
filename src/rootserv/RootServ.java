@@ -17,6 +17,7 @@
  */
 package rootserv;
 
+import core.Scheduler;
 import core.CommandInfo;
 import core.Handler;
 import core.HashString;
@@ -24,14 +25,13 @@ import core.Proc;
 import core.Service;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.ScheduledFuture;
 import nickserv.NSDatabase;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import operserv.OSLogEvent;
 import operserv.OSDatabase;
-import operserv.OperServ;
+import operserv.Oper;
 import user.User;
 
 /**
@@ -44,7 +44,7 @@ public class RootServ extends Service {
     private RSExecutor                      executor;       /* Object that parse and execute commands */
     private RSHelper                        helper;         /* Object that parse and respond to help queries */
     private RSSnoop                         snoop;          /* Object for monitoring and reporting */
-    private static Timer                    panicTimer;
+    private static ScheduledFuture<?>       panicTimer;
     private static boolean                  updConf; 
     
     /**
@@ -129,8 +129,6 @@ public class RootServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  { 
-        HashString command = new HashString ( cmd[3].substring(1) );
-        
         if ( ! user.isAtleast ( SRA ) ) {
             return;
         }
@@ -138,12 +136,13 @@ public class RootServ extends Service {
         /* :DreamHealer PRIVMSG OperServ@stats.sshd.biz :help */
         
         cmd[3] = cmd[3].substring ( 1 );
+        HashString command = new HashString ( cmd[3] );
         
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         
         } else {
-            this.executor.parse ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         }
          
     }
@@ -152,15 +151,12 @@ public class RootServ extends Service {
      *
      */
     public static void adPanic ( ) {
-        panicTimer = new Timer ( );
-        panicTimer.schedule ( new TimerTask ( ) {
-            @Override
-                public void run() {
-                    Handler.getRootServ().sendGlobOp ( "WARNING! Services PANIC state is currently set to: "+RootServ.getPanicStr ( NONE ) );
-                    RootServ.adPanic();
-                } 
-            }, 900000
-        );
+        /* Remind every 15 minutes while in panic, only one reminder at a time */
+        Scheduler.cancel ( panicTimer );
+        panicTimer = Scheduler.schedule ( ( ) -> {
+            Handler.getRootServ().sendGlobOp ( "WARNING! Services PANIC state is currently set to: "+RootServ.getPanicStr ( NONE ) );
+            RootServ.adPanic();
+        }, 900000 );
     }
     
     /**
@@ -176,37 +172,33 @@ public class RootServ extends Service {
             RootServ.adPanic ( );
         
         } else if ( state.is(USER) ) {
-            panicTimer.cancel();
+            Scheduler.cancel ( panicTimer );
             panicTimer = null;
         }
         
     }
+
     
     /**
      *
+     * @param state OPER, IDENT or USER, anything else gives the current state
      * @return
      */
-    public static HashString getPanic ( ) {
-        return panic;
-    }
-    
-    /**
-     *
-     * @param panic
-     * @return
-     */
-    public static String getPanicStr ( HashString panic ) {
-        if ( panic.is(OPER) ) {
+    public static String getPanicStr ( HashString state ) {
+        if ( state.is(OPER) ) {
             return "OPER [only IRCops can access services]";
         
-        } else if ( panic.is(IDENT) ) {
+        } else if ( state.is(IDENT) ) {
             return "IDENT [only identified users (+r) can access services]";
         
-        } else if ( panic.is(USER) ) {
+        } else if ( state.is(USER) ) {
             return "USER [everyone can access services]";
         
-        } else {
+        } else if ( panic.is(OPER) || panic.is(IDENT) ) {
             return getPanicStr ( panic );
+        
+        } else {
+            return getPanicStr ( USER );
         }
         
     }
@@ -235,16 +227,26 @@ public class RootServ extends Service {
      */
     public void fixMaster ( ) {
         HashString master = Proc.getConf().get(MASTER);
-        NickInfo ni = NickServ.findNick ( master );
+        NickInfo ni;
         User user;
         boolean newNick = false;
         
+        if ( ! Handler.isDataLoaded ( ) ) {
+            /* The master nick would look unregistered and be created again */
+            return;
+        }
+        
         if ( master == null ) {
-            System.out.println ( "Couldnt find Master nickname in configuration file." );
+            Proc.log ( "Couldnt find Master nickname in configuration file." );
             System.exit ( 1 );
         }
+        ni   = NickServ.findNick ( master );
         user = Handler.findUser ( master );
         
+        if ( ni == null && user == null ) {
+            /* Master nick not registered and not online, nothing to do yet */
+            return;
+        }
         if ( ni == null ) {
             ni = new NickInfo ( master.getString() );
             NSDatabase.createNick ( ni );
@@ -259,17 +261,21 @@ public class RootServ extends Service {
             OSLogEvent log;
             ArrayList<NickInfo> nList = RSDatabase.setMaster ( master );
             for ( NickInfo old : nList ) {
-                log = new OSLogEvent ( old.getName(), new HashString ( "DELMASTER" ), "new!master@services", "Services config" );
+                old.setOper ( new Oper ( old.getNameStr(), 4, "Services config" ) );
+                log = new OSLogEvent ( old.getName(), DELMASTER, "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
-                log = new OSLogEvent ( old.getName(), new HashString ( "ADDSRA" ), "new!master@services", "Services config" );
+                log = new OSLogEvent ( old.getName(), ADDSRA, "new!master@services", "Services config" );
                 OSDatabase.logEvent ( log );
             }
-            log = new OSLogEvent ( ni.getName(), new HashString ( "ADDMASTER" ), "new!master@services", "Services config" );
+            log = new OSLogEvent ( ni.getName(), ADDMASTER, "new!master@services", "Services config" );
             OSDatabase.logEvent ( log );
+            /* Also when the master is not online right now, or the role would
+               only start to work after the next restart */
+            ni.setOper ( new Oper ( ni.getNameStr(), 5, "Services config" ) );
             if ( user != null ) {
-                ni.setOper ( OperServ.getOper ( master ) );
                 Handler.getRootServ().sendMsg ( user, "Nick: "+master+" is now set as Master of AServices." );
                 if ( newNick ) {
+                    /* the password was shown when the nick was made, only the hash is kept */
                     this.sendMsg ( user, "Before anything!.. Please set a valid email on the Master nick and change password." );
                     this.sendMsg ( user, "NOTE: losing access of the master nick can cause inconvenience as only the master can manage the SRA list, and no SRA can add a new master." );
                 }

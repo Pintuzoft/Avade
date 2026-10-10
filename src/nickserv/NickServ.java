@@ -17,6 +17,7 @@
  */
 package nickserv;
 
+import core.WorkGuard;
 import chanserv.CSAcc;
 import chanserv.CSAccessLogEvent;
 import chanserv.CSDatabase;
@@ -26,6 +27,7 @@ import chanserv.ChanServ;
 import command.Command;
 import core.CommandInfo;
 import core.Handler;
+import server.Server;
 import core.HashString;
 import core.Proc;
 import core.Service;
@@ -54,7 +56,8 @@ public class NickServ extends Service {
     
     /* Oper stuff */
     private NSSnoop                         snoop;          /* Object that parse and respond to help queries */ 
-    private static HashMap<BigInteger,NickInfo>      niList  = new HashMap<> ( ); /* List of focused regged nicknames */  
+    private static HashMap<BigInteger,NickInfo>      niList  = new HashMap<> ( ); /* List of focused regged nicknames */
+    private static boolean                          loaded  = false;  
     private static TextFormat               f       = new TextFormat ( );
 
     private static ArrayList<NSAuth>        newAuthList = new ArrayList<>();
@@ -83,11 +86,38 @@ public class NickServ extends Service {
     }
      
     private void loadNicks ( )  {
-       niList = NSDatabase.loadAllNicks ( );
-       NSDatabase.loadAllSettings();
-       NSDatabase.loadAllNickExp();
-       MSDatabase.loadAllMemos();
-       
+        loaded = false;
+        HashMap<BigInteger,NickInfo> nicks = NSDatabase.loadAllNicks ( );
+        if ( nicks == null ) {
+            Proc.log ( "NickServ: could not load the nicks from the database" );
+            return;
+        }
+        niList = nicks;
+        if ( ! NSDatabase.loadAllSettings() ||
+             ! NSDatabase.loadAllNickExp() ||
+             ! NSDatabase.loadAllVhosts() ||
+             ! MSDatabase.loadAllMemos() ) {
+            Proc.log ( "NickServ: could not load nick settings/memos from the database" );
+            return;
+        }
+        loaded = true;
+    }
+
+    /**
+     * @return true when all nicks are loaded from the database. Until then
+     *         services must not touch anyone's identification or access.
+     */
+    public static boolean isLoaded ( ) {
+        return loaded;
+    }
+
+    /**
+     * Try to load the nicks again
+     * @return
+     */
+    public boolean retryLoad ( ) {
+        this.loadNicks ( );
+        return loaded;
     }
 
     /**
@@ -100,6 +130,7 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "AUTH",     0,   "Authorize a mail or pass" )                       );
         cmdList.add ( new CommandInfo ( "IDENTIFY", 0,   "Identify as owner of a nick" )                    );
         cmdList.add ( new CommandInfo ( "GHOST",    0,   "Kill the ghost using your nick" )                 );
+        cmdList.add ( new CommandInfo ( "RESETPASS",0,   "New password with a code by mail" )               );
         cmdList.add ( new CommandInfo ( "SET",      0,   "Set nick options" )                               );
         cmdList.add ( new CommandInfo ( "INFO",     0,   "Show nick info" )                                 );
         cmdList.add ( new CommandInfo ( "DROP",     0,   "Drop / end nick registration" )                   );
@@ -108,9 +139,9 @@ public class NickServ extends Service {
         cmdList.add ( new CommandInfo ( "FREEZE",   CMDAccess ( FREEZE ),   "Freeze nick" )                 );
         cmdList.add ( new CommandInfo ( "HOLD",     CMDAccess ( HOLD ),     "Hold nick" )                   );
         cmdList.add ( new CommandInfo ( "NOGHOST",  CMDAccess ( NOGHOST ),  "Deactivate ghost for nick" )   );
-        cmdList.add ( new CommandInfo ( "GETPASS",  CMDAccess ( GETPASS ),  "Get nick password" )           );
+        cmdList.add ( new CommandInfo ( "SETPASS",  CMDAccess ( SETPASS ),  "Set a new nick password" )     );
         cmdList.add ( new CommandInfo ( "GETEMAIL", CMDAccess ( GETEMAIL ), "Get nick email" )              );
-        cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Get nick email" )              );
+        cmdList.add ( new CommandInfo ( "DELETE",   CMDAccess ( DELETE ),   "Delete a nick" )               );
     }
     
     /**
@@ -158,6 +189,10 @@ public class NickServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            this.sendMsg ( user, "Services are loading the nick and channel database, please try again in a moment." );
+            return;
+        }
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
         if ( cmd == null || cmd[3].isEmpty ( )  )  { 
             return; 
@@ -170,7 +205,7 @@ public class NickServ extends Service {
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         } else {
-            this.executor.parse ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         }
          
     }
@@ -212,7 +247,7 @@ public class NickServ extends Service {
         ArrayList<NickInfo> nicks = new ArrayList<>();
         for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
             ni = entry.getValue();
-            if ( StringMatch.wild ( ni.getName().getString().toUpperCase(), string.toUpperCase() ) ) {
+            if ( StringMatch.matches ( ni.getName().getString(), string ) ) {
                 nicks.add ( ni );
             }
         }
@@ -230,17 +265,6 @@ public class NickServ extends Service {
         niList.put ( ni.getName().getCode(), ni ); 
     }
 
-    /**
-     *
-     */
-    public static void listNicks ( ) {
-        if ( ! is ) {
-            return;
-        }
-        for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
-            System.out.println ( "NICKLIST: "+entry.getValue().getString ( FULLMASK ) );
-        }
-    }
  
     /* Ownership messages */
 
@@ -264,8 +288,10 @@ public class NickServ extends Service {
             return;
         }
         for ( User user : Handler.findUsersByNick ( ni ) ) {
-            if ( ! user.hasAccess(ni.getName()) ) {
+            /* everyone except the one that is using the nick right now */
+            if ( ! user.is ( ni ) ) {
                 user.getSID().del ( ni );
+                Handler.addUpdateSID ( user.getSID ( ) );
                 Handler.getNickServ().sendMsg ( user, "You have been unidentified from nick: "+ni.getName() );
             }
         }
@@ -325,6 +351,9 @@ public class NickServ extends Service {
             ArrayList<NSLogEvent> eLogs = new ArrayList<>();
             for ( NSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
                 if ( NSDatabase.logEvent ( log ) > 0 ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "nick log" ) ) {
                     eLogs.add ( log );
                 }
             }
@@ -345,6 +374,15 @@ public class NickServ extends Service {
             for ( NSAuth auth : newAuthList ) {
                 if ( ( auth.is(MAIL) && NSDatabase.addMail ( auth ) ) ||
                        auth.is(PASS) && NSDatabase.addPass ( auth ) ) {
+                    WorkGuard.done ( auth );
+                    auths.add ( auth );
+                    /* The code is stored, now the mail with it can go out.
+                       A password set by RESETPASS or staff has no code */
+                    NickInfo ni = findNick ( auth.getNick ( ) );
+                    if ( ni != null && auth.getAuth ( ) != null ) {
+                        SendMail.sendAuthMail ( ni, auth );
+                    }
+                } else if ( WorkGuard.failed ( auth, "auth" ) ) {
                     auths.add ( auth );
                 }
             }
@@ -359,9 +397,16 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || newFullAuthList.isEmpty() ) {
             return newFullAuthList.size();
         }
-        NSAuth auth = newFullAuthList.get ( 0 );
-        if ( NSDatabase.addFullAuth ( auth ) ) {
-            newFullAuthList.remove ( auth );
+        for ( int i = getIndexFromSize ( newFullAuthList.size() ); i > 0; i-- ) {
+            NSAuth auth = newFullAuthList.get ( 0 );
+            if ( NSDatabase.addFullAuth ( auth ) ) {
+                WorkGuard.done ( auth );
+                newFullAuthList.remove ( auth );
+            } else if ( WorkGuard.failed ( auth, "auth for "+auth.getNick() ) ) {
+                newFullAuthList.remove ( auth );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return newFullAuthList.size();
     }
@@ -370,9 +415,16 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || regList.isEmpty() ) {
             return regList.size();
         }
-        NickInfo ni = regList.get ( 0 );
-        if ( NSDatabase.createNick ( ni ) == 1 ) {
-            regList.remove ( ni );
+        for ( int i = getIndexFromSize ( regList.size() ); i > 0; i-- ) {
+            NickInfo ni = regList.get ( 0 );
+            if ( NSDatabase.createNick ( ni ) == 1 ) {
+                WorkGuard.done ( ni );
+                regList.remove ( ni );
+            } else if ( WorkGuard.failed ( ni, "register of "+ni.getNameStr() ) ) {
+                regList.remove ( ni );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return regList.size();
     }
@@ -382,10 +434,17 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || changeList.isEmpty() ) {
             return changeList.size();
         }
-        NickInfo ni = changeList.get ( 0 );
-        if ( NSDatabase.updateNick ( ni ) == 1 ) {
-            ni.getChanges().clean();
-            changeList.remove ( ni );
+        for ( int i = getIndexFromSize ( changeList.size() ); i > 0; i-- ) {
+            NickInfo ni = changeList.get ( 0 );
+            if ( NSDatabase.updateNick ( ni ) == 1 ) {
+                WorkGuard.done ( ni );
+                ni.getChanges().clean();
+                changeList.remove ( ni );
+            } else if ( WorkGuard.failed ( ni, "changes to "+ni.getNameStr() ) ) {
+                changeList.remove ( ni );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return changeList.size();
     }
@@ -395,9 +454,16 @@ public class NickServ extends Service {
         if ( ! NSDatabase.activateConnection() || deleteList.isEmpty() ) {
             return deleteList.size();
         }
-        NickInfo ni = deleteList.get(0);
-        if ( NSDatabase.deleteNick ( ni ) ) {
-            deleteList.remove ( ni );
+        for ( int i = getIndexFromSize ( deleteList.size() ); i > 0; i-- ) {
+            NickInfo ni = deleteList.get(0);
+            if ( NSDatabase.deleteNick ( ni ) ) {
+                WorkGuard.done ( ni );
+                deleteList.remove ( ni );
+            } else if ( WorkGuard.failed ( ni, "delete of "+ni.getNameStr() ) ) {
+                deleteList.remove ( ni );
+            } else {
+                break; /* the database said no, try again next time */
+            }
         }
         return deleteList.size();
     }
@@ -443,19 +509,6 @@ public class NickServ extends Service {
     }
     static void addNewFullAuth ( NSAuth mail ) {
         newFullAuthList.add ( mail );
-    }
-    
-    /**
-     *
-     * @param user
-     * @param cmd
-     */
-    public void snoopAndLog ( User user, String[] cmd )  {
-        try { 
-            this.accessDenied ( user );
-        } catch ( Exception e )  {
-            Proc.log ( NickServ.class.getName ( ) , e );
-        }
     }
 
     /* Send advertisement for this unregged nick */
@@ -576,10 +629,167 @@ public class NickServ extends Service {
      *
      * @param u
      */
+    /**
+     * Check a vhost a user wants
+     * @param host
+     * @return null if it is fine, else the reason it is not
+     */
+    public static String checkVhostSyntax ( String host ) {
+        if ( host == null || host.length() < 3 || host.length() > 63 ) {
+            return "a vhost must be 3 to 63 characters long";
+        }
+        if ( ! host.matches ( "[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)+" ) ) {
+            return "a vhost may only contain a-z, 0-9, - and . and must contain at least one dot";
+        }
+        return null;
+    }
+
+    /**
+     * Check a vhost a user wants (syntax, not an ip, not the network's own
+     * names and not in vhostforbidden)
+     * @param host
+     * @return null if it is fine, else the reason it is not
+     */
+    public static String checkVhost ( String host ) {
+        String reason = checkVhostSyntax ( host );
+        if ( reason != null ) {
+            return reason;
+        }
+        if ( host.substring ( host.lastIndexOf ( '.' ) + 1 ).matches ( "[0-9]+" ) ) {
+            return "a vhost may not look like an ip address";
+        }
+        String[] reserved = {
+            Proc.getConf().get ( NAME ).getString(),
+            Proc.getConf().get ( STATS ).getString(),
+            Proc.getConf().get ( DOMAIN ).getString()
+        };
+        for ( String r : reserved ) {
+            if ( r != null && ! r.isEmpty() && 
+                 ( host.equalsIgnoreCase ( r ) || host.toLowerCase().endsWith ( "."+r.toLowerCase() ) ) ) {
+                return "that vhost is reserved for the network";
+            }
+        }
+        for ( Server s : Handler.getServerList ( ) ) {
+            if ( s.getName() != null && host.equalsIgnoreCase ( s.getName().getString() ) ) {
+                return "that vhost is reserved for the network";
+            }
+        }
+        for ( String pattern : Proc.getConf().getVhostForbidden ( ) ) {
+            if ( StringMatch.matches ( host, pattern ) ) {
+                return "that vhost is not allowed";
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Show the vhost of the nick on the user
+     * @param u
+     * @param ni
+     */
+    public static void applyVhost ( User u, NickInfo ni ) {
+        if ( u != null && ni != null && ni.getVhost ( ) != null ) {
+            /* SVSHOST sets the masked host, bahamut only shows it with umode +H */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSHOST "+u.getString ( NAME )+" "+ni.getVhost ( ) );
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 +H" );
+            u.setVhost ( ni.getVhost ( ) );
+        }
+    }
+
+    /**
+     * Show the services staff level (SA and up) of an identified user in its
+     * WHOIS, or remove it when the user no longer has it
+     * @param u
+     */
+    public static void applyStaffTag ( User u ) {
+        if ( u == null ) {
+            return;
+        }
+        int access = ( u.getSID ( ) != null ? u.getAccess ( ) : 0 );
+        if ( access < 2 ) {
+            /* IRC operators are already shown by the ircd */
+            access = 0;
+        }
+        if ( access == u.getStaffTag ( ) ) {
+            return;
+        }
+        String name = u.getString ( NAME );
+        if ( access == 0 ) {
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSTAG "+name+" 0 -" );
+        } else {
+            String role;
+            switch ( access ) {
+                case 5 :  role = "the Services Master";              break;
+                case 4 :  role = "a Services Root Administrator";    break;
+                case 3 :  role = "a Channel Services Operator";      break;
+                default : role = "a Services Administrator";         break;
+            }
+            /* -320: replace any earlier tag, + = everyone can see it */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSTAG "+name+" 0 -320 + :is "+role );
+        }
+        u.setStaffTag ( access );
+    }
+
+    /**
+     * Show the user's own host again
+     * @param u
+     * @return false if not possible (the ircd masks hosts in a way we do not
+     *         know, so this would reveal the real host: the user has to reconnect)
+     */
+    /**
+     * Give an identified user the host its nick should show: the vhost of the
+     * nick, or the real host when the owner asked for it on a network that
+     * masks hosts (SET SHOWHOST ON, for someone who has a host of their own
+     * to show), or else what the network gives everyone
+     * @param u
+     * @param ni the nick the user is on and identified to
+     */
+    public static void applyHost ( User u, NickInfo ni ) {
+        if ( u == null || ni == null ) {
+            return;
+        }
+        if ( ni.getVhost ( ) != null ) {
+            u.setShowReal ( false );
+            applyVhost ( u, ni );
+        
+        } else if ( ni.isSet ( SHOWHOST ) && Handler.getUhmType ( ) > 0 ) {
+            /* Without umode +H the ircd shows the real host */
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 -H" );
+            u.setVhost ( null );
+            u.setShowReal ( true );
+        
+        } else if ( u.isShowReal ( ) ) {
+            resetHost ( u );    /* SHOWHOST was turned off: masked like everyone else again */
+        }
+    }
+
+    public static boolean resetHost ( User u ) {
+        if ( u == null ) {
+            return false;
+        }
+        if ( Handler.getUhmType ( ) > 0 ) {
+            /* Back to the mask of the ircd, never to the real host */
+            String masked = Handler.maskedHost ( u.getHost ( ), u.getIp ( ) );
+            if ( masked == null ) {
+                return false;
+            }
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSHOST "+u.getString ( NAME )+" "+masked );
+            ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 +H" );
+            u.setVhost ( null );
+            u.setShowReal ( false );
+            return true;
+        }
+        /* Without umode +H bahamut shows the user's own host again */
+        ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME )+" SVSMODE "+u.getString ( NAME )+" 0 -H" );
+        u.setVhost ( null );
+        return true;
+    }
+
     public static void fixIdentState ( User u )  {
         NickInfo ni;
 
-        if ( u == null ) {
+        if ( u == null || ! Handler.isDataLoaded ( ) ) {
+            /* Never unidentify anyone before we know the registered nicks */
             return;
         }
         
@@ -602,10 +812,14 @@ public class NickServ extends Service {
                 }
                 u.getModes().set ( IDENT, true );
                 Handler.getMemoServ().checkNick ( ni, u );
+                applyHost ( u, ni );
 
             } else {
                 ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSMODE "+u.getString ( NAME ) +" 0 -r" );
                 Handler.getGuestServ().addNick ( u, ni );      
+                if ( u.isShowReal ( ) ) {
+                    resetHost ( u );    /* not identified any more: no real host on request */
+                }
             }
 
         } else {
@@ -614,7 +828,7 @@ public class NickServ extends Service {
             Handler.getNickServ().adNick ( u ); /* let nickserv advertise registration */
             u.resetState ( );
         }
-     
+        applyStaffTag ( u );
     }
     
     /**
@@ -628,7 +842,7 @@ public class NickServ extends Service {
         ArrayList<ChanInfo> cList;
         ArrayList<ChanInfo> remList = new ArrayList<>();
         CSAcc acc = null;
-        HashString[] lists = { SOP, AOP, AKICK };
+        HashString[] lists = { SOP, AOP, HOP, VOP, AKICK };
         //HashMap<Integer,Integer> map = new HashMap ( );
         //map.put ( AOP, "DELAOP".hashCode() );
         //map.put ( SOP, "DELSOP".hashCode() );

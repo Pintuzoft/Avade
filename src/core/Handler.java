@@ -20,12 +20,12 @@ package core;
 import user.User;
 import server.ServSock;
 import server.Server;
-import monitor.Snoop;
 import channel.Chan;
 import channel.Topic;
 import chanserv.CSLogEvent;
 import chanserv.ChanInfo;
 import rootserv.RootServ;
+import operserv.CloneLimit;
 import operserv.OperServ;
 import memoserv.MemoServ;
 import chanserv.ChanServ;
@@ -62,7 +62,6 @@ public class Handler extends HashNumeric {
     private static Service                      global;
 
     private Services                            services;
-    private Snoop                               snoop;
     private Trigger                             trigger;
     private static HashMap<BigInteger, User>    uList = new HashMap<>();
 //    private static HashMap<BigInteger, ServicesID>    splitSIDs = new HashMap<>();
@@ -89,7 +88,8 @@ public class Handler extends HashNumeric {
     private String                          buf; 
     private Queue                           cmdQueue;
     private static boolean                  sanity;
-    private HashString bufhash;
+    private static int                      burstPings; /* PINGs seen since link, burst ends after the 2nd */
+    private static boolean                  syncFinished;
     
     /**
      *
@@ -97,7 +97,9 @@ public class Handler extends HashNumeric {
     public Handler ( )  { 
         db              = new Database ( );
         Handler.initServices ( );
-        Database.loadSIDs ( );
+        if ( Handler.isDataLoaded ( ) ) {
+            Database.loadSIDs ( );
+        }
  //       Handler.printSIDs();
         this.trigger    = new Trigger ( );
         this.services   = new Services ( );
@@ -128,15 +130,190 @@ public class Handler extends HashNumeric {
     /**
      *
      */
-    public static void unloadServices ( ) {
-        root = null;
-        oper = null;
-        nick = null;
-        chan = null;
-        memo = null;
-        global = null;
-        guest = null;
+    /**
+     * Forget everything we know about the network (users, channels and
+     * servers), used before we relink to the hub and get a new burst
+     */
+    private static void addServer ( Server server ) {
+        /* A SERVER line we could not parse has no name */
+        if ( server.getName ( ) != null ) {
+            sList.add ( server );
+            if ( syncFinished ) {
+                sendUhmSalt ( );    /* a server that linked later needs the salt too */
+                if ( oper != null ) {
+                    oper.sendJoinRequests ( server );
+                }
+            }
+        }
     }
+
+    /**
+     * @return true when all registered nicks and channels are loaded. Until
+     *         then services must not touch anyone's identification or access.
+     */
+    private static int uhmType = 0;
+    private static int uhmUmodeH = 0;
+
+    /* SVSUHM <type> [umodeH]: without the second value the ircd keeps what it had */
+    private static void setUhm ( String type, String umodeH ) {
+        try {
+            uhmType = Integer.parseInt ( type );
+            if ( umodeH != null ) {
+                uhmUmodeH = Integer.parseInt ( umodeH );
+            }
+        } catch ( NumberFormatException ex ) {
+            uhmType = 0;
+        }
+    }
+
+    /**
+     * What the ircd shows as the host of this user when the network masks
+     * hosts with the avade_uhm module (SVSUHM type 1).
+     * @param host
+     * @param ip
+     * @return the masked host, or null when hosts are not masked or we have no salt
+     */
+    public static String maskedHost ( String host, String ip ) {
+        String salt = Proc.getConf().getUhmSalt ( );
+        if ( uhmType != 1 || salt == null || host == null ) {
+            return null;
+        }
+        return HostMask.mask ( salt, Proc.getConf().getUhmPrefix ( ), host, ip );
+    }
+
+    /**
+     * Give the salt of the host-masking to the modules on all servers. The
+     * ircd passes the line on to every server, sending it again is harmless.
+     */
+    public static void sendUhmSalt ( ) {
+        String salt = Proc.getConf().getUhmSalt ( );
+        if ( salt != null && oper != null ) {
+            oper.sendCmd ( "MODULE CGLOBAL avade_uhm SALT "+salt+" "+Proc.getConf().getUhmPrefix ( ) );
+        }
+    }
+
+    /**
+     * @return how users may use umode +H (SVSUHM): 0 = not at all,
+     *         1 = set for everyone when they connect, 2 = allowed, not automatic
+     */
+    public static int getUhmUmodeH ( ) {
+        return uhmUmodeH;
+    }
+
+    /**
+     * The network setting changed (OperServ UHM), the ircd tells all servers but not us
+     * @param type
+     * @param umodeH
+     */
+    public static void setUhm ( int type, int umodeH ) {
+        uhmType     = type;
+        uhmUmodeH   = umodeH;
+    }
+
+    /**
+     * @return the user host-masking type of the network (SVSUHM), 0 = none.
+     *         When the ircd masks hosts we must never show a user's real host.
+     */
+    public static int getUhmType ( ) {
+        return uhmType;
+    }
+
+    public static boolean isDataLoaded ( ) {
+        return NickServ.isLoaded ( ) && ChanServ.isLoaded ( );
+    }
+
+    private static long lastLoadAttempt = 0;
+
+    /* Nicks or channels failed to load at start, try again every 30 seconds */
+    private void retryLoadIfNeeded ( ) {
+        if ( isDataLoaded ( ) || nick == null || chan == null ||
+             System.currentTimeMillis ( ) - lastLoadAttempt < 30000 ) {
+            return;
+        }
+        lastLoadAttempt = System.currentTimeMillis ( );
+        if ( ! NickServ.isLoaded ( ) ) {
+            nick.retryLoad ( );
+        }
+        if ( NickServ.isLoaded ( ) && ! ChanServ.isLoaded ( ) ) {
+            chan.retryLoad ( );
+        }
+        if ( isDataLoaded ( ) ) {
+            this.onDataLoaded ( );
+        }
+    }
+
+    /* Everything we held back while the data was missing */
+    private void onDataLoaded ( ) {
+        Proc.log ( "Nicks and channels loaded, checking all users" );
+        oper.sendGlobOp ( "Nicks and channels loaded from the database, checking all users" );
+        Database.loadSIDs ( );
+        /* The setting could not be read either, and the servers may still
+           send join requests from before */
+        OperServ.loadJoinRequests ( );
+        if ( isSynced ( ) ) {
+            oper.sendJoinRequests ( null );
+        }
+        for ( User u : new ArrayList<> ( uList.values ( ) ) ) {
+            ServicesID sid;
+            if ( u.getServiceStamp ( ) > 999 && ( sid = findSid ( u.getServiceStamp ( ) ) ) != null ) {
+                u.setSID ( sid );
+                sid.addUser ( u );
+            }
+            NickInfo ni = NickServ.findNick ( u.getName ( ) );
+            if ( ni != null && u.getModes().is ( IDENT ) ) {
+                u.getSID().add ( ni );
+            }
+            NickServ.fixIdentState ( u );
+        }
+        for ( Chan c : new ArrayList<> ( cList.values ( ) ) ) {
+            c.addCheckUsers ( );
+        }
+        if ( isSynced ( ) ) {
+            root.fixMaster ( );
+        }
+    }
+
+    public static void resetNetwork ( ) {
+        for ( User u : uList.values ( ) ) {
+            if ( u.getSID ( ) != null ) {
+                u.getSID().remUser ( );
+            }
+        }
+        uList.clear ( );
+        cList.clear ( );
+        sList.clear ( );
+        ChanServ.clearCheckUsers ( );
+        resetSync ( );
+    }
+
+    /**
+     * Introduce the loaded services on the network again after a relink.
+     * Registered nicks and channels stay loaded, reloading them would give
+     * new objects that identified users and services IDs don't point at.
+     */
+    public static void reintroduceServices ( ) {
+        Service[] services = { root, oper, nick, chan, memo, guest, global };
+        for ( Service s : services ) {
+            if ( s != null ) {
+                s.introduce ( );
+            }
+        }
+        /* Load anything that was never loaded */
+        Handler.initServices ( );
+    }
+
+    /* A service that is killed (a nick collision, a server KILL) comes back
+       at once, not first at the next relink */
+    private static void reintroduceIfService ( String target ) {
+        HashString name = new HashString ( target );
+        Service[] services = { root, oper, nick, chan, memo, guest, global };
+        for ( Service s : services ) {
+            if ( s != null && s.getName().is ( name ) ) {
+                s.introduce ( );
+            }
+        }
+    }
+
     
     /**
      *
@@ -177,8 +354,11 @@ public class Handler extends HashNumeric {
         User uBuf;
         NickInfo nBuf;
         this.data   = null; 
-        System.out.println ( read );
         this.data   = read.split ( " " ); 
+        /* Never echo private messages, they carry passwords for the services */
+        if ( this.data.length < 2 || ! this.data[1].equalsIgnoreCase ( "PRIVMSG" ) ) {
+            System.out.println ( read );
+        }
          
         try { 
             if ( this.data[0].isEmpty ( ) ) { 
@@ -198,7 +378,7 @@ public class Handler extends HashNumeric {
                     this.command = new HashString ( this.data[1] );
                     
                     if ( command.is(SERVER) ) {
-                        sList.add ( new Server ( this.data ) );
+                        addServer ( new Server ( this.data ) );
                         root.sendPanic();
                         
                     } else if ( command.is(SJOIN) ) {
@@ -215,32 +395,69 @@ public class Handler extends HashNumeric {
 
                     } else if ( command.is(OS) ) {
                         doOS ( this.data );
+
+                    } else if ( command.is(SVSUHM) ) {
+                        /* :server SVSUHM <type> [umodeH] */
+                        setUhm ( this.data.length > 2 ? this.data[2] : "0", this.data.length > 3 ? this.data[3] : null );
+
+                    } else if ( command.is(SQUIT) ) {
+                        /* :hub SQUIT leaf :reason */
+                        this.doSquit ( this.data[2] );
+
+                    } else if ( command.is(KILL) ) {
+                        /* :server KILL nick :reason (collisions, opers) */
+                        User u;
+                        if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
+                            deleteUser ( u );
+                        } else {
+                            reintroduceIfService ( this.data[2] );
+                        }
+
+                    } else if ( command.is(KICK) ) {
+                        doKick ( null );
+
+                    } else if ( command.is(MODE) && isChanName ( this.data[2] ) ) {
+                        doMode ( null );
                     }
                     
                 } else {
                     /* User stuff */ 
                     
-                    if ( this.data == null || this.data[2].isEmpty ( )  )  { 
-                        return; 
+                    if ( this.data.length < 3 || this.data[2].isEmpty ( )  )  { 
+                        return; /* nothing we use is that short (":nick AWAY" when coming back) */
                     }
                     
                     User user; 
                     user = findUser ( this.source );
-                     
-                    if ( oper.isIgnored ( user ) ) {
-                        return;
-                    }
                     
                     this.command = new HashString ( this.data[1] );
+                    
+                    if ( user == null && ! this.command.is(KILL) ) {
+                        return; /* not a user we know of */
+                    }
                      
                     if ( this.command.is(PRIVMSG) ) {
-                        doPrivmsg ( user );
+                        /* Ignored users are not answered, but everything else
+                           they do (quit, nick, modes..) must still be tracked */
+                        if ( ! oper.isIgnored ( user ) ) {
+                            doPrivmsg ( user );
+                        }
+                    
+                    } else if ( this.command.is(JOIN) ) {
+                        /* The only JOIN servers get: the user left all channels */
+                        if ( this.data[2].equals ( "0" ) ) {
+                            user.partAll ( );
+                        }
                     
                     } else if ( this.command.is(MODE) ) {
                         doMode ( user );
                     
                     } else if ( this.command.is(SJOIN) ) {
                         doSJoin ( user );
+                    
+                    } else if ( this.command.is(SJR) ) {
+                        /* :nick SJR <invited> #chan [:key], the user waits for our answer */
+                        chan.joinRequest ( user, this.data );
                     
                     } else if ( this.command.is(TOPIC) ) {
                         doTopic ( user, this.data );
@@ -255,10 +472,11 @@ public class Handler extends HashNumeric {
                         deleteUser ( user );
                     
                     } else if ( this.command.is(KILL) ) {
-                        //this.nullService ( user ); /* null if service */
                             User u;
                             if ( ( u = Handler.findUser ( this.data[2] ) ) != null ) {
                                 deleteUser ( u );
+                            } else {
+                                reintroduceIfService ( this.data[2] );
                             }
                     
                     } else if ( this.command.is(NICK) ) {
@@ -289,14 +507,18 @@ public class Handler extends HashNumeric {
                 this.command = new HashString ( this.data[0] );
                 
                 if ( this.command.is(SERVER) ) {
-                    sList.add ( new Server ( this.data ) );
+                    addServer ( new Server ( this.data ) );
                     root.sendPanic();
                 
                 } else if ( this.command.is(SJOIN) ) {
                     this.doChan ( false );
                 
                 } else if ( this.command.is(SQUIT) ) {
-                    this.doSquit ( );
+                    this.doSquit ( this.data[1] );
+
+                } else if ( this.command.is(SVSUHM) ) {
+                    /* SVSUHM <type> <umodeH>, sent by the hub when we link */
+                    setUhm ( this.data.length > 1 ? this.data[1] : "0", this.data.length > 2 ? this.data[2] : null );
                 
                 } else if ( this.command.is(SVINFO) ) {
                     this.doSVInfo ( );
@@ -327,6 +549,11 @@ public class Handler extends HashNumeric {
         Chan c;
         ChanInfo ci;
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
+            try {
+                c.sawStamp ( Long.parseLong ( this.data[2] ) );
+            } catch ( NumberFormatException ex ) {
+                /* keep the one we have */
+            }
             c.addUserList(data, 5);
         } else {
             c = new Chan ( this.data );
@@ -335,18 +562,30 @@ public class Handler extends HashNumeric {
             if ( check ) {
                 chan.checkSettings ( c );
             }
-            if ( (ci = ChanServ.findChan(c.getName())) != null ) {
-                chan.sendTopic(ci);
-                c.setTopic(ci.getTopic());
-            }
             
         }
         
     }
+
+    /**
+     * A channel that someone created through a join request (AJ). The ircd
+     * tells services nothing about it, so add it the way its SJOIN would.
+     * @param name
+     * @param stamp the TS we gave the channel
+     * @param user the one who joined, and got op
+     */
+    public static void newChan ( String name, long stamp, User user ) {
+        String[] sjoin = { ":"+Proc.getConf().get ( NAME ), "SJOIN", ""+stamp, name, "+", ":@"+user.getNameStr ( ) };
+        Chan c = new Chan ( sjoin );
+        c.addUserList ( sjoin, 5 );
+        cList.put ( c.getName().getCode(), c );
+        chan.checkSettings ( c );
+    }
     
     //     :Guest12203 PRIVMSG NickServ@services.sshd.biz :identify asd.
     private void doPrivmsg ( User user )  {
-        HashString service = new HashString ( this.data[2].substring ( 0, this.data[2].lastIndexOf ( "@" ) ) );
+        int at = this.data[2].lastIndexOf ( "@" );
+        HashString service = new HashString ( at > 0 ? this.data[2].substring ( 0, at ) : this.data[2] );
         
         if ( service.is(ROOTSERV) ) {
             if ( RootServ.isUp ( )  )  { 
@@ -396,8 +635,8 @@ public class Handler extends HashNumeric {
         }
     }
     
-    private void doSquit ( )  {
-        Server s = findServer ( this.data[1] );
+    private void doSquit ( String name )  {
+        Server s = findServer ( name );
         if ( s != null )  {
             if ( s.getLink ( )  != null )  {
                 s.getLink().remServer ( s ); /* remove server from leaf list on hub */
@@ -411,6 +650,29 @@ public class Handler extends HashNumeric {
     }
     private void doPing ( )  {
         this.pong ( this.data[1] );
+        /* bahamut ends the user/channel burst with a PING, then sends the
+           topic burst followed by another PING. After the 2nd we are synced */
+        if ( burstPings < 2 ) {
+            burstPings++;
+            if ( burstPings == 2 ) {
+                this.finishSync ( );
+            }
+        }
+    }
+
+    /**
+     * Called when we (re)link to the hub
+     */
+    public static void resetSync ( ) {
+        burstPings = 0;
+        syncFinished = false;
+    }
+
+    /**
+     * @return true when the hub has finished bursting users, channels and topics
+     */
+    public static boolean isSynced ( ) {
+        return burstPings >= 2;
     }
     
     
@@ -430,6 +692,9 @@ public class Handler extends HashNumeric {
         ServicesID sid = null;
         //NICK DreamHealer 1 1532897366 +oiCra fredde DreamHealer.ircop testnet.avade.net 965942 167772447 :a figment of your own imagination
         try {
+            /* The services ID (servicestamp) we gave the user with SVSMODE +d,
+               it lets us restore what the user was identified to after a
+               split or a services restart */
             long serviceID = Long.parseLong ( this.data[8] );
             if ( serviceID > 999 ) {
                 u.setSID ( Handler.findSid ( serviceID ) );
@@ -441,13 +706,17 @@ public class Handler extends HashNumeric {
         
         if ( u.getSID() == null ) {
             u.setSID ( new ServicesID ( ) );
+            Handler.newSid ( u.getSID() );
         }  
+        u.getSID().addUser ( u );
         
-        NickInfo ni = NickServ.findNick ( u.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( u.getName ( ) );
         
-        if ( ni != null && u.getModes().is ( IDENT ) ) {
+        /* Only services can set +r, so trust it for the current nick */
+        if ( ni != null && ( u.getModes().is ( IDENT ) || u.getSID().isIdentified ( ni ) ) ) {
             u.getSID().add ( ni );
-        } else {
+        } else if ( Handler.isDataLoaded ( ) ) {
+            /* (without the registered nicks we can't tell, leave +r alone) */
             Handler.getNickServ().sendCmd ( "SVSMODE "+u.getString ( NAME )+" 0 -r" );
             u.getModes().set ( IDENT, false );
         }
@@ -471,6 +740,10 @@ public class Handler extends HashNumeric {
         if ( OperServ.isWhiteListed(user.getMask()) ) {
             return;
         }
+        if ( user.getHostInfo().isUnknown ( ) ) {
+            /* No IP from the ircd, counting would lump all such users together */
+            return;
+        }
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             u = entry.getValue();
             if ( u.ipMatch ( user.getHostInfo().getIpHash() ) ) {
@@ -485,6 +758,19 @@ public class Handler extends HashNumeric {
                 }
                 ++rangeCount;
             }
+        }
+        /* A clone limit set with OperServ CLONE replaces the trigger for that
+           ip/range, and like in the ircd a host limit exempts from the site */
+        CloneLimit ipLimit = OperServ.findCloneLimit ( user.getIp ( ) );
+        CloneLimit rangeLimit = OperServ.findCloneLimit ( user.getHostInfo().getRange ( ) );
+        if ( ipLimit != null ) {
+            rangeCount = 0;
+            if ( ipCount <= ipLimit.getLimit ( ) ) {
+                ipCount = 0;
+            }
+        }
+        if ( rangeLimit != null && rangeCount <= rangeLimit.getLimit ( ) ) {
+            rangeCount = 0;
         }
         String reason;
         if ( Trigger.isWarn() ) {
@@ -524,14 +810,14 @@ public class Handler extends HashNumeric {
                 HashString mask;
                 String expire = Handler.expireToDateString ( stamp, "30m" );
                 id = new HashString ( ""+System.nanoTime() );
-                mask = new HashString ( "*!*@"+user.getIp() );
+                mask = new HashString ( "*!*@"+user.getHostInfo().getRange() );
                 reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
                 ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
                 percent = String.format("%.02f", (float) rangeCount / Handler.getUserList().size() * 100 );
                 if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
                     OperServ.addServicesBan ( ban );
                     Handler.getOperServ().sendServicesBan ( ban );
-                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
+                    oper.sendGlobOp ( "AKILL: *!*@"+user.getHostInfo().getRange()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
                 }
             }
         } else if ( Trigger.getAction().is(KILL) ) {
@@ -554,99 +840,6 @@ public class Handler extends HashNumeric {
         
         
         
-/*        if ( action.is(AKILL) ) {
-                String stamp = dateFormat.format ( new Date ( ) );
-                String percent;
-                boolean foundOperMatch = false;
-                HashString id;
-                HashString mask;
-                String expire = Handler.expireToDateString ( stamp, "30m" );
-                if ( ipCount > Trigger.getActionIP ( ) ) {
-                    reason = "Cloning. Too many clients found from this IP. 30 min ban.";
-                    id = new HashString ( ""+System.nanoTime() );
-                    mask = new HashString ( "*!*@"+user.getIp() );
-
-                    
-                    ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
-                    percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
-                    if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                        Handler.getOperServ().addServicesBan ( ban );
-                        Handler.getOperServ().sendServicesBan ( ban );
-                        oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
-                    }
-                } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
-                    if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
-                         ipCount % 10 == 0 ) {
-                        oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
-                    }
-                }
-                if ( ipCount > Trigger.getActionRange() ) {
-                    id = new HashString ( ""+System.nanoTime() );
-                    mask = new HashString ( "*!*@"+user.getIp() );
-                    reason = "Cloning. Too many clients found from this IP-range. 30 min ban.";
-                    ServicesBan ban = new ServicesBan ( AKILL, id, false, mask, reason, "OperServ", null, expire );
-                    percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
-                    if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                        Handler.getOperServ().addServicesBan ( ban );
-                        Handler.getOperServ().sendServicesBan ( ban );
-                        oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
-                    }
-                } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
-                    if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
-                         ipCount % 10 == 0 ) {
-                        oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
-                    }
-                }
-        
-        } else if ( action.is(KILL) ) {
-                if ( ipCount > Trigger.getActionIP() ) {
-                    reason = "Cloning. Too many clients found from this IP.";
-                    oper.sendGlobOp ( "KILL: "+user.getFullMask()+" for cloning." );
-                    oper.sendRaw ( "KILL "+user.getName()+" :"+reason );
-                    Handler.deleteUser ( user );
-                }
-        }
-         
-  /*      if ( Trigger.getAction() == AKILL && ipCount > Trigger.getActionIP() ) {
-                String stamp = dateFormat.format ( new Date ( ) );
-                String reason = "Cloning. Too many clients found from this IP. 30 min ban.";
-                String percent;
-                boolean foundOperMatch = false;
-                String expire = Handler.expireToDateString ( stamp, "30m" );
-                ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getIp(), reason, "OperServ", null, expire );
-                percent = String.format("%.02f", (float) ipCount / Handler.getUserList().size() * 100 );
-                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                    Handler.getOperServ().addServicesBan ( ban );
-                    Handler.getOperServ().sendServicesBan ( ban );
-                    oper.sendGlobOp ( "AKILL: *!*@"+user.getIp()+" placed for cloning. Affecting "+ipCount+" users ["+percent+"%]" );
-                }
-        } else if ( Trigger.isWarn() && ipCount > Trigger.getWarnIP() ) {
-            if ( ipCount == ( Trigger.getWarnIP() + 1 ) ||
-                 ipCount % 10 == 0 ) {
-                oper.sendGlobOp ( "Warning! possible clones: "+ipCount+" clients from ip: *!*@"+user.getIp() );
-            }
-        }
-        
-        if ( Trigger.getAction() == AKILL && rangeCount > Trigger.getActionRange()) {
-                String stamp = dateFormat.format ( new Date ( ) );
-                String reason = "Cloning. Too many clients found from this IPRANGE. 30 min ban.";
-                String percent;
-                boolean foundOperMatch = false;
-                String expire = Handler.expireToDateString ( stamp, "30m" );
-                ServicesBan ban = new ServicesBan ( AKILL, ""+System.nanoTime(), false, "*!*@"+user.getHostInfo().getRange(), reason, "OperServ", null, expire );
-                percent = String.format("%.02f", (float) rangeCount / Handler.getUserList().size() * 100 );
-                if ( ! OperServ.isWhiteListed ( ban.getMask() ) ) {
-                    Handler.getOperServ().addServicesBan ( ban );
-                    Handler.getOperServ().sendServicesBan ( ban );
-                    oper.sendGlobOp ( "AKILL: *!*@"+user.getHostInfo().getRange()+" placed for cloning. Affecting "+rangeCount+" users ["+percent+"%]" );
-                }
-        } else if ( rangeCount > Trigger.getWarnRange() ) {
-            if ( rangeCount == ( Trigger.getWarnRange() + 1 ) ||
-                 rangeCount % 10 == 0 ) {
-                oper.sendGlobOp ( "Warning! possible clones: "+rangeCount+" clients from range: *!*@"+user.getHostInfo().getRange() );
-            }
-        }
-    */    
         
     }
     
@@ -664,7 +857,15 @@ public class Handler extends HashNumeric {
             user.setName ( this.data[2] );
             uList.put ( user.getName().getCode(), user );
         }
-        ni = NickServ.findNick ( user.getString ( NAME )  );
+        if ( this.data.length >= 4 ) {
+            /* :old NICK new :<ts> */
+            try {
+                user.setNickStamp ( Long.parseLong ( this.data[3].startsWith ( ":" ) ? this.data[3].substring ( 1 ) : this.data[3] ) );
+            } catch ( NumberFormatException ex ) {
+                /* keep the one we have */
+            }
+        }
+        ni = NickServ.findNick ( user.getName ( )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );
         for ( Chan c : user.getChans ( ) ) {
@@ -682,13 +883,14 @@ public class Handler extends HashNumeric {
             this.doChan ( true );
         }
         
-        if ( (c = findChan( this.data[3] )) != null ) {
-            c.addUser ( USER, user );
-            user.addChan ( c );
-            if ( (ci = ChanServ.findChan(c.getName())) != null ) {
-                chan.sendTopic(ci);
-            }
+        if ( user == null || (c = findChan( this.data[3] )) == null ) {
+            return;
         }
+        if ( ! c.nickIsPresent ( user.getName ( ) ) ) {
+            c.countJoin ( );
+        }
+        c.addUser ( USER, user );
+        user.addChan ( c );
         if ( ! c.isSaJoin() ) {
             ChanServ.addCheckUser ( c, user );
         } else {
@@ -726,7 +928,7 @@ public class Handler extends HashNumeric {
         if ( Handler.isChanName ( this.data[2] ) ) {
             Chan c = findChan ( this.data[2] );
             if ( c != null ) {
-                ChanInfo ci = ChanServ.findChan ( c.getString ( NAME ) );
+                ChanInfo ci = ChanServ.findChan ( c.getName ( ) );
                 c.getModes().set ( MODE, this.data );
                 c.chMode ( this.data );
                 Handler.getChanServ().checkModes ( c, ci );
@@ -748,20 +950,27 @@ public class Handler extends HashNumeric {
     private void doGlobOps ( String[] data ) {
         // :testnet.avade.net GLOBOPS :DreamHealer used SAJOIN (#fredde +b)
         //                  0       1            2    3      4       5+
-        System.out.println("debug: doGlobOps()");
         CSLogEvent log;
+        /* Only "<nick> used SAJOIN/SAMODE (#chan ...)" globops are of interest */
+        if ( this.data.length < 7 || ! this.data[3].equals ( "used" ) ) {
+            return;
+        }
         User user = Handler.findUser ( this.data[2].substring ( 1 ) );
         HashString command = new HashString ( this.data[4] );
-        Chan chan = Handler.findChan(this.data[5].substring ( 1 ));
+        Chan chan = Handler.findChan ( this.data[5].replace ( "(", "" ).replace ( ")", "" ) );
         String string = Handler.cutArrayIntoString ( this.data, 6 ).replace(")", "");
+        String oper = ( user != null && user.getOper() != null ? user.getOper().getNameStr() : this.data[2].substring ( 1 ) );
         
+        if ( chan == null ) {
+            return;
+        }
         if ( command.is(SAJOIN) ) {
-            log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, user.getOper().getNameStr() );
+            log = new CSLogEvent ( chan.getString(NAME), SAJOIN, string, oper );
             ChanServ.addLog ( log );
             chan.toggleSaJoin();
         
         } else if ( command.is(SAMODE) ) {
-            log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, user.getOper().getNameStr() );
+            log = new CSLogEvent ( chan.getString(NAME), SAMODE, string, oper );
             ChanServ.addLog ( log );
         }
          
@@ -778,7 +987,7 @@ public class Handler extends HashNumeric {
      */
 
     public static String cutArrayIntoString ( String[] data, int pos ) {
-        if ( data == null || data.length < pos ) {
+        if ( data == null || data.length <= pos ) {
             return null;
         }
         String buf = String.join ( " ", data );
@@ -957,9 +1166,16 @@ public class Handler extends HashNumeric {
      */
     public static void deleteUser ( User user )  {
         try {
-            user.getSID().remUser ( ); 
+            if ( user.getSID() != null ) {
+                user.getSID().remUser ( ); 
+            }
             user.partAll ( );
             user.quitServer ( );
+        } catch ( Exception e )  { 
+            Proc.log ( Handler.class.getName ( ) , e );
+        }
+        try {
+            /* Always forget the user, even if the cleanup above failed */
             removeUser ( user );
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -980,29 +1196,6 @@ public class Handler extends HashNumeric {
 
     /**
      *
-     * @param u
-     */
-    public void doRecursiveUList ( User u )  { 
-        try {
-            Server sHub = findServer ( Proc.getConf().get ( HUBNAME ) );
-            if ( sHub != null )  {
-                sHub.recursiveUserList ( u, "" );
-            }
-        } catch ( Exception e )  { 
-            Proc.log ( Handler.class.getName ( ) , e );
-        }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public static Database getDB ( )  {
-        return db; 
-    }
-
-    /**
-     *
      * @return
      */
     public static SimpleDateFormat getSdf ( ) { 
@@ -1017,7 +1210,7 @@ public class Handler extends HashNumeric {
     public static ServicesID findSid ( long id )  {
         HashString target = new HashString ( ""+id );
         try {
-            ServicesID sid = sidList.get ( target );
+            ServicesID sid = sidList.get ( target.getCode() );
             if ( sid != null ) {
                 return sid;
             }
@@ -1036,6 +1229,8 @@ public class Handler extends HashNumeric {
 
     public int runSecMaintenance() {
         int todoAmount = 0;
+        this.retryLoadIfNeeded ( );
+        this.cmdQueue.maintenance ( );  /* throttles itself to every 5 seconds */
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             entry.getValue().secMaintenence ( );
         }
@@ -1089,7 +1284,6 @@ public class Handler extends HashNumeric {
             todoAmount += NickServ.maintenance ( );
             todoAmount += ChanServ.maintenance ( );
             this.sidCleaner ( );
-            this.cmdQueue.maintenance ( );
         
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -1120,7 +1314,7 @@ public class Handler extends HashNumeric {
             for ( User u : uList )  { 
                 System.out.println ( "DEBUG: checkNiStates ( "+u.getString ( User.NAME ) +" );" );
      
-                if (  ( ni = NickServ.findNick ( u.getString ( User.NAME )  )  )  != null && !u.isIdented ( ni )  )  {     
+                if (  ( ni = NickServ.findNick ( u.getName ( )  )  )  != null && !u.isIdented ( ni )  )  {     
                     System.out.println ( "DEBUG: checkNiStates ( "+u.getString ( User.NAME ) +"/not idented );" );
 
                     this.nick.warnIdent ( u ); /* send warning */
@@ -1142,16 +1336,33 @@ public class Handler extends HashNumeric {
 //    }
 
     
+    /* A services ID that nobody has used for a day is forgotten, and its
+       row in the database goes with it. The table got a row per identified
+       connection, all of them were read at every start, and nothing ever
+       removed one */
     private void sidCleaner ( )  {
         try {
-            ArrayList<ServicesID> buf2 = new ArrayList<> ( );
+            ArrayList<ServicesID> expired = new ArrayList<> ( );
+            ArrayList<ServicesID> rows = new ArrayList<> ( );
             for ( ServicesID s : sidList.values() )  {
                 if ( s.hasExpired ( )  )  {
-                    buf2.add ( s );
+                    expired.add ( s );
+                    if ( s.isStored ( ) ) {
+                        rows.add ( s );
+                    }
+                    if ( rows.size ( ) >= 500 ) {
+                        break;      /* the rest next minute, never one long statement */
+                    }
                 }
             }
-            for ( ServicesID r : buf2 )  {
+            if ( ! Database.deleteServicesIDs ( rows ) ) {
+                /* The database is down. Forgotten here they would never be
+                   removed there, so they stay until it is back */
+                expired.removeAll ( rows );
+            }
+            for ( ServicesID r : expired )  {
                 sidList.remove ( r.getCode() );
+                updServicesID.remove ( r );
             }
         } catch ( Exception e )  { 
             Proc.log ( Handler.class.getName ( ) , e );
@@ -1166,6 +1377,7 @@ public class Handler extends HashNumeric {
         Topic topic = new Topic ( topicData, data[3], Long.parseLong ( data[4] )  );
         if ( c != null )  {
             c.setTopic ( topic );
+            chan.checkServerTopic ( c );
         }  
     }
     private void doTopic ( User user, String[] data )  {
@@ -1173,7 +1385,7 @@ public class Handler extends HashNumeric {
         //     0   1      2      3                             4        5  =6
         Chan c = findChan ( data[2] );
         String topicData = Handler.cutArrayIntoString ( data, 5 );
-        Topic topic = new Topic ( topicData, user.getString ( FULLMASK ), Long.parseLong ( data[4] )  );
+        Topic topic = new Topic ( topicData, data[3], Long.parseLong ( data[4] )  );
         if ( c != null )  {
             c.setTopic ( topic );
         }
@@ -1280,9 +1492,9 @@ public class Handler extends HashNumeric {
         User user = null;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             user = entry.getValue();
-            if ( StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask.getString() )         ||
-                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask.getString() )     ||
-                 StringMatch.maskWild ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask.getString() )  )  {
+            if ( StringMatch.matches ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( HOST ) , mask.getString() )         ||
+                 StringMatch.matches ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( REALHOST ) , mask.getString() )     ||
+                 StringMatch.matches ( user.getName()+"!"+user.getString(USER)+"@"+user.getString ( IP ) , mask.getString() )  )  {
                  ul.add ( user );
             }  
         } 
@@ -1324,7 +1536,7 @@ public class Handler extends HashNumeric {
         User user = null;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             user = entry.getValue();
-            if ( StringMatch.nickWild ( user.getString ( NAME ), nick ) ) {
+            if ( StringMatch.matches ( user.getString ( NAME ), nick ) ) {
                 ul.add ( user );
             }
         }
@@ -1341,56 +1553,13 @@ public class Handler extends HashNumeric {
         User user = null;
         for ( HashMap.Entry<BigInteger,User> entry : uList.entrySet() ) {
             user = entry.getValue();
-            if ( StringMatch.wild ( user.getString ( REALNAME ), gcos ) ) {
+            if ( StringMatch.matches ( user.getString ( REALNAME ), gcos ) ) {
                 ul.add ( user );
             }
         }
         return ul;
     }
-        
-    /**
-     *
-     * @param data
-     * @return
-     */
-    public static String expireToTime ( String data )  {
-        String          strBuf;
-        String          state;
-        String          timeUnit;
-        int             multiply=1;
-        int             amount=0;
-         
-        /* take all data except last char */
-        strBuf = data.substring ( 0, data.length ( ) - 1 ); 
-          
-        /* Try the value as an integer */
-        try { 
-            amount = Integer.parseInt ( strBuf );
-        } catch ( NumberFormatException e )  {
-            return "";
-        }
-        
-        /* take only the last char */
-        HashString ch = new HashString ( String.valueOf(data.charAt(data.length()-1)) );
-         
-        if ( ch.is(m) ) {
-            timeUnit = "MINUTE";
-        
-        } else if ( ch.is(h) ) {
-            timeUnit = "HOUR";
-        
-        } else if ( ch.is(d) ) {
-            timeUnit = "DAY";
-        
-        } else if ( ch.is(y) ) {
-            timeUnit = "YEAR";
-        
-        } else {
-            return "INTERVAL 0 DAYS";
-        }
-         
-        return  "INTERVAL "+( amount * multiply )+" "+timeUnit;
-    }
+
  
     /**
      *
@@ -1399,36 +1568,52 @@ public class Handler extends HashNumeric {
      * @return
      */
     public static Date expireToDate ( Date date, String data ) {
-        String strBuf;
-        Date expire = new Date();
-        int ms = 60*1000;
-        int amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Proc.log("expireToDate: date:"+date);
-        Proc.log("expireToDate: data:"+data);
-        if ( data == null ) {
-            data = "30";
-
-        } else if ( data.contains("-") ) {
+        if ( data != null && data.contains("-") ) {
+            /* Already a date */
             try {
-                expire = dateFormat.parse ( data );
+                return dateFormat.parse ( data );
             } catch ( ParseException ex ) {
                 Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
                 return null;
             }
-            return expire;
         }
-        
-        strBuf = data.substring ( 0, data.length ( ) - 1 );
-        Proc.log("expireToDate: strBuf = "+strBuf);
-        try {
-            amount = Integer.parseInt ( strBuf );            
-        } catch ( NumberFormatException ex ) {
+        long seconds = ( data == null ? 30 * 60 : parseDuration ( data ) );
+        if ( seconds < 0 ) {
             return null;
         }
-       
-        expire.setTime ( expire.getTime() + ( amount*ms ) );
-        return expire;
+        return new Date ( ( date != null ? date.getTime() : System.currentTimeMillis() ) + seconds * 1000L );
+    }
+
+    /**
+     * Parse a duration: a plain number is minutes, or a number followed by
+     * m (minutes), h (hours), d (days), w (weeks) or y (years)
+     * @param data
+     * @return seconds, or -1 if it is not a valid duration
+     */
+    public static long parseDuration ( String data ) {
+        if ( data == null || ! data.matches ( "[0-9]{1,9}[mhdwyMHDWY]?" ) ) {
+            return -1;
+        }
+        char unit = Character.toLowerCase ( data.charAt ( data.length() - 1 ) );
+        long amount;
+        long multiply;
+        if ( Character.isDigit ( unit ) ) {
+            amount = Long.parseLong ( data );
+            multiply = 60;
+        } else {
+            amount = Long.parseLong ( data.substring ( 0, data.length() - 1 ) );
+            switch ( unit ) {
+                case 'h' : multiply = 60L*60;          break;
+                case 'd' : multiply = 60L*60*24;       break;
+                case 'w' : multiply = 60L*60*24*7;     break;
+                case 'y' : multiply = 60L*60*24*365;   break;
+                default  : multiply = 60;              break;
+            }
+        }
+        long seconds = amount * multiply;
+        /* More than ten years is a typo, and the date would not fit the database */
+        return seconds > 10L*365*24*60*60 ? -1 : seconds;
     }
     
     /**
@@ -1438,21 +1623,7 @@ public class Handler extends HashNumeric {
      * @return
      */
     public static String expireToDateString ( String datetime, String data ) {
-        int ms = 60*1000;
-        int amount;
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        Date date;
-        try {
-            date = dateFormat.parse ( datetime );
-            amount = Integer.parseInt ( data );            
-        } catch ( NumberFormatException | ParseException ex ) {
-            Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-        
-        date.setTime ( date.getTime() + ( amount*ms ) );
-        return dateFormat.format ( date );
+        return expireWithCharToDateString ( datetime, data );
     }
     
     /**
@@ -1462,52 +1633,39 @@ public class Handler extends HashNumeric {
      * @return
      */
     public static String expireWithCharToDateString ( String datetime, String data ) {
-        String          strBuf;
-        String          state;
-        int             multiply;
-        int             amount;
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date;
-        
         try {
             date = dateFormat.parse ( datetime );
         } catch (ParseException ex) {
             Logger.getLogger(Handler.class.getName()).log(Level.SEVERE, null, ex);
             return null;
         }
-        if ( StringMatch.isInt ( data ) ) {
-            state = "m";
-            amount = Integer.parseInt ( data );
-            
-        } else {
-            strBuf = data.substring ( 0, data.length() - 1 );
-            amount = Integer.parseInt ( strBuf );
-            state = ""+data.charAt ( data.length() - 1 );
+        long seconds = parseDuration ( data );
+        if ( seconds < 0 ) {
+            return null;
         }
-        
-        HashString ch = new HashString ( state );
-        
-        if ( ch.is(m) ) {
-            multiply = 60;
-        
-        } else if ( ch.is(h) ) {
-            multiply = 60*60;
-        
-        } else if ( ch.is(d) ) {
-            multiply = 60*60*24;
-        
-        } else {
-            multiply = 60;
-        }
-         
-        date.setTime ( date.getTime() + ( amount * multiply * 1000 ) );
+        date.setTime ( date.getTime() + seconds * 1000L );
         return dateFormat.format ( date );
     }
     
     private void doFinishSync(String[] data) {
+        this.finishSync ( );
+    }
+
+    /* Run once per link when the burst is done. Hubs send LUSERSLOCK, but
+       every server ends the burst with the 2nd PING, so use whichever comes first */
+    private void finishSync ( ) {
+        if ( syncFinished ) {
+            return;
+        }
+        syncFinished = true;
         /* Fix Master after we synched */ 
         root.fixMaster ( );
         oper.sendSpamFilter ( );
+        oper.sendCloneLimits ( );
+        oper.sendJoinRequests ( null );
+        sendUhmSalt ( );
     }
 
     /**
@@ -1526,41 +1684,10 @@ public class Handler extends HashNumeric {
         return sanity;
     }
 
-    private void nullService ( User user ) {
-        HashString name = user.getName();
-        
-        if ( name.is(ROOTSERV) ) {
-            root = null;
-        
-        } else if ( name.is(OPERSERV) ) {
-            oper = null;
-        
-        } else if ( name.is(NICKSERV) ) {
-            nick = null;
-        
-        } else if ( name.is(CHANSERV) ) {
-            chan = null;
-        
-        } else if ( name.is(MEMOSERV) ) {
-            memo = null;
-        
-        } else if ( name.is(GUESTSERV) ) {
-            guest = null;
-        
-        } else if ( name.is(GLOBAL) ) {
-            global = null;
-        }
-         
-    }
-
     private void doError ( ) {
-        HashString sub1 = new HashString ( this.data[1].replace(":", "") );
-        HashString sub2 = new HashString ( this.data[2].replace(":", "") );
-        
-        if ( sub1 == CLOSING && 
-             sub2 == LINK ) {
-            this.reInitServices ( );
-        }
+        /* The hub only sends ERROR right before it closes the link */
+        Proc.log ( "Hub sent: "+String.join ( " ", this.data ) );
+        this.reInitServices ( );
     }
 
     /**

@@ -39,10 +39,10 @@ public class Topic {
      * @param stamp
      */
     public Topic ( String topic, String setter, long stamp )  {
-        this.text = topic.replace ("^:", "");
-        this.setter = setter;
+        this.text = stripColon ( topic );
+        this.setter = ( setter != null ? setter : "" );
         this.stamp = stamp;
-        this.timeStr = dateFormat.format ( new Date ( ) );
+        this.timeStr = dateFormat.format ( new Date ( stamp * 1000L ) );
     }
 
     /**
@@ -53,14 +53,49 @@ public class Topic {
      * @param timeStr
      */
     public Topic ( String topic, String setter, long stamp, String timeStr )  {
-        if ( topic != null ) {
-            this.text = topic.replace ("^:", "" );
-        }
-        this.setter = setter;
+        this.text = stripColon ( topic );
+        this.setter = ( setter != null ? setter : "" );
         this.stamp = stamp;
-        if ( timeStr != null ) {
-            this.timeStr = timeStr.substring (0,19 );
+        if ( timeStr != null && timeStr.length() >= 19 ) {
+            this.timeStr = timeStr.substring ( 0, 19 );
+        } else {
+            this.timeStr = dateFormat.format ( new Date ( stamp * 1000L ) );
         }
+    }
+
+    /* Remove the single leading ':' of an IRC trailing parameter */
+    private static String stripColon ( String topic ) {
+        if ( topic == null ) {
+            return "";
+        }
+        return topic.startsWith ( ":" ) ? topic.substring ( 1 ) : topic;
+    }
+
+    /**
+     * @return true if the topic has any text
+     */
+    public boolean hasText ( ) {
+        return ! this.text.isEmpty ( );
+    }
+
+    /**
+     * Versions before 1.2609 sent "TOPIC #chan null 0 :null" for channels
+     * without a stored topic, the network and the topic log can still hold it
+     * @return true if this is such a topic
+     */
+    public boolean isJunk ( ) {
+        return "null".equals ( this.text ) && "null".equals ( this.setter );
+    }
+
+    /**
+     * @param topic
+     * @return true if text, setter and stamp are the same
+     */
+    public boolean isSame ( Topic topic ) {
+        return topic != null &&
+               this.text.equals ( topic.text ) &&
+               this.setter.equals ( topic.setter ) &&
+               this.stamp == topic.stamp;
     }
  
     /**
@@ -93,23 +128,8 @@ public class Topic {
      */
     public String getTimeStr ( ) {
         return this.timeStr;
-    } 
+    }
 
-    /**
-     *
-     * @param topic
-     */
-    public void setText ( String topic ) { 
-        this.text = topic.replace ("^:", "");
-    } 
-    
-    /**
-     *
-     * @param setter
-     */
-    public void setSetter ( String setter ) { 
-        this.setter = setter;
-    } 
     
     /**
      *

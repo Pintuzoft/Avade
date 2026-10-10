@@ -24,13 +24,22 @@ import operserv.Oper;
 import user.User;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.Timer;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  *
  * @author DreamHealer
  */
 public class ServicesID extends HashNumeric {
+    /* How long an ID that nobody uses is remembered, in seconds. One with
+       a nick or a channel identified is kept three days: the users of a
+       server that was split away, also over a weekend, are still identified
+       when it comes back, and are not all sent to guest nicks at once. One
+       with nothing to give back is kept a day, as before. (The tests start
+       services with -Davade.sidexpire, these times are too long to wait for.) */
+    private static final long       EXPIRE       = Long.getLong ( "avade.sidexpire", 3*24*60*60 );
+    private static final long       EXPIRE_EMPTY = Math.min ( EXPIRE, 24*60*60 );
+    
     private long                    id;
     private BigInteger              code;
     private ArrayList<NickInfo>     niList;    /* List of identified nicks from this serviceid */
@@ -38,8 +47,9 @@ public class ServicesID extends HashNumeric {
     private Random                  rand;
     private User                    user;      /* the owner of this servicesid */
     private long                    stamp;     /* timestamp  ( seconds )  lastseen */
-    private Timer                   timer;
-    private Timer                   adTimer;
+    private boolean                 stored;    /* has a row in the servicesid table */
+    private ScheduledFuture<?>      timer;      /* guest nick change */
+    private ScheduledFuture<?>      adTimer;    /* identify reminder */
     
     /**
      *
@@ -49,7 +59,7 @@ public class ServicesID extends HashNumeric {
         this.id         = this.getUniqueID ( );
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
-        this.stamp      = System.currentTimeMillis();
+        this.stamp      = System.currentTimeMillis() / 1000;
         HashString buf  = new HashString ( ""+this.id );
         this.code       = buf.getCode ( );
     }
@@ -61,9 +71,10 @@ public class ServicesID extends HashNumeric {
     public ServicesID ( long id )  {
         this.rand       = new Random ( );
         this.id         = id;
+        this.stored     = true;     /* this one is read from the database */
         this.niList     = new ArrayList<>( );
         this.ciList     = new ArrayList<>( );
-        this.stamp      = System.currentTimeMillis();
+        this.stamp      = System.currentTimeMillis() / 1000;
         HashString buf  = new HashString ( ""+this.id );
         this.code       = buf.getCode ( );
     }
@@ -106,11 +117,25 @@ public class ServicesID extends HashNumeric {
      * @return
      */
     public boolean hasExpired ( )  {
-        long dayAgo =  ( long ) ( System.currentTimeMillis ( ) /1000 ) - ( 60*60*24 );
-        if ( this.user == null && this.stamp < dayAgo ) {
-            return true;
+        if ( this.user != null ) {
+            return false;
         }
-        return false; 
+        long keep = ( this.niList.isEmpty ( ) && this.ciList.isEmpty ( ) ? EXPIRE_EMPTY : EXPIRE );
+        return this.stamp < System.currentTimeMillis ( ) / 1000 - keep;
+    }
+
+    /**
+     * @return true when this ID has a row in the database
+     */
+    public boolean isStored ( ) {
+        return this.stored;
+    }
+
+    /**
+     * @param stored
+     */
+    public void setStored ( boolean stored ) {
+        this.stored = stored;
     }
     
     /**
@@ -159,12 +184,10 @@ public class ServicesID extends HashNumeric {
         }
         for ( ChanInfo chan : this.ciList )  {
             if ( chan.is(ci) ) {
-                this.printSID ( );
                 return;
             }
         }
         this.ciList.add ( ci );
-        this.printSID ( );
     }
     
     /**
@@ -253,22 +276,8 @@ public class ServicesID extends HashNumeric {
      */
     public void setCiList ( ArrayList<ChanInfo> ciList ) { 
         this.ciList = ciList;
-    }  
-
-    /**
-     *
-     */
-    public void printSID ( )  {
-        System.out.println ( "ServicesID ( "+this.id+" )  {" );
-        System.out.println ( "    niList ( "+this.niList.size ( ) +" ) " );
-        System.out.println ( "    ciList ( "+this.ciList.size ( ) +" ) " );
-        if ( this.user != null )  {
-            System.out.println ( "    User ( "+user.getString ( NAME ) +" ) " );
-        } else {
-            //System.out.println ( "    User ( NULL ) " );
-        }
-        System.out.println ( "}" );
     }
+
     
     /**
      *
@@ -294,7 +303,8 @@ public class ServicesID extends HashNumeric {
      *
      * @param timer
      */
-    public void addTimer ( Timer timer ) { 
+    public void addTimer ( ScheduledFuture<?> timer ) { 
+        Scheduler.cancel ( this.timer );
         this.timer = timer;
     }
 
@@ -302,7 +312,8 @@ public class ServicesID extends HashNumeric {
      *
      * @param timer
      */
-    public void addAdTimer ( Timer timer ) { 
+    public void addAdTimer ( ScheduledFuture<?> timer ) { 
+        Scheduler.cancel ( this.adTimer );
         this.adTimer = timer;
     }
      
@@ -310,13 +321,10 @@ public class ServicesID extends HashNumeric {
      *
      */
     public void resetTimers ( ) {
-        if ( this.timer != null ) {
-            this.timer.cancel ( );
-        }
-        if ( this.adTimer != null ) {
-            this.adTimer.cancel ( );
-        }
+        Scheduler.cancel ( this.timer );
+        Scheduler.cancel ( this.adTimer );
         this.timer = null;
+        this.adTimer = null;
     }
 
     User getUser ( ) { 
@@ -327,12 +335,16 @@ public class ServicesID extends HashNumeric {
      *
      * @return
      */
+    private static int operAccess ( NickInfo ni ) {
+        return ( ni.getOper ( ) != null ? ni.getOper().getAccess ( ) : 0 );
+    }
+
     public NickInfo getTopOperNick ( ) {
         NickInfo top = null;
         for ( NickInfo ni : this.niList ) {
             if ( top == null ) {
                 top = ni;
-            } else if ( ni.getOper().getAccess ( ) > top.getOper().getAccess ( ) ) {
+            } else if ( operAccess ( ni ) > operAccess ( top ) ) {
                 top = ni;
             }
         }
@@ -379,12 +391,4 @@ public class ServicesID extends HashNumeric {
      *
      * @return
      */
-
-    public boolean timeToExpire() {
-        return this.hasExpired();
-//        System.out.println("timeToExpire: now:"+System.currentTimeMillis()+", splitExpire:"+this.splitExpire);
-//        return System.currentTimeMillis() > this.splitExpire;
-    }
-
-
 }

@@ -22,6 +22,7 @@ import core.Proc;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import setup.Setup;
 
 /**
  * Main class of Avade Services
@@ -34,6 +35,10 @@ public class Main {
      * @throws java.io.IOException
      */
     public static void main ( String[] args )  throws IOException {
+        if ( args.length > 0 && args[0].equalsIgnoreCase ( "setup" ) ) {
+            /* Ask what is needed and write services.conf, then exit */
+            System.exit ( new Setup ( ).run ( ) );
+        }
         /* run main loop */
         try {
             proc = new Proc ( );

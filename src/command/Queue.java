@@ -18,7 +18,7 @@
 package command;
 
 import core.Handler;
-import core.Proc;
+import core.WorkGuard;
 import core.HashNumeric;
 import core.HashString;
 import nickserv.NickInfo;
@@ -30,7 +30,6 @@ import java.util.LinkedList;
  */
 public class Queue extends HashNumeric {
     private LinkedList<Command>     cList;
-    private LinkedList<Command>     buf;
     private long                    time;
     
     /**
@@ -41,42 +40,20 @@ public class Queue extends HashNumeric {
     }
     
     /**
-     *
+     * Run the commands the web interface put in the database (mail and
+     * password confirmations)
      */
     public void maintenance ( ) {
-        if ( time < ( System.currentTimeMillis ( ) ) ) {
-            this.retrieve ( );
-            this.next ( );
-            time = System.currentTimeMillis ( ) + ( 5000 );
+        if ( time > System.currentTimeMillis ( ) || ! Handler.isDataLoaded ( ) ) {
+            return;
+        }
+        time = System.currentTimeMillis ( ) + 5000;
+        this.cList = CMDDatabase.getCommands ( );
+        while ( ! this.cList.isEmpty ( ) ) {
+            this.execute ( this.cList.pop ( ) );
         }
     }
     
-    /**
-     *
-     */
-    public void retrieve ( ) {
-        this.cList = CMDDatabase.getCommands ( );
-        if ( ! this.cList.isEmpty ( ) ) {
-            boolean found;
-            this.buf = CMDDatabase.getCommands ( );
-            for ( Command cmd : this.buf ) {
-                found = false;
-                try {
-                    for ( Command cmd2 : this.cList )  {
-                        if ( cmd.getHashCode ( ) == cmd2.getHashCode ( ) ) {
-                            found = true;
-                        }
-                    }
-                    if ( ! found )  {
-                        this.cList.add ( cmd );
-                    }
-                } catch ( Exception e )  {
-                    Proc.log ( Queue.class.getName ( ), e );
-                }
-            }
-        }
-    }
-   
     /**
      *
      */
@@ -103,11 +80,13 @@ public class Queue extends HashNumeric {
             }
              
         }
-        if ( !res )  {
-            /* bad result? lets readd it to queue */
-            this.cList.add ( command );
-        } else {
+        String key = ""+command.getID ( );
+        if ( res )  {
             /* Good result lets remove it from the database */
+            WorkGuard.doneKey ( key );
+            CMDDatabase.deleteCommand ( command.getID ( ) );
+        } else if ( WorkGuard.failedKey ( key, "web command "+key ) ) {
+            /* Keeps failing, don't let it be retried forever */
             CMDDatabase.deleteCommand ( command.getID ( ) );
         }
     }

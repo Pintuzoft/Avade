@@ -70,6 +70,8 @@ public class CSHelper extends Helper {
         else if ( command.is(INFO) )            { this.info ( user );       }
         else if ( command.is(SOP) )             { this.sop ( user );        }
         else if ( command.is(AOP) )             { this.aop ( user );        }
+        else if ( command.is(HOP) )             { this.hop ( user );        }
+        else if ( command.is(VOP) )             { this.vop ( user );        }
         else if ( command.is(AKICK) )           { this.akick ( user );      }
         else if ( command.is(OP) )              { this.op ( user );         }
         else if ( command.is(DEOP) )            { this.deOp ( user );       }
@@ -89,14 +91,11 @@ public class CSHelper extends Helper {
         else if ( command.is(MARK) )            { this.mark ( user );       }
         else if ( command.is(AUDITORIUM) )      { this.auditorium ( user ); }
         else if ( command.is(DELETE) )          { this.delete ( user );     }
+        else if ( command.is(SETPASS) )         { this.setPass ( user );    }
         else {
             this.noMatch ( user, cmd[4] );
         }
          
-    }
-    
-    private void unknownCommand ( User user ) {
-        this.service.sendMsg ( user, "Error: No such command found." );
     }
 
     /**
@@ -118,7 +117,7 @@ public class CSHelper extends Helper {
 
         for ( CommandInfo ci : ChanServ.getCMDList ( USER )  )  {
             if ( ci.getDescription() != null ) {
-                Handler.getOperServ().sendMsg ( user, "       "+f.b ( ) +ci.getName ( ) +f.b ( ) +ci.getPatch ( ) +ci.getDescription ( )  );
+                this.service.sendMsg ( user, "       "+f.b ( ) +ci.getName ( ) +f.b ( ) +ci.getPatch ( ) +ci.getDescription ( )  );
             }
         }
         this.service.sendMsg ( user, "   "                                                                              );
@@ -131,14 +130,14 @@ public class CSHelper extends Helper {
                 count++;
             }
             if ( count > 3 ) {
-                Handler.getOperServ().sendMsg ( user, "       "+f.b()+buf+f.b()  );
+                this.service.sendMsg ( user, "       "+f.b()+buf+f.b()  );
                 count = 0;
                 buf = "";
             }
         }
 
         if ( buf.length() > 0 ) {
-            Handler.getOperServ().sendMsg ( user, "       "+f.b()+buf+f.b()  );
+            this.service.sendMsg ( user, "       "+f.b()+buf+f.b()  );
         }
          
         if ( access > 0 ) {
@@ -193,6 +192,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   After issuing this command and therefor registering a not already registered"              );
         this.service.sendMsg ( user, "   channel services will keep the channel for you and allow you to administer it."            );
         this.service.sendMsg ( user, "   You need to identify to a registered nickname before being able to register a channel"     );
+        this.service.sendMsg ( user, "   The password must be at least 8 characters."                                               );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
         this.service.sendMsg ( user, "   Do not use an easy-to-guess password, rather mix letters with digits and other"            );
@@ -264,7 +264,7 @@ public class CSHelper extends Helper {
     public void sop ( User user )  {
         this.showStart ( user, "Sop" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SOP <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Add, delete or list SuperOps in the channel."                                              );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -281,9 +281,10 @@ public class CSHelper extends Helper {
     public void aop ( User user )  {
         this.showStart ( user, "Aop" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AOP <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Add, delete or list AutoOps in the channel."                                               );
+        this.service.sendMsg ( user, "   Add, delete or list AutoOps in the channel. AOPs can also manage the"                      );
+        this.service.sendMsg ( user, "   HOP and VOP lists."                                                                        );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                           );
         this.service.sendMsg ( user, "   Make sure you can trust the users who you give Aop access as these users can kick/ban"     );
@@ -295,10 +296,43 @@ public class CSHelper extends Helper {
      *
      * @param user
      */
+    public void hop ( User user )  {
+        this.showStart ( user, "Hop" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ HOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Add, delete or list HalfOps in the channel. Users on the list are given"                   );
+        this.service.sendMsg ( user, "   halfop (+h) when they join. Halfops can kick users and change the topic"                   );
+        this.service.sendMsg ( user, "   when the channel is +t."                                                                   );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The HOP list can be managed by AOPs and above."                                            );
+        this.showEnd ( user );
+    }
+    
+    /**
+     *
+     * @param user
+     */
+    public void vop ( User user )  {
+        this.showStart ( user, "Vop" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ VOP <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Add, delete or list Voices in the channel. Users on the list are given"                    );
+        this.service.sendMsg ( user, "   voice (+v) when they join."                                                                );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   The VOP list can be managed by AOPs and above."                                            );
+        this.showEnd ( user );
+    }
+    
+    /**
+     *
+     * @param user
+     */
     public void akick ( User user )  {
         this.showStart ( user, "Akick" );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AKICK <#chan> <ADD|DEL|LIST> [<nick|mask|#NUM>]"+f.b( )+""   );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ AKICK <#chan> <ADD|DEL|LIST> [<nick|mask>]"+f.b( )+""   );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   Add, delete or list AutoKicked users in the channel."                                      );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -486,8 +520,8 @@ public class CSHelper extends Helper {
         else if ( command.is(MAILBLOCK) )       { this.setMailBlock ( user );   }
         else if ( command.is(LEAVEOPS) )        { this.setLeaveOps ( user );    }
         else if ( command.is(AUTOAKICK) )       { this.setAutoAKick ( user );   }
-        else if ( command.is(PRIVATE) )         { this.setPrivate ( user );     }
         else if ( command.is(DYNAOP) )          { this.setDynAOP ( user );      }
+        else if ( command.is(PASSWD) )          { this.setPasswd ( user );      }
         else {
             this.setMain ( user );
         }
@@ -518,6 +552,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"LEAVEOPS"+f.b ( ) +"       First user in will be allowed to be op(@) "                             );
         this.service.sendMsg ( user, "       "+f.b ( ) +"AUTOAKICK"+f.b ( ) +"      Have ChanServ remove all matching users when placing an akick"          );
         this.service.sendMsg ( user, "       "+f.b ( ) +"DYNAOP"+f.b ( ) +"         ChanServ will try automatically fill/del the AOP list upon op/deop(@)"  );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"PASSWD"+f.b ( ) +"         Sets a new channel password"                                            );
         this.service.sendMsg ( user, "   "                                                                                                               );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                                      );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                                );
@@ -525,6 +560,24 @@ public class CSHelper extends Helper {
         this.showEnd ( user );
     }
       
+    /**
+     *
+     * @param user
+     */
+    public void setPasswd ( User user )  {
+        this.showStart ( user, "Set Passwd" );
+        this.service.sendMsg ( user, "   "                                                                                                              );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SET <#chan> PASSWD <new-pass>"+f.b ( ) +""                                         );
+        this.service.sendMsg ( user, "   "                                                                                                              );
+        this.service.sendMsg ( user, "   Sets a new password on the channel. Only the founder can do this, identified to"                               );
+        this.service.sendMsg ( user, "   the founder nick. Everyone who identified to the channel with the old password"                                );
+        this.service.sendMsg ( user, "   is unidentified from it."                                                                                      );
+        this.service.sendMsg ( user, "   "                                                                                                              );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                                     );
+        this.service.sendMsg ( user, "   Use a password of its own for the channel, not the one of your nick."                                          );
+        this.showEnd ( user );
+    }
+
     /**
      *
      * @param user
@@ -753,23 +806,6 @@ public class CSHelper extends Helper {
      *
      * @param user
      */
-    public void setPrivate ( User user )  {
-        this.showStart ( user, "Set Private" );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SET <#chan> PRIVATE <ON|OFF>"+f.b ( ) +""                        );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   The private option will keep the channel as private and secret ( +ps )  while keeping the" );
-        this.service.sendMsg ( user, "   topic off the channel info."                                                               );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
-        this.service.sendMsg ( user, "   To avoid the channel from being used by unwanted users and to make sure the topic"         );
-        this.service.sendMsg ( user, "   is secret in the channel info its recommended. For ordinary channels its not recommended." );
-        this.showEnd ( user );  
-    }
-    /**
-     *
-     * @param user
-     */
     public void setDynAOP ( User user )  {
         this.showStart ( user, "Set DynAOP" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -869,6 +905,23 @@ public class CSHelper extends Helper {
         this.showEnd ( user );      
     }
 
+    private void setPass ( User user ) {
+        if ( ! ChanServ.enoughAccess ( user, SETPASS ) ) {
+            return;
+        }
+        this.showStart ( user, "SetPass" );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SETPASS <#chan> <new-pass>"+f.b ( ) +""                      );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   Sets a new password on a channel. Nobody can see the old password, it is stored"           );
+        this.service.sendMsg ( user, "   as a hash. The founder does not need this, it can use SET <#chan> PASSWD."                 );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
+        this.service.sendMsg ( user, "   Make sure it is the founder you are talking to. This command is logged and sent as"        );
+        this.service.sendMsg ( user, "   globops."                                                                                  );
+        this.showEnd ( user );  
+    }
+
     private void mark(User user) {
         if ( ! ChanServ.enoughAccess ( user, MARK ) ) {
             return;
@@ -878,7 +931,7 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ MARK [-]<#chan>"+f.b ( ) +""                                     );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   This command will set the mark flag or remove it from a channel. When the flag is"         );
-        this.service.sendMsg ( user, "   set the channel will be locked from ownership commands including sendpass and getpass"     );
+        this.service.sendMsg ( user, "   set the channel will be locked from ownership commands including setpass"                  );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
         this.service.sendMsg ( user, "   Marking a channel should only be done if there is a conflict of ownership. The flag"       );
@@ -904,11 +957,10 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   occasions as network events like if network staff is holding an open public conference"    );
         this.service.sendMsg ( user, "   like a lecture where alot of users will participate."                                      );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Upon setting the Auditorium mode the relay channel will be registered to the issuer."      );
-        this.service.sendMsg ( user, "   So if you set channel #avade with the Auditorium mode the channel #avade-relay will"       );
-        this.service.sendMsg ( user, "   automatically be registered to you. The channel will be set with +sp but will be open"     );
-        this.service.sendMsg ( user, "   for anyone to join to make it easier to manage. Feel free to restrict this channel."       );
-        this.service.sendMsg ( user, "   When the Auditorium mode is removed the relay channel will be dropped."                    );
+        this.service.sendMsg ( user, "   What users without voice or op say is not shown in the channel. The ircd sends it to"      );
+        this.service.sendMsg ( user, "   the relay channel when that exists: for #avade that is #avade-relay. A relay channel"      );
+        this.service.sendMsg ( user, "   can not be registered. While the mode is set ChanServ gives op(@) in it to everyone"       );
+        this.service.sendMsg ( user, "   with AOP or higher in the main channel, and removes everyone else from it."                );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
         this.service.sendMsg ( user, "   The auditorium mode should not be used on a normal channel as its behavior by filtering"   );
@@ -916,8 +968,6 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   see everyone in the channel when its removed. To counter this behavior its recommended"    );
         this.service.sendMsg ( user, "   to issue a masskick on the channel after the mode is removed to make sure everyones"       );
         this.service.sendMsg ( user, "   clients will get all the joins and parts properly and so they can see all users."          );
-        this.service.sendMsg ( user, "   When it comes to the relay channel, make sure you put in some security on it perhaps"      );
-        this.service.sendMsg ( user, "   set it invite only or Oper only +O or perhaps even set restrict on."                       );
         this.showEnd ( user );  
     }
 
@@ -969,6 +1019,11 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "     HIDE_MODE_LISTS <ON|OFF>     - Hide mode lists"                                          );
         this.service.sendMsg ( user, "     NO_NICK_CHANGE <ON|OFF>      - Stop nick changes"                                        );
         this.service.sendMsg ( user, "     NO_UTF8 <ON|OFF>             - Stop special characters"                                  );
+        this.service.sendMsg ( user, "     USER_VERBOSE <ON|OFF>        - Report what the ChanFlags stopped to <#chan>-relay"       );
+        if ( user.isAtleast ( SA ) ) {
+            this.service.sendMsg ( user, "     OPER_VERBOSE <ON|OFF>        - Report what the ChanFlags stopped to IRC operators (SA+)" );
+        }
+        this.service.sendMsg ( user, "     SJR <ON|OFF>                 - ChanServ decides who may join, see below"                 );
         this.service.sendMsg ( user, "     GREETMSG <greeting>          - Set join greeting message for warning users they might"   );
         this.service.sendMsg ( user, "                                    get match by the ChanFlags."                              );
         this.service.sendMsg ( user, "     LIST                         - Will list current configuration"                          );
@@ -976,6 +1031,12 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   These channel flags is temporary on the IRCd and will be unset if the channel is recreated");
         this.service.sendMsg ( user, "   but with ChanFlag command these flags get persistent just like keeptopic keeps the topic"  );
         this.service.sendMsg ( user, "   set on the channel even if the channel is recreated"                                       );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   With SJR the server asks ChanServ before it lets someone into the channel. Users who are"  );
+        this.service.sendMsg ( user, "   on the AKICK list, or have no access to a RESTRICT channel, are then stopped before they"  );
+        this.service.sendMsg ( user, "   join and are not kicked afterwards. Bans, the key, the limit and the other modes work as"  );
+        this.service.sendMsg ( user, "   before. It only has effect on a network where the IRC operators have turned join"          );
+        this.service.sendMsg ( user, "   requests on, and from the second user in: the first one creates the channel."              );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                );
         this.service.sendMsg ( user, "   Before setting any flags on your channel please observe and identify the key aspects of"   );

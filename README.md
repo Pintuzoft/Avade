@@ -9,6 +9,20 @@ upcoming bahamut release.
 
 ./DreamHealer
 
+### Install
+
+You need Java 17, a bahamut hub and MariaDB (or MySQL). As the user that will
+run services:
+
+    git clone https://github.com/Pintuzoft/Avade.git
+    cd Avade
+    ./install.sh
+
+It puts everything in `~/avade/` and starts services. The first time it asks a
+few questions (your network, the hub, the database), writes `services.conf`
+for you and shows the lines the hub needs in its `ircd.conf`. Run it again in
+a newer version to upgrade. Everything else is in [INSTALL](INSTALL).
+
 ### Special features included in Avade:
 
 - Reconnecting to services hub
@@ -77,9 +91,10 @@ Something that has shown to have been working poorly in different versions of
 services is how mailing is handled when there is a problem with the smtp server. 
 This has been known to be causing services to sit and wait for a timeout or some 
 other error during which it perhaps isnt doing anything else. This has been 
-resolved by lifting out the mailing funcitonality to its own small software. All 
-this feature needs is a database connection, and as its java based aswell it can 
-run offsite from services keeping the location of services hopefully a secret.
+resolved by lifting out the mailing funcitonality to its own small software,
+AvadeMailer (`mailer/`). Services only put each mail in the database, and the
+mailer sends it. All the mailer needs is a database connection, so it can be
+restarted on its own or run on another machine. See "Mail" in INSTALL.
 
 
 #### Server command
@@ -105,10 +120,20 @@ normal conversation with the user.
 
 #### Auditorium chanflag
 
-IRC operators are able to enable the auditorium flag on a channel. The 
-funcationality in services will automatically do some initial checks and then 
-register the relay channel as "#channame-relay" for where chat from regular users 
-(-ov) will end up. The +A channel mode will then be applied to the main channel.
+IRC operators are able to enable the auditorium flag on a channel. The +A channel 
+mode is then applied to the main channel, and chat from regular users (-ov) ends up 
+in "#channame-relay". A relay channel can not be registered: while the flag is set 
+ChanServ gives op in it to everyone with AOP or higher in the main channel, and 
+removes everyone else from it.
+
+#### Join requests
+
+With services join requests the servers ask Avade before they let a user into a 
+channel. A user on the AKICK list, or without access to a RESTRICT channel, is then 
+stopped before the join and not kicked after it, and the channel never sees the user. 
+The key, the limit, bans, exception and invite lists and the other modes are checked 
+by Avade the way the ircd does. The staff turn it on for the network 
+(/OperServ SJR ON), a founder for a channel (/ChanServ CHANFLAG #channel SJR ON).
 
 #### Audit staff
 
@@ -134,10 +159,13 @@ been violated network rules or other types of abuse using the channel topic.
 
 - Help           - Show help
 - Register       - Register nick
+- Auth           - Confirm an email address or a new password
 - Identify       - Identify nick
 - SIdentify      - Silently identify nick
 - Ghost          - Kill ghost nick
+- ResetPass      - New password with a code sent to the confirmed email
 - SET            - Set nick options
+- Info           - Show info about a nick
 - Drop           - Drop registered nick
   
 --- IRCop---
@@ -147,7 +175,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Freeze         - OperFlag to freeze a nick from being used
 - Hold           - OperFlag to deny a nick from expiring
 - NoGhost        - OperFlag to deny a nick from being ghosted
-- Getpass        - Show password log for nick
+- Setpass        - Set a new password (nobody can see the old one)
 - Getemail       - Show email log for nick
 - Delete         - Force drop a nick
 
@@ -158,9 +186,12 @@ been violated network rules or other types of abuse using the channel topic.
 - Register       - Register channel
 - Identify       - Identify channel
 - Set            - Set channel options
-- Info           - Show info about a nick
+- Chanflag       - Set extended channel flags of the ircd (flood limits, join requests ..)
+- Info           - Show info about a channel
 - AOP            - Manage AOP list
 - SOP            - Manage SOP list
+- HOP            - Manage HOP (halfop) list
+- VOP            - Manage VOP (voice) list
 - AKICK          - Manage AKICK list
 - Op             - Op nick
 - Deop           - Deop nick
@@ -172,6 +203,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Mkick          - Mass kick channel
 - Drop           - Drop registered channel
 - Accesslog      - View SOP/AOP/AKICK logs
+- Listops        - View the founder and the SOP/AOP lists
   
 --- IRCop ---
   
@@ -183,7 +215,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Close          - Close channel
 - Hold           - Deny channel from expiring
 - Auditorium     - Makes a channel an auditorium
-- Getpass        - Show password log
+- Setpass        - Set a new channel password
 - Delete         - Force drop a channel
   
   
@@ -203,23 +235,41 @@ been violated network rules or other types of abuse using the channel topic.
 - Global         - Send global message
 - Uinfo          - Show debug information regarding a user
 - Cinfo          - Show debug information regarding a channel
+- Ninfo          - Show debug information regarding a nick
+- Sinfo          - Show debug information regarding a server
 - Ulist          - Show user map (use only on smaller networks)
+- Clist          - Show the channels on the network
+- Slist          - Show the servers on the network
 - Uptime         - Show uptime information
 - Akill          - Manage AKill list
+- Makill         - Add many akills at once
+- Banlog         - Search the log of services bans
 - Searchlog      - Show ownership events and comments for a nick or channel
+- Snooplog       - Search the snoop logs for a nick or channel
 - Audit          - Show staff events
 - Comment        - Attach a comment to a nick or channel
 - Ignore         - Manage the ignore list
 - Sqline         - Manage the SQline (restricted nick) list
 - Sgline         - Manage the SGline (restricted gcos) list
+- Spamfilter     - Manage the spam filters of the network
+- Forcenick      - Change the nick of a user
+- Vhost          - Set or remove the vhost of a nick
+- Clone          - Manage clone limits for ips and ranges
+- Uhm            - Control user host-masking on the network
+- Sjr            - Control services join requests on the network
 - Jupe           - Jupiter a server to prevent it from linking
 - Server         - Serverlist purposed as missing server list (auto-populated)
+- Bahamut        - Show the bahamut version services are made for
   
   
 #### RootServ :
   
 - Rehash         - Re-read the services configuration file
+- Showconfig     - Show the services configuration (passwords and the salt are hidden)
 - Sraw           - Send a raw services command to the network
+- Sra            - Manage the Services Root Admin list
+- Panic          - Limit who can use services commands
+- Stop           - Stop services, pending changes are written first
   
   
 

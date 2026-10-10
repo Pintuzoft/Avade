@@ -18,11 +18,9 @@
 package nickserv;
 
 import core.CommandInfo;
-import core.Config;
 import core.Handler;
 import core.HashString;
 import core.Helper;
-import core.Proc;
 import core.TextFormat;
 import operserv.Oper;
 import user.User;
@@ -98,6 +96,12 @@ public class NSHelper extends Helper {
         } else if ( command.is(NOGHOST) ) {
             this.noghost ( user );
         
+        } else if ( command.is(RESETPASS) ) {
+            this.resetPass ( user );
+        
+        } else if ( command.is(SETPASS) ) {
+            this.setPass ( user );
+        
         } else {
             this.noMatch ( user, cmd[4] );
         }
@@ -135,6 +139,9 @@ public class NSHelper extends Helper {
         } else if ( command.is(SHOWHOST) ) {
             this.setShowHost ( user );
         
+        } else if ( command.is(VHOST) ) {
+            this.setVhost ( user );
+        
         } else if ( command.is(EMAIL) ) {
             this.setEmail ( user );
         
@@ -163,8 +170,9 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"REGISTER"+f.b ( ) +"    Register a nickname"                           );
         this.service.sendMsg ( user, "       "+f.b ( ) +"IDENTIFY"+f.b ( ) +"    Identify as owner of your nick"                );
         this.service.sendMsg ( user, "       "+f.b ( ) +"GHOST"+f.b ( ) +"       Kill ghosted client holding your nick"         );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"RESETPASS"+f.b ( ) +"   New password if you lost yours"                );
         this.service.sendMsg ( user, "       "+f.b ( ) +"SET"+f.b ( ) +"         Set nick settings"                             );
-        this.service.sendMsg ( user, "       "+f.b ( ) +"INFO"+f.b ( ) +"        Identify as owner of your nick"                );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"INFO"+f.b ( ) +"        Show information about a nick"                 );
         this.service.sendMsg ( user, "   "                                                                                      );
         this.service.sendMsg ( user, "   For further options available for your nickname use: /NickServ HELP SET"               );
         this.service.sendMsg ( user, "   "                                                                                      );
@@ -201,7 +209,6 @@ public class NSHelper extends Helper {
                 }
             }
             
-            System.out.println( "debug: mark: "+Proc.getConf().getCommandAccess(MARK)+":"+NickServ.getCMDList(SRA).size() );
         }
         this.showEnd ( user );
     }
@@ -230,6 +237,7 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                         );
         this.service.sendMsg ( user, "   Do not use an easy-to-guess password, rather mix letters with digits and other"        );
         this.service.sendMsg ( user, "   characters in order to make your password more secure."                                );
+        this.service.sendMsg ( user, "   The password must be at least 8 characters."                                           );
         this.service.sendMsg ( user, "   Do not share your password ( s )  with anyone, not even your friends. Friends has"     );
         this.service.sendMsg ( user, "   broken up for even less than a hijacked nickname on IRC."                              );
         this.showEnd ( user );
@@ -347,6 +355,7 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"SHOWHOST"+f.b ( ) +"   Show real host in info"                                             );
         this.service.sendMsg ( user, "       "+f.b ( ) +"EMAIL"+f.b ( ) +"      Set a new email on nick"                                            );
         this.service.sendMsg ( user, "       "+f.b ( ) +"PASSWD"+f.b ( ) +"     Set a new password on nick"                                         );
+        this.service.sendMsg ( user, "       "+f.b ( ) +"VHOST"+f.b ( ) +"      Set a host that is shown instead of your own"                      );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Do not remove settings you do not know the functions of as they could seriously"                           );
@@ -431,12 +440,31 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET SHOWHOST ON"+f.b ( ) +""         );
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET SHOWHOST OFF"+f.b ( ) +""        );
         this.service.sendMsg ( user, "   "                                                                  );
-        this.service.sendMsg ( user, "   Setting ShowHost on or off."                                       );
+        this.service.sendMsg ( user, "   With ShowHost on your real host is shown to everyone in /NickServ INFO."      );
+        this.service.sendMsg ( user, "   If the network masks hosts it is also shown on IRC instead of the masked"      );
+        this.service.sendMsg ( user, "   one while you are identified, for those who have a host of their own to show." );
+        this.service.sendMsg ( user, "   A vhost set with SET VHOST goes before this."                                  );
         this.service.sendMsg ( user, "   "                                                                  );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                     );
         this.service.sendMsg ( user, "   Recommending this option being off."                               );
         this.showEnd ( user );
     } 
+    
+    private void setVhost ( User user ) {
+        this.showStart ( user, "Set Vhost" );
+        this.service.sendMsg ( user, "   "                                                                  );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET VHOST <host>"+f.b ( ) +""        );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET VHOST OFF"+f.b ( ) +""           );
+        this.service.sendMsg ( user, "   "                                                                  );
+        this.service.sendMsg ( user, "   Sets a virtual host that is shown instead of your own host every"  );
+        this.service.sendMsg ( user, "   time you identify to your nick, for example: my.cool.host"          );
+        this.service.sendMsg ( user, "   "                                                                  );
+        this.service.sendMsg ( user, "   The host may contain a-z, 0-9, - and . and needs at least one dot." );
+        this.service.sendMsg ( user, "   IP addresses and the network's own names can't be used. The email" );
+        this.service.sendMsg ( user, "   of the nick must be confirmed and the vhost can be changed once"    );
+        this.service.sendMsg ( user, "   every 10 minutes."                                                 );
+        this.showEnd ( user );
+    }
     
     private void setEmail ( User user ) {
         this.showStart ( user, "Set Email" );
@@ -456,7 +484,7 @@ public class NSHelper extends Helper {
     private void setPasswd ( User user ) {
         this.showStart ( user, "Set Passwd" );
         this.service.sendMsg ( user, "   "                                                                    );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET PASSWD <pass> <email>"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SET PASSWD <current-pass> <new-pass>"+f.b ( ) +"" );
         this.service.sendMsg ( user, "   "                                                                    );
         this.service.sendMsg ( user, "   This command will set a new pass to the current nickname. After"     );
         this.service.sendMsg ( user, "   the new pass has been set you will be sent a auth mail. You need"    );
@@ -470,6 +498,40 @@ public class NSHelper extends Helper {
     }
      
     
+    
+    private void resetPass ( User user ) {
+        this.showStart ( user, "ResetPass" );
+        this.service.sendMsg ( user, "   "                                                                    );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ RESETPASS <nick>"+f.b ( ) +""           );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"        /NickServ RESETPASS <nick> <code> <new-pass>"+f.b ( ) +"" );
+        this.service.sendMsg ( user, "   "                                                                    );
+        this.service.sendMsg ( user, "   If you lost the password of your nick, this sends a code to the"    );
+        this.service.sendMsg ( user, "   confirmed email of the nick. With the code you choose a new"        );
+        this.service.sendMsg ( user, "   password. The code works for 2 hours, and a new code can be sent"   );
+        this.service.sendMsg ( user, "   15 minutes after the last one."                                      );
+        this.service.sendMsg ( user, "   "                                                                    );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                       );
+        this.service.sendMsg ( user, "   Never give the code to anyone. Network staff will never ask for it." );
+        this.showEnd ( user );
+    }
+    
+    private void setPass ( User user ) {
+        if ( ! NickServ.enoughAccess ( user, SETPASS ) ) {
+            return;
+        }
+        this.showStart ( user, "SetPass" );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ SETPASS <nick> <new-pass>"+f.b ( ) +""                     );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   Sets a new password on a nick, for an owner that lost the password and has no"           );
+        this.service.sendMsg ( user, "   confirmed email (otherwise they can use RESETPASS themselves). Everyone identified"      );
+        this.service.sendMsg ( user, "   to the nick is unidentified. Nobody can see the old password, it is stored as a hash."   );
+        this.service.sendMsg ( user, "   "                                                                                         );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                            );
+        this.service.sendMsg ( user, "   Make sure it is the owner you are talking to. Ask them to change the password with"      );
+        this.service.sendMsg ( user, "   SET PASSWD at once. This command is logged and sent as globops."                         );
+        this.showEnd ( user );
+    }
     
     /*** OPER COMMANDS
      * @param user
@@ -537,7 +599,7 @@ public class NSHelper extends Helper {
         this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /NickServ MARK [-]<nick>"+f.b ( ) +""                                 );
         this.service.sendMsg ( user, "   "                                                                                         );
         this.service.sendMsg ( user, "   This command will set the mark flag or remove it from a nick. When the flag is"           );
-        this.service.sendMsg ( user, "   set the nick will be locked from ownership commands including sendpass and getpass"       );
+        this.service.sendMsg ( user, "   set the nick will be locked from ownership commands including resetpass and setpass"      );
         this.service.sendMsg ( user, "   "                                                                                         );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                            );
         this.service.sendMsg ( user, "   Marking a nick should only be done if there is a conflict of ownership. The flag"         );

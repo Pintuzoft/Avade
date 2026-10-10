@@ -140,7 +140,8 @@ public class CSSnoop extends Snoop {
             else if ( it.is(CHAN_SET_FLAG) )            { return "CHAN_SET_FLAG";           } 
             else if ( it.is(CHANFLAG_EXIST) )           { return "CHANFLAG_EXIST";          } 
             else if ( it.is(ALREADY_ON_LIST) )          { return "ALREADY_ON_LIST";         } 
-            else if ( it.is(CHAN_GETPASS) )             { return "CHAN_GETPASS";            }
+            else if ( it.is(SETPASS) )                  { return "SETPASS";                 }
+            else if ( it.is(SET_PASSWD) )               { return "SET_PASSWD";              }
             else if ( it.is(CHAN_INFO) )                { return "CHAN_INFO";               }
             else if ( it.is(CHAN_UNBAN) )               { return "CHAN_UNBAN";              }
             else if ( it.is(ACCESS_LIST) )              { return "ACCESS_LIST";             }
@@ -176,4 +177,24 @@ public class CSSnoop extends Snoop {
                 return "UnDefined"; 
             }
     } 
+
+    @Override
+    protected String[] redact ( String[] arr ) {
+        // :nick PRIVMSG ChanServ@services :CMD #chan arg2 arg3 ..
+        //   0      1          2            3    4     5    6
+        switch ( commandOf ( arr ) ) {
+            case "REGISTER" :
+            case "IDENTIFY" :
+            case "DROP" :
+            case "SETPASS" :
+                return mask ( arr, 5 );
+            case "SET" :
+                if ( arr.length > 5 && arr[5].toUpperCase().startsWith ( "PASS" ) ) {
+                    return mask ( arr, 6, 7 );
+                }
+                return arr;
+            default :
+                return arr;
+        }
+    }
 }

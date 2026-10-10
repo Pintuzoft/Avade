@@ -94,7 +94,7 @@ public class MSHelper extends Helper {
         this.showStart ( user, "Help" );
 
         this.service.sendMsg ( user, "   MemoServ allows you to send short messages to other users regardless"                  );
-        this.service.sendMsg ( user, "   they are online or not. To use them type: /NickServ <command>"                         );
+        this.service.sendMsg ( user, "   they are online or not. To use them type: /MemoServ <command>"                         );
         this.service.sendMsg ( user, "   For more information on a specific command, type:"                                     );
         this.service.sendMsg ( user, "       /MemoServ HELP <command>"                                                          );
         this.service.sendMsg ( user, "   "                                                                                      );
@@ -104,7 +104,6 @@ public class MSHelper extends Helper {
         this.service.sendMsg ( user, "       "+f.b ( ) +"READ"+f.b ( ) +"        Read a memo"                                   );
         this.service.sendMsg ( user, "       "+f.b ( ) +"DEL"+f.b ( ) +"         Delete a memo"                                 );
         this.service.sendMsg ( user, "   "                                                                                      );
-        this.service.sendMsg ( user, "   For further options available for your nickname use: /MemoServ HELP SET"               );
 
         this.showEnd ( user );   
     }
@@ -124,6 +123,9 @@ public class MSHelper extends Helper {
         this.service.sendMsg ( user, "   The reciever does not have to be online for the memo to arrive in their inbox"         );
         this.service.sendMsg ( user, "   and if the reciever didnt tell services to do otherwise the reciever will also"        );
         this.service.sendMsg ( user, "   notify the user by sending an email."                                                  );
+        this.service.sendMsg ( user, "   "                                                                                      );
+        this.service.sendMsg ( user, "   A memo can be 256 characters long. A nick can hold 30 memos, and 5 unread memos"       );
+        this.service.sendMsg ( user, "   from the same sender: after that the reciever has to read or delete some first."       );
         this.service.sendMsg ( user, "   "                                                                                      );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                         );
         this.service.sendMsg ( user, "   Do not share any personal information like phone numbers, address, email, name or"     );
@@ -149,7 +151,9 @@ public class MSHelper extends Helper {
         this.service.sendMsg ( user, "   This command allows you to send a memo to a channel list on the network."              );
         this.service.sendMsg ( user, "   The recievers does not have to be online for the memo to arrive in their inbox"        );
         this.service.sendMsg ( user, "   and if the recievers didnt tell services to do otherwise the recievers will also"      );
-        this.service.sendMsg ( user, "   get notified through email."                                                           );
+        this.service.sendMsg ( user, "   get notified through email. The memo goes to the founder and everyone on the SOP"      );
+        this.service.sendMsg ( user, "   and AOP lists. A reciever whose memo box is full, or who has 5 unread memos from"      );
+        this.service.sendMsg ( user, "   you already, does not get it."                                                         );
         this.service.sendMsg ( user, "   "                                                                                      );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                         );
         this.service.sendMsg ( user, "   Do not share any personal information like phone numbers, address, email, name or"     );

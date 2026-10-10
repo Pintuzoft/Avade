@@ -26,7 +26,6 @@ import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.LinkedList;
 
 /**
@@ -34,9 +33,7 @@ import java.util.LinkedList;
  * @author DreamHealer
  */
 public class CMDDatabase extends Database {
-    private static Statement            s;
     private static ResultSet            res;
-    private static ResultSet            res2;
     private static PreparedStatement    preparedStmt;
  
     /**

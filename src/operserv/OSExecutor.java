@@ -17,9 +17,12 @@
  */
 package operserv;
 
+import core.StringMatch;
+import core.Scheduler;
 import channel.Chan;
 import core.Executor;
 import core.Handler;
+import core.HostMask;
 import core.Proc;
 import static core.HashNumeric.ADD;
 import static core.HashNumeric.DEL;
@@ -35,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.Timer;
+import nickserv.NSDatabase;
 import nickserv.NickInfo;
 import nickserv.NickServ;
 import server.Server;
@@ -65,9 +68,8 @@ public class OSExecutor extends Executor {
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd )  {
+    public void parse ( User user, String[] cmd, HashString command )  {
         this.found = true; /* Assume that everything will go correctly */
-        HashString command = new HashString ( cmd[3] );
         
         if ( command.is(UINFO) ) {
             this.doUInfo ( user, cmd );
@@ -133,6 +135,18 @@ public class OSExecutor extends Executor {
         } else if ( command.is(SPAMFILTER) ) {
             this.doSpamFilter ( user, cmd );
         
+        } else if ( command.is(VHOST) ) {
+            this.doVhost ( user, cmd );
+            
+        } else if ( command.is(CLONE) ) {
+            this.doClone ( user, cmd );
+            
+        } else if ( command.is(UHM) ) {
+            this.doUhm ( user, cmd );
+            
+        } else if ( command.is(SJR) ) {
+            this.doSjr ( user, cmd );
+            
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user, cmd );
         
@@ -177,9 +191,12 @@ public class OSExecutor extends Executor {
                 }
             }
             this.service.sendMsg ( user, "        IP: " + u.getString ( IP )                                        );
+            if ( u.getShownHost ( ) != null ) {
+                this.service.sendMsg ( user, "  Shown as: " + u.getShownHost ( )                                    );
+            }
             this.service.sendMsg ( user, "     Modes: ident ( "+u.getModes().is ( IDENT )+" ), oper ( "+u.getModes().is ( OPER )+" ) , admin ( "+u.getModes().is ( ADMIN )+" ) , sadmin ( "+u.getModes().is ( SADMIN )+" ) " );
             this.service.sendMsg ( user, "    Server: "+u.getServ().getName ( )                                     );
-            for ( Chan c : user.getChans() ) {
+            for ( Chan c : u.getChans() ) {
                 this.service.sendMsg ( user, "   Channel: "+c.getString ( NAME )                                    );
             }
             this.service.sendMsg ( user, "*** End ***"                                                              );
@@ -242,6 +259,23 @@ public class OSExecutor extends Executor {
                 }
             }
             this.service.sendMsg ( user, "      Op: "+oped                      );
+
+            /* GET HALFOP LIST */
+            counter = 0;
+            String halfop = "";
+            for ( User cu : c.getList ( HALFOP )  )  {
+                if ( halfop.isEmpty ( )  )  {
+                    halfop = cu.getString ( NAME );
+                } else {
+                    halfop += " "+cu.getString ( NAME );
+                }
+                if ( ++counter > 10 ) {
+                    this.service.sendMsg ( user, "  HalfOp: "+halfop                     );
+                    counter = 0;
+                    halfop = "";
+                }
+            }
+            this.service.sendMsg ( user, "  HalfOp: "+halfop                     );
 
             /* GET VOICE LIST */
             counter = 0;
@@ -306,7 +340,6 @@ public class OSExecutor extends Executor {
         this.service.sendMsg ( user, "      host: "+ni.getString(HOST) );
         this.service.sendMsg ( user, "        IP: "+ni.getString(IP) );
         this.service.sendMsg ( user, "      mail: "+( ni.getEmail ( ) != null ? ni.getEmail ( ) : "" ) );
-        this.service.sendMsg ( user, "      pass: "+ni.getPass ( ) );
         this.service.sendMsg ( user, "  settings: "+ni.getSettings().getInfoStr() );
         this.service.sendMsg ( user, "   regtime: "+ni.getString(REGTIME) );
         this.service.sendMsg ( user, "  lastused: "+ni.getString(LASTUSED) );
@@ -351,9 +384,8 @@ public class OSExecutor extends Executor {
         // :DreamHealer PRIVMSG OperServ@stats.avade.net   :ban add fredde@172.* testing
         // 0            1       2                          3      4   5            6
         
-        System.out.println("Bans: "+Handler.getOperServ().getAkillCount()+":"+Handler.getOperServ().getIgnoreCount());
         
-        if ( cmd.length > 4 && cmd[4].charAt(0) == '-' ) {
+        if ( cmd.length > 4 && cmd[4].startsWith ( "-" ) ) {
             String[] buf = new String[6];
             buf[0] = cmd[0];
             buf[1] = cmd[1];
@@ -386,7 +418,12 @@ public class OSExecutor extends Executor {
                 return;            
         
         } else if ( result.is(SYNTAX_ERROR_ADD) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" ADD <pattern> <time> <reason>" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, cmdName+" ADD <time> <pattern> <reason>" ) );
+                if ( command.is(AKILL) ) {
+                    this.service.sendMsg ( user, "An AKILL pattern is *!user@host (or *!user@ip/bits), the nick part must be *" );
+                } else if ( command.is(IGNORE) ) {
+                    this.service.sendMsg ( user, "An IGNORE pattern is nick!user@host" );
+                }
                 return;            
         
         } else if ( result.is(BADTIME) ) {
@@ -460,11 +497,6 @@ public class OSExecutor extends Executor {
                 boolean foundOperMatch = false;
                 String expire = Handler.expireToDateString ( stamp, time );
                 
-                System.out.println("debug(2): mask:"+mask);
-                System.out.println("debug(2): time:"+time);
-                System.out.println("debug(2): reason:"+reason);
-                System.out.println("debug(2): stamp:"+stamp);
-                System.out.println("debug(2): expire:"+expire);
                 
                 
                 //    public ServicesBan ( int type, String id, String mask, String reason, String instater, String time, String expire )  {
@@ -493,10 +525,10 @@ public class OSExecutor extends Executor {
                 }
                 
                 
-                System.out.println("matching users: "+uList.size());
                 
                 for ( User u : uList ) {
-                    if ( u.isAtleast ( IRCOP ) ) {
+                    /* Every IRC operator (+o), also one that is not on the staff list */
+                    if ( u.isOper ( ) ) {
                         this.service.sendMsg ( user, output ( BAN_MATCH_OPER, cmdName, mask, "" ) );
                         return;
                     }
@@ -508,40 +540,15 @@ public class OSExecutor extends Executor {
                 this.service.sendGlobOp ( output ( BAN_ADD_GLOB, cmdName.toLowerCase(), mask, ban.getInstater(), ""+uList.size(), percent, time ) );
                 
                 // -OperServ(stats@dal.net)- *!*@159.65.148.178 has been added to my autokill list for 30 minutes.
-                this.service.sendMsg ( user, mask+" has been added to the akill list for "+time+" min." );
+                this.service.sendMsg ( user, mask+" has been added to the "+cmdName.toLowerCase ( )+" list for "+time+( StringMatch.isInt ( time ) ? " min." : "." ) );
                 
                 // -OperServ(stats@dal.net)- This autokill's id hasAccess 1563280267K-k and the authorization id hasAccess 1563280267K-16159. Please send your reports@dal.net email as soon as possible.
-                this.service.sendMsg ( user, "The akill id is "+ban.getID()+". Please use the akill id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
+                this.service.sendMsg ( user, "The "+cmdName.toLowerCase ( )+" id is "+ban.getID()+". Please use the id "+ban.getID()+" and send your reports@avade.net email as soon as possible." );
                
         }  
          
     }
 
-
-    private ServicesBan getBan ( HashString command, HashString banId )  {
-        ServicesBan ban = null;
-        for ( ServicesBan ban2 : Handler.getOperServ().getListByCommand ( command ) ) {
-            if ( ban2.getID().is(banId) )  {
-                ban = ban2;
-            }
-        }
-        return ban;
-    }
-/*    private String dataToReason ( String[] cmd, int start )  {
-        String reason = new String ( );
-        int index = 0;
-        for ( String buf : cmd )  {
-            if ( index++ > start )  {
-                if ( reason.length ( ) == 0 )  {
-                    reason = buf;
-                } else {
-                    reason += " "+buf;
-                }
-            }
-        }
-        return reason;
-    }
- */
     private void doSearchLog ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SEARCHLOG <nick|chan> [FULL]
         //            0       1                          2          3           4      5 < 6
@@ -686,7 +693,7 @@ public class OSExecutor extends Executor {
         for ( OSLogEvent log : lsList ) {
             this.service.sendMsg ( user, output ( SHOWBANLOG, log.getStamp(), log.getFlag().getString(), log.getName().getString(), log.getMask(), log.getOper(), log.getData() ) );
         }
-        this.service.sendMsg ( user, "*** End of Audit ***" ); 
+        this.service.sendMsg ( user, "*** End of BanLog ***" ); 
         
     }
     
@@ -705,6 +712,17 @@ public class OSExecutor extends Executor {
             return;
         } else if ( serverName.is ( Proc.getConf().get(HUBNAME) ) ) {
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (services hub cannot be juped)" ) );
+            return;
+        } else if ( ! cmd[4].matches ( "[A-Za-z0-9.-]+" ) ) {
+            /* the ircd drops our link if we introduce a server with a bogus name */
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (only letters, digits, dots and dashes)" ) );
+            return;
+        } else if ( serverName.is ( Proc.getConf().get(NAME) ) || serverName.is ( Proc.getConf().get(STATS) ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "JUPE <servername.netname.net> (services cannot be juped)" ) );
+            return;
+        } else if ( Handler.findServer ( serverName ) != null ) {
+            /* a second server with the same name makes the ircd close a link, ours */
+            this.service.sendMsg ( user, "Error: "+cmd[4]+" is linked right now, SQUIT it first." );
             return;
         }
         String name = cmd[4];
@@ -741,7 +759,7 @@ public class OSExecutor extends Executor {
                 this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1 ( ) ) );
                 return;            
         
-        } else if ( result.is(STATS) ) {
+        } else if ( result.is(SHOWLIST) ) {
                 ArrayList<Oper> sraList = OperServ.getRootAdmins();
                 ArrayList<Oper> csopList = OperServ.getCSops();
                 ArrayList<Oper> saList = OperServ.getServicesAdmins();
@@ -801,6 +819,7 @@ public class OSExecutor extends Executor {
         
         for ( User u : Handler.findUsersByNick ( ni ) ) {
             Handler.forceOperModes ( u );
+            NickServ.applyStaffTag ( u );
         }
 
     }
@@ -818,7 +837,7 @@ public class OSExecutor extends Executor {
                 return;            
         
         } else if ( result.is(SYNTAX_ERROR_ADD) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER ADD <string> <flags> <time> <reason>" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SPAMFILTER ADD <string> <flags> [target:<#chan|nick>] <reason>" ) );
                 return;            
         
         } else if ( result.is(BADFLAGS) ) {
@@ -841,7 +860,8 @@ public class OSExecutor extends Executor {
         if ( result.is(SHOWLIST) ) {
                 this.service.sendMsg ( user, "*** SpamFilter LIST ***" );
                 for ( SpamFilter sf : OperServ.getSpamFilters ( ) ) {
-                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), sf.getReason() ) );
+                    this.service.sendMsg ( user, output ( SPAMFILTER_LIST, sf.getPattern().getString(), sf.getFlags(), sf.getInstater(), 
+                                                          "["+sf.getShortID()+"] "+( sf.getTarget() != null ? "(target: "+sf.getTarget()+") " : "" )+sf.getReason() ) );
                 }
                 this.service.sendMsg ( user, "*** End of List ***" );            
         
@@ -861,12 +881,13 @@ public class OSExecutor extends Executor {
                 String reason = result.getString3();
                 String stamp = dateFormat.format ( new Date ( ) );
                 sFilter = new SpamFilter ( System.nanoTime(), pattern, flags, user.getOper().getNick().getNameStr(), reason, stamp );
+                sFilter.setTarget ( result.getString4 ( ) );
                 
-                /*  sendto_one(acptr, "SF %s %ld :%s", sf->text, sf->flags, sf->reason); */
                 OperServ.addSpamFilter ( sFilter );
             
-                this.service.sendServ ( "SF "+pattern+" "+sFilter.getBitFlags()+" :"+reason );                
-                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter: "+pattern+" Flags: "+flags+" Reason: "+reason  );            
+                this.service.sendServ ( sFilter.toServerLine ( ) );
+                this.service.sendGlobOp ( user.getOper().getNick().getName()+" added SpamFilter "+sFilter.getShortID()+": "+pattern+" Flags: "+flags+
+                                          ( sFilter.getTarget() != null ? " Target: "+sFilter.getTarget() : "" )+" Reason: "+reason  );            
         }
         
     }
@@ -918,15 +939,222 @@ public class OSExecutor extends Executor {
         Handler.getOperServ().sendServ ( "SQLINE "+u.getName()+" :You cannot use this nick." );
         Handler.getOperServ().sendServ ( "SVSNICK "+u.getName()+" "+newNick+" 0" );
         
-        Timer timer = new Timer ( );
-        timer.schedule( new UnSQlineTask ( u.getNameStr() ), 15000);
-        
-        OperServ.addTimer ( timer );
-        
-        u.setName(newNick);
+        Scheduler.schedule ( new UnSQlineTask ( u.getNameStr() ), 15000 );
+        /* the ircd answers with a NICK line, that renames the user here */
     }
       
           
+    /* CLONE ADD <ip|a.b.c.*> <limit> [reason] | DEL <mask> | LIST
+       Network wide clone limits, sent to the ircd with SVSCLONE */
+    private void doClone ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :CLONE ADD 1.2.3.* 20 school nat
+        //   0      1        2                       3     4   5      6  7+
+        String sub = cmd.length > 4 ? cmd[4].toUpperCase ( ) : "";
+        
+        if ( sub.equals ( "LIST" ) ) {
+            this.service.sendMsg ( user, "*** Clone limits ***" );
+            for ( CloneLimit cl : OperServ.getCloneLimits ( ) ) {
+                this.service.sendMsg ( user, "  "+cl.getMask()+" - "+cl.getLimit()+" clients - "+cl.getInstater()+
+                                             ( cl.getReason() != null ? " ("+cl.getReason()+")" : "" ) );
+            }
+            this.service.sendMsg ( user, "*** End of List ***" );
+            return;
+        }
+        
+        if ( ( ! sub.equals ( "ADD" ) && ! sub.equals ( "DEL" ) ) || cmd.length < 6 ||
+             ( sub.equals ( "ADD" ) && cmd.length < 7 ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "CLONE <ADD|DEL|LIST> [<ip|a.b.c.*>] [<limit>] [<reason>]" ) );
+            return;
+        }
+        String mask = cmd[5];
+        if ( ! CloneLimit.validMask ( mask ) ) {
+            this.service.sendMsg ( user, "Error: use an ip (1.2.3.4 or an IPv6 address) or a range (1.2.3.*)." );
+            return;
+        }
+        
+        if ( sub.equals ( "DEL" ) ) {
+            CloneLimit cl = OperServ.findCloneLimit ( mask );
+            if ( cl == null ) {
+                this.service.sendMsg ( user, "Error: there is no clone limit for "+mask+"." );
+                return;
+            }
+            if ( ! OSDatabase.deleteCloneLimit ( cl.getMask ( ) ) ) {
+                this.service.sendMsg ( user, "Error: Database not available, try again later." );
+                return;
+            }
+            OperServ.delCloneLimit ( cl.getMask ( ) );
+            this.service.sendServ ( "SVSCLONE "+cl.getMask()+" 0" );
+            String string = user.getOper().getNameStr()+" removed the clone limit for "+cl.getMask();
+            this.service.sendMsg ( user, string );
+            this.service.sendGlobOp ( string );
+            return;
+        }
+        
+        int limit;
+        try {
+            limit = Integer.parseInt ( cmd[6] );
+        } catch ( NumberFormatException ex ) {
+            limit = -1;
+        }
+        if ( limit < 1 || limit > 9999 ) {
+            this.service.sendMsg ( user, "Error: the limit must be a number between 1 and 9999." );
+            return;
+        }
+        String reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : null;
+        CloneLimit cl = new CloneLimit ( mask, limit, reason, user.getOper().getNameStr ( ), null );
+        if ( ! OSDatabase.saveCloneLimit ( cl ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        OperServ.addCloneLimit ( cl );
+        this.service.sendServ ( "SVSCLONE "+mask+" "+limit );
+        String string = user.getOper().getNameStr()+" set the clone limit for "+mask+" to "+limit+( reason != null ? " ("+reason+")" : "" );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+    }
+
+    /* UHM [<type> <0|1|2>]
+       User host-masking in the ircd (SVSUHM). The type is the kind of masking
+       the masking module of the ircd does, 0 is off. The second value is
+       umode +H: 0 = users cannot use it, 1 = set for everyone when they
+       connect, 2 = users may set it themselves. The ircd remembers it. */
+    private void doUhm ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :UHM 1 1
+        //   0      1        2                      3  4 5   = 6
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, "Host-masking type: "+Handler.getUhmType ( )+( Handler.getUhmType ( ) == 0 ? " (off)" : "" )+
+                                         ", umode +H: "+uhmUmodeHStr ( Handler.getUhmUmodeH ( ) ) );
+            this.service.sendMsg ( user, Proc.getConf().getUhmSalt ( ) != null ?
+                                         "The salt for the avade_uhm module is set in the config and sent to the servers." :
+                                         "No uhmsalt in the config: services do not know the masked hosts." );
+            return;
+        }
+        if ( cmd[4].equalsIgnoreCase ( "TEST" ) ) {
+            /* UHM TEST <host> <ip>: what the mask is, to compare with /MODULE CMD avade_uhm TEST on a server */
+            String salt = Proc.getConf().getUhmSalt ( );
+            if ( cmd.length < 7 || salt == null ) {
+                this.service.sendMsg ( user, salt == null ? "Error: no uhmsalt in the config." : output ( SYNTAX_ERROR, "UHM TEST <host> <ip>" ) );
+                return;
+            }
+            this.service.sendMsg ( user, cmd[5]+" ("+cmd[6]+") -> "+HostMask.mask ( salt, Proc.getConf().getUhmPrefix ( ), cmd[5], cmd[6] ) );
+            return;
+        }
+        if ( cmd.length < 6 || ! cmd[4].matches ( "[0-9]{1,2}" ) || ! cmd[5].matches ( "[012]" ) ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "UHM [<type> <0|1|2>]" ) );
+            return;
+        }
+        int type    = Integer.parseInt ( cmd[4] );
+        int umodeH  = Integer.parseInt ( cmd[5] );
+        this.service.sendServ ( "SVSUHM "+type+" "+umodeH );
+        Handler.setUhm ( type, umodeH );
+        String string = user.getOper().getNameStr()+" set host-masking to type "+type+( type == 0 ? " (off)" : "" )+", umode +H: "+uhmUmodeHStr ( umodeH );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+        OSLogEvent log = new OSLogEvent ( user.getName ( ), UHM, user, user.getOper().getNick ( ) );
+        log.setData ( string );
+        OSDatabase.logEvent ( log );
+    }
+    
+    /* SJR [OFF|ON|ALL]
+       Services join requests (SVSCTRL SJR): the servers ask services before
+       they let a user join, and services decide. ON is for the channels
+       with the chanflag SJR, ALL is for every channel on the network. */
+    private void doSjr ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :SJR ON
+        //   0      1        2                      3  4   = 5
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, "Join requests: "+sjrStr ( OperServ.getJoinRequests ( ) ) );
+            return;
+        }
+        HashString sub = new HashString ( cmd[4] );
+        int mode;
+        if ( sub.is(OFF) ) {
+            mode = 0;
+        } else if ( sub.is(ON) ) {
+            mode = 1;
+        } else if ( sub.is(ALL) ) {
+            mode = 2;
+        } else {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SJR [OFF|ON|ALL]" ) );
+            return;
+        }
+        if ( ! OSDatabase.saveSetting ( "sjr", ""+mode ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        OperServ.setJoinRequests ( mode );
+        Handler.getOperServ().sendJoinRequests ( null );
+        String string = user.getOper().getNameStr()+" set join requests to "+sjrStr ( mode );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+        OSLogEvent log = new OSLogEvent ( user.getName ( ), SJR, user, user.getOper().getNick ( ) );
+        log.setData ( string );
+        OSDatabase.logEvent ( log );
+    }
+    
+    private static String sjrStr ( int mode ) {
+        switch ( mode ) {
+            case 1  : return "ON (the channels with the chanflag SJR)";
+            case 2  : return "ALL (every channel)";
+            default : return "OFF";
+        }
+    }
+
+    private static String uhmUmodeHStr ( int umodeH ) {
+        switch ( umodeH ) {
+            case 1  : return "1 (set for everyone at connect)";
+            case 2  : return "2 (users may set it themselves)";
+            default : return "0 (not available to users)";
+        }
+    }
+
+    /* VHOST <nick> <host|OFF>, for staff hosts or to remove an abusive one.
+       Not limited by vhostforbidden. */
+    private void doVhost ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :VHOST nick host
+        //   0      1        2                       3     4    5   = 6
+        NickInfo ni;
+        if ( cmd.length < 6 ) {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "VHOST <nick> <host|OFF>" ) );
+            return;
+        }
+        if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
+            this.service.sendMsg ( user, "Error: nick "+cmd[4]+" is not registered." );
+            return;
+        }
+        if ( ni.getOper().getAccess ( ) >= user.getAccess ( ) && ! user.isIdented ( ni ) ) {
+            /* not on staff at your own level or above */
+            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+            return;
+        }
+        String host = cmd[5].equalsIgnoreCase ( "OFF" ) ? null : cmd[5];
+        String reason;
+        if ( host != null && ( reason = NickServ.checkVhostSyntax ( host ) ) != null ) {
+            this.service.sendMsg ( user, "Error: "+reason+"." );
+            return;
+        }
+        if ( ! NSDatabase.saveVhost ( ni, host, user.getOper().getNameStr ( ) ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        ni.setVhost ( host );
+        for ( User u : Handler.findUsersByNick ( ni ) ) {
+            if ( u.getName().is ( ni.getName() ) ) {
+                if ( host != null ) {
+                    NickServ.applyVhost ( u, ni );
+                } else {
+                    NickServ.resetHost ( u );
+                }
+            }
+        }
+        String string = user.getOper().getNameStr()+" "+( host != null ? "set the vhost of "+ni.getNameStr()+" to "+host : "removed the vhost of "+ni.getNameStr() );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+        OSLogEvent log = new OSLogEvent ( ni.getName(), VHOST, user, user.getOper().getNick() );
+        log.setData ( host != null ? host : "OFF" );
+        OSDatabase.logEvent ( log );
+    }
+      
     private void doServer(User user, String[] cmd) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <DEL> <SERVERNAME> 
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SERVER <SET> <SERVERNAME> <PRIMARY> <SERVERNAME> 
@@ -965,7 +1193,7 @@ public class OSExecutor extends Executor {
                 this.service.sendMsg ( user, "*** End of List ***");            
         
         } else if ( result.is(DEL) ) {
-                if ( cmd.length == 6 && OperServ.addDelServer (result.getString1() ) ) {
+                if ( cmd.length == 6 && OperServ.addDelServer ( cmd[5] ) ) {
                     this.service.sendMsg ( user, "Server "+cmd[5]+" was successfully removed from list.");
                 } else {
                     this.service.sendMsg ( user, "Error: Server "+cmd[5]+" was not removed from list.");
@@ -1035,60 +1263,37 @@ public class OSExecutor extends Executor {
     -OperServ- 4 = Shortcut to block+akill channel massads (contain the flags: scWRBA)
     */
     
+    /* Every character must be a flag SpamFilter.flagsToBits knows (they
+       are case sensitive: s and S are two different flags) */
     private boolean isFlagsGood ( String flags ) {
-        HashString ch;
-        for ( int index = 0; index < flags.length(); index++ ) {
-            ch = new HashString ( String.valueOf(flags.charAt(index)) );
-            if ( ch.is(s) ||
-                 ch.is(S) ||
-                 ch.is(r) ||
-                 ch.is(m) ||
-                 ch.is(p) ||
-                 ch.is(n) ||
-                 ch.is(k) ||
-                 ch.is(q) ||
-                 ch.is(t) ||
-                 ch.is(a) ||
-                 ch.is(c) ||
-                 ch.is(P) ||
-                 ch.is(W) ||
-                 ch.is(L) ||
-                 ch.is(R) ||
-                 ch.is(B) ||
-                 ch.is(K) ||
-                 ch.is(A) ||
-                 ch.is(NUM_1) ||
-                 ch.is(NUM_2) ||
-                 ch.is(NUM_3) ||
-                 ch.is(NUM_4) ) {
-                return true;
-           
-            } 
-        }
-        return false;
+        return flags.matches ( "[sSrmpnkqtacPWLRBKA1-4]+" );
     }
 
     private void makill(User user, String[] cmd) {
         CMDResult result = this.validateCommandData ( user, MAKILL, cmd );
         
-        if ( result.is(STATS) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <add> [<nick!user@host> <nick!user@host> ...]" ) );
+        if ( result.is(SYNTAX_ERROR) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <add> [<*!user@host> <*!user@host> ...]" ) );
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <commit> <length> <reason>" ) );
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );            
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "MAKILL <reset>" ) );
+                return;
         
         } else if ( result.is(BADTIME) ) {
-                this.service.sendMsg ( user, output ( BADTIME, "" ) );            
+                this.service.sendMsg ( user, output ( BADTIME, "" ) );
+                return;
         
         } else if ( result.is(BADREASON) ) {
-                this.service.sendMsg ( user, output ( BADREASON, "" ) );            
+                this.service.sendMsg ( user, output ( BADREASON, "" ) );
+                return;
         
         } else if ( result.is(ACCESS_DENIED) ) {
-                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );            
+                this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+                return;
         }
          
         ServicesBan ban = null;
 
-        if ( result.getSub().is(COMMIT) ) {
+        if ( result.getSub ( ) != null && result.getSub().is(COMMIT) ) {
                 String time = result.getString1 ( );
                 String reason = result.getString2 ( );
                 String expire = result.getString3 ( );
@@ -1114,7 +1319,7 @@ public class OSExecutor extends Executor {
                     );
                     affectedUsers = Handler.findUsersByBan ( ban );
                     for ( User u : affectedUsers ) {
-                        if ( u.isAtleast ( IRCOP ) ) {
+                        if ( u.isOper ( ) ) {
                             this.service.sendMsg ( user, output ( BAN_MATCH_OPER, "Akill", str, "" ) );
                             shouldAdd = false;
                         } 
@@ -1179,7 +1384,7 @@ public class OSExecutor extends Executor {
 
                 if ( sub.is(ADD) ) {
                         for ( int i = 5; i < cmd.length; i++ ) {
-                            if ( cmd[i].contains("!") && cmd[i].contains("@") ) {
+                            if ( validBanMask ( cmd[i] ) && cmd[i].startsWith ( "*!" ) ) {
                                 if ( OperServ.findBan ( AKILL, cmd[i] ) != null ) {
                                     /* Ban exist */
                                     this.service.sendMsg ( user, output ( BAN_EXIST, "AKill", cmd[i] ) );
@@ -1282,7 +1487,7 @@ public class OSExecutor extends Executor {
                     
                 } else if ( sub.is(DEL) && 
                             ( ( ban = OperServ.findBanByID ( command, cmd[5] ) ) == null &&
-                              ( ban = OperServ.findBan ( command, cmd[5] ) ) == null ) ) {
+                              ( ban = OperServ.findBanExact ( command, cmd[5] ) ) == null ) ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( BAN_NO_EXIST );
                 
@@ -1297,13 +1502,23 @@ public class OSExecutor extends Executor {
                 } else if ( isShorterThanLen ( 8, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
-                } else if ( ! ( cmd[6].contains("!") && cmd[6].contains("@") ) ) {
+                } else if ( cmd[6].length ( ) > 110 ) {
+                    /* does not fit the database, and no real mask is that long */
+                    result.setStatus ( SYNTAX_ERROR_ADD );
+                    
+                } else if ( ( command.is(AKILL) || command.is(IGNORE) ) && ! validBanMask ( cmd[6] ) ) {
+                    /* SQLINE is a nick/channel and SGLINE a realname pattern */
+                    result.setStatus ( SYNTAX_ERROR_ADD );
+                    
+                } else if ( command.is(AKILL) && ! cmd[6].startsWith ( "*!" ) ) {
+                    /* The ircd bans on user@host only: with a nick in the mask we
+                       would count one user and then ban everyone on that host */
                     result.setStatus ( SYNTAX_ERROR_ADD );
                     
                 } else if ( ( expire = Handler.expireToDateString ( stamp, time ) ) == null ) {
                     result.setStatus ( BADTIME );
                 
-                } else if ( reason == null ) {
+                } else if ( reason == null || reason.length ( ) > 250 ) {
                     result.setStatus ( BADREASON );
                 
                 } else if ( OperServ.findBan ( command, cmd[6] ) != null ) {
@@ -1324,7 +1539,14 @@ public class OSExecutor extends Executor {
                 //            0       1                          2           3   4                 5     6        7+              = 8+
                 sub = (cmd.length > 4 ? new HashString ( cmd[4] ) : new HashString ( "0" ));
                 flag = cmd.length > 6 ? cmd[6].toUpperCase().hashCode() : 0;
-                reason = cmd.length > 7 ? Handler.cutArrayIntoString ( cmd, 7 ) : "SpamFiltered"; 
+                /* optional target:<#chan|nick mask> before the reason */
+                String sfTarget = null;
+                int reasonAt = 7;
+                if ( cmd.length > 7 && cmd[7].toLowerCase().startsWith ( "target:" ) ) {
+                    sfTarget = cmd[7].substring ( 7 );
+                    reasonAt = 8;
+                }
+                reason = cmd.length > reasonAt ? Handler.cutArrayIntoString ( cmd, reasonAt ) : "SpamFiltered"; 
                 stamp = dateFormat.format ( new Date ( ) );
                                  
                 if ( isShorterThanLen ( 5, cmd ) ) {
@@ -1338,6 +1560,10 @@ public class OSExecutor extends Executor {
                     result.setStatus ( DEL );
                 } else if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR_ADD );
+                } else if ( cmd[5].startsWith ( ":" ) || cmd[5].replaceAll ( "[*?]", "" ).length ( ) < 4 ) {
+                    /* "*" would filter everything everyone says */
+                    this.service.sendMsg ( user, "Error: the pattern needs at least 4 characters that are not wildcards, and cannot start with a colon." );
+                    result.setStatus ( SYNTAX_ERROR_ADD );
                 } else if ( ! this.isFlagsGood ( cmd[6] ) ) {
                     result.setStatus ( BADFLAGS );
                 } else if ( reason == null ) {
@@ -1345,10 +1571,13 @@ public class OSExecutor extends Executor {
                 } else if ( OperServ.findSpamFilter ( cmd[5] ) != null ) {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( FILTER_EXISTS );
+                } else if ( sfTarget != null && ! sfTarget.matches ( "[^\\s:,]{1,63}" ) ) {
+                    result.setStatus ( SYNTAX_ERROR_ADD );
                 } else {
                     result.setString1 ( cmd[5] );
                     result.setString2 ( cmd[6] );
                     result.setString3 ( reason );
+                    result.setString4 ( sfTarget );
                     result.setStatus ( ADD );
                 }            
         
@@ -1364,13 +1593,13 @@ public class OSExecutor extends Executor {
                     result.setStatus ( SHOWLIST );
                 } else if ( isShorterThanLen ( 7, cmd) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( sub != SRA && sub != CSOP && sub != SA && sub != IRCOP ) {
+                } else if ( ! sub.is(SRA) && ! sub.is(CSOP) && ! sub.is(SA) && ! sub.is(IRCOP) ) {
                     result.setSub ( sub );
                     result.setStatus ( SUB_SYNTAX_ERROR );
-                } else if ( (sub2 = new HashString(cmd[5])).is(ADD) && ! sub2.is(DEL) ) {
+                } else if ( ! (sub2 = new HashString(cmd[5])).is(ADD) && ! sub2.is(DEL) ) {
                     result.setStatus ( SUB2_SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[6] ) ) == null ) {
-                    result.setString1 ( user.getString ( NAME ) );
+                    result.setString1 ( cmd[6] );
                     result.setStatus ( NICK_NOT_REGISTERED );
                 } else if ( user.getAccess() <= ni.getAccess() ) {
                     result.setStatus ( ACCESS_DENIED );
@@ -1394,7 +1623,7 @@ public class OSExecutor extends Executor {
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ( u = Handler.findUser ( cmd[4] ) ) == null ) {
                     result.setStatus ( NICK_NOT_FOUND );
-                } else if ( u.isAtleast ( IRCOP ) ) {
+                } else if ( u.isOper ( ) ) {
                     result.setString1 ( u.getNameStr() );
                     result.setStatus ( NICK_IS_OPER );
                 } else if ( cmd.length == 6 && ( u2 = Handler.findUser ( cmd[5] ) ) != null ) {
@@ -1496,7 +1725,7 @@ public class OSExecutor extends Executor {
             return "Permanent "+args[0]+" for "+args[1]+" was successfully placed. Affecting "+args[2]+" users ["+args[3]+"%]";            
         
         } else if ( code.is(BAN_ADD_GLOB) ) {
-            return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+" min." ;            
+            return args[0]+" for "+args[1]+" by "+args[2]+" affecting "+args[3]+" users ["+args[4]+"%] for "+args[5]+( StringMatch.isInt ( args[5] ) ? " min." : "." ) ;            
         
         } else if ( code.is(BAN_EXIST) ) {
             return args[0]+" already exists for "+args[1]+".";            
@@ -1592,7 +1821,7 @@ public class OSExecutor extends Executor {
             return "MAKILL has been reset";             
         
         } else if ( code.is(MAKILL_ADD_GLOB) ) {
-            return args[0]+" akilled "+args[1]+" hosts for "+args[2]+" min affecting "+args[3]+" users ["+args[4]+"%].";             
+            return args[0]+" akilled "+args[1]+" hosts for "+args[2]+( StringMatch.isInt ( args[2] ) ? " min" : "" )+" affecting "+args[3]+" users ["+args[4]+"%].";             
         
         } else if ( code.is(MAKILL_NOBAN_GLOB) ) {
             return "MAKILL has no bans present";             
@@ -1625,5 +1854,16 @@ public class OSExecutor extends Executor {
     }
 
  
+
+    /* nick!user@host with nothing empty, and /bits only on an ip address.
+       ServicesBan splits the mask without checking, and a host name with
+       /bits would be looked up in DNS */
+    static boolean validBanMask ( String mask ) {
+        if ( ! mask.matches ( "[^!@\\s]+![^!@\\s]+@[^!@\\s]+" ) ) {
+            return false;
+        }
+        String host = mask.substring ( mask.indexOf ( '@' ) + 1 );
+        return ! host.contains ( "/" ) || host.matches ( "[0-9a-fA-F:.]+/\\d{1,3}" );
+    }
 
 }

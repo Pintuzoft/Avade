@@ -18,10 +18,8 @@
 package nickserv;
 
 import command.Command;
-import core.Config;
 import core.Expire;
 import core.Database;
-import core.Handler;
 import core.HashString;
 import core.LogEvent;
 import core.Proc;
@@ -29,7 +27,6 @@ import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +40,6 @@ import user.User;
  * @author DreamHealer
  */
 public class NSDatabase extends Database {
-    private static Statement            s;
     private static ResultSet            res;
     private static ResultSet            res2;
     private static PreparedStatement    ps;
@@ -64,7 +60,7 @@ public class NSDatabase extends Database {
         }
         /* Try add the nick */
         try {
-            HashString salt = Proc.getConf().get ( SECRETSALT );
+            begin ( );
             /* NICK */
             String query = "insert into nick  ( name,  mask, regstamp, stamp )  "
                           +"values  ( ?, ?, ?, ? )";
@@ -76,13 +72,12 @@ public class NSDatabase extends Database {
             ps.execute ( );
             ps.close ( );
 
-            /* PASS */
+            /* PASS, a hash */
             query = "insert into passlog (nick,pass,stamp) "+
-                    "values (?,aes_encrypt(?,?),now())";
+                    "values (?,?,now())";
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, ni.getPass() );
-            ps.setString ( 3, salt.getString() );
             ps.execute();
             ps.close();
             
@@ -108,10 +103,11 @@ public class NSDatabase extends Database {
             ps.setInt      ( 6, ni.getSettings().is ( SHOWHOST ) ?1:0                 );
             ps.execute ( );
             ps.close ( ); 
+            commit ( );
 
             idleUpdate ( "createNick ( ) " );
         } catch  ( SQLException ex )  {
-            /* Nick already exists? return -1 */
+            rollback ( );
             Proc.log ( NSDatabase.class.getName ( ) , ex );
             return -1;
         }
@@ -127,7 +123,6 @@ public class NSDatabase extends Database {
      */
 
     public static int updateNick ( NickInfo ni )  {
-        ni.getChanges().printChanges();
         if ( ! ni.getChanges().changed ( ) ) {
             return 1;
         }
@@ -198,7 +193,6 @@ public class NSDatabase extends Database {
                
                 ps = sql.prepareStatement ( query );
                  int index = 1;
-                 ni.getChanges().printChanges();
                 if ( ni.hasChanged ( NOOP ) ) {
                     ps.setInt ( index++, ni.isSet ( NOOP ) ? 1 : 0 );
                 }
@@ -376,7 +370,7 @@ public class NSDatabase extends Database {
                     
                     "union "+
                     
-                    "select nick,null as mail,aes_decrypt(pass,?) as pass,auth,stamp "+
+                    "select nick,null as mail,pass,auth,stamp "+
                     "from passlog "+
                     "where auth = ? "+
                     "and nick = ?";
@@ -385,9 +379,8 @@ public class NSDatabase extends Database {
             ps.setString ( 1, salt.getString() );
             ps.setString ( 2, code );
             ps.setString ( 3, user.getNameStr() );
-            ps.setString ( 4, salt.getString() );
-            ps.setString ( 5, code );
-            ps.setString ( 6, user.getNameStr() );
+            ps.setString ( 4, code );
+            ps.setString ( 5, user.getNameStr() );
             res2 = ps.executeQuery ( );
             
             if ( res2.next() ) {
@@ -417,6 +410,13 @@ public class NSDatabase extends Database {
         }
         try {
             String query = "delete from nick where name = ?;";
+            ps = sql.prepareStatement ( query );
+            ps.setString  ( 1, ni.getNameStr() );
+            ps.execute ( );
+            ps.close ( ); 
+            /* Not tied to nick in the database: the memos must not be
+               waiting for the next owner of the name */
+            query = "delete from memo where name = ?";
             ps = sql.prepareStatement ( query );
             ps.setString  ( 1, ni.getNameStr() );
             ps.execute ( );
@@ -456,17 +456,78 @@ public class NSDatabase extends Database {
     /**
      *
      */
-    public static void loadAllNickExp ( )  {
+    /**
+     * Load the vhosts of all nicks
+     * @return false if they could not be loaded
+     */
+    public static boolean loadAllVhosts ( )  {
         NickInfo ni;
         if  ( ! activateConnection ( ) ) {
-            return;
+            return false;
+        }
+        try {
+            String query = "select name,host from vhost";
+            ps = sql.prepareStatement ( query );
+            res2 = ps.executeQuery ( );
+            while ( res2.next ( ) )  {
+                if ( ( ni = NickServ.findNick ( res2.getString ( "name" ) ) ) != null ) {
+                    ni.setVhost ( res2.getString ( "host" ) );
+                }
+            }
+            res2.close ( );
+            ps.close ( );
+        } catch ( SQLException ex )  {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Store or remove the vhost of a nick
+     * @param ni
+     * @param host the vhost, or null to remove it
+     * @param instater nick that set it
+     * @return false if it could not be written
+     */
+    public static boolean saveVhost ( NickInfo ni, String host, String instater )  {
+        if  ( ! activateConnection ( ) ) {
+            return false;
+        }
+        try {
+            if ( host == null ) {
+                ps = sql.prepareStatement ( "delete from vhost where name = ?" );
+                ps.setString ( 1, ni.getNameStr ( ) );
+            } else {
+                ps = sql.prepareStatement ( "insert into vhost ( name, host, instater, stamp ) values ( ?, ?, ?, now() ) "
+                                          + "on duplicate key update host = ?, instater = ?, stamp = now()" );
+                ps.setString ( 1, ni.getNameStr ( ) );
+                ps.setString ( 2, host );
+                ps.setString ( 3, instater );
+                ps.setString ( 4, host );
+                ps.setString ( 5, instater );
+            }
+            ps.execute ( );
+            ps.close ( );
+            idleUpdate ( "saveVhost ( )" );
+        } catch ( SQLException ex )  {
+            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
+    public static boolean loadAllNickExp ( )  {
+        NickInfo ni;
+        if  ( ! activateConnection ( ) ) {
+            return false;
         }
         try {
             String query = "select name,lastsent,mailcount from nickexp;";
             ps = sql.prepareStatement ( query );
             res2 = ps.executeQuery ( );
 
-            if  ( res2.next ( ) )  {
+            while  ( res2.next ( ) )  {
                 if ( (ni = NickServ.findNick(res2.getString("name"))) != null ) {
                     ni.getExp().setLastSent ( Long.parseLong ( res2.getString ( "lastsent" )  )  );
                     ni.getExp().setMailCount ( res2.getInt ( "mailcount" )  );
@@ -474,18 +535,19 @@ public class NSDatabase extends Database {
             }
         } catch ( NumberFormatException | SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return false;
         }
-        return;
+        return true;
     }
 
     /**
      *
      */
-    public static void loadAllSettings ( )  {
+    public static boolean loadAllSettings ( )  {
         NickInfo ni;
 
         if ( ! activateConnection ( ) ) {
-            return;
+            return false;
         }
         try {
             String query = "select name,noop,neverop,mailblock,showemail,showhost,mark,freeze,hold,noghost from nicksetting";
@@ -510,8 +572,9 @@ public class NSDatabase extends Database {
             idleUpdate ( "loadAllSettings ( ) " );
         } catch  ( SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ), ex );
+            return false;
         } 
-        return;
+        return true;
     }
   
     /**
@@ -533,8 +596,12 @@ public class NSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, command.getExtra ( ) );
-            ps.executeUpdate ( );
+            int updated = ps.executeUpdate ( );
             ps.close ( );
+            if ( updated == 0 ) {
+                /* Wrong or already used auth code */
+                return false;
+            }
 
             idleUpdate ( "authMail ( )" );
             return true;
@@ -563,8 +630,12 @@ public class NSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ni.getNameStr() );
             ps.setString ( 2, command.getExtra ( ) );
-            ps.executeUpdate ( );
+            int updated = ps.executeUpdate ( );
             ps.close ( );
+            if ( updated == 0 ) {
+                /* Wrong or already used auth code */
+                return false;
+            }
 
             idleUpdate ( "authMail ( ) " );
             return true;
@@ -726,18 +797,16 @@ public class NSDatabase extends Database {
             return pass;
         }
         
-        String query = "select aes_decrypt(pass,?) as pass "+
+        String query = "select pass "+
                        "from passlog "+
                        "where nick = ? "+
                        "and auth is null "+
-                       "order by stamp desc "+
+                       "order by stamp desc, id desc "+
                        "limit 1";
         
         try {
-            HashString salt = Proc.getConf().get ( SECRETSALT );
             ps = sql.prepareStatement ( query );
-            ps.setString ( 1, salt.getString() );
-            ps.setString ( 2, nick );
+            ps.setString ( 1, nick );
             res = ps.executeQuery ( );
             if ( res.next ( ) ) {
                 pass = res.getString("pass");
@@ -779,16 +848,15 @@ public class NSDatabase extends Database {
         if ( ! activateConnection() ) {
             return false;
         }
+        /* The value is a hash, auth is null for a password that works at once */
         String query = "insert into passlog "+
                        "(nick,pass,auth,stamp) "+
-                       "values ( ?, aes_encrypt(?,?), ?, now() )";
+                       "values ( ?, ?, ?, now() )";
         try {
-            HashString salt = Proc.getConf().get ( SECRETSALT );
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, pass.getNick().getString() );
             ps.setString ( 2, pass.getValue() );
-            ps.setString ( 3, salt.getString() );
-            ps.setString ( 4, pass.getAuth() );
+            ps.setString ( 3, pass.getAuth() );
             ps.execute();
             ps.close();
             
@@ -809,7 +877,7 @@ public class NSDatabase extends Database {
         long now2;
 
         if ( ! activateConnection ( ) ) {
-            return nList;
+            return null;
         }
         
         try {
@@ -818,7 +886,7 @@ public class NSDatabase extends Database {
             
             String query = "select n.name,"+
                            "  n.mask,"+
-                           "  (select aes_decrypt(pass,?) from passlog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as pass,"+
+                           "  (select pass from passlog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc, id desc limit 1) as pass,"+
                            "  (select aes_decrypt(mail,?) from maillog where nick=n.name and stamp >= n.regstamp and auth is null order by stamp desc limit 1) as mail,"+
                            "  n.regstamp,"+
                            "  n.stamp "+
@@ -827,7 +895,6 @@ public class NSDatabase extends Database {
             
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, salt.getString() );
-            ps.setString ( 2, salt.getString() );
             res = ps.executeQuery ( );
 
             System.out.print("Loading Nicks: ");
@@ -873,6 +940,7 @@ public class NSDatabase extends Database {
             ps.close ( );
         } catch ( SQLException ex )  {
             Proc.log ( NSDatabase.class.getName ( ) , ex );
+            return null;
         }
         return nList;
     }

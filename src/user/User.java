@@ -34,18 +34,23 @@ import java.util.Date;
  * @author DreamHealer
  */
 public class User extends HashNumeric {
+    private String                  vhost;          /* set by services right now, null if none */
+    private boolean                 showReal;       /* the owner asked for the real host on a network that masks (SET SHOWHOST) */
 
     private HashString                  name;
     private HashString                  mask;           
     private HashString                  user;
     private HashString                  gcos;
     private Server                      server;
-    private long                        signOn;
+    private long                        signOn;         /* when the user connected */
+    private long                        nickStamp;      /* TS of the nick, new at every nick change */
     private Date                        date;
     private int                         state; 
     private UserMode                    modes; 
     private ArrayList<Chan>             cList;
     private ServicesID                  sid;
+    private long            serviceStamp;
+    private int             staffTag = 0;   /* services access shown in WHOIS (SVSTAG) */
     private HostInfo                    hi;
     
     private UserFlood                   flood;
@@ -60,14 +65,16 @@ public class User extends HashNumeric {
         long sidBuf;
         this.name       = new HashString ( data[1] );
         this.user       = new HashString ( data[5] ); 
-        this.hi         = new HostInfo ( Long.parseLong ( data[9] ), data[6] ); 
+        this.hi         = new HostInfo ( data[9], data[6] ); 
         
         this.mask       = new HashString ( this.user+"@"+this.getHost ( ) ); 
         this.server     = Handler.findServer ( data[7] );
         this.date       = new Date ( );
         this.state      = 0; 
         sidBuf          = Long.parseLong ( data[8] ); /* buffer */ 
+        this.serviceStamp = sidBuf;
         this.signOn     = Long.parseLong ( data[3] ); 
+        this.nickStamp  = this.signOn;
         this.modes      = new UserMode ( );
         this.modes.set ( SERVER, data );
         this.cList      = new ArrayList<> ( );
@@ -92,13 +99,7 @@ public class User extends HashNumeric {
     public User ( HashString code )  {
         this.name = code;
     }
-  
-    /**
-     *
-     */
-    public void serverConnect ( )  {
-        this.server.addUser ( this ); /* We are connected so lets add ourself to the server */ 
-    }
+
  
     /**
      *
@@ -136,6 +137,40 @@ public class User extends HashNumeric {
      *
      * @return
      */
+
+    /**
+     * The vhost services have set on this user right now (SVSHOST), or null
+     * @param vhost
+     */
+    public void setVhost ( String vhost ) {
+        this.vhost = vhost;
+    }
+
+    /**
+     * @param showReal true when services have taken the mask of the ircd off this user
+     */
+    public void setShowReal ( boolean showReal ) {
+        this.showReal = showReal;
+    }
+
+    public boolean isShowReal ( ) {
+        return this.showReal;
+    }
+
+    /**
+     * @return the host other users see when it is not the real one: the
+     *         vhost, or the mask of the ircd when the network masks hosts.
+     *         Null when the real host is what everyone sees.
+     */
+    public String getShownHost ( ) {
+        if ( this.vhost != null ) {
+            return this.vhost;
+        }
+        if ( this.showReal ) {
+            return null;
+        }
+        return Handler.maskedHost ( this.getHost ( ), this.getIp ( ) );
+    }
 
     public String getHost ( ) { 
         return this.hi.getHost ( );
@@ -230,6 +265,28 @@ public class User extends HashNumeric {
         }
         this.name = nameHash;
     } /* /nick */
+
+    /**
+     * @return when the user connected, in seconds
+     */
+    public long getSignOn ( ) {
+        return this.signOn;
+    }
+
+    /**
+     * @return the TS of the nick the user has now, the ircd checks it when
+     *         we name a user (AJ)
+     */
+    public long getNickStamp ( ) {
+        return this.nickStamp;
+    }
+
+    /**
+     * @param stamp the TS the ircd sent with a nick change
+     */
+    public void setNickStamp ( long stamp ) {
+        this.nickStamp = stamp;
+    }
      
     /**
      *
@@ -244,7 +301,10 @@ public class User extends HashNumeric {
      * @param chan
      */
     public void addChan ( Chan chan ) { 
-        this.cList.add ( chan );
+        /* A user can be named in more than one SJOIN for the same channel */
+        if ( ! this.cList.contains ( chan ) ) {
+            this.cList.add ( chan );
+        }
     }
 
     /**
@@ -313,7 +373,9 @@ public class User extends HashNumeric {
      *
      */
     public void quitServer ( ) { 
-        this.server.remUser ( this );
+        if ( this.server != null ) {
+            this.server.remUser ( this );
+        }
     }
 
     /**
@@ -380,10 +442,6 @@ public class User extends HashNumeric {
      * @param sid
      */
 
-    public void attachSid ( ServicesID sid )    {         
-        this.sid = sid; 
-    }
-
     
     
     /* Return sid */
@@ -404,10 +462,6 @@ public class User extends HashNumeric {
      *
      * @return
      */
-    
-    public int getState ( ) { 
-        return this.state;
-    }
 
     /**
      *
@@ -440,16 +494,6 @@ public class User extends HashNumeric {
      * @return
      */
 
-
-    public boolean hasAccess ( HashString access )  {
-        int numacc = Oper.hashToAccess ( access );
-        for ( NickInfo ni : this.sid.getNiList() ) {
-            if ( ni.getOper().getAccess() >= numacc ) {
-                return true;        
-            }
-        }
-        return false;
-    }
     
     /**
      *
@@ -507,12 +551,6 @@ public class User extends HashNumeric {
      */
     public int getAccess ( ) {
         if ( this.sid == null ) {
-            System.out.println ( "DEBUG!!: getaccess().sid:null" );
-        } else {
-            System.out.println ( "DEBUG!!: getaccess().sid:!null" );
-        }
-         
-        if ( this.sid == null ) {
             this.sid = new ServicesID ();
         }
         return this.sid.getAccess ( );
@@ -545,6 +583,21 @@ public class User extends HashNumeric {
      *
      * @param sid
      */
+    /**
+     * @return the services ID the ircd told us the user has (NICK line)
+     */
+    public int getStaffTag ( ) {
+        return this.staffTag;
+    }
+
+    public void setStaffTag ( int access ) {
+        this.staffTag = access;
+    }
+
+    public long getServiceStamp ( ) {
+        return this.serviceStamp;
+    }
+
     public void setSID ( ServicesID sid ) {
         this.sid = sid;
     }

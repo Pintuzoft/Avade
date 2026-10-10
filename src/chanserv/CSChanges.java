@@ -28,7 +28,6 @@ public class CSChanges extends Changes {
     private boolean freeze;
     private boolean mark;
     private boolean hold;
-    private boolean pass;
     private boolean mailblock;
 
     private boolean close;
@@ -61,6 +60,7 @@ public class CSChanges extends Changes {
     private boolean exemptregistered;
     private boolean exemptinvites;
     private boolean greetmsg;
+    private final java.util.HashSet<java.math.BigInteger> other = new java.util.HashSet<>();
     
     /**
      * CSChanges
@@ -110,6 +110,7 @@ public class CSChanges extends Changes {
         this.exemptregistered = false;
         this.exemptinvites = false;
         this.greetmsg = false;
+        this.other.clear ( );
     }
     
     /**
@@ -151,7 +152,7 @@ public class CSChanges extends Changes {
         else if ( setting.is(EXEMPT_REGISTERED) )   { return this.exemptregistered;     }
         else if ( setting.is(EXEMPT_INVITES) )      { return this.exemptinvites;        }
         else if ( setting.is(GREETMSG) )            { return this.greetmsg;             }
-        return false;        
+        return this.other.contains ( setting.getCode() );        
     }
     
     /**
@@ -290,36 +291,12 @@ public class CSChanges extends Changes {
         } else if ( setting.is(GREETMSG) ) {
             this.greetmsg = true;
             this.changed = true;
+        
+        } else {
+            /* Settings without a field of their own (the newer chanflags) */
+            this.other.add ( setting.getCode() );
+            this.changed = true;
         }  
     }
-    
-    /**
-     * printChanges
-     */
-    public void printChanges ( ) {
-        System.out.println("***** Changes *****");
-        if ( this.freeze )          { System.out.println("Changes: freeze!");       }
-        if ( this.mark )            { System.out.println("Changes: mark!");         }
-        if ( this.hold )            { System.out.println("Changes: hold!");         }
-        if ( this.pass )            { System.out.println("Changes: pass!");         }
-        if ( this.mailblock )       { System.out.println("Changes: mailblock!");    }
-        if ( this.changed )         { System.out.println("Changes: changed!");      }
-        if ( this.changed )         { System.out.println("Changes: changed!");      }
-        if ( this.close )           { System.out.println("Changes: close!");        }
-        if ( this.auditorium )      { System.out.println("Changes: auditorium!");   }
-        if ( this.topic )           { System.out.println("Changes: topic!");        }
-        if ( this.lastused )        { System.out.println("Changes: lastused!");     }
-        if ( this.description )     { System.out.println("Changes: description!");  }
-        if ( this.topiclock )       { System.out.println("Changes: topiclock!");    }
-        if ( this.modelock )        { System.out.println("Changes: modelock!");     }
-        if ( this.keeptopic )       { System.out.println("Changes: keeptopic!");    }
-        if ( this.ident )           { System.out.println("Changes: ident!");        }
-        if ( this.restrict )        { System.out.println("Changes: restrict!");     }
-        if ( this.verbose )         { System.out.println("Changes: verbose!");      }
-        if ( this.leaveops )        { System.out.println("Changes: leaveops!");     }
-        if ( this.autoakick )       { System.out.println("Changes: autoakick!");    }
-        if ( this.dynaop )          { System.out.println("Changes: dynaop!");       }
-    }
-
     
 }

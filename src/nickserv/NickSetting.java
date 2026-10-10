@@ -45,7 +45,6 @@ public class NickSetting extends HashNumeric {
     private boolean showEmail;
     private boolean showHost;
     private boolean auth;
-    private int access;
     /* Oper */
     private String mark;
     private String freeze;
@@ -68,7 +67,8 @@ public class NickSetting extends HashNumeric {
     public boolean is ( HashString it )  {
         if      ( it.is(NOOP) )             { return this.noOp;                 }
         else if ( it.is(NEVEROP) )          { return this.neverOp;              }
-        else if ( it.is(MAILBLOCKED) )      { return this.mailBlock;            }
+        else if ( it.is(MAILBLOCKED) ||
+                  it.is(MAILBLOCK) )        { return this.mailBlock;            }
         else if ( it.is(SHOWEMAIL) )        { return this.showEmail;            }
         else if ( it.is(SHOWHOST) )         { return this.showHost;             }
         else if ( it.is(AUTH) )             { return this.auth;                 }
@@ -92,7 +92,8 @@ public class NickSetting extends HashNumeric {
     public void set ( HashString it, boolean state )  {
         if      ( it.is(NOOP) )             { this.noOp         = state;        }
         else if ( it.is(NEVEROP) )          { this.neverOp      = state;        }
-        else if ( it.is(MAILBLOCKED) )      { this.mailBlock    = state;        }
+        else if ( it.is(MAILBLOCKED) ||
+                  it.is(MAILBLOCK) )        { this.mailBlock    = state;        }
         else if ( it.is(SHOWEMAIL) )        { this.showEmail    = state;        }
         else if ( it.is(SHOWHOST) )         { this.showHost     = state;        }
         else if ( it.is(AUTH) )             { this.auth         = state;        }
@@ -228,21 +229,6 @@ public class NickSetting extends HashNumeric {
         else {
             return "";
         }    
-    }
-    
-    /**
-     *
-     */
-    public void printSettings ( ) {
-        System.out.println ( "NickSetting Mailblock: "+this.mailBlock );
-        System.out.println ( "NickSetting NeverOp: "+this.neverOp );
-        System.out.println ( "NickSetting NoOp: "+this.noOp );
-        System.out.println ( "NickSetting ShowEmail: "+this.showEmail );
-        System.out.println ( "NickSetting ShowHost: "+this.showHost );
-        System.out.println ( "NickSetting Mark: "+this.mark );
-        System.out.println ( "NickSetting Freeze: "+this.freeze );
-        System.out.println ( "NickSetting Hold: "+this.hold );
-        System.out.println ( "NickSetting NoGhost: "+this.noghost );
     }
 }
  

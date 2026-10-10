@@ -28,6 +28,7 @@ import core.HashString;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import mail.SendMail;
+import security.Hash;
 import server.ServSock;
 import user.User;
 import java.util.ArrayList;
@@ -40,9 +41,12 @@ import java.util.regex.Pattern;
  * @author DreamHealer
  */
  public class NSExecutor extends Executor {
+    private static final int MINPASS = 8;
+    private static final int MAXPASS = 63;
     private NSSnoop                 snoop;
     private TextFormat              f;
-    private static final Pattern    VALID_EMAIL_ADDRESS_REGEX = Pattern.compile ( "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE );
+    /* Top level domains are 2-63 letters (.se, .online, .stockholm) */
+    private static final Pattern    VALID_EMAIL_ADDRESS_REGEX = Pattern.compile ( "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,63}$", Pattern.CASE_INSENSITIVE );
     private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     
     /**
@@ -62,14 +66,11 @@ import java.util.regex.Pattern;
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd ) {
-        HashString command;
+    public void parse ( User user, String[] cmd, HashString command ) {
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
             this.help ( user );
             return; 
         }
-        
-        command = new HashString ( cmd[3] );
         
         if ( command.is(REGISTER) ) {
             this.register ( user, cmd );
@@ -110,8 +111,11 @@ import java.util.regex.Pattern;
         } else if ( command.is(NOGHOST) ) {
             this.changeFlag ( NOGHOST, user, cmd );
         
-        } else if ( command.is(GETPASS) ) {
-            this.getPass ( user, cmd );
+        } else if ( command.is(RESETPASS) ) {
+            this.resetPass ( user, cmd );
+        
+        } else if ( command.is(SETPASS) ) {
+            this.setPass ( user, cmd );
         
         } else if ( command.is(GETEMAIL) ) {
             this.getEmail ( user, cmd );
@@ -164,6 +168,11 @@ import java.util.regex.Pattern;
                 this.snoop.msg (false, INVALID_EMAIL, new HashString ( result.getString1() ), user, cmd );
                 return;             
         
+        } else if ( result.is(INVALID_PASS) ) {
+                this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+                this.snoop.msg ( false, INVALID_PASS, user.getName(), user, cmd );
+                return;             
+        
         } else if ( result.is(NICK_ALREADY_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_ALREADY_REGGED, user.getNameStr() ) );
                 this.snoop.msg ( false, NICK_ALREADY_REGGED, user.getNameStr(), user, cmd );
@@ -180,8 +189,8 @@ import java.util.regex.Pattern;
         NickServ.addNewAuth ( auth );
         NickServ.addToWorkList ( REGISTER, ni );
         NickServ.addNick ( ni );
-        SendMail.sendNickRegisterMail ( ni, auth );
         user.getSID().add ( ni );
+        Handler.addUpdateSID ( user.getSID ( ) );   /* stay identified over a services restart */
         NSLogEvent log = new NSLogEvent ( ni.getName(), REGISTER, user.getFullMask(), null );
         NickServ.addLog ( log );
         NickServ.fixIdentState ( user ); 
@@ -240,7 +249,8 @@ import java.util.regex.Pattern;
         }  
          
         NickInfo ni = result.getNick ( );
-        if ( ! ni.is(user) ) {
+        if ( ! ni.isMask ( user ) ) {
+            /* From somewhere else than last time: show where that was */
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );        
         }
@@ -250,7 +260,6 @@ import java.util.regex.Pattern;
         NickServ.fixIdentState ( user );
         ni.getNickExp().reset ( );
         ni.setLastUsed();
-        ni.getChanges().hasChanged ( LASTUSED );
         NickServ.addToWorkList ( CHANGE, ni );
         Handler.addUpdateSID ( user.getSID() );
         this.snoop.msg ( true, IDENTIFY, ni.getName(), user, cmd );
@@ -310,6 +319,14 @@ import java.util.regex.Pattern;
         if ( result.is(SYNTAX_ERROR) ) {
                 this.service.sendMsg ( user, output ( SYNTAX_ERROR, "DELETE <nick>" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getNameStr(), user, cmd );
+                return;
+        
+        } else if ( result.is(ACCESS_DENIED) ) {
+                return; /* the access check already told the user */
+        
+        } else if ( result.is(ACCESS_DENIED_DELETE_OPER) ) {
+                this.service.sendMsg ( user, output ( ACCESS_DENIED_DELETE_OPER, "" ) );
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
                 return;
         
         } else if ( result.is(NICK_NOT_REGGED) ) {
@@ -423,16 +440,16 @@ import java.util.regex.Pattern;
         }  
          
         ni = result.getNick ( );
-        if ( ! ni.isMask(user) ) {
+        if ( ! ni.isMask ( user ) ) {
             this.service.sendMsg ( user, output ( NICK_NEW_MASK, ni.getString ( FULLMASK ) ) );
             ni.setUserMask ( user );
-        } else {
-            this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         }
+        this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         user.getSID().add ( ni );
         NickServ.fixIdentState ( user );
-        ni.getChanges().hasChanged ( LASTUSED );
+        ni.setLastUsed ( );
         NickServ.addToWorkList ( CHANGE, ni );
+        Handler.addUpdateSID ( user.getSID ( ) );
         this.snoop.msg ( true, SIDENTIFY, ni.getName(), user, cmd );
     }
 
@@ -449,7 +466,7 @@ import java.util.regex.Pattern;
         
         CMDResult result = this.validateCommandData ( user, GHOST, cmd );
  
-        if ( result.getStatus() != SYNTAX_ERROR )  {
+        if ( ! result.is ( SYNTAX_ERROR ) )  {
             nick = cmd[4];       
             cmd[5] = "pass_redacted";
         }
@@ -484,15 +501,21 @@ import java.util.regex.Pattern;
                 this.service.sendGlobOp (output (GLOB_IS_NOGHOST, user.getFullMask(), result.getNick().getNameStr() ) );
                 this.snoop.msg (false, IS_NOGHOST, result.getNick().getNameStr(), user, cmd );
                 return;            
+        
+        } else if ( result.is(IS_THROTTLED) ) {
+                this.service.sendMsg (user, output (IS_THROTTLED, result.getNick().getNameStr() ) );
+                this.snoop.msg (false, IS_THROTTLED, result.getNick().getNameStr(), user, cmd );
+                return;            
         }  
          
         ni = result.getNick ( );
         this.service.sendMsg ( user, output ( PASSWD_ACCEPTED, ni.getString ( NAME ) ) );
         ServSock.sendCmd ( ":"+Proc.getConf().get ( NAME ) +" SVSKILL "+ni.getNameStr()+" :Ghost exorcised by: "+user.getNameStr() ); /* kill the ghosted nick */
-        NickServ.fixIdentState ( user );
         user.getSID().add ( ni );
-        ni.getChanges().hasChanged ( LASTUSED );
+        NickServ.fixIdentState ( user );
+        ni.setLastUsed ( );
         NickServ.addToWorkList ( CHANGE, ni );
+        Handler.addUpdateSID ( user.getSID ( ) );
         this.snoop.msg ( true, GHOST, ni.getNameStr(), user, cmd );
     }
     
@@ -520,12 +543,18 @@ import java.util.regex.Pattern;
          
         ni = result.getNick ( );
         this.showStart ( true, user, ni, f.b ( ) +"Info for: "+f.b ( ) ); 
-        this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER )+"@"+ni.getString ( HOST ) );        
+        /* The real host is only for the owner and opers, unless SET SHOWHOST is on */
+        if ( ni.getSettings().is ( SHOWHOST ) || user.isIdented ( ni ) || user.isAtleast ( IRCOP ) ) {
+            this.service.sendMsg ( user, f.b ( ) +"    Hostmask: "+f.b ( ) +ni.getString ( USER )+"@"+ni.getString ( HOST ) );        
+        }
         this.service.sendMsg ( user, f.b ( ) +"  Registered: "+f.b ( ) +ni.getString ( REGTIME ) );
         this.service.sendMsg ( user, f.b ( ) +"   Last seen: "+f.b ( ) +ni.getString ( LASTUSED ) );
         this.service.sendMsg ( user, f.b ( ) +"    Time now: "+f.b ( ) +dateFormat.format ( new Date ( ) ) );
         if ( ni.getSettings().is(SHOWEMAIL) ) {
             this.service.sendMsg(user, f.b ( ) +"       Email: "+f.b ( ) +ni.getEmail ( ) );
+        }
+        if ( ni.getVhost ( ) != null ) {
+            this.service.sendMsg ( user, f.b ( ) +"       Vhost: "+f.b ( ) +ni.getVhost ( ) );
         }
         if ( ni.getSettings().getInfoStr().length() > 0 ) {
             this.service.sendMsg ( user, f.b ( ) +"    Settings: "+f.b ( ) +ni.getSettings().getInfoStr ( ) );
@@ -571,7 +600,7 @@ import java.util.regex.Pattern;
             this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET <option> ON/OFF" ) );
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
 
-        } else if ( ( ni = NickServ.findNick ( cmd[0] ) ) == null ) {
+        } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
             this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[0] ) );
             this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[0], user, cmd );
 
@@ -585,13 +614,16 @@ import java.util.regex.Pattern;
             command = new HashString ( cmd[4] );
             subcommand = new HashString ( cmd[5] );
             
-            if ( subcommand.is(ON) ) {
-                enable = true;
-            } else if ( subcommand.is(OFF) ) {
-                enable = false;
-            }
+            boolean onOff = ( subcommand.is(ON) || subcommand.is(OFF) );
+            enable = subcommand.is(ON);
              
-            if ( command.is(NOOP) ) {
+            if ( ! onOff && ( command.is(NOOP) || command.is(NEVEROP) || command.is(MAILBLOCK) ||
+                              command.is(SHOWEMAIL) || command.is(SHOWHOST) ) ) {
+                /* anything but ON used to mean OFF */
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SET <option> <ON|OFF>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, ni.getName(), user, cmd );
+            
+            } else if ( command.is(NOOP) ) {
                 doSetBoolean ( NOOP, "NoOp", user, ni, enable, cmd );
             } else if ( command.is(NEVEROP) ) {
                 doSetBoolean ( NEVEROP, "NeverOp", user, ni, enable, cmd );
@@ -605,12 +637,71 @@ import java.util.regex.Pattern;
                 doSetString ( SETEMAIL, user, cmd );
             } else if ( command.is(PASSWD) ) {
                 doSetString ( SETPASSWD, user, cmd );
+            } else if ( command.is(VHOST) ) {
+                doSetVhost ( user, ni, cmd );
             } else {
                 this.service.sendMsg ( user, output ( SETTING_NOT_FOUND, cmd[4] ) );
                 this.snoop.msg ( false, SET, ni.getName(), user, cmd );
             }  
              
         }
+    }
+    
+    /* SET VHOST <host|OFF> */
+    private void doSetVhost ( User user, NickInfo ni, String[] cmd ) {
+        String host = cmd[5];
+        boolean isCurrentNick = user.getName().is ( ni.getName() );
+        
+        if ( ! ni.isAuth ( ) ) {
+            this.service.sendMsg ( user, "Error: you need to confirm the email of your nick before you can use a vhost." );
+            this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            return;
+        }
+        if ( System.currentTimeMillis ( ) - ni.getVhostChanged ( ) < 10 * 60 * 1000L ) {
+            this.service.sendMsg ( user, "Error: you can only change your vhost once every 10 minutes." );
+            this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            return;
+        }
+        
+        if ( host.equalsIgnoreCase ( "OFF" ) ) {
+            if ( ni.getVhost ( ) == null ) {
+                this.service.sendMsg ( user, "Error: "+ni.getNameStr()+" has no vhost." );
+                return;
+            }
+            if ( ! NSDatabase.saveVhost ( ni, null, null ) ) {
+                this.service.sendMsg ( user, "Error: Database not available, try again later." );
+                return;
+            }
+            ni.setVhost ( null );
+            ni.vhostChanged ( );
+            if ( isCurrentNick && ! NickServ.resetHost ( user ) ) {
+                this.service.sendMsg ( user, "The vhost of "+ni.getNameStr()+" has been removed, reconnect to get your normal host back." );
+            } else {
+                this.service.sendMsg ( user, "The vhost of "+ni.getNameStr()+" has been removed." );
+            }
+            NickServ.addLog ( new NSLogEvent ( ni.getName(), VHOST, user, null ) );
+            this.snoop.msg ( true, SET, ni.getName(), user, cmd );
+            return;
+        }
+        
+        String reason = NickServ.checkVhost ( host );
+        if ( reason != null ) {
+            this.service.sendMsg ( user, "Error: "+reason+"." );
+            this.snoop.msg ( false, SET, ni.getName(), user, cmd );
+            return;
+        }
+        if ( ! NSDatabase.saveVhost ( ni, host, ni.getNameStr ( ) ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        ni.setVhost ( host );
+        ni.vhostChanged ( );
+        if ( isCurrentNick ) {
+            NickServ.applyVhost ( user, ni );
+        }
+        this.service.sendMsg ( user, "The vhost of "+ni.getNameStr()+" is now: "+host );
+        NickServ.addLog ( new NSLogEvent ( ni.getName(), VHOST, user, null ) );
+        this.snoop.msg ( true, SET, ni.getName(), user, cmd );
     }
     
     private void changeFlag ( HashString flag, User user, String[] cmd ) {
@@ -655,7 +746,7 @@ import java.util.regex.Pattern;
              command.is(UNHOLD) ) {
                 NickInfo instater = NickServ.findNick ( ni.getSettings().getInstater ( flag ) );
                 if ( ! user.isIdented ( instater ) && ! user.isAtleast ( SRA ) ) {
-                    this.service.sendMsg ( user, "Error: flag can only be removed by: "+instater.getName()+" or a SRA+." );
+                    this.service.sendMsg ( user, "Error: flag can only be removed by: "+( instater != null ? instater.getName() : "its instater (nick no longer registered)" )+" or a SRA+." );
                     return;
                 }
                 ni.getSettings().set ( flag, "" );
@@ -689,48 +780,148 @@ import java.util.regex.Pattern;
          
     }
     
-    /* Can possibly merge getPass and getEmail methods in the future */
-    private void getPass ( User user, String[] cmd ) {
-        CMDResult result = this.validateCommandData ( user, GETPASS, cmd );
+    /**
+     * RESETPASS <nick>: mail a code to the confirmed address of the nick.
+     * RESETPASS <nick> <code> <new-pass>: a new password with that code.
+     * Anyone can ask for it, the code only goes to the owner
+     * @param user
+     * @param cmd
+     */
+    private void resetPass ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :resetpass nick code newpass   = 7
+        //       0         1               2                    3       4    5     6
+        CMDResult result = this.validateCommandData ( user, RESETPASS, cmd );
+        String pass = null;
+        
+        if ( cmd.length > 6 ) {
+            pass = cmd[6];
+            cmd[5] = "code_redacted";
+            cmd[6] = "pass_redacted";
+        }
         
         if ( result.is(SYNTAX_ERROR) ) {
-                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "" ) );
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "RESETPASS <nick> [<code> <new-pass>]" ) );
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
-                return;            
-        
-        } else if ( result.is(ACCESS_DENIED) ) {
-                this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1 ( ) ) ); 
-                this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
-                return;            
+                return;
         
         } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
                 this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
-                return;            
+                return;
         
         } else if ( result.is(IS_MARKED) ) {
-                this.service.sendMsg (user, output (IS_MARKED, result.getNick().getNameStr() ) ); 
-                this.snoop.msg (false, IS_MARKED, result.getNick().getName ( ), user, cmd );
-                return;            
+                this.service.sendMsg ( user, output ( IS_MARKED, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(IS_FROZEN) ) {
+                this.service.sendMsg ( user, output ( IS_FROZEN, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, IS_FROZEN, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(NICK_NOT_AUTHED) ) {
+                this.service.sendMsg ( user, output ( NICK_NOT_AUTHED, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, NICK_NOT_AUTHED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(IS_THROTTLED) ) {
+                this.service.sendMsg ( user, output ( IS_THROTTLED, "" ) );
+                this.snoop.msg ( false, IS_THROTTLED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(NO_AUTH_FOUND) ) {
+                this.service.sendMsg ( user, "Error: the code is wrong or does not work any more. A new one is sent with: /NickServ RESETPASS "+result.getNick().getNameStr() );
+                this.snoop.msg ( false, NO_AUTH_FOUND, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(INVALID_PASS) ) {
+                this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+                this.snoop.msg ( false, INVALID_PASS, user.getName(), user, cmd );
+                return;
         }
-         
-        NickInfo ni = result.getNick ( ); 
-        NickInfo oper = user.getOper().getNick ( );
-        HashString command = result.getCommand ( );
-        this.service.sendMsg ( user, "*** Password log of "+ni.getName()+":" );
-        if ( ! NSDatabase.checkConn() ) {
-            this.service.sendMsg ( user, "No passwords currently available as no database connection is present." );
-        } else {
-            ArrayList<NSAuth> pList = NSDatabase.getAuthsByNick ( PASS, ni.getName() );
-            for ( NSAuth pass : pList ) {
-                String auth = ( pass.getAuth() == null ? "A" : "N" );
-                this.service.sendMsg ( user, output ( NICK_GETEMAIL, pass.getStamp(), auth, pass.getValue() ) );
+        
+        NickInfo ni = result.getNick ( );
+        
+        if ( pass == null ) {
+            String code = ni.newResetCode ( );
+            if ( code == null ) {
+                this.service.sendMsg ( user, "A code was mailed for nick "+ni.getName()+" a short while ago. Check the mail, a new code can be sent 15 minutes after the last one." );
+                this.snoop.msg ( false, RESETPASS, ni.getName(), user, cmd );
+                return;
             }
-        }       
-        this.service.sendMsg ( user, "*** End of log ***" );
-        NSLogEvent log = new NSLogEvent ( ni.getName(), command, user.getFullMask(), oper.getNameStr() );
+            SendMail.sendResetMail ( ni, code );
+            this.service.sendMsg ( user, "A code has been mailed to the address of nick "+ni.getName()+". Follow the instructions in the mail to choose a new password." );
+            this.snoop.msg ( true, RESETPASS, ni.getName(), user, cmd );
+            return;
+        }
+        
+        ni.setNewPass ( pass );
+        ni.clearResetCode ( );
+        NickServ.unIdentifyAllFromNick ( ni );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), RESETPASS, user.getFullMask(), null );
         NickServ.addLog ( log );
-        this.service.sendGlobOp ( oper.getName()+" used GETPASS on: "+ni.getName() );
+        this.service.sendMsg ( user, "The password of nick "+ni.getName()+" has been changed. Identify with: /NickServ IDENTIFY "+ni.getName()+" <new-pass>" );
+        this.snoop.msg ( true, RESETPASS, ni.getName(), user, cmd );
+    }
+    
+    /**
+     * SETPASS <nick> <new-pass>: staff sets a new password for an owner that
+     * lost it. Nobody can see the old one
+     * @param user
+     * @param cmd
+     */
+    private void setPass ( User user, String[] cmd ) {
+        // :DreamHea1er PRIVMSG NickServ@services.sshd.biz :setpass nick newpass   = 6
+        //       0         1               2                    3     4     5
+        CMDResult result = this.validateCommandData ( user, SETPASS, cmd );
+        String pass = null;
+        
+        if ( cmd.length > 5 ) {
+            pass = cmd[5];
+            cmd[5] = "pass_redacted";
+        }
+        
+        if ( result.is(SYNTAX_ERROR) ) {
+                this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SETPASS <nick> <new-pass>" ) );
+                this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(ACCESS_DENIED) ) {
+                /* the access check already told the user */
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
+                return;
+        
+        } else if ( result.is(NICK_NOT_REGGED) ) {
+                this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
+                this.snoop.msg ( false, NICK_NOT_REGISTERED, cmd[4], user, cmd );
+                return;
+        
+        } else if ( result.is(IS_MARKED) ) {
+                this.service.sendMsg ( user, output ( IS_MARKED, result.getNick().getNameStr() ) );
+                this.snoop.msg ( false, IS_MARKED, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(ACCESS_DENIED_SETPASS_OPER) ) {
+                this.service.sendMsg ( user, output ( ACCESS_DENIED_SETPASS_OPER, "" ) );
+                this.snoop.msg ( false, ACCESS_DENIED_SETPASS_OPER, result.getNick().getName(), user, cmd );
+                return;
+        
+        } else if ( result.is(INVALID_PASS) ) {
+                this.service.sendMsg ( user, output ( INVALID_PASS, "" ) );
+                this.snoop.msg ( false, INVALID_PASS, user.getName(), user, cmd );
+                return;
+        }
+        
+        NickInfo ni = result.getNick ( );
+        NickInfo oper = user.getOper().getNick ( );
+        ni.setNewPass ( pass );
+        ni.clearResetCode ( );
+        NickServ.unIdentifyAllFromNick ( ni );
+        NSLogEvent log = new NSLogEvent ( ni.getName(), SETPASS, user.getFullMask(), oper.getNameStr() );
+        NickServ.addLog ( log );
+        this.service.sendMsg ( user, "A new password has been set on nick: "+ni.getName() );
+        this.service.sendGlobOp ( oper.getName()+" used SETPASS on: "+ni.getName() );
+        this.snoop.msg ( true, SETPASS, ni.getName(), user, cmd );
     }
  
     private void getEmail ( User user, String[] cmd ) {
@@ -741,8 +932,8 @@ import java.util.regex.Pattern;
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;            
         } else if ( result.is(ACCESS_DENIED) ) {
-                this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1 ( ) ) );
-                this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
+                /* the access check already told the user */
+                this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
                 return;            
         } else if ( result.is(NICK_NOT_REGGED) ) {
                 this.service.sendMsg ( user, output ( NICK_NOT_REGISTERED, cmd[4] ) );
@@ -808,6 +999,7 @@ import java.util.regex.Pattern;
         
         if ( auth.getType().is(MAIL) ) {
                 ni.setEmail ( auth.getValue() );
+                NickServ.fixIdentState ( user );   /* a confirmed mail gives +r */
                 log = new NSLogEvent ( ni.getName(), AUTHMAIL, user, null );
                 NickServ.addLog ( log );
                 NickServ.notifyIdentifiedUsers ( ni, "A new mail has been fully authed and added to nick: "+ni.getName() );
@@ -838,6 +1030,11 @@ import java.util.regex.Pattern;
         ni.getSettings().set ( command, enable );
         ni.getChanges().change ( command );
         NickServ.addToWorkList ( CHANGE, ni );
+        if ( command.is(SHOWHOST) && user.getName().is ( ni.getName ( ) ) ) {
+            /* On a network that masks hosts this also puts the real host
+               back on IRC, or the mask when it is turned off */
+            NickServ.applyHost ( user, ni );
+        }
         this.snoop.msg ( true, SET, ni.getName(), user, cmd );        
     }
 
@@ -909,7 +1106,6 @@ import java.util.regex.Pattern;
         if ( command.is(SETEMAIL) ) {
                 auth = new NSAuth ( MAIL, ni.getName(), value );
                 NickServ.addNewAuth ( auth );
-                ni.getChanges().hasChanged ( MAIL );
                 NickServ.addToWorkList ( CHANGE, ni );
                 log = new NSLogEvent ( ni.getName(), MAIL, user.getFullMask(), null );
                 NickServ.addLog ( log );
@@ -917,9 +1113,9 @@ import java.util.regex.Pattern;
                 this.snoop.msg ( true, SETEMAIL, ni.getName(), user, cmd );              
         
         } else if ( command.is(SETPASSWD) ) {
-                auth = new NSAuth ( PASS, ni.getName(), value );
+                /* the new password waits as a hash until the mail is confirmed */
+                auth = new NSAuth ( PASS, ni.getName(), Hash.password ( value ) );
                 NickServ.addNewAuth ( auth );
-                ni.getChanges().hasChanged ( PASS );
                 NickServ.addToWorkList ( CHANGE, ni );
                 log = new NSLogEvent ( ni.getName(), PASS, user.getFullMask(), null );
                 NickServ.addLog ( log );
@@ -952,7 +1148,7 @@ import java.util.regex.Pattern;
      * @param str
      */
     public void showStart ( boolean online, User user, NickInfo ni, String str )  {
-        if ( Handler.findUser ( ni.getString ( NAME ) ) == null )  {
+        if ( Handler.findUser ( ni.getName ( ) ) == null )  {
             this.service.sendMsg ( user, "*** "+str+ni.getString ( NickInfo.NAME ) + ( online?" [Offline]":"" ) +" ***" );
         } else {
             this.service.sendMsg ( user, "*** "+str+ni.getString ( NickInfo.NAME ) + ( online?" [Online]":"" ) +" ***" );
@@ -974,6 +1170,10 @@ import java.util.regex.Pattern;
      * @return
      */
     public static boolean validEmail ( String email )  {
+        /* 254 is the longest address there can be, and fits encrypted in maillog.mail */
+        if ( email == null || email.length ( ) > 254 ) {
+            return false;
+        }
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher ( email );
         return matcher.find ( );
     }
@@ -1056,6 +1256,8 @@ import java.util.regex.Pattern;
         if ( command.is(REGISTER) ) {
                 if ( isShorterThanLen ( 6, cmd )  )  {
                     result.setStatus ( SYNTAX_ERROR );
+                } else if ( cmd[4].length ( ) < MINPASS || cmd[4].length ( ) > MAXPASS ) {
+                    result.setStatus ( INVALID_PASS );
                 } else if ( ! validEmail ( cmd[5] )  )  {
                     result.setString1 ( cmd[5] );
                     result.setStatus ( INVALID_EMAIL );
@@ -1090,13 +1292,16 @@ import java.util.regex.Pattern;
                     command.is(IDENTIFY) ) {
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( user.getString ( NAME ) ) ) == null ) {
+                } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
                     result.setString1 ( user.getString ( NAME ) );
                     result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
-                } else if ( ! ni.is(user) && ni.getThrottle().isThrottled() ) {
+                } else if ( command.is(DROP) && ni.isSet ( MARKED ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
+                } else if ( ni.getThrottle().isThrottled() ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_THROTTLED );
                 } else if ( ! ni.identify ( user, cmd[4] ) ) {
@@ -1134,7 +1339,8 @@ import java.util.regex.Pattern;
                     result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setStatus ( NICK_NOT_REGGED );
-                } else if ( ( target = Handler.findUser ( cmd[4] ) ) == null ) {
+                } else if ( ( target = Handler.findUser ( cmd[4] ) ) == null || target == user ) {
+                    /* not online, or yourself: nothing to ghost */
                     result.setString1 ( cmd[4] );
                     result.setStatus ( NO_SUCH_NICK );    
                 } else if ( ni.isSet ( FROZEN ) ) {
@@ -1143,6 +1349,9 @@ import java.util.regex.Pattern;
                 } else if ( ni.isSet ( NOGHOST ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_NOGHOST ); 
+                } else if ( ni.getThrottle().isThrottled() ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_THROTTLED );
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
                     result.setStatus ( IDENTIFY_FAIL );
                 } else {
@@ -1150,7 +1359,7 @@ import java.util.regex.Pattern;
                 }            
         
         } else if ( command.is(INFO) ) {
-                if ( isShorterThanLen ( 4, cmd )  )  {
+                if ( isShorterThanLen ( 5, cmd )  )  {
                     result.setStatus ( SYNTAX_ERROR );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setStatus ( NICK_NOT_REGGED );
@@ -1182,7 +1391,7 @@ import java.util.regex.Pattern;
                 boolean remove = false;
                 String name = null;
                 if ( cmd.length > 4 ) {
-                    remove = cmd[4].charAt(0) == '-';
+                    remove = cmd[4].startsWith ( "-" );
                     if ( remove ) {
                         name = cmd[4].substring ( 1 );
                     } else {
@@ -1213,8 +1422,7 @@ import java.util.regex.Pattern;
                     }
                 }
                 
-        } else if ( command.is(GETEMAIL) ||
-                    command.is(GETPASS) ) {
+        } else if ( command.is(GETEMAIL) ) {
                 result.setCommand ( command );
                 if ( isShorterThanLen ( 5, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
@@ -1222,7 +1430,7 @@ import java.util.regex.Pattern;
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
-                    result.setStatus ( NICK_NOT_REGISTERED );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( MARK ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
@@ -1230,12 +1438,64 @@ import java.util.regex.Pattern;
                     result.setNick ( ni );
                 }            
             
+        } else if ( command.is(RESETPASS) ) {
+                /* RESETPASS <nick> or RESETPASS <nick> <code> <new-pass> */
+                if ( cmd.length != 5 && cmd.length != 7 ) {
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGGED );
+                } else if ( ni.isSet ( MARK ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
+                } else if ( ni.isSet ( FROZEN ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_FROZEN );
+                } else if ( ! ni.isAuth ( ) ) {
+                    /* no confirmed address to send the code to */
+                    result.setNick ( ni );
+                    result.setStatus ( NICK_NOT_AUTHED );
+                } else if ( cmd.length == 7 && ni.getThrottle().isThrottled ( ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_THROTTLED );
+                } else if ( cmd.length == 7 && ! ni.isResetCode ( cmd[5] ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( NO_AUTH_FOUND );
+                } else if ( cmd.length == 7 && ( cmd[6].length ( ) < MINPASS || cmd[6].length ( ) > MAXPASS ) ) {
+                    result.setStatus ( INVALID_PASS );
+                } else {
+                    result.setNick ( ni );
+                }
+                
+        } else if ( command.is(SETPASS) ) {
+                result.setCommand ( command );
+                if ( cmd.length != 6 ) {
+                    result.setStatus ( SYNTAX_ERROR );
+                } else if ( ! NickServ.enoughAccess ( user, command ) ) {
+                    result.setStatus ( ACCESS_DENIED );
+                } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
+                    result.setString1 ( cmd[4] );
+                    result.setStatus ( NICK_NOT_REGGED );
+                } else if ( ni.isSet ( MARK ) ) {
+                    result.setNick ( ni );
+                    result.setStatus ( IS_MARKED );
+                } else if ( ni.getOper().getAccess ( ) > 0 &&
+                            ni.getOper().getAccess ( ) >= user.getAccess ( ) ) {
+                    /* the password of staff is set by someone above */
+                    result.setNick ( ni );
+                    result.setStatus ( ACCESS_DENIED_SETPASS_OPER );
+                } else if ( cmd[5].length ( ) < MINPASS || cmd[5].length ( ) > MAXPASS ) {
+                    result.setStatus ( INVALID_PASS );
+                } else {
+                    result.setNick ( ni );
+                }
+                
         } else if ( command.is(SETEMAIL) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
+                } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
                     result.setString1 ( user.getString(NAME) );
-                    result.setStatus ( NICK_NOT_REGISTERED );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
@@ -1256,9 +1516,9 @@ import java.util.regex.Pattern;
         } else if ( command.is(SETPASSWD) ) {
                 if ( isShorterThanLen ( 7, cmd ) ) {
                     result.setStatus ( SYNTAX_ERROR );
-                } else if ( ( ni = NickServ.findNick ( user.getString(NAME) ) ) == null ) {
+                } else if ( ( ni = NickServ.findNick ( user.getName ( ) ) ) == null ) {
                     result.setString1 ( user.getString(NAME) );
-                    result.setStatus ( NICK_NOT_REGISTERED );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( FROZEN ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_FROZEN );
@@ -1268,7 +1528,7 @@ import java.util.regex.Pattern;
                 } else if ( ! ni.identify ( user, cmd[5] )  )  {
                     result.setNick ( ni );
                     result.setStatus ( IDENTIFY_FAIL );
-                } else if ( cmd[6].length() < 8 ) {
+                } else if ( cmd[6].length ( ) < MINPASS || cmd[6].length ( ) > MAXPASS ) {
                     result.setStatus ( INVALID_PASS );
                 } else {
                     result.setString1 ( cmd[6] );
@@ -1283,12 +1543,15 @@ import java.util.regex.Pattern;
                     result.setStatus ( ACCESS_DENIED );
                 } else if ( ( ni = NickServ.findNick ( cmd[4] ) ) == null ) {
                     result.setString1 ( cmd[4] );
-                    result.setStatus ( NICK_NOT_REGISTERED );
+                    result.setStatus ( NICK_NOT_REGGED );
                 } else if ( ni.isSet ( MARK ) ) {
                     result.setNick ( ni );
                     result.setStatus ( IS_MARKED );
+                } else if ( ni.getOper().getAccess ( ) > 0 &&
+                            ni.getOper().getAccess ( ) >= user.getAccess ( ) ) {
+                    /* Staff is removed from the staff list first, by someone above */
+                    result.setStatus ( ACCESS_DENIED_DELETE_OPER );
                 } else {
-                    Proc.log("Setting nick to: "+ni.getNameStr());
                     result.setNick ( ni );
                 }
                 
@@ -1354,7 +1617,7 @@ import java.util.regex.Pattern;
             return "Error: "+args[0]+" is not a valid email-adress";
         
         } else if ( code.is(INVALID_PASS) ) {
-            return "Error: password is not valid, it might be too short or too easy.";
+            return "Error: password is not valid, it must be "+MINPASS+" to "+MAXPASS+" characters.";
         
         } else if ( code.is(INVALID_NICK) ) {
             return "Error: "+args[0]+" is not a valid nick for registration";
@@ -1428,11 +1691,14 @@ import java.util.regex.Pattern;
         } else if ( code.is(NICKFLAG_EXIST) ) {
             return "Nick "+args[0]+" is already "+args[1]+".";
         
-        } else if ( code.is(NICK_GETPASS) ) {
-            return "Password is: "+args[0]+".";
+        } else if ( code.is(NICK_NOT_AUTHED) ) {
+            return "Error: nick "+args[0]+" has no confirmed mail address, so the password can not be reset by mail. Ask the network staff for help.";
+
+        } else if ( code.is(ACCESS_DENIED_SETPASS_OPER) ) {
+            return "Access denied. The password of staff can only be set by someone with higher access.";
         
         } else if ( code.is(NICK_GETEMAIL) ) {
-            return "["+args[0]+"] "+args[1]+" "+args[1]+" "+args[2]+"";
+            return "["+args[0]+"] "+args[1]+" "+args[2]+"";
         
         } else if ( code.is(IS_MARKED) ) {
             return "Error: Nick "+args[0]+" is MARKed by a network staff blocking certain functionality.";

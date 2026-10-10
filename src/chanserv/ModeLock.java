@@ -62,6 +62,9 @@ class ModeLock extends HashNumeric {
     private void parseLock ( String data )  {
         int state = 0;
         this.init ( );
+        if ( data == null ) {
+            data = "";  /* a channel row without settings must not stop the loading */
+        }
         this.modes = data;
         for ( int index = 0; index < data.length ( ); index++ ) {
             switch ( ( ""+data.charAt ( index ) ).hashCode ( ) ) {
@@ -114,7 +117,8 @@ class ModeLock extends HashNumeric {
                    break;
                    
                case MODE_k :
-                   if ( this.m_key == -1 ) { 
+                   /* Only "no key" can be locked, a locked +k would need the key */
+                   if ( state == -1 ) { 
                        this.m_key = -1; 
                    }  
                    break;
@@ -192,7 +196,21 @@ class ModeLock extends HashNumeric {
         if ( this.m_topic == -1 && modes.is ( MODE_t ) ) {
             missing += "t";
         }
+        /* Last: it is the only one with an argument (the key, added by the caller) */
+        if ( this.m_key == -1 && modes.is ( MODE_k ) && c.getKey ( ) != null ) {
+            missing += "k";
+        }
         
+        /* Nothing to change: no MODE line at all */
+        if ( missing.equals ( "+-" ) ) {
+            return null;
+        }
+        if ( missing.endsWith ( "-" ) ) {
+            missing = missing.substring ( 0, missing.length ( ) - 1 );
+        }
+        if ( missing.startsWith ( "+-" ) ) {
+            missing = missing.substring ( 1 );
+        }
         return missing;
     }
     

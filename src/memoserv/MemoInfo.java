@@ -18,6 +18,7 @@
 package memoserv;
 
 import core.Handler;
+import core.HashString;
 import java.util.Date;
 
 /**
@@ -32,6 +33,7 @@ public class MemoInfo {
     private long            stamp;
     private boolean         read;
     private String          stampString;
+    private HashString      senderHash;     /* made when first needed */
 
     /**
      *
@@ -62,7 +64,6 @@ public class MemoInfo {
         this.sender         = sender;
         this.stamp          = stamp;
         this.read           = read;
-//        this.stampString    = Handler.getSdf ( ) .format ( new Date ( this.stamp*1000 )  );
     }
     
     /**
@@ -104,6 +105,17 @@ public class MemoInfo {
     public String getSender ( ) { 
         return this.sender;
     } 
+
+    /**
+     * @param nick
+     * @return true when this memo was sent by that nick
+     */
+    public boolean isFrom ( HashString nick ) {
+        if ( this.senderHash == null ) {
+            this.senderHash = new HashString ( this.sender );
+        }
+        return this.senderHash.is ( nick );
+    }
     
     /**
      *
@@ -118,9 +130,8 @@ public class MemoInfo {
      * @param stamp
      */
     public void setStamp ( long stamp ) { 
-        Date date = new Date ( this.stamp * 1000 );
-        this.stamp = stamp; 
-        this.stampString = Handler.getSdf ( ) .format ( date );
+        this.stamp          = stamp; 
+        this.stampString    = null;
     } 
   
     /**
@@ -136,6 +147,9 @@ public class MemoInfo {
      * @return
      */
     public String getStampStr ( ) { 
+        if ( this.stampString == null ) {
+            this.stampString = Handler.getSdf ( ) .format ( new Date ( this.stamp * 1000 ) );
+        }
         return this.stampString;
     }
     

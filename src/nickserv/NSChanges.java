@@ -151,41 +151,4 @@ public class NSChanges extends Changes {
          
     }
     
-    /**
-     *
-     */
-    public void printChanges ( ) {
-        System.out.println("***** Changes *****");
-        if ( this.freeze ) 
-            System.out.println("Changes: freeze!");
-        if ( this.mark ) 
-            System.out.println("Changes: mark!");
-        if ( this.hold ) 
-            System.out.println("Changes: hold!");
-        if ( this.noghost ) 
-            System.out.println("Changes: noghost!");
-        if ( this.pass ) 
-            System.out.println("Changes: pass!");
-        if ( this.fullmask ) 
-            System.out.println("Changes: fullmask!");
-        if ( this.mail ) 
-            System.out.println("Changes: mail!");
-        if ( this.lastseen ) 
-            System.out.println("Changes: lastseen!");
-        if ( this.noop ) 
-            System.out.println("Changes: noop!");
-        if ( this.neverop ) 
-            System.out.println("Changes: neverop!");
-        if ( this.mailblock ) 
-            System.out.println("Changes: mailblock!");
-        if ( this.showemail ) 
-            System.out.println("Changes: showemail!");
-        if ( this.showhost ) 
-            System.out.println("Changes: showhost!");
-        if ( this.changed ) 
-            System.out.println("Changes: changed!");
-        System.out.println("***** End of Changes *****");
-    }
-
-    
 }

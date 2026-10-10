@@ -94,10 +94,8 @@ public class SExecutor extends Executor {
     public void doMotd ( User user, String[] cmd )  { 
         HashString name = nameToService ( cmd[2] );
         
-        if ( name.is(SERVICES) ) {
-            this.servicesMOTD ( user );
-        
-        } else if ( name.is(this.services.getString(STATS) ) ) {
+        /* name is null when the target is neither of our two servers */
+        if ( name != null && name.is(STATS) ) {
             this.statsMOTD ( user );
         
         } else {
@@ -114,10 +112,8 @@ public class SExecutor extends Executor {
     public void doVersion ( User user, String[] cmd )  { 
         HashString name = nameToService ( cmd[2] );
 
-        if ( name.is(SERVICES) ) {
-            this.servicesVersion ( user );
-        
-        } else if ( name.is(this.services.getString(STATS) ) ) {
+        /* name is null when the target is neither of our two servers */
+        if ( name != null && name.is(STATS) ) {
             this.statsVersion ( user );
         
         } else {
@@ -134,10 +130,8 @@ public class SExecutor extends Executor {
     public void doInfo ( User user, String[] cmd )  { 
         HashString name = nameToService ( cmd[2] );
         
-        if ( name.is(SERVICES) ) {
-            this.servicesInfo ( user );
-        
-        } else if ( name.is(this.services.getString(STATS) ) ) {
+        /* name is null when the target is neither of our two servers */
+        if ( name != null && name.is(STATS) ) {
             this.statsInfo ( user );
         
         } else {
@@ -235,8 +229,8 @@ public class SExecutor extends Executor {
      * @param user
      */
     public void statsVersion ( User user )  {
-        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    "Avade IRC Services (Avade) Version"                                      );
-        this.services.sendServicesCMD ( user, Numeric.RPL_VERSION,    Proc.getVersion().getVersion ( )                                         );
+        this.services.sendStatsCMD    ( user, Numeric.RPL_VERSION,    "Avade IRC Services (Avade) Version"                                      );
+        this.services.sendStatsCMD    ( user, Numeric.RPL_VERSION,    Proc.getVersion().getVersion ( )                                         );
     }
 
     /***  INFO

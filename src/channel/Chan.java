@@ -17,15 +17,21 @@
  */
 package channel;
 
+import chanserv.CSAcc;
+import chanserv.CSFlag;
 import chanserv.ChanServ;
+import core.CIDRUtils;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
 import core.HashString;
 import core.StringMatch;
 import user.User;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  *
@@ -36,12 +42,33 @@ public class Chan extends HashNumeric {
     private Topic               topic;
     
     private long                createdOn;
-    private ArrayList<User>     oList;
-    private ArrayList<User>     vList;
-    private ArrayList<User>     uList;
+    private ArrayList<User>     members;    /* everyone in the channel, once */
+    private ArrayList<User>     oList;      /* ops */
+    private ArrayList<User>     hList;      /* halfops */
+    private ArrayList<User>     vList;      /* voices */
     
     private ChanMode            modes;
     private boolean sajoin = false;
+    
+    /* What the modes with an argument are set to. Needed to remove a key
+       (-k wants the key) and to decide a join ourselves (join requests) */
+    private String              key;                                /* +k, null when not set */
+    private int                 limit;                              /* +l, 0 when not set */
+    private ArrayList<String>   bans        = new ArrayList<>( );   /* +b */
+    private ArrayList<String>   excepts     = new ArrayList<>( );   /* +e */
+    private ArrayList<String>   invites     = new ArrayList<>( );   /* +I */
+    /* Bans that only hit someone through the host that is shown (a vhost, or
+       the mask of the ircd): the real ip of those users, per ban, in lower
+       case. A shown host can change, the ban should follow the person.
+       Never shown to anyone. */
+    private HashMap<String,HashSet<String>> followBans = new HashMap<>( );
+    /* Join throttling like in the ircd (+j joins:seconds, 8:6 when not set):
+       a bucket that gets <joins> a second up to joins*seconds, and every
+       join takes <seconds> out of it */
+    private int                 jrNum       = 8;
+    private int                 jrTime      = 6;
+    private int                 jrBucket;
+    private long                jrLast;                             /* in seconds, 0 = full */
     
     private boolean             isRelay;
     private HashString          relay;
@@ -56,11 +83,11 @@ public class Chan extends HashNumeric {
         this.name           = new HashString ( data[3] );
         this.modes          = new ChanMode ( );
         this.createdOn      = Long.parseLong ( data[2] );
+        this.members        = new ArrayList<>( );
         this.oList          = new ArrayList<>( );    /* oplist */
+        this.hList          = new ArrayList<>( );    /* halfoplist */
         this.vList          = new ArrayList<>( );    /* voicelist */
-        this.uList          = new ArrayList<>( );    /* userlist */
         this.modes.set ( ChanMode.SERVER, data );
-        this.init ( data );
         this.checkRelay();
         this.topic          = new Topic ( "", "", 0 );
     }
@@ -74,14 +101,10 @@ public class Chan extends HashNumeric {
     }
     
     private void checkRelay ( ) {
-        if ( StringMatch.wild(this.name.getString(), "*-relay") ) {
+        if ( StringMatch.matches(this.name.getString(), "*-relay") ) {
             this.isRelay = true;
             this.relay = new HashString ( this.name.getString().substring(0, this.name.getString().length()-6) );
         }
-    }
-    
-    private void init ( String[] data ) {
-        this.addUserList ( data, 6 );
     }
     
     /**
@@ -108,41 +131,51 @@ public class Chan extends HashNumeric {
     public void addUserList ( String[] data, int offset )  {
         // :irc.avade.net SJOIN 1374147654 #friends +c  :@Guest33015 @DreamHealer 
         //      0           1       2       3       4  5     6+
-        // :irc.avade.net SJOIN 1374147654 #friends +c :@Guest33015 @DreamHealer 
+        // :irc.avade.net SJOIN 1374147654 #friends +c :@Guest33015 @%+DreamHealer 
         //      0           1       2       3       4       5+
         User u;
-        boolean op;
-        boolean vo;
 
         try {
 
             this.modes.setModeString ( data[4] );
+            this.setSjoinModeArgs ( data );
+            /* The nicks are the trailing parameter. Modes with arguments put
+               those in between ("+kl key 10 :@nick"), and a key that happens
+               to be the nick of someone online must not become a member */
+            for ( int i = 5; i < data.length; i++ ) {
+                if ( data[i].startsWith ( ":" ) ) {
+                    offset = i;
+                    break;
+                }
+            }
             String[] nicks = Arrays.copyOfRange(data, offset, data.length);
             
             for ( String nick : nicks ) {
-                String nickStr = nick.replace (  ":", "" );
-                op = false;
-                vo = false;
+                String nickStr = nick.startsWith ( ":" ) ? nick.substring ( 1 ) : nick;
+                boolean op = false;
+                boolean hop = false;
+                boolean vo = false;
                 
-                if ( nickStr.contains("@") ) {
-                    nickStr = nickStr.replace ( "@", "" );
-                    op = true;
-                }
-                if ( nick.contains("+") ) {
-                    nickStr = nickStr.replace ( "+", "" );
-                    vo = true;
+                /* status prefixes: @ op, % halfop, + voice */
+                while ( ! nickStr.isEmpty ( ) && "@%+".indexOf ( nickStr.charAt ( 0 ) ) >= 0 ) {
+                    switch ( nickStr.charAt ( 0 ) ) {
+                        case '@' : op = true;  break;
+                        case '%' : hop = true; break;
+                        default  : vo = true;  break;
+                    }
+                    nickStr = nickStr.substring ( 1 );
                 }
                 
                 if ( ( u = Handler.findUser ( nickStr ) ) != null ) {
-                    if ( op && vo ) { 
-                        this.addUser (OP, u );
-                        this.addUser (VOICE, u );
-                    } else if ( op ) { 
+                    this.addUser ( USER, u );
+                    if ( op ) {
                         this.addUser ( OP, u );
-                    } else if ( vo ) {
+                    }
+                    if ( hop ) {
+                        this.addUser ( HALFOP, u );
+                    }
+                    if ( vo ) {
                         this.addUser ( VOICE, u );
-                    } else {
-                        this.addUser ( USER, u );
                     }
                     u.addChan ( this );
                     ChanServ.addCheckUser ( this, u );
@@ -157,13 +190,7 @@ public class Chan extends HashNumeric {
      *
      */
     public void addCheckUsers ( ) {
-        for ( User u : uList ) {
-            ChanServ.addCheckUser ( this, u );
-        }
-        for ( User u : vList ) {
-            ChanServ.addCheckUser ( this, u );
-        }
-        for ( User u : oList ) {
+        for ( User u : members ) {
             ChanServ.addCheckUser ( this, u );
         }
     }
@@ -178,95 +205,357 @@ public class Chan extends HashNumeric {
         boolean state = false;
         User setter;
         User u;
-        int m=1;
-        if ( cmd.length < 6 ) {
+        int param = 5;
+        char ch;
+        if ( cmd.length < 5 ) {
             return;
         }
         setter = Handler.findUser(cmd[0].substring(1));
         for ( int i=0; i < cmd[4].length ( ); i++ ) {
-            u = Handler.findUser ( cmd[4+m] );
-            switch ( ( ""+cmd[4].charAt(i)).hashCode ( ) ) {
-               case MODE_PLUS :
-                   state = true;
-                   break;
-                   
-               case MODE_MINUS :
-                   state = false;
-                   break;
-                   
-               case MODE_o :
-                   if ( setter != null ) {
-                        if ( state ) {
-                            Handler.getChanServ().checkDynAopAdd ( this, setter, u );
-                        } else {
-                            Handler.getChanServ().checkDynAopDel(this, setter, u);
-                        }
-                   }
-                    this.chModeUser ( u, OP, ( state ? OP : USER ), u.isAtleast ( IRCOP ) );
-
-                   m++;
-                   break;
-                   
-               case MODE_v :
-                   this.chModeUser ( u, VOICE, ( state ? VOICE : USER ), u.isAtleast ( IRCOP ) ); 
-                   m++;
-                   break;
-                   
-               default :
-                   
-           } 
-        }
-    }
-
-    /**
-     *
-     * @param user
-     * @param access
-     * @param isop
-     * @param isvoice
-     */
-    public void setModeUserOP ( User user, HashString access, boolean isop, boolean isvoice ) {
-        if ( access.is(OP) && ! isop )  {
-            this.uList.remove ( user );
-            this.oList.add ( user );
-
-        } else {
-            if ( isop )  {
-                if ( ! isvoice )  {
-                    this.uList.add ( user );
+            ch = cmd[4].charAt ( i );
+            if ( ch == '+' ) {
+                state = true;
+                continue;
+            } else if ( ch == '-' ) {
+                state = false;
+                continue;
+            }
+            
+            if ( ! takesParam ( ch, state ) ) {
+                if ( ch == 'l' ) {
+                    this.limit = 0;     /* -l has no argument */
+                } else if ( ch == 'j' ) {
+                    this.setJoinRate ( null );
                 }
-                this.oList.remove ( user );
+                continue;
+            }
+            if ( param >= cmd.length ) {
+                return;
+            }
+            String arg = cmd[param++];
+            
+            if ( ch != 'o' && ch != 'h' && ch != 'v' ) {
+                this.setModeArg ( ch, state, arg );
+                continue;
+            }
+            if ( ( u = Handler.findUser ( arg ) ) == null ) {
+                continue;
+            }
+            
+            if ( ch == 'o' ) {
+                if ( setter != null ) {
+                    if ( state ) {
+                        Handler.getChanServ().checkDynAopAdd ( this, setter, u );
+                    } else {
+                        Handler.getChanServ().checkDynAopDel ( this, setter, u );
+                    }
+                }
+                this.chModeUser ( u, OP, ( state ? OP : USER ), u.isAtleast ( IRCOP ) );
+            } else if ( ch == 'h' ) {
+                this.chModeUser ( u, HALFOP, ( state ? HALFOP : USER ), u.isAtleast ( IRCOP ) );
+            } else {
+                this.chModeUser ( u, VOICE, ( state ? VOICE : USER ), u.isAtleast ( IRCOP ) );
             }
         }
     }
 
     /**
-     *
-     * @param user
-     * @param access
-     * @param isop
-     * @param isvoice
-     */
-    public void setModeUserVoice ( User user, HashString access, boolean isop, boolean isvoice ) {
-         if ( access.is(VOICE) && ! isvoice )  {
-            this.uList.remove ( user );
-            this.vList.add ( user );
-
-        } else {
-            if ( isvoice )  {
-                if ( ! isop )  {
-                    this.uList.add ( user );
-                }
-                this.vList.remove ( user );
-            }
-        }
-    }
-
-    /**
-     *
-     * @param user
+     * Channel modes that carry a parameter in bahamut
      * @param mode
-     * @param access
+     * @param adding
+     * @return
+     */
+    /* Remember the argument of a mode that is not a status mode */
+    private void setModeArg ( char mode, boolean adding, String arg ) {
+        ArrayList<String> list = null;
+        switch ( mode ) {
+            case 'k' :
+                this.key = ( adding ? arg : null );
+                return;
+            case 'l' :
+                try {
+                    this.limit = ( adding ? Integer.parseInt ( arg ) : 0 );
+                } catch ( NumberFormatException ex ) {
+                    this.limit = 0;
+                }
+                return;
+            case 'j' :
+                this.setJoinRate ( adding ? arg : null );
+                return;
+            case 'b' : list = this.bans;    break;
+            case 'e' : list = this.excepts; break;
+            case 'I' : list = this.invites; break;
+            default  : return;
+        }
+        list.removeIf ( m -> m.equalsIgnoreCase ( arg ) );
+        if ( adding ) {
+            list.add ( arg );
+        }
+        if ( mode == 'b' ) {
+            this.followBans.remove ( arg.toLowerCase ( ) );
+            if ( adding ) {
+                this.rememberBanned ( arg );
+            }
+        }
+    }
+    
+    /* Who does this ban hit only because of the host they show right now? */
+    private void rememberBanned ( String mask ) {
+        HashSet<String> ips = new HashSet<>( );
+        for ( User u : Handler.getUserList().values ( ) ) {
+            String shown = u.getShownHost ( );
+            String ip    = u.getIp ( );
+            if ( shown == null || ! validIp ( ip ) ) {
+                continue;
+            }
+            String who = u.getString ( NAME )+"!"+u.getString ( USER )+"@";
+            if ( StringMatch.matches ( who+shown, mask ) &&
+                 ! StringMatch.matches ( who+u.getHost ( ), mask ) &&
+                 ! StringMatch.matches ( who+ip, mask ) ) {
+                ips.add ( ip );
+            }
+        }
+        if ( ! ips.isEmpty ( ) ) {
+            this.followBans.put ( mask.toLowerCase ( ), ips );
+        }
+    }
+    
+    private static boolean validIp ( String ip ) {
+        return ip != null && ip.length ( ) > 1 && ( ip.contains ( "." ) || ip.contains ( ":" ) );
+    }
+    
+    /**
+     * @param user someone who is in, or just joined, the channel
+     * @return the ban this user got around by changing the host that is
+     *         shown, null when there is none
+     */
+    public String evadedBan ( User user ) {
+        String ip = user.getIp ( );
+        if ( this.followBans.isEmpty ( ) || ! validIp ( ip ) ) {
+            return null;
+        }
+        String shown = user.getShownHost ( );
+        String who   = user.getString ( NAME )+"!"+user.getString ( USER )+"@"+( shown != null ? shown : user.getHost ( ) );
+        for ( HashMap.Entry<String,HashSet<String>> entry : this.followBans.entrySet ( ) ) {
+            /* Still hit by the ban as it is: that is for the ircd to enforce
+               (someone banned while inside the channel stays until kicked) */
+            if ( entry.getValue().contains ( ip ) && ! StringMatch.matches ( who, entry.getKey ( ) ) ) {
+                return entry.getKey ( );
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * A ban we set ourselves (the ircd does not send our own modes back)
+     * @param mask
+     * @param sameAs the ban it continues, so it follows the same people
+     */
+    public void addOwnBan ( String mask, String sameAs ) {
+        HashSet<String> ips = ( sameAs != null ? this.followBans.get ( sameAs.toLowerCase ( ) ) : null );
+        this.setModeArg ( 'b', true, mask );
+        if ( ips != null ) {
+            this.followBans.computeIfAbsent ( mask.toLowerCase ( ), k -> new HashSet<>( ) ).addAll ( ips );
+        }
+    }
+    
+    /* The arguments of the modes in a SJOIN: "+ljk 10 8:6 key :nicks" */
+    private void setSjoinModeArgs ( String[] data ) {
+        int param = 5;
+        for ( char ch : data[4].toCharArray ( ) ) {
+            if ( ( ch == 'k' || ch == 'l' || ch == 'j' ) && param < data.length && ! data[param].startsWith ( ":" ) ) {
+                this.setModeArg ( ch, true, data[param++] );
+            }
+        }
+    }
+
+    /* +j <joins>:<seconds>, +j 0 turns the throttling off and -j (null)
+       gives the default back. The ircd starts with an empty bucket then */
+    private void setJoinRate ( String arg ) {
+        int num  = 8;
+        int time = 6;
+        if ( arg != null ) {
+            try {
+                String[] parts = arg.split ( ":" );
+                num  = Integer.parseInt ( parts[0] );
+                time = ( parts.length > 1 ? Integer.parseInt ( parts[1] ) : 0 );
+            } catch ( NumberFormatException ex ) {
+                num = 0;
+            }
+            if ( num < 1 || time < 1 ) {
+                num  = 0;
+                time = 0;
+            }
+        }
+        this.jrNum      = num;
+        this.jrTime     = time;
+        this.jrBucket   = 0;
+        this.jrLast     = System.currentTimeMillis ( ) / 1000;
+    }
+
+    private boolean joinRateOk ( ) {
+        int size = this.jrNum * this.jrTime;
+        if ( size == 0 ) {
+            return true;
+        }
+        long now = System.currentTimeMillis ( ) / 1000;
+        if ( this.jrBucket < size && now > this.jrLast ) {
+            long fill = now - this.jrLast;
+            int room  = size - this.jrBucket;
+            if ( fill < room ) {
+                fill *= this.jrNum;
+            }
+            this.jrBucket  += (int) Math.min ( fill, room );
+            this.jrLast     = now;
+        }
+        return this.jrBucket >= this.jrTime;
+    }
+
+    /**
+     * Someone joined: count it for the join throttling
+     */
+    public void countJoin ( ) {
+        int size = this.jrNum * this.jrTime;
+        if ( size == 0 ) {
+            return;
+        }
+        this.joinRateOk ( );    /* fills the bucket for the time that has passed */
+        if ( this.jrBucket >= -( size - this.jrTime ) ) {
+            this.jrBucket  -= this.jrTime;
+            this.jrLast     = System.currentTimeMillis ( ) / 1000;
+        }
+    }
+
+    /**
+     * Decide a join the way the ircd does (can_join), for a join request:
+     * with those the ircd checks nothing itself.
+     * @param user
+     * @param key the key the user gave, or null
+     * @param flags the chanflags of the channel, null when it is not registered
+     * @return what stops the user ("+b", "+i", "+k", "+l", "+j", "+O", "+S",
+     *         "+R", or "+X" for JOIN_CONNECT_TIME), null when the user may join
+     */
+    public String joinRefusal ( User user, String key, CSFlag flags ) {
+        String stop = null;
+        boolean wait = false;
+        boolean oper = user.getModes().is ( OPER );
+        long now = System.currentTimeMillis ( ) / 1000;
+        
+        if ( flags != null && flags.getJoinconnecttime ( ) > 0 &&
+             user.getSignOn ( ) + flags.getJoinconnecttime ( ) > now &&
+             ! oper &&
+             ! ( flags.isExemptregistered ( ) && user.getModes().is ( IDENT ) ) &&
+             ! ( flags.isExemptidentd ( ) && ! user.getString ( USER ).startsWith ( "~" ) ) ) {
+            stop = "+X";
+            wait = true;
+        } else if ( this.modes.is ( MODE_i ) ) {
+            stop = "+i";
+        } else if ( this.modes.is ( MODE_O ) && ! oper ) {
+            stop = "+O";
+        } else if ( this.limit > 0 && this.size ( ) >= this.limit ) {
+            stop = "+l";
+        } else if ( this.modes.is ( MODE_S ) && ! user.getModes().is ( SSL ) ) {
+            stop = "+S";
+        } else if ( this.modes.is ( MODE_R ) && ! user.getModes().is ( IDENT ) ) {
+            stop = "+R";
+        } else if ( this.key != null && ( key == null || ! this.key.equalsIgnoreCase ( key ) ) ) {
+            stop = "+k";
+        } else if ( ! this.joinRateOk ( ) ) {
+            return "+j";    /* the invite list does not get around the throttling */
+        }
+        
+        /* The invite list (+I) gets around all of the above, the wait only
+           with the chanflag EXEMPT_INVITES */
+        if ( stop != null && ( ! wait || flags.isExemptinvites ( ) ) && hits ( this.invites, user ) ) {
+            stop = null;
+        }
+        if ( stop == null && hits ( this.bans, user ) && ! hits ( this.excepts, user ) ) {
+            stop = "+b";
+        }
+        return stop;
+    }
+
+    /* Is the user in a +b, +e or +I list? */
+    private static boolean hits ( ArrayList<String> masks, User user ) {
+        return ! masks.isEmpty ( ) && ! matching ( masks, user, false ).isEmpty ( );
+    }
+
+    /* The masks of a list that the user is in (the first one, or all). Like
+       the ircd: the real host, the ip and the host that is shown are all
+       tried, and ip/bits is a range */
+    private static ArrayList<String> matching ( ArrayList<String> masks, User user, boolean all ) {
+        ArrayList<String> found = new ArrayList<>( );
+        String who   = user.getString ( NAME )+"!"+user.getString ( USER )+"@";
+        String shown = user.getShownHost ( );
+        String ip    = ( validIp ( user.getIp ( ) ) ? user.getIp ( ) : null );
+        for ( String mask : masks ) {
+            if ( StringMatch.matches ( who+user.getHost ( ), mask ) ||
+                 ( ip != null && StringMatch.matches ( who+ip, mask ) ) ||
+                 ( shown != null && StringMatch.matches ( who+shown, mask ) ) ||
+                 ( ip != null && inRange ( mask, who, ip ) ) ) {
+                found.add ( mask );
+                if ( ! all ) {
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Services asked the ircd to remove every ban on this user (SVSMODE -b
+     * nick). It does not send our own changes back, so forget them here too.
+     * @param user
+     */
+    public void removeBansOn ( User user ) {
+        for ( String mask : matching ( this.bans, user, true ) ) {
+            this.setModeArg ( 'b', false, mask );
+        }
+    }
+
+    /* nick!user@ip/bits. Only an ip is accepted in the mask: looking up a
+       host name would stop the main loop */
+    private static boolean inRange ( String mask, String who, String ip ) {
+        int at    = mask.lastIndexOf ( '@' );
+        int slash = mask.lastIndexOf ( '/' );
+        if ( at < 1 || slash < at ) {
+            return false;
+        }
+        String addr = mask.substring ( at + 1, slash );
+        if ( ! CSAcc.isIPv4Address ( addr ) && ! CSAcc.isIPv6Address ( addr ) ) {
+            return false;
+        }
+        try {
+            return StringMatch.matches ( who, mask.substring ( 0, at + 1 ) ) &&
+                   new CIDRUtils ( mask.substring ( at + 1 ) ).isInRange ( ip );
+        } catch ( UnknownHostException | RuntimeException ex ) {
+            return false;   /* bits that are no number, or too many */
+        }
+    }
+
+    public String getKey ( )                    { return this.key;      }
+    public void clearKey ( )                    { this.key = null;      }
+    public int getLimit ( )                     { return this.limit;    }
+
+    
+    public static boolean takesParam ( char mode, boolean adding ) {
+        switch ( mode ) {
+            case 'b' : case 'e' : case 'I' :
+            case 'o' : case 'h' : case 'v' :
+            case 'k' :
+                return true;
+            case 'l' : case 'j' :
+                return adding;
+            default :
+                return false;
+        }
+    }
+
+    /**
+     * Give or take a status (OP, HALFOP, VOICE) from a user
+     * @param user
+     * @param mode OP, HALFOP or VOICE
+     * @param access same as mode to give the status, anything else to take it
      * @param isIRCop
      */
     public void chModeUser ( User user, HashString mode, HashString access, boolean isIRCop )  { 
@@ -274,18 +563,21 @@ public class Chan extends HashNumeric {
             if ( user == null )  {
                  return;
             }
-            boolean isop        = this.isOp ( user );
-            boolean isvoice     = this.isVo ( user );
+            ArrayList<User> list = this.statusList ( mode );
+            if ( list == null ) {
+                return;
+            }
+            if ( ! this.members.contains ( user ) ) {
+                this.members.add ( user );
+            }
+            if ( access.is ( mode ) ) {
+                if ( ! list.contains ( user ) ) {
+                    list.add ( user );
+                }
+            } else {
+                list.remove ( user );
+            }
             
-            /* if we want to change OP */
-                       
-            if ( mode.is(OP) )  {
-                setModeUserOP ( user, access, isop, isvoice );
-
-            } else if ( mode.is(VOICE) ) {
-                setModeUserVoice ( user, access, isop, isvoice );
-
-            } 
             if ( this.isOp ( user ) && ! isIRCop )  {
                  Handler.getChanServ().checkUser ( this, user );
             }
@@ -294,37 +586,30 @@ public class Chan extends HashNumeric {
         }
     }
 
+    private ArrayList<User> statusList ( HashString mode ) {
+        if ( mode.is(OP) ) {
+            return this.oList;
+        } else if ( mode.is(HALFOP) ) {
+            return this.hList;
+        } else if ( mode.is(VOICE) ) {
+            return this.vList;
+        }
+        return null;
+    }
+     
     /**
      *
      * @param user
      */
     public void remUser ( User user )  {
-        ArrayList<User> rList = new ArrayList<>();
-        for ( User o : oList ) {
-            if ( o.is(user) ) {
-                rList.add ( o );
-            }
-        }
-        for ( User v : vList ) {
-            if ( v.is(user) ) {
-                rList.add ( v );
-            }
-        } 
-        for ( User u : uList ) {
-            if ( u.is(user) ) {
-                rList.add ( u );
-            }
-        } 
-        
-        for ( User rem : rList ) {
-            this.oList.remove ( rem );
-            this.vList.remove ( rem );
-            this.uList.remove ( rem );
-        }
+        this.members.removeIf ( u -> u.is ( user ) );
+        this.oList.removeIf ( u -> u.is ( user ) );
+        this.hList.removeIf ( u -> u.is ( user ) );
+        this.vList.removeIf ( u -> u.is ( user ) );
     }
-
+    
     /**
-     *
+     * Add a user to the channel (USER) or give it a status (OP, HALFOP, VOICE)
      * @param acc
      * @param u
      */
@@ -332,19 +617,15 @@ public class Chan extends HashNumeric {
         if ( u == null )  {
              return;
         } 
-        
-        if ( acc.is (OP) && !this.oList.contains(u)) {
-            this.oList.add ( u );
-            
-        } else if ( acc.is (VOICE) && !this.vList.contains(u) ) {
-            this.vList.add ( u );
-        
-        } else if ( acc.is ( USER ) && !this.uList.contains(u) ) {
-            this.uList.add ( u );
+        if ( ! this.members.contains ( u ) ) {
+            this.members.add ( u );
         }
-         
+        ArrayList<User> list = this.statusList ( acc );
+        if ( list != null && ! list.contains ( u ) ) {
+            list.add ( u );
+        }
     }
-    
+     
     /**
      *
      * @param type
@@ -365,67 +646,47 @@ public class Chan extends HashNumeric {
      * @return
      */
     public ArrayList<User> getList ( HashString type )  { 
-        if ( type.is(OP) ) {
-            return this.oList;
-        
-        } else if ( type.is(VOICE) ) {
-            return this.vList;
-        
+        if ( type.is(ALL) ) {
+            return new ArrayList<> ( this.members );
         } else if ( type.is(USER) ) {
-            return this.uList;
-        
-        } else if ( type.is(ALL) ) {
-            ArrayList<User> all = new ArrayList<> ( );
-            all.addAll ( this.oList );
-            all.addAll ( this.vList );
-            all.addAll ( this.uList );
-            return all;
+            /* users without any status */
+            ArrayList<User> users = new ArrayList<> ( );
+            for ( User u : this.members ) {
+                if ( ! this.oList.contains ( u ) && ! this.hList.contains ( u ) && ! this.vList.contains ( u ) ) {
+                    users.add ( u );
+                }
+            }
+            return users;
         }
-        return new ArrayList<>( );
+        ArrayList<User> list = this.statusList ( type );
+        return list != null ? new ArrayList<> ( list ) : new ArrayList<>( );
     }
-      
+    
     /**
-     *
      * @param user
      * @return
      */
     public boolean isOp ( User user )  {
-        for ( User u : this.oList )  {
-            if ( user.hashCode ( ) == u.hashCode ( )  )  {
-                return true;
-            }
-        }
-        return false;
+        return this.oList.contains ( user );
     }
     
     /**
-     *
+     * @param user
+     * @return
+     */
+    public boolean isHop ( User user )  {
+        return this.hList.contains ( user );
+    }
+    
+    /**
      * @param user
      * @return
      */
     public boolean isVo ( User user )  {
-        for ( User u : this.vList )  {
-            if ( user.hashCode ( )  == u.hashCode ( )  )  {
-                return true;
-            }
-        }
-        return false;
+        return this.vList.contains ( user );
     }
-    
-    /**
-     *
-     * @param user
-     * @return
-     */
-    public boolean isUser ( User user )  {
-        for ( User u : this.uList )  {
-            if ( user.hashCode ( )  == u.hashCode ( )  )  {
-                return true;
-            }
-        }
-        return false;
-    }
-    
+
+     
     /**
      *
      * @param nick
@@ -442,7 +703,7 @@ public class Chan extends HashNumeric {
      */
     public boolean nickIsPresent ( HashString nick )  {
         for ( User user : this.getList ( ALL )  )  {
-            if ( user.hasAccess(nick) ) {
+            if ( user.getName().is ( nick ) ) {
                 return true;
             }
         } 
@@ -453,9 +714,10 @@ public class Chan extends HashNumeric {
      *
      */
     public void clearUsers ( )  {
+        this.members = new ArrayList<>( );
         this.oList = new ArrayList<>( );
+        this.hList = new ArrayList<>( );
         this.vList = new ArrayList<>( );
-        this.uList = new ArrayList<>( );
     }
     
     /**
@@ -470,7 +732,7 @@ public class Chan extends HashNumeric {
      */
     public int size ( )    { 
         try { 
-            return  ( this.uList.size ( )  + this.oList.size ( )  + this.vList.size ( )  );
+            return  this.members.size ( );
         } catch ( Exception e )  { 
             return 1; 
         }  
@@ -559,5 +821,15 @@ public class Chan extends HashNumeric {
      */
     public Long getCreatedOn ( ) {
         return this.createdOn;
+    }
+
+    /**
+     * The TS in a SJOIN for a channel we already know: the oldest one wins
+     * @param stamp
+     */
+    public void sawStamp ( long stamp ) {
+        if ( stamp > 0 && stamp < this.createdOn ) {
+            this.createdOn = stamp;
+        }
     }
 }

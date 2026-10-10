@@ -8,6 +8,7 @@ package core;
 import channel.Chan;
 import chanserv.ChanInfo;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
@@ -38,24 +39,12 @@ public class HashString {
         this.generateCode ( );
     }
     
-    /**
-     *
-     * @param str
-     * @param code
-     */
-    public HashString ( String str, BigInteger code ) {
-        this.string = str.trim();
-        this.code = code;
-    }
-    
     private void generateCode ( ) {
         try {
-            String hex;
+            /* The digest as a positive number, no detour over a hex string */
             MessageDigest crypt = MessageDigest.getInstance ( "SHA-256" );
-            crypt.reset ( );
-            crypt.update ( this.string.toUpperCase().getBytes ( ) );
-            hex = String.format ( "%064x", new BigInteger ( 1, crypt.digest ( ) ) );
-            this.code = new BigInteger ( hex, 16 );
+            crypt.update ( asciiUpper ( this.string ).getBytes ( StandardCharsets.UTF_8 ) );
+            this.code = new BigInteger ( 1, crypt.digest ( ) );
         } catch ( NoSuchAlgorithmException ex ) {
             Logger.getLogger(HashString.class.getName()).log ( Level.SEVERE, null, ex );
         }
@@ -65,17 +54,22 @@ public class HashString {
      *
      * @return
      */
+    /* Same case folding as bahamut (CASEMAPPING=ascii): only a-z, never
+       depending on the locale, other characters are kept as they are */
+    private static String asciiUpper ( String str ) {
+        char[] chars = str.toCharArray ( );
+        for ( int i = 0; i < chars.length; i++ ) {
+            if ( chars[i] >= 'a' && chars[i] <= 'z' ) {
+                chars[i] = (char) ( chars[i] - 32 );
+            }
+        }
+        return new String ( chars );
+    }
+    
     public BigInteger getCode ( ) {
         return this.code;
     }
-    
-    /**
-     *
-     * @return
-     */
-    public String getCodeStr ( ) {
-        return ""+this.code;
-    }
+
     
     /**
      *
@@ -85,6 +79,24 @@ public class HashString {
     public boolean is ( HashString code ) {
         return code.getCode().compareTo(this.code) == 0;
     }
+
+    /**
+     * The same as is ( ): two HashStrings made from the same name are equal,
+     * whatever the case of a-z. Without this Java compared the objects, so a
+     * new HashString was never found in a list, or as the key of a map.
+     * (== still compares the objects, use is ( ).)
+     * @param other
+     * @return
+     */
+    @Override
+    public boolean equals ( Object other ) {
+        return other instanceof HashString && this.code != null && this.code.equals ( ( (HashString) other ).code );
+    }
+
+    @Override
+    public int hashCode ( ) {
+        return this.code != null ? this.code.hashCode ( ) : 0;
+    }
     
     /**
      *
@@ -92,7 +104,7 @@ public class HashString {
      * @return
      */
     public boolean is ( NickInfo ni ) {
-        return this.code == ni.getName().getCode();
+        return this.code.equals ( ni.getName().getCode() );
     }
      
     /**
@@ -101,7 +113,7 @@ public class HashString {
      * @return
      */
     public boolean is ( ChanInfo ci ) {
-        return this.code == ci.getName().getCode();
+        return this.code.equals ( ci.getName().getCode() );
     }
     
     /**
@@ -110,7 +122,7 @@ public class HashString {
      * @return
      */
     public boolean is ( User user ) {
-        return this.code == user.getName().getCode();
+        return this.code.equals ( user.getName().getCode() );
     }
     
     /**
@@ -119,7 +131,7 @@ public class HashString {
      * @return
      */
     public boolean is ( Chan chan ) {
-        return this.code == chan.getName().getCode();
+        return this.code.equals ( chan.getName().getCode() );
     }
     
     /**

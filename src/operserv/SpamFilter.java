@@ -7,7 +7,6 @@ package operserv;
 
 import core.HashNumeric;
 import core.HashString;
-import core.Proc;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,6 +19,7 @@ public class SpamFilter extends HashNumeric {
     private long id;
     private HashString pattern;
     private String flags;
+    private String target;      /* optional: only messages to a matching channel/nick */
     private String instater;
     private String reason;
     private String stamp;
@@ -156,6 +156,38 @@ public class SpamFilter extends HashNumeric {
      *
      * @return
      */
+    /**
+     * @return the channel/nick mask the filter is limited to, or null
+     */
+    public String getTarget ( ) {
+        return this.target;
+    }
+
+    /**
+     * @param target
+     */
+    public void setTarget ( String target ) {
+        this.target = ( target == null || target.isEmpty() ? null : target );
+    }
+
+    /**
+     * @return short id shown to opers in the ircd's spamfilter warnings
+     *         instead of the pattern
+     */
+    public String getShortID ( ) {
+        String id = Long.toString ( Math.abs ( this.id ), 36 ).toUpperCase ( );
+        return "SF-"+( id.length() > 6 ? id.substring ( id.length() - 6 ) : id );
+    }
+
+    /**
+     * @return the SF line for the ircd: SF <pattern> <flags> [<target>] :[<id>] <reason>
+     */
+    public String toServerLine ( ) {
+        return "SF "+this.pattern.getString()+" "+this.getBitFlags()+
+               ( this.target != null ? " "+this.target : "" )+
+               " :["+this.getShortID()+"] "+this.reason;
+    }
+
     public long getID ( ) {
         return this.id;
     }
@@ -327,7 +359,6 @@ public class SpamFilter extends HashNumeric {
             }
            
              
-            Proc.log("bits: "+ch+":"+this.bits);
         }
     }    
 }

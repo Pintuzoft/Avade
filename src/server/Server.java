@@ -64,10 +64,14 @@ public class Server extends HashNumeric {
                 this.name       = new HashString ( data[2] );
                 this.distance   = Integer.parseInt ( data[3] );
                 this.link       = Handler.findServer ( data[0].substring ( 1 )  );
-                this.link.addServer ( this );
+                if ( this.link != null ) {
+                    this.link.addServer ( this );
+                }
             }
         }
-        OperServ.addServer ( this.name );
+        if ( this.name != null ) {
+            OperServ.addServer ( this.name );
+        }
     }
     
     /**

@@ -29,7 +29,6 @@ import java.util.TimerTask;
 class GuestAdTask extends TimerTask {
     private User        user;
     private Random      rand;
-    private int         index;
 
     public GuestAdTask ( User user )  {
         this.user   = user; 

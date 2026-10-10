@@ -17,14 +17,24 @@
  */
 package server;
 
+import core.Handler;
 import core.Proc;
 import core.HashNumeric;
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 
 /**
  *
@@ -34,34 +44,38 @@ public class ServSock extends HashNumeric {
 
     private Socket sock;
     private static PrintWriter out;
-    private BufferedReader in;
-    private BufferedReader stdIn;
+    private InputStream in;
+    private final ByteArrayOutputStream lineBuf = new ByteArrayOutputStream ( 512 );
     private String buf;
     private long last;
-    private static long pingTime;
     private static long lastPing;
     private static long defaultPing = 120000;
+    private volatile boolean closed = false;
+    /* A PrintWriter never throws, it only remembers that a write failed */
+    private static volatile boolean broken = false;
 
     /**
      *
      */
-    public ServSock() {
+    public ServSock() throws IOException {
         last = System.currentTimeMillis();
         lastPing = this.last;
         try {
-            this.sock = new Socket(Proc.getConf().get(HUBHOST).getString(), Integer.parseInt(Proc.getConf().get(HUBPORT).getString()));
+            this.sock = new Socket();
+            this.sock.connect(new InetSocketAddress(Proc.getConf().get(HUBHOST).getString(), Integer.parseInt(Proc.getConf().get(HUBPORT).getString())), 10000);
             this.sock.setKeepAlive(true);
             this.sock.setSoTimeout(200);
-            out = new PrintWriter(this.sock.getOutputStream(), true);
-            this.in = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));
+            out = new PrintWriter(new OutputStreamWriter(this.sock.getOutputStream(), StandardCharsets.UTF_8), true);
+            broken = false;
+            this.in = new BufferedInputStream(this.sock.getInputStream());
 
         } catch (UnknownHostException e) {
             System.out.println("Don't know about host: " + Proc.getConf().get(HUBNAME));
-            System.exit(1);
+            throw e;
 
         } catch (IOException e) {
             System.out.println("Couldn't get I/O for the connection to: " + Proc.getConf().get(HUBNAME));
-            System.exit(1);
+            throw e;
         }
 
         // this.stdIn = new BufferedReader ( new InputStreamReader ( System.in )  );
@@ -77,27 +91,72 @@ public class ServSock extends HashNumeric {
     }
 
     /**
+     * @return true when the link to the hub is gone
+     */
+    public boolean isClosed() {
+        if (broken && !this.closed) {
+            /* A write failed: close the socket too, the main loop relinks */
+            this.disconnect();
+        }
+        return this.closed;
+    }
+
+    /**
      *
      * @return
      */
     public String readLine() {
         try {
-            this.buf = this.in.readLine();
-            if (this.buf != null && this.buf.length() > 0) {
-                this.last = System.currentTimeMillis();
+            int b;
+            if (this.closed) {
+                return null;
             }
-            return this.buf;
-
+            while ((b = this.in.read()) != -1) {
+                if (b == '\n') {
+                    this.buf = decode(this.lineBuf.toByteArray());
+                    this.lineBuf.reset();
+                    if (this.buf.length() > 0) {
+                        this.last = System.currentTimeMillis();
+                    }
+                    return this.buf;
+                } else if (b != '\r') {
+                    this.lineBuf.write(b);
+                }
+            }
+            /* End of stream, the hub closed the link */
+            this.closed = true;
+        } catch (SocketTimeoutException ex) {
+            /* Nothing more to read right now, keep any partial line for the next call */
         } catch (IOException ex) {
-            // Logger.getLogger(ServSock.class.getName()).log(Level.SEVERE, null, ex);
+            this.closed = true;
         }
         return null;
+    }
+
+    /**
+     * IRC has no fixed charset. Decode lines as UTF-8 and fall back to
+     * Windows-1252 (what old latin1 clients send) if it is not valid UTF-8.
+     * @param bytes
+     * @return
+     */
+    public static String decode(byte[] bytes) {
+        try {
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes))
+                    .toString();
+        } catch (CharacterCodingException ex) {
+            return new String(bytes, Charset.forName("windows-1252"));
+        }
     }
 
     /**
      *
      */
     public void disconnect() {
+        this.closed = true;
+        broken = true;      /* nothing more is written to this link */
         try {
             this.sock.close();
             out.close();
@@ -116,7 +175,14 @@ public class ServSock extends HashNumeric {
             if (!cmd.contains("PONG")) {
                 //System.out.println ( "Sending: "+cmd );
             }
-            out.println (cmd);
+            if (out != null && !broken) {
+                out.println (cmd);
+                /* Without asking, a dead link is only noticed at the ping timeout */
+                if (out.checkError()) {
+                    broken = true;
+                    Proc.log("Could not write to the hub, dropping the link");
+                }
+            }
         } catch (Exception e) {
             Proc.log(ServSock.class.getName(), e);
         }
@@ -126,7 +192,10 @@ public class ServSock extends HashNumeric {
      *
      */
     public void authenticate() {
+        Handler.resetSync();
         sendCmd("PASS " + Proc.getConf().get(HUBPASS) + " :TS..");
+        /* NICKIPSTR: get the IP of users as a string, needed for IPv6 */
+        sendCmd("CAPAB NICKIPSTR");
         sendCmd("SERVER " + Proc.getConf().get(NAME) + " 1 :services");
         sendCmd("SERVER " + Proc.getConf().get(STATS) + " 1 :stats");
     }
@@ -137,5 +206,13 @@ public class ServSock extends HashNumeric {
      */
     public boolean timedOut() {
         return System.currentTimeMillis() - this.last > defaultPing;
+    }
+
+    /**
+     * @return true if the hub has been silent for a minute. A quiet network
+     * is not a dead link: ask the hub for a sign of life before giving up
+     */
+    public boolean quiet() {
+        return System.currentTimeMillis() - this.last > 60000;
     }
 }

@@ -27,6 +27,7 @@ import core.Proc;
 import core.Service;
 import core.StringMatch;
 import core.TextFormat;
+import core.WorkGuard;
 import java.math.BigInteger;
 import user.User;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public class ChanServ extends Service {
     private static ArrayList<ChanInfo> deleteList = new ArrayList<>();
     
     private static HashMap<BigInteger,ChanInfo> ciList = new HashMap<>(); /* List of regged channels */
+    private static boolean                      loaded = false;
 
     private static ArrayList<UserCheck> chUserCheckList = new ArrayList<>();
     
@@ -88,6 +90,8 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "INFO",         0,                          "Show information about a channel" )    );
         cmdList.add ( new CommandInfo ( "AOP",          0,                          "Manage the AOP list" )                 );
         cmdList.add ( new CommandInfo ( "SOP",          0,                          "Manage the SOP list" )                 );
+        cmdList.add ( new CommandInfo ( "HOP",          0,                          "Manage the HOP (halfop) list" )        );
+        cmdList.add ( new CommandInfo ( "VOP",          0,                          "Manage the VOP (voice) list" )         );
         cmdList.add ( new CommandInfo ( "AKICK",        0,                          "Manage the AKick list" )               );
         cmdList.add ( new CommandInfo ( "OP",           0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "DEOP",         0,                          null )                                  );
@@ -98,7 +102,7 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "MDEOP",        0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "MKICK",        0,                          null )                                  );
         cmdList.add ( new CommandInfo ( "DROP",         0,                          null )                                  );
-        cmdList.add ( new CommandInfo ( "ACCESSLOG",    0,                          "View the AOP/SOP/AKICK logs" )         );
+        cmdList.add ( new CommandInfo ( "ACCESSLOG",    0,                          "View the access list logs" )         );
         cmdList.add ( new CommandInfo ( "LISTOPS",      0,                          "View the AOP/SOP/AKICK lists" )         );
         cmdList.add ( new CommandInfo ( "TOPICLOG",     CMDAccess ( TOPICLOG ),     "View the topic logs" )         );
         cmdList.add ( new CommandInfo ( "LIST",         CMDAccess ( LIST ),         "List registered channels" )            );
@@ -108,7 +112,7 @@ public class ChanServ extends Service {
         cmdList.add ( new CommandInfo ( "CLOSE",        CMDAccess ( CLOSE ),        "Close channel" )                       );
         cmdList.add ( new CommandInfo ( "HOLD",         CMDAccess ( HOLD ),         "Hold channel" )                        );
         cmdList.add ( new CommandInfo ( "AUDITORIUM",   CMDAccess ( AUDITORIUM ),   "Set Auditorium setting" )              );
-        cmdList.add ( new CommandInfo ( "GETPASS",      CMDAccess ( GETPASS ),      "Get channel password" )                );
+        cmdList.add ( new CommandInfo ( "SETPASS",      CMDAccess ( SETPASS ),      "Set a new channel password" )          );
         cmdList.add ( new CommandInfo ( "DELETE",       CMDAccess ( DELETE ),       "Force DROP a channel" )                );
     }
     
@@ -148,21 +152,40 @@ public class ChanServ extends Service {
     }
      
     private void loadChans ( )  {
-        ciList = CSDatabase.getAllChans ( );
-        //CSDatabase.loadChanAccess ( SOP );
-        //CSDatabase.loadChanAccess ( AOP );
-        //CSDatabase.loadChanAccess ( AKICK );
-        CSDatabase.loadAllChanAccess();
+        loaded = false;
+        if ( ! NickServ.isLoaded ( ) ) {
+            /* Founders and access lists point at nicks */
+            return;
+        }
+        HashMap<BigInteger,ChanInfo> chans = CSDatabase.getAllChans ( );
+        if ( chans == null ) {
+            Proc.log ( "ChanServ: could not load the channels from the database" );
+            return;
+        }
+        ciList = chans;
+        if ( ! CSDatabase.loadAllChanAccess() ) {
+            Proc.log ( "ChanServ: could not load the channel access lists from the database" );
+            return;
+        }
+        loaded = true;
     }
-    
+
     /**
-     *
-     * @param name
-     * @param settings
+     * @return true when all channels and access lists are loaded
      */
-    public static void attachSettings ( HashString name, ChanSetting settings ) {
-        ciList.get(name.getCode()).setSettings ( settings );
+    public static boolean isLoaded ( ) {
+        return loaded;
     }
+
+    /**
+     * Try to load the channels again
+     * @return
+     */
+    public boolean retryLoad ( ) {
+        this.loadChans ( );
+        return loaded;
+    }
+
         
     /**
      *
@@ -170,13 +193,13 @@ public class ChanServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            this.sendMsg ( user, "Services are loading the nick and channel database, please try again in a moment." );
+            return;
+        }
         //:DreamHea1er PRIVMSG NickServ@services.sshd.biz :help
-        try {
-            if ( cmd[3].isEmpty ( ) ) { 
-                return; 
-            }
-        } catch ( Exception e ) {
-            Proc.log ( ChanServ.class.getName ( ), e );
+        if ( cmd.length < 4 || cmd[3].length ( ) < 2 ) {
+            return; /* no command */
         }
         
 //        user.getUserFlood().incCounter ( this );
@@ -186,22 +209,7 @@ public class ChanServ extends Service {
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         } else {
-            this.executor.parse ( user, cmd );
-        }
-    }
-      
-    /**
-     *
-     * @param user
-     * @param cmd
-     */
-    public void snoopAndLog ( User user, String[] cmd )  {
-        try { 
-            HashString serv = new HashString ( "NickServ" );
-            snoop.msg ( false, serv, user, cmd );
-            this.accessDenied ( user );
-        } catch ( Exception e )  {
-            Proc.log ( ChanServ.class.getName ( ) , e );
+            this.executor.parse ( user, cmd, command );
         }
     }
 
@@ -212,11 +220,6 @@ public class ChanServ extends Service {
      * @param u
      */
 
-    public void adChan ( User u )  {
-        this.sendMsg ( u, "The Chan "+f.b ( ) +u.getString ( NAME ) +f.b ( ) +" is currently not registered"      );
-        this.sendMsg ( u, "To register the channel please type:"                                                    );
-        this.sendMsg ( u, "    /ChanServ REGISTER <#channel> <Password> <description>"                              );
-    }
     
     /**
      *
@@ -225,7 +228,8 @@ public class ChanServ extends Service {
     public void checkAllUsers ( ChanInfo ci )  {
         Chan c;
         if ( ( c = Handler.findChan ( ci.getName() ) ) != null ) {
-            for ( User u : c.getList ( ALL ) ) {
+            /* a copy: checkUser can kick, which changes the list */
+            for ( User u : new ArrayList<> ( c.getList ( ALL ) ) ) {
                 this.checkUser ( c, u );                
             }
         }
@@ -236,7 +240,8 @@ public class ChanServ extends Service {
      */
     public void checkAllUsers ( Chan c )  {
         if ( c != null ) {
-            for ( User u : c.getList ( ALL ) ) {
+            /* a copy: checkUser can kick, which changes the list */
+            for ( User u : new ArrayList<> ( c.getList ( ALL ) ) ) {
                 this.checkUser ( c, u );                
             }
         }
@@ -251,6 +256,11 @@ public class ChanServ extends Service {
         ChanInfo ci;
         NickInfo ni;
         CSAcc acc;
+        
+        if ( ! Handler.isDataLoaded ( ) ) {
+            /* Never op/deop/kick before we know the registered channels */
+            return;
+        }
         
         /* Relay channel */
         if ( c.isRelay() ) {
@@ -277,16 +287,51 @@ public class ChanServ extends Service {
                 return;
             }
             
+            /* Banned through a host that was shown then, and back with
+               another one: the ban follows. The new ban is on what the user
+               shows now, so nothing about the real host is given away */
+            String evaded = c.evadedBan ( user );
+            if ( evaded != null && ! user.isOper ( ) ) {
+                String mask = "*!*@"+shownOrReal ( user );
+                c.addOwnBan ( mask, evaded );
+                this.sendCmd ( "MODE "+c.getString ( NAME )+" 0 +b "+mask );
+                kickUser ( c, user, "Banned ("+evaded+")" );
+                return;
+            }
+            
             /* User Access */
             if ( ci.isAtleastAop ( user ) ) {
                 ni = ci.getNickByUser ( user );
                 ci.setLastUsed ( );
-                if ( ni != null && ni.is(NEVEROP) ) {
+                if ( ni != null && ni.isSet(NEVEROP) ) {
                     /* Dont op */
                 } else {
                     opUser ( c, user );
                     ci.updateLastOped ( user );                    
                 }
+
+            /* Halfop access */
+            } else if ( ci.isAtleastHop ( user ) ) {
+                ni = ci.getNickByUser ( user );
+                ci.setLastUsed ( );
+                if ( c.isOp ( user ) && ci.isSet ( OPGUARD ) ) {
+                    this.deOpUser ( c, user );
+                }
+                if ( ni != null && ni.isSet(NEVEROP) ) {
+                    /* Dont halfop */
+                } else {
+                    hopUser ( c, user );
+                    ci.updateLastOped ( user );
+                }
+
+            /* Voice access */
+            } else if ( ci.isAtleastVop ( user ) ) {
+                ci.setLastUsed ( );
+                if ( c.isOp ( user ) && ci.isSet ( OPGUARD ) ) {
+                    this.deOpUser ( c, user );
+                }
+                voiceUser ( c, user );
+                ci.updateLastOped ( user );
 
             /* Restricted */
             }  else if ( ci.isSet ( RESTRICT ) ) {
@@ -307,24 +352,151 @@ public class ChanServ extends Service {
     }
      
     /**
+     * A join request (SJR): the ircd checked nothing and lets the user in
+     * only when we answer with AJ. So the checks of the ircd are done here
+     * (modes, key, limit, bans, see Chan.joinRefusal), and those ChanServ
+     * otherwise does with a ban and a kick after the join.
+     * @param user
+     * @param data :nick SJR <invited 0|1> <#chan> [:key]
+     */
+    public void joinRequest ( User user, String[] data ) {
+        if ( data.length < 4 || ! Handler.isChanName ( data[3] ) ) {
+            return;
+        }
+        HashString name = new HashString ( data[3] );
+        boolean invited = data[2].equals ( "1" );
+        String key      = ( data.length > 4 ? data[4] : null );
+        if ( key != null && key.startsWith ( ":" ) ) {
+            key = key.substring ( 1 );
+        }
+        Chan c          = Handler.findChan ( name );
+        /* Without the registered channels only the checks of the ircd are left */
+        ChanInfo ci     = ( Handler.isDataLoaded ( ) ? findChan ( name ) : null );
+        ChanInfo relay  = ( Handler.isDataLoaded ( ) && c != null && c.isRelay ( ) ? findChan ( c.getRelay ( ) ) : null );
+        String stop     = null;
+        String why      = null;
+        
+        if ( relay != null && relay.isRelayed ( ) ) {
+            if ( ! relay.isAtleastAop ( user ) ) {
+                stop = "+i";
+                why  = data[3]+" is only for the staff of "+c.getRelay ( )+".";
+            }
+        } else if ( ci != null && ci.isSet ( CLOSED ) ) {
+            stop = "+b";
+            why  = data[3]+" is closed.";
+        } else if ( ci != null && ! ci.isSet ( FROZEN ) ) {
+            if ( c != null && c.evadedBan ( user ) != null && ! user.isOper ( ) ) {
+                stop = "+b";
+            } else if ( ci.isAtleastVop ( user ) ) {
+                /* on an access list: gets its status after the join */
+            } else if ( ci.isSet ( RESTRICT ) ) {
+                stop = "+i";
+                why  = data[3]+" is restricted to the users on its access lists.";
+            } else if ( ci.isAkick ( user ) ) {
+                stop = "+b";
+            }
+        }
+        /* An INVITE gets around the modes and the bans, like in the ircd */
+        if ( stop == null && ! invited && c != null ) {
+            stop = c.joinRefusal ( user, key, ( ci != null ? ci.getChanFlag ( ) : null ) );
+        }
+        
+        if ( stop != null ) {
+            this.refuseJoin ( user, data[3], stop, ci );
+            if ( why != null ) {
+                this.sendMsg ( user, why );
+            }
+            return;
+        }
+        
+        if ( c == null ) {
+            /* A new channel (join requests for all channels): the first one
+               in gets op like always, and the usual checks follow */
+            long stamp = System.currentTimeMillis ( ) / 1000;
+            this.sendServ ( "AJ @"+user.getNameStr ( )+" "+user.getNickStamp ( )+" "+data[3]+" "+stamp );
+            Handler.newChan ( data[3], stamp, user );
+            return;
+        }
+        this.sendServ ( "AJ "+user.getNameStr ( )+" "+user.getNickStamp ( )+" "+c.getNameStr ( )+" "+c.getCreatedOn ( ) );
+        /* The ircd tells services nothing more about this join */
+        if ( ! c.nickIsPresent ( user.getName ( ) ) ) {
+            c.countJoin ( );
+        }
+        c.addUser ( USER, user );
+        user.addChan ( c );
+        addCheckUser ( c, user );
+    }
+
+    /* The reply the ircd gives when a join is refused, and what it reports
+       for the chanflags USER_VERBOSE and OPER_VERBOSE */
+    private void refuseJoin ( User user, String chan, String stop, ChanInfo ci ) {
+        String nick = user.getNameStr ( );
+        CSFlag flags = ( ci != null ? ci.getChanFlag ( ) : null );
+        switch ( stop.charAt ( 1 ) ) {
+            case 'b' :
+                this.sendServ ( "474 "+nick+" "+chan+" :Cannot join channel (+b)" );
+                break;
+            case 'k' :
+                this.sendServ ( "475 "+nick+" "+chan+" :Cannot join channel (+k)" );
+                break;
+            case 'l' :
+            case 'j' :
+                this.sendServ ( "471 "+nick+" "+chan+" :Cannot join channel ("+stop+")" );
+                break;
+            case 'S' :
+                this.sendServ ( "488 "+nick+" :SSL Only channel (+S), You must connect using SSL to join this channel." );
+                break;
+            case 'R' :
+                this.sendServ ( "477 "+nick+" "+chan+" :You need to identify to a registered nick to join "+chan+
+                                ". For help with registering your nickname, type \"/msg "+Handler.getNickServ().getNameStr ( )+"@"+Proc.getConf().get ( NAME )+" help register\"" );
+                break;
+            case 'X' :
+                long left = user.getSignOn ( ) + ( flags != null ? flags.getJoinconnecttime ( ) : 0 ) - System.currentTimeMillis ( ) / 1000;
+                this.sendServ ( "473 "+nick+" "+chan+" :Cannot join channel (+X)" );
+                this.sendMsg ( user, "You must wait "+Math.max ( left, 1 )+" seconds before you will be able to join "+chan+"." );
+                break;
+            default :
+                this.sendServ ( "473 "+nick+" "+chan+" :Cannot join channel ("+stop+")" );
+        }
+        if ( flags == null ) {
+            return;
+        }
+        String failed = "Failed join by "+nick+"!"+user.getString ( USER )+"@";
+        Chan relay;
+        if ( flags.isUserverbose ( ) && ( relay = Handler.findChan ( chan+"-relay" ) ) != null && ! relay.getModes().is ( MODE_m ) ) {
+            String shown = user.getShownHost ( );
+            this.sendCmd ( "PRIVMSG "+relay.getNameStr ( )+" :"+failed+( shown != null ? shown : user.getHost ( ) )+" - "+stop );
+        }
+        int refused;
+        if ( flags.isOperverbose ( ) && stop.charAt ( 1 ) != 'j' && ( refused = flags.refusedJoin ( ) ) > 0 ) {
+            Handler.getOperServ().sendGlobOp ( "Flood -- "+failed+user.getHost ( )+" in "+chan+" - "+stop+
+                                               ( refused > 1 ? " ("+refused+" refused joins since the last report)" : "" ) );
+        }
+    }
+
+    /**
      *
      * @param c
      */
     public void checkSettings ( Chan c )  {
         ChanInfo ci;
-        if ( c == null ) {
+        if ( c == null || ! Handler.isDataLoaded ( ) ) {
             return;
         }
-        if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {
+        if ( ( ci = ChanServ.findChan ( c.getName ( ) ) ) != null ) {
             if ( ci.isSet ( CLOSED ) ) {
                 ci.kickAll ( "Channel is CLOSED" );
             } else {
                 ci.getChanFlag().syncChangedValuesWithNetwork();
-                if ( ci.isSet ( TOPICLOCK )  || ci.isSet ( KEEPTOPIC ) ) {
-                    if ( ci.getTopic ( ) != null ) {
-                        c.setTopic ( ci.getTopic ( )  );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
-                    }
+                /* Restore the topic of a newly created channel. During the burst the
+                   channel already exists on the network and its topic follows in the
+                   topic burst, so only do this once we are synced */
+                if ( Handler.isSynced ( ) &&
+                     ( ci.isSet ( TOPICLOCK ) || ci.isSet ( KEEPTOPIC ) ) &&
+                     ci.getTopic ( ) != null && 
+                     ci.getTopic().hasText ( ) ) {
+                    c.setTopic ( ci.getTopic ( ) );
+                    this.sendTopic ( ci );
                 }
                 if ( ci.isSet ( AUDITORIUM ) ) {
                     this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :+A" );
@@ -340,13 +512,19 @@ public class ChanServ extends Service {
      * @param ci
      */
     public void checkModes ( Chan c, ChanInfo ci )  {
-        if ( ci == null || c == null || ci.getSettings() == null || ci.getSettings().getModeLock() == null ) {
+        if ( ! Handler.isDataLoaded ( ) || ci == null || c == null || ci.getSettings() == null || ci.getSettings().getModeLock() == null ) {
             return;
         }
         String missing = null;
         if ( ( missing = ci.getSettings().getModeLock().getMissingModes ( c, ci ) ) != null ) {
             c.getModes().setModeString ( missing );
-            this.sendCmd ( "MODE "+ci.getName ( ) +" 0 :"+missing );
+            /* -k needs the key as argument, and is always last in the string */
+            String arg = "";
+            if ( missing.endsWith ( "k" ) && missing.contains ( "-" ) && c.getKey ( ) != null ) {
+                arg = " "+c.getKey ( );
+                c.clearKey ( );
+            }
+            this.sendCmd ( "MODE "+ci.getName ( ) +" 0 "+missing+arg );
         }
     }
 
@@ -360,11 +538,11 @@ public class ChanServ extends Service {
         ChanInfo ci;
         NickInfo ni;
         boolean updTopic = false;
-        if ( c == null ) {
+        if ( c == null || ! Handler.isDataLoaded ( ) ) {
             return false;
         }
 
-        if ( ( ci = ChanServ.findChan ( c.getString ( NAME ) ) ) != null ) {   /* If chan isSet regged */
+        if ( ( ci = ChanServ.findChan ( c.getName ( ) ) ) != null ) {   /* If chan isSet regged */
             if ( ci.isSet ( TOPICLOCK )  )  {                    /* If topiclock isSet set */
                 if (  ( ni = ci.getNickByUser ( u )  )  != null ) {            /* Nick has some access to the chan */
                     if ( ci.getSettings().isTopicLock ( FOUNDER ) ) {
@@ -380,39 +558,70 @@ public class ChanServ extends Service {
                             updTopic = true; 
                         }
                     }
-               
-                    if ( updTopic )  {
-                        if ( c.getTopic().getStamp ( )  != ci.getTopic().getStamp ( ) ) {
-                            ci.setTopic ( c.getTopic ( ) );
-                        }
-                        return true;
-                    } else {
+                }
+                
+                if ( ! updTopic )  {
+                    /* Not allowed, put the locked topic back */
+                    if ( ci.getTopic ( ) != null ) {
                         c.setTopic ( ci.getTopic ( ) );
-                        this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
-                        return false;
+                        this.sendTopic ( ci );
                     }
-            
-                } else {
-                    c.setTopic ( ci.getTopic ( )  );
-                    this.sendCmd ( "TOPIC "+c.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
                     return false;
                 }
-            } else {
-                ci.setTopic ( c.getTopic ( ) );
             }
+            ci.setTopic ( c.getTopic ( ) );
             return true;
         }
         return false;
     }
     
     /**
-     *
+     * A topic was set by a server (topic burst or netjoin). Keep the stored
+     * topic up to date, or enforce it if the channel has TOPICLOCK.
+     * @param c
+     */
+    public void checkServerTopic ( Chan c ) {
+        ChanInfo ci;
+        Topic topic;
+        if ( c == null || ! Handler.isDataLoaded ( ) || ( ci = ChanServ.findChan ( c.getName ( ) ) ) == null ) {
+            return;
+        }
+        topic = c.getTopic ( );
+        if ( topic == null || topic.isSame ( ci.getTopic ( ) ) ) {
+            return;
+        }
+        if ( topic.isJunk ( ) ) {
+            /* Left on the network by an older version, never store it */
+            if ( ci.getTopic ( ) != null && ci.getTopic().hasText ( ) ) {
+                c.setTopic ( ci.getTopic ( ) );
+                this.sendTopic ( ci );
+            } else {
+                c.setTopic ( new Topic ( "", "", 0 ) );
+                this.sendCmd ( "TOPIC "+ci.getString ( NAME )+" "+this.getName()+" "+( System.currentTimeMillis ( ) / 1000 )+" :" );
+            }
+            return;
+        }
+        if ( ci.isSet ( TOPICLOCK ) && ci.getTopic ( ) != null && ci.getTopic().hasText ( ) ) {
+            c.setTopic ( ci.getTopic ( ) );
+            this.sendTopic ( ci );
+        
+        } else if ( ci.getTopic ( ) == null || topic.getStamp ( ) >= ci.getTopic().getStamp ( ) ) {
+            ci.setTopic ( topic );
+            ci.getChanges().change ( TOPIC );
+            ChanServ.addToWorkList ( CHANGE, ci );
+        }
+    }
+    
+    /**
+     * Send the stored topic of a channel to the network, keeping the
+     * original setter and time
      * @param ci
      */
     public void sendTopic ( ChanInfo ci ) {
         Topic topic = ci.getTopic();
         if ( topic != null ) {
-            this.sendCmd ( "TOPIC "+ci.getString ( NAME ) +" "+ci.getTopic().getSetter ( ) +" "+ci.getTopic().getStamp ( ) +" :"+ci.getTopic().getText ( ) );
+            String setter = topic.getSetter().isEmpty() ? this.getName().getString() : topic.getSetter();
+            this.sendCmd ( "TOPIC "+ci.getString ( NAME ) +" "+setter+" "+topic.getStamp ( ) +" :"+topic.getText ( ) );
         }
     }
     
@@ -425,10 +634,17 @@ public class ChanServ extends Service {
     public void banUser ( Chan c, User user, String mask )  {
         // :Pintuz MODE #avade 0 +o Pintuz
         if ( mask == null )  {
-            this.sendCmd ( "MODE "+c.getString(NAME)+" +b *!"+user.getString(USER)+"@"+user.getString(HOST) );
-        } else {
-            this.sendCmd ( "MODE "+c.getString(NAME)+" +b "+mask );
+            /* On the host everyone sees: a ban on the real host of someone
+               with a vhost or a masked host would show it to the channel */
+            mask = "*!"+user.getString(USER)+"@"+shownOrReal ( user );
         }
+        c.addOwnBan ( mask, null );
+        this.sendCmd ( "MODE "+c.getString(NAME)+" 0 +b "+mask );
+    }
+    
+    private static String shownOrReal ( User user ) {
+        String shown = user.getShownHost ( );
+        return ( shown != null ? shown : user.getString ( HOST ) );
     }
     
     /**
@@ -443,8 +659,11 @@ public class ChanServ extends Service {
             if ( reason == null ) {
                 reason = user.getNameStr();
             }
+            this.sendCmd ( "KICK "+c.getNameStr()+" "+user.getNameStr()+" :"+reason );
+            /* Same bookkeeping as when the ircd tells us about a kick */
             c.remUser ( user );
-            this.sendCmd ( "KICK "+c.getNameStr()+" :"+user.getNameStr() );
+            user.remChan ( c );
+            Handler.deleteEmpty ( c );
         }
     }
     
@@ -459,10 +678,36 @@ public class ChanServ extends Service {
         if ( ! c.isOp ( user )  )  {
             this.sendCmd ( "MODE "+c.getString ( NAME )+" +o "+user.getString ( NAME )  );
             c.chModeUser ( user, OP, OP, false );
-            if ( ( ci = ChanServ.findChan ( c.getString(NAME) ) ) != null ) {
+            if ( ( ci = ChanServ.findChan ( c.getName ( ) ) ) != null ) {
                 ci.setLastUsed();
                 ci.changed(LASTUSED);
             }
+        }
+    }
+    
+    /**
+     *
+     * @param c
+     * @param user
+     */
+    public void hopUser ( Chan c, User user )  {
+        // :ChanServ MODE #avade +h Pintuz
+        if ( ! c.isHop ( user )  )  {
+            this.sendCmd ( "MODE "+c.getString ( NAME )+" +h "+user.getString ( NAME )  );
+            c.chModeUser ( user, HALFOP, HALFOP, false );
+        }
+    }
+    
+    /**
+     *
+     * @param c
+     * @param user
+     */
+    public void voiceUser ( Chan c, User user )  {
+        // :ChanServ MODE #avade +v Pintuz
+        if ( ! c.isVo ( user )  )  {
+            this.sendCmd ( "MODE "+c.getString ( NAME )+" +v "+user.getString ( NAME )  );
+            c.chModeUser ( user, VOICE, VOICE, false );
         }
     }
     
@@ -486,6 +731,7 @@ public class ChanServ extends Service {
      */
     public void unBanUser ( Chan c, User user )  {
         this.sendCmd ( "SVSMODE "+c.getString ( NAME ) +" -b "+user.getString ( NAME )  );
+        c.removeBansOn ( user );
     }
     
     /**
@@ -552,8 +798,8 @@ public class ChanServ extends Service {
         ChanInfo ci = null;
         for ( HashMap.Entry<BigInteger,ChanInfo> entry : ciList.entrySet() ) {
             ci = entry.getValue();
-            if ( StringMatch.wild ( ci.getName().getString().toUpperCase(), string.toUpperCase() ) ||
-                 StringMatch.wild ( ci.getString (TOPIC).toUpperCase(), string.toUpperCase() ) ) {
+            if ( StringMatch.matches ( ci.getName().getString(), string ) ||
+                 StringMatch.matches ( ci.getString (TOPIC), string ) ) {
                 chans.add ( ci );
             }
         }
@@ -653,14 +899,6 @@ public class ChanServ extends Service {
     
     /**
      *
-     * @param c
-     */
-    public static void kickAll ( Chan c )  { 
-        ChanServ.kickAll ( c );
-    }
-    
-    /**
-     *
      * @return
      */
     public static int secMaintenance ( )  {
@@ -687,6 +925,13 @@ public class ChanServ extends Service {
         return todoAmount;
     }
  
+    /**
+     * Drop pending user checks, used when we relink to the hub
+     */
+    public static void clearCheckUsers ( ) {
+        chUserCheckList.clear ( );
+    }
+
     private static void checkUserList ( ) {
         ArrayList<UserCheck> checked = new ArrayList<>();
         for ( UserCheck uc : chUserCheckList ) {
@@ -737,6 +982,9 @@ public class ChanServ extends Service {
             ArrayList<CSLogEvent> eLogs = new ArrayList<>();
             for ( CSLogEvent log : logs.subList ( 0, getIndexFromSize ( logs.size() ) ) ) {
                 if ( CSDatabase.logEvent ( log ) > 0 ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "chan log" ) ) {
                     eLogs.add ( log );
                 }
             }
@@ -751,6 +999,9 @@ public class ChanServ extends Service {
             ArrayList<CSAccessLogEvent> eLogs = new ArrayList<>();
             for ( CSAccessLogEvent log : accessLogs.subList ( 0, getIndexFromSize ( accessLogs.size() ) ) ) {
                 if ( CSDatabase.accesslogEvent ( log ) ) {
+                    WorkGuard.done ( log );
+                    eLogs.add ( log );
+                } else if ( WorkGuard.failed ( log, "chan access log" ) ) {
                     eLogs.add ( log );
                 }
             }
@@ -767,6 +1018,9 @@ public class ChanServ extends Service {
             ArrayList<ChanInfo> chans = new ArrayList<>();            
             for ( ChanInfo ci : regList.subList ( 0, getIndexFromSize ( regList.size() ) ) ) {
                 if ( CSDatabase.createChan ( ci ) == 1 ) {
+                    WorkGuard.done ( ci );
+                    chans.add ( ci );
+                } else if ( WorkGuard.failed ( ci, "register of "+ci.getName() ) ) {
                     chans.add ( ci );
                 }
             }
@@ -782,6 +1036,9 @@ public class ChanServ extends Service {
             ArrayList<ChanInfo> chans = new ArrayList<>();
             for ( ChanInfo ci : changeList.subList ( 0, getIndexFromSize ( changeList.size() ) ) ) {
                 if ( CSDatabase.updateChan ( ci ) == 1 ) {
+                    WorkGuard.done ( ci );
+                    chans.add ( ci );
+                } else if ( WorkGuard.failed ( ci, "changes to "+ci.getName() ) ) {
                     chans.add ( ci );
                 }
                 ci.maintenence ( );
@@ -798,6 +1055,9 @@ public class ChanServ extends Service {
             ArrayList<ChanInfo> chans = new ArrayList<>();            
             for ( ChanInfo ci : deleteList.subList ( 0, getIndexFromSize ( deleteList.size() ) ) ) {
                 if ( CSDatabase.deleteChan ( ci ) ) {
+                    WorkGuard.done ( ci );
+                    chans.add ( ci );
+                } else if ( WorkGuard.failed ( ci, "delete of "+ci.getName() ) ) {
                     chans.add ( ci );
                 }
             }
@@ -849,7 +1109,17 @@ public class ChanServ extends Service {
         for ( User user : uList ) {
             this.sendMsg ( user, "Channel "+ci.getName()+" which you have been found to be associated with has now been dropped");
         }
-        ciList.remove ( ci );
+        ciList.remove ( ci.getName().getCode() );
+        
+        /* Nicks with access keep a list of their channels (CHANLIST) */
+        HashString[] lists = { SOP, AOP, HOP, VOP, AKICK };
+        for ( HashString list : lists ) {
+            for ( CSAcc acc : ci.getAccessList ( list ).values ( ) ) {
+                if ( acc.getNick ( ) != null ) {
+                    acc.getNick().remFromAccessList ( list, ci );
+                }
+            }
+        }
         
         /* All initial work has been done lets remove it from the database */
         ChanServ.addToWorkList ( DELETE, ci );
@@ -859,6 +1129,9 @@ public class ChanServ extends Service {
     
     
     public void checkDynAopAdd ( Chan c, User setter, User user ) {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            return;
+        }
         ChanInfo ci;
         NickInfo ni;
         NickInfo op;
@@ -872,16 +1145,24 @@ public class ChanServ extends Service {
         } else if ( ! ci.getSettings().is(DYNAOP) ) {
             return;
             
-        } else if ( ( op = NickServ.findNick(setter.getName())) == null ) {
+        } else if ( ( op = ci.getNickByUser ( setter ) ) == null ) {
             return;
             
         } else if ( ( ni = NickServ.findNick(user.getName())) == null ) {
+            return;
+            
+        } else if ( user.getSID() == null || ! user.getSID().isIdentified ( ni ) ) {
+            /* Only add nicks the opped user is identified to */
             return;
             
         } else if ( ! ci.isAtleastAop(op) ) {
             return;
             
         } else if ( ci.isAtleastAop(ni) ) {
+            return;
+            
+        } else if ( ni.isSet ( NOOP ) || ci.isAccess ( AKICK, ni ) ) {
+            /* Respect NOOP and never silently remove an AKICK entry */
             return;
         }
         
@@ -894,6 +1175,9 @@ public class ChanServ extends Service {
     }
 
     public void checkDynAopDel ( Chan c, User setter, User user ) {
+        if ( ! Handler.isDataLoaded ( ) ) {
+            return;
+        }
         ChanInfo ci;
         NickInfo ni;
         NickInfo op;
@@ -909,7 +1193,7 @@ public class ChanServ extends Service {
         } else if ( ! ci.getSettings().is(DYNAOP) ) {
             return;
             
-        } else if ( ( op = NickServ.findNick(setter.getName())) == null ) {
+        } else if ( ( op = ci.getNickByUser ( setter ) ) == null ) {
             return;
             
         } else if ( ( ni = NickServ.findNick(user.getName())) == null ) {
@@ -918,7 +1202,8 @@ public class ChanServ extends Service {
         } else if ( ! ci.isAtleastAop(op) ) {
             return;
             
-        } else if ( ci.isAtleastSop(ni) ) {
+        } else if ( ci.getAccessByNick ( op ) <= ci.getAccessByNick ( ni ) ) {
+            /* Only remove nicks with lower access than the setter */
             return;
         } else if ( ( acc = ci.getAccess(AOP, ni) ) == null ) {
             return;

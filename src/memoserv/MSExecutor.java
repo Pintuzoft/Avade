@@ -25,7 +25,6 @@ import nickserv.NickServ;
 import core.Executor;
 import core.Handler;
 import core.HashString;
-import core.Proc;
 import core.TextFormat;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -57,28 +56,11 @@ import user.User;
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd ) {
-        HashString command;
+    public void parse ( User user, String[] cmd, HashString command ) {
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
             this.help ( user );
             return; 
         }
-        
-        command = new HashString ( cmd[3] );
-
-    
-    //public void parse ( User user, String[] cmd )  {
-    //    HashString command;
-    //    try {
-    //        if ( cmd[3].isEmpty ( )  )  {
-    //            this.help ( user );
-    //            return; 
-    //        }
-    //    } catch ( Exception e )  {
-    //        this.help ( user );
-    //        return;
-    //    }
-    //    command = new HashString ( cmd[3] );
         
         if ( command.is(SEND) ) {
             this.doSend ( user, cmd );
@@ -118,7 +100,7 @@ import user.User;
     public void doSend ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :send nick message
         //  0           1           2                       3     4     5   = 6
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) ) ; 
+        NickInfo ni = NickServ.findNick ( user.getName ( ) ) ; 
         NickInfo target;
         
         if ( cmd.length < 6 )  {
@@ -152,8 +134,33 @@ import user.User;
     
     private void sendToNick ( User user, NickInfo from, NickInfo to, String[] cmd )  {
         String message = Handler.cutArrayIntoString ( cmd, 5 );
+        if ( message.length ( ) > MAXLEN ) {
+            this.service.sendMsg ( user, "Error: The memo is too long, max "+MAXLEN+" characters." );
+            return;
+        }
+        /* Every memo is a row in the database and a mail to the receiver:
+           a full memo box takes no more, and one sender can not fill it alone */
+        if ( to.getMemos().size ( ) >= MAXMEMOS ) {
+            this.service.sendMsg ( user, "Error: The memo box of "+to.getNameStr()+" is full, the memo was not sent." );
+            return;
+        }
+        int unread = 0;
+        for ( MemoInfo m : to.getMemos ( ) ) {
+            if ( ! m.isRead ( ) && m.isFrom ( from.getName ( ) ) ) {
+                unread++;
+            }
+        }
+        if ( unread >= MAXUNREAD ) {
+            this.service.sendMsg ( user, "Error: "+to.getNameStr()+" has "+unread+" memos from you that are not read yet, the memo was not sent." );
+            return;
+        }
         MemoInfo memo = new MemoInfo ( to.getNameStr(), from.getNameStr(), message );
         memo = MSDatabase.storeMemo ( memo );
+        if ( memo == null ) {
+            /* Memos are stored in the database, nothing we can do without it */
+            this.service.sendMsg ( user, "Error: Memo to "+to.getNameStr()+" could not be sent, database not available. Try again later." );
+            return;
+        }
         this.service.sendMsg ( user, output ( MEMO_SENT, to.getNameStr() ) );
         to.addMemo ( memo );
         SendMail.sendNewMemo ( to, memo );
@@ -167,13 +174,13 @@ import user.User;
     public void doCSend ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :csend chan message
         //  0           1           2                        3     4     5   = 6
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
         ChanInfo ci;
         
         if ( cmd.length < 6 )  {
             this.service.sendMsg ( 
                 user, 
-                output ( SYNTAX_ERROR, "SEND <nick> <message>" )
+                output ( SYNTAX_ERROR, "CSEND <#chan> <message>" )
             );
 
         } else if ( ni == null )  {
@@ -201,10 +208,14 @@ import user.User;
                 this.sendToNick ( user, ni, ci.getFounder ( ), cmd );
                 
                 for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(SOP).entrySet() ) {
-                    this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    if ( entry.getValue().getNick ( ) != null ) {   /* skip mask entries */
+                        this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    }
                 }
                 for ( HashMap.Entry<BigInteger,CSAcc> entry : ci.getAccessList(AOP).entrySet() ) {
-                    this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    if ( entry.getValue().getNick ( ) != null ) {   /* skip mask entries */
+                        this.sendToNick ( user, ni, entry.getValue().getNick ( ), cmd );
+                    }
                 }
                 
             } else {
@@ -225,7 +236,7 @@ import user.User;
     public void doList ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :list
         //  0           1           2                       3   = 4        
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
 
         if ( cmd.length < 4 )  {
             this.service.sendMsg ( 
@@ -302,7 +313,7 @@ import user.User;
     public void doRead ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :read 1
         //  0           1           2                       3    4 = 5
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
         MemoInfo memo = null;
        
         if ( cmd.length < 5 )  {
@@ -334,6 +345,7 @@ import user.User;
                         "READ <#num>  ( where #num is a number ) "
                     )
                 );
+                return;
             }
             
             if ( memo == null )  {
@@ -350,7 +362,7 @@ import user.User;
                 );
                 this.service.sendMsg ( 
                     user, 
-                    output ( MEMO_BODY, memo.getName ( ),
+                    output ( MEMO_BODY, memo.getSender ( ),
                     memo.getMessage ( ) )
                 );
                 if ( MSDatabase.readMemo ( memo )  )  {
@@ -368,7 +380,7 @@ import user.User;
     public void doDelete ( User user, String[] cmd )  {
         //:DreamHealer PRIVMSG MemoServ@services.avade.net :del 1
         //  0           1           2                       3    4 = 5
-        NickInfo ni = NickServ.findNick ( user.getString ( NAME ) );
+        NickInfo ni = NickServ.findNick ( user.getName ( ) );
         MemoInfo memo = null;
        
         if ( cmd.length < 5 )  {
@@ -400,6 +412,7 @@ import user.User;
                         "DEL <#num>  ( where #num is a number ) "
                     )
                 );
+                return;
             }
             
             if ( memo == null )  {
@@ -525,6 +538,9 @@ import user.User;
     private final static int NO_SUCH_MEMO             = 1503; 
 
     private final static int MEMO_START               = 1551; 
+    private final static int MAXLEN                   = 256;    /* memo.message in the database */
+    private final static int MAXMEMOS                 = 30;     /* memos a nick can hold */
+    private final static int MAXUNREAD                = 5;      /* unread memos from one sender to one nick */
     private final static int MEMO_BODY                = 1553; 
 
     private final static int DEL_ERROR                = 1554; 

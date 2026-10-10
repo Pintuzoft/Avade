@@ -76,7 +76,6 @@ public class Oper extends HashNumeric {
         } catch ( SQLException ex )  {
             Logger.getLogger ( Oper.class.getName ( ) ) .log ( Level.SEVERE, null, ex );
         }
-        this.printOper();
     }
     
     /**
@@ -138,23 +137,6 @@ public class Oper extends HashNumeric {
             return this.shortLevels[this.access];
         }
         return null;
-    } 
-    
-    /**
-     *
-     * @param access
-     */
-    public void setAccess ( int access ) {
-        this.access = access;
-    }
-     
-    /**
-     *
-     * @param i
-     * @return
-     */
-    public boolean getAccOper ( int i )  { 
-        return  ( i >= this.access );
     }
 
     /**
@@ -281,15 +263,6 @@ public class Oper extends HashNumeric {
      */
     public boolean is ( HashString name ) {
         return this.name.is(name);
-    }
-    
-    /**
-     *
-     */
-    public void printOper ( ) {
-        System.out.println ( "Oper: "+this.name );
-        System.out.println ( " - instater: "+this.instater );
-        System.out.println ( " - access: "+this.access );
     }
 
     /**

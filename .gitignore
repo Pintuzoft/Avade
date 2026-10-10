@@ -23,3 +23,6 @@ hs_err_pid*
 /build/
 /services.conf
 /nbproject/private/
+/tests/.work/
+__pycache__/
+bahamut-module/*.so

@@ -119,7 +119,9 @@ public abstract class LogEvent extends HashNumeric {
         else if ( hash.is(GETEMAIL) )       { return "GE";  }
         else if ( hash.is(GETPASS) )        { return "GP";  }
         else if ( hash.is(REGISTER) )       { return "R";   }
+        else if ( hash.is(RESETPASS) )      { return "Rp";  }
         else if ( hash.is(SENDPASS) )       { return "SP";  }
+        else if ( hash.is(SETPASS) )        { return "P!";  }
         else if ( hash.is(WIPE) )           { return "W";   }
         else {
             return null;
@@ -150,6 +152,8 @@ public abstract class LogEvent extends HashNumeric {
         else if ( hash.is(GETPASS) )        { return "GP";  }
         else if ( hash.is(MDEOP) )          { return "Md";  }
         else if ( hash.is(MKICK) )          { return "Mk";  }
+        else if ( hash.is(PASS) )           { return "p";   }
+        else if ( hash.is(SETPASS) )        { return "P!";  }
         else if ( hash.is(REGISTER) )       { return "R";   }
         else if ( hash.is(SAJOIN) )         { return "SJ";  }
         else if ( hash.is(SAMODE) )         { return "SM";  }
@@ -182,6 +186,9 @@ public abstract class LogEvent extends HashNumeric {
         else if ( hash.is(DELIRCOP) )       { return "IRCop-";      }
         else if ( hash.is(GLOBAL) )         { return "Global";      }
         else if ( hash.is(FORCENICK) )      { return "FN";          }
+        else if ( hash.is(VHOST) )          { return "VHost";       }
+        else if ( hash.is(UHM) )            { return "UHM";         }
+        else if ( hash.is(SJR) )            { return "SJR";         }
         else {
             return null;
         }

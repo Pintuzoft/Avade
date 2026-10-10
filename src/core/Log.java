@@ -34,14 +34,12 @@ public class Log extends HashNumeric {
     private BufferedWriter          out;
     private SimpleDateFormat        dateFormat;
     private Date                    date;
-    private long                    seconds;
     private String                  buf;
     
     /**
      *
      */
     public Log ( )  {
-        this.seconds        =  ( long )  ( System.currentTimeMillis ( ) /1000 );
         this.dateFormat     = new SimpleDateFormat ( "yyyy MM/dd HH:mm:ss zzz" );
         this.connect ( );
     }
@@ -56,8 +54,9 @@ public class Log extends HashNumeric {
     }
     private void reConnect ( )  {
         try {
-            this.out.close ( );
-            this.fStream.close ( );
+            if ( this.out != null ) {
+                this.out.close ( );
+            }
             this.fStream    = new FileWriter ( Proc.getConf().get(LOGFILE).getString(), true );
             this.out        = new BufferedWriter ( this.fStream );
         } catch  ( IOException ex )  {
@@ -65,24 +64,28 @@ public class Log extends HashNumeric {
         }
     }
     
+    /* One line to the log file, written at once so the log can be followed
+       and nothing is lost when services stop */
+    private boolean write ( )  {
+        if ( this.out == null ) {
+            return false; /* the log file could not be opened */
+        }
+        try {
+            this.out.write ( this.buf );
+            this.out.newLine ( );
+            this.out.flush ( );
+            return true;
+        } catch  ( IOException ex )  {
+            return false;
+        }
+    }
+
     /**
      *
      * @param e
      */
     public void out ( Exception e )  {
-        try {
-            this.buf = " ( "+this.getTime ( ) +" ) : "+e.getMessage ( );
-            this.out.write ( this.buf );
- 
-        } catch  ( IOException ex )  {
-            this.reConnect ( );
-            try {
-                this.out.write ( this.buf );
-            } catch  ( IOException exc )  { 
-                System.out.println ( this.buf );
-            }
-        }
-        System.err.println ( "Error: " + e.getMessage ( )  );
+        this.out ( "Error: "+e.getMessage ( ) );
     }
 
     /**
@@ -90,27 +93,17 @@ public class Log extends HashNumeric {
      * @param message
      */
     public void out ( String message )  {
-        try {
-            this.buf = " ( "+this.getTime ( ) +" ) : "+message;
-            this.out.write ( this.buf );
-        } catch  ( IOException ex )  {
+        this.buf = " ( "+this.getTime ( ) +" ) : "+message;
+        if ( ! this.write ( ) ) {
             this.reConnect ( );
-            try {
-                this.out.write ( this.buf );
-            } catch ( IOException exc )  { 
-                System.out.println ( this.buf );
-            }
+            this.write ( );
         }
         System.out.println ( this.buf );
     }
     
     private String getTime ( )  {
-        long now =  ( long ) ( System.currentTimeMillis ( ) / 1000 );
-        if ( this.seconds != now )  {
-            this.date = new Date ( );
-            return dateFormat.format ( this.date );
-        }
-        return "";
+        this.date = new Date ( );
+        return dateFormat.format ( this.date );
     }
     
     /**

@@ -5,8 +5,17 @@
  */
 package core;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import security.Hash;
 
 /**
  *
@@ -177,6 +186,51 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db123091 ( ) );
                 qList.add ( "update settings set value = '1.2309-1' where name = 'version'" );
 
+            case 126091 :
+                qList.add ( "to: v1.2609-1");
+                qList.addAll ( this.db126091 ( ) );
+                qList.add ( "update settings set value = '1.2609-1' where name = 'version'" );
+
+            case 126092 :
+                qList.add ( "to: v1.2609-2");
+                qList.addAll ( this.db126092 ( ) );
+                qList.add ( "update settings set value = '1.2609-2' where name = 'version'" );
+
+            case 126093 :
+                qList.add ( "to: v1.2609-3");
+                qList.addAll ( this.db126093 ( ) );
+                qList.add ( "update settings set value = '1.2609-3' where name = 'version'" );
+
+            case 126094 :
+                qList.add ( "to: v1.2609-4");
+                qList.addAll ( this.db126094 ( ) );
+                qList.add ( "update settings set value = '1.2609-4' where name = 'version'" );
+
+            case 126095 :
+                qList.add ( "to: v1.2609-5");
+                qList.addAll ( this.db126095 ( ) );
+                qList.add ( "update settings set value = '1.2609-5' where name = 'version'" );
+
+            case 126096 :
+                qList.add ( "to: v1.2609-6");
+                qList.addAll ( this.db126096 ( ) );
+                qList.add ( "update settings set value = '1.2609-6' where name = 'version'" );
+
+            case 126097 :
+                qList.add ( "to: v1.2609-7");
+                qList.addAll ( this.db126097 ( ) );
+                qList.add ( "update settings set value = '1.2609-7' where name = 'version'" );
+
+            case 126098 :
+                qList.add ( "to: v1.2609-8");
+                qList.addAll ( this.db126098 ( ) );
+                qList.add ( "update settings set value = '1.2609-8' where name = 'version'" );
+
+            case 126101 :
+                qList.add ( "to: v1.2610-1");
+                qList.addAll ( this.db126101 ( ) );
+                qList.add ( "update settings set value = '1.2610-1' where name = 'version'" );
+
                 break;
                 
             default :
@@ -188,6 +242,15 @@ public class DBChanges extends HashNumeric {
                 System.out.print ( "\n" );
                 System.out.print ( "Updating DB "+query+" ..." );
                 counter = 0;
+            } else if ( query.equals ( "run: hashPasswords" ) ) {
+                try {
+                    this.hashPasswords ( );
+                } catch ( SQLException | IllegalStateException ex ) {
+                    System.out.println ( ": "+query );
+                    System.out.println ( "  - Change FAILED to apply: "+ex.getMessage ( ) );
+                    Proc.log ( Database.class.getName ( ), ex );
+                    System.exit ( 1 );
+                }
             } else {
                 try {
                     Database.change ( query );
@@ -600,6 +663,206 @@ public class DBChanges extends HashNumeric {
     private ArrayList<String> db123091 ( ) {
         ArrayList<String> qList = new ArrayList<>();
         qList.add("alter table chanacclog change instater instater varchar(64)");
+        return qList;
+    }
+
+    private ArrayList<String> db126091 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Topics were stored with the leading ':' of the IRC trailing parameter */
+        qList.add("update topiclog set topic = substring(topic, 2) where topic like ':%'");
+        /* Used when loading the latest topic per channel */
+        qList.add("alter table topiclog add index topiclog_name_stamp (name, stamp)");
+        return qList;
+    }
+
+    private ArrayList<String> db126092 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        String[] tables = { 
+            "akill", "banlog", "chan", "chanaccess", "chanaccess_mask", "chanacclog", "chanflag", 
+            "chanlog", "chansetting", "command", "comment", "globallog", "ignorelist", "log", 
+            "mailbox", "maillog", "memo", "nick", "nickexp", "nicklog", "nicksetting", "oper", 
+            "operlog", "passlog", "server", "servicesid", "settings", "sgline", "spamfilter", 
+            "sqline", "topiclog" 
+        };
+        /* Move from latin1 to utf8mb4 so any text (emojis etc) can be stored.
+           AES encrypted columns hold binary data, make them binary first so the
+           bytes are kept as they are and not converted as text */
+        qList.add("SET FOREIGN_KEY_CHECKS=0");
+        qList.add("alter table chan modify pass varbinary(64) default null");
+        qList.add("alter table passlog modify pass varbinary(64)");
+        qList.add("alter table maillog modify mail varbinary(256)");
+        for ( String table : tables ) {
+            qList.add("alter table "+table+" convert to character set utf8mb4 collate utf8mb4_swedish_ci");
+        }
+        qList.add("alter database character set utf8mb4 collate utf8mb4_swedish_ci");
+        qList.add("SET FOREIGN_KEY_CHECKS=1");
+        return qList;
+    }
+
+    private ArrayList<String> db126097 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Memos were left behind when a nick was dropped, and handed to
+           whoever registered the name next */
+        qList.add("delete from memo where name not in (select name from nick)");
+        return qList;
+    }
+
+    private ArrayList<String> db126098 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Passwords become one way hashes (security.Hash), nobody can read
+           them any more. Room for a hash first, still binary so the encrypted
+           bytes are kept as they are until they are hashed */
+        qList.add("alter table passlog modify pass varbinary(128)");
+        qList.add("alter table chan modify pass varbinary(128) default null");
+        qList.add("run: hashPasswords");
+        /* Only hashes left, they are plain text */
+        qList.add("alter table passlog modify pass varchar(128)");
+        qList.add("alter table chan modify pass varchar(128) default null");
+        return qList;
+    }
+
+    private ArrayList<String> db126101 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Chanflag SJR: the ircd asks services before it lets someone join */
+        qList.add("alter table chanflag add sjr tinyint(1) default 0 after oper_verbose");
+        return qList;
+    }
+
+    /* 1.2609-8: the AES encrypted passwords are decrypted and hashed. Rows
+       that already are hashes are left, so a step that stopped half way can
+       run again. Old passwords and rows of dropped nicks are removed */
+    private void hashPasswords ( ) throws SQLException {
+        String salt = Proc.getConf().get ( SECRETSALT ).getString ( );
+        /* Per nick the password in use, and new ones waiting for a confirmation mail */
+        Map<String,String> nicks = this.readPasswords (
+            "select p.id, p.pass, aes_decrypt(p.pass,?) from passlog as p join nick as n on n.name = p.nick "+
+            "where p.stamp >= n.regstamp and ( p.auth is not null or p.id = "+
+            "(select p2.id from passlog as p2 where p2.nick = n.name and p2.stamp >= n.regstamp and p2.auth is null order by p2.stamp desc, p2.id desc limit 1) )",
+            salt, "nick password" );
+        Map<String,String> chans = this.readPasswords (
+            "select name, pass, aes_decrypt(pass,?) from chan where pass is not null",
+            salt, "channel password" );
+        System.out.print ( "\n  hashing "+nicks.size()+" nick and "+chans.size()+" channel passwords " );
+        Map<String,String> nickHash = hashAll ( nicks );
+        Map<String,String> chanHash = hashAll ( chans );
+
+        Database.begin ( );
+        try {
+            try ( PreparedStatement up = Database.sql.prepareStatement ( "update passlog set pass = ? where id = ?" ) ) {
+                for ( Map.Entry<String,String> e : nickHash.entrySet ( ) ) {
+                    up.setString ( 1, e.getValue ( ) );
+                    up.setInt ( 2, Integer.parseInt ( e.getKey ( ) ) );
+                    up.addBatch ( );
+                }
+                up.executeBatch ( );
+            }
+            try ( PreparedStatement up = Database.sql.prepareStatement ( "update chan set pass = ? where name = ?" ) ) {
+                for ( Map.Entry<String,String> e : chanHash.entrySet ( ) ) {
+                    up.setString ( 1, e.getValue ( ) );
+                    up.setString ( 2, e.getKey ( ) );
+                    up.addBatch ( );
+                }
+                up.executeBatch ( );
+            }
+            /* Everything that is not a hash now is an old password, or one that could not be read */
+            try ( PreparedStatement del = Database.sql.prepareStatement ( "delete from passlog where pass is null or pass not like 'pbkdf2-sha256$%'" ) ) {
+                del.executeUpdate ( );
+            }
+            try ( PreparedStatement del = Database.sql.prepareStatement ( "update chan set pass = null where pass not like 'pbkdf2-sha256$%'" ) ) {
+                del.executeUpdate ( );
+            }
+            Database.commit ( );
+        } catch ( SQLException ex ) {
+            Database.rollback ( );
+            throw ex;
+        }
+    }
+
+    /* key (id or channel name) -> password in clear, for the rows that are not hashed yet */
+    private Map<String,String> readPasswords ( String query, String salt, String what ) throws SQLException {
+        Map<String,String> plain = new LinkedHashMap<> ( );
+        ArrayList<String> unreadable = new ArrayList<> ( );
+        try ( PreparedStatement ps = Database.sql.prepareStatement ( query ) ) {
+            ps.setString ( 1, salt );
+            try ( ResultSet res = ps.executeQuery ( ) ) {
+                while ( res.next ( ) ) {
+                    String stored = res.getString ( 2 );
+                    if ( Hash.isHashed ( stored ) ) {
+                        continue;
+                    }
+                    String pass = res.getString ( 3 );
+                    if ( pass == null || pass.isEmpty ( ) ) {
+                        unreadable.add ( res.getString ( 1 ) );
+                    } else {
+                        plain.put ( res.getString ( 1 ), pass );
+                    }
+                }
+            }
+        }
+        if ( plain.isEmpty ( ) && ! unreadable.isEmpty ( ) ) {
+            /* Not one could be read: the wrong secretsalt, nothing is changed */
+            throw new IllegalStateException ( "no "+what+" could be decrypted, is secretsalt the same as before?" );
+        }
+        if ( ! unreadable.isEmpty ( ) ) {
+            System.out.print ( "\n  "+unreadable.size()+" "+what+"s could not be decrypted and are removed: "+unreadable );
+        }
+        return plain;
+    }
+
+    /* Hashing takes a while, use every core */
+    private static Map<String,String> hashAll ( Map<String,String> plain ) {
+        Map<String,String> hashed = new LinkedHashMap<> ( );
+        Map<String,Future<String>> jobs = new LinkedHashMap<> ( );
+        ExecutorService pool = Executors.newFixedThreadPool ( Runtime.getRuntime().availableProcessors ( ) );
+        try {
+            for ( Map.Entry<String,String> e : plain.entrySet ( ) ) {
+                String pass = e.getValue ( );
+                jobs.put ( e.getKey ( ), pool.submit ( ( ) -> Hash.password ( pass ) ) );
+            }
+            int count = 0;
+            for ( Map.Entry<String,Future<String>> e : jobs.entrySet ( ) ) {
+                hashed.put ( e.getKey ( ), e.getValue().get ( ) );
+                if ( ++count % 100 == 0 ) {
+                    System.out.print ( "." );
+                }
+            }
+        } catch ( InterruptedException | ExecutionException ex ) {
+            throw new IllegalStateException ( "hashing failed", ex );
+        } finally {
+            pool.shutdown ( );
+        }
+        return hashed;
+    }
+
+    private ArrayList<String> db126096 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Spamfilters limited to a channel/nick mask */
+        qList.add("alter table spamfilter add target varchar(64) default null after flags");
+        return qList;
+    }
+
+    private ArrayList<String> db126095 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Chanflags USER_VERBOSE and OPER_VERBOSE */
+        qList.add("alter table chanflag add user_verbose tinyint(1) default 0 after no_utf8");
+        qList.add("alter table chanflag add oper_verbose tinyint(1) default 0 after user_verbose");
+        /* Channels were registered with max_invites 0, which after a restart
+           was sent to the ircd and disabled the +I list */
+        qList.add("update chanflag set max_invites = 100 where max_invites = 0");
+        return qList;
+    }
+
+    private ArrayList<String> db126094 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Network wide clone limits (SVSCLONE) */
+        qList.add("CREATE TABLE IF NOT EXISTS clonelimit (mask varchar(64) NOT NULL, maxclones int NOT NULL, reason varchar(256) DEFAULT NULL, instater varchar(33) DEFAULT NULL, stamp datetime DEFAULT NULL, PRIMARY KEY (mask)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_swedish_ci");
+        return qList;
+    }
+
+    private ArrayList<String> db126093 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Vhosts: host shown instead of the real one (SVSHOST) */
+        qList.add("CREATE TABLE IF NOT EXISTS vhost (name varchar(32) NOT NULL, host varchar(64) NOT NULL, instater varchar(33) DEFAULT NULL, stamp datetime DEFAULT NULL, PRIMARY KEY (name), CONSTRAINT vhost_nick FOREIGN KEY (name) REFERENCES nick (name) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_swedish_ci");
         return qList;
     }
         

@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
 import nickserv.NickServ;
+import security.Hash;
 import user.User;
 import java.util.ArrayList;
 import java.util.Date;
@@ -55,6 +56,8 @@ public class ChanInfo extends HashNumeric {
     private HashMap<BigInteger,CSAcc> klist;
     private HashMap<BigInteger,CSAcc> slist;
     private HashMap<BigInteger,CSAcc> alist;
+    private HashMap<BigInteger,CSAcc> hlist;
+    private HashMap<BigInteger,CSAcc> vlist;
     
     private ArrayList<CSAcc> addAccList;
     private ArrayList<CSAcc> remAccList;
@@ -89,6 +92,8 @@ public class ChanInfo extends HashNumeric {
         this.klist      = new HashMap<>();
         this.slist      = new HashMap<>();
         this.alist      = new HashMap<>();
+        this.hlist      = new HashMap<>();
+        this.vlist      = new HashMap<>();
         this.addAccList = new ArrayList<>();
         this.remAccList = new ArrayList<>();
         this.updAccList = new ArrayList<>();
@@ -100,15 +105,15 @@ public class ChanInfo extends HashNumeric {
      *
      * @param name
      * @param founder
-     * @param pass
+     * @param pass the password in clear, it is stored hashed
      * @param desc
      * @param topic
      */
     public ChanInfo ( String name, NickInfo founder, String pass, String desc, Topic topic )  {
-        /* Register nickname */
+        /* Register channel */
         this.name       = new HashString ( name );
         this.founder    = founder;
-        this.pass       = pass;
+        this.pass       = Hash.password ( pass );
         this.desc       = desc;
         this.topic      = topic;
         this.settings   = new ChanSetting ( );
@@ -119,6 +124,8 @@ public class ChanInfo extends HashNumeric {
         this.klist      = new HashMap<>();
         this.slist      = new HashMap<>();
         this.alist      = new HashMap<>();
+        this.hlist      = new HashMap<>();
+        this.vlist      = new HashMap<>();
         this.addAccList = new ArrayList<>();
         this.remAccList = new ArrayList<>();
         this.updAccList = new ArrayList<>();
@@ -134,13 +141,7 @@ public class ChanInfo extends HashNumeric {
         this.updateAccessChanges ( );
         this.updateLastOpedChanges ( );
     }
-     
-    private void printStats ( ) {
-        System.out.println ( "STATS: addAccList:"+this.addAccList.size() );
-        System.out.println ( "STATS: remAccList:"+this.remAccList.size() );
-        System.out.println ( "STATS: updAccList:"+this.updAccList.size() );
-        System.out.println ( "STATS: newLogList:"+this.newLogList.size() );
-    }
+
     
     private void updateAccessChanges ( ) {
         if ( ! CSDatabase.checkConn() ) {
@@ -247,7 +248,20 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public boolean identify ( User user, String pass )  {
-        return ( this.pass.compareTo ( pass )  == 0 );
+        if ( pass == null || this.throttle.isThrottled ( ) ) {
+            return false;
+        }
+        if ( Hash.verify ( pass, this.pass ) ) {
+            this.throttle.reset ( );
+            if ( Hash.needsRehash ( this.pass ) ) {
+                /* made with fewer iterations than new hashes get */
+                this.pass = Hash.password ( pass );
+                this.changed ( LASTUSED );
+            }
+            return true;
+        }
+        this.throttle.hit ( );
+        return false;
     }
 
     /**
@@ -262,18 +276,20 @@ public class ChanInfo extends HashNumeric {
     }
 
     /**
-     *
-     * @param oldPass
-     * @param newPass
-     * @return
+     * SET PASSWD by the founder, SETPASS by staff. Whoever identified to
+     * the channel with the old password is unidentified
+     * @param pass the new password in clear, it is stored hashed
      */
-    public boolean setPass ( String oldPass, String newPass )  {
-        if ( this.pass.compareTo ( oldPass )  == 0 )  {
-            this.pass = newPass;
-            this.changed(LASTUSED);
-            return true;
+    public void setNewPass ( String pass )  {
+        this.pass = Hash.password ( pass );
+        this.changed ( LASTUSED );
+        for ( User user : Handler.getUserList().values ( ) ) {
+            if ( user.getSID ( ) != null && user.getSID().isIdentified ( this ) ) {
+                user.getSID().unIdentify ( this );
+                Handler.addUpdateSID ( user.getSID ( ) );
+                Handler.getChanServ().sendMsg ( user, "The password of "+this.name+" was changed, you have been unidentified from the channel." );
+            }
         }
-        return false;
     }
 
     /**
@@ -287,7 +303,7 @@ public class ChanInfo extends HashNumeric {
      
     /**
      *
-     * @return
+     * @return the hash of the password, for the database
      */
     public String getPass ( )  {
         return this.pass;
@@ -299,15 +315,6 @@ public class ChanInfo extends HashNumeric {
      */
     public ChanSetting getSettings ( )  {
         return this.settings;
-    }
-    
-    /**
-     *
-     * @param settings
-     */
-    public void setSettings ( ChanSetting settings )  {
-        this.settings = settings;
-        this.changed(LASTUSED);
     }
 
     private void attachFounder ( String founder )  {
@@ -345,6 +352,8 @@ public class ChanInfo extends HashNumeric {
     public NickInfo getNickByUser ( User user )  {
         NickInfo sop = null;
         NickInfo aop = null;
+        NickInfo hop = null;
+        NickInfo vop = null;
         NickInfo akick = null;
         
         if ( user == null || user.getSID ( )  == null )  {
@@ -360,6 +369,10 @@ public class ChanInfo extends HashNumeric {
                 sop = ni;
             } else if ( this.alist.get(ni.getName().getCode()) != null ) {
                 aop = ni;
+            } else if ( this.hlist.get(ni.getName().getCode()) != null ) {
+                hop = ni;
+            } else if ( this.vlist.get(ni.getName().getCode()) != null ) {
+                vop = ni;
             } else if ( this.klist.get(ni.getName().getCode()) != null ) {
                 akick = ni;
             }
@@ -369,6 +382,10 @@ public class ChanInfo extends HashNumeric {
             return sop;
         } else if ( aop != null ) {
             return aop;
+        } else if ( hop != null ) {
+            return hop;
+        } else if ( vop != null ) {
+            return vop;
         } else if ( akick != null ) {
             return akick;
         }
@@ -386,11 +403,16 @@ public class ChanInfo extends HashNumeric {
             return 0; 
         }
         
+        /* Same order as the privileges in the ircd */
         if ( ni.is(this.founder) ) {
-            return 3;
+            return 5;
         } else if ( this.isAccess ( SOP, ni ) ) {
-            return 2;
+            return 4;
         } else if ( this.isAccess ( AOP, ni ) ) {
+            return 3;
+        } else if ( this.isAccess ( HOP, ni ) ) {
+            return 2;
+        } else if ( this.isAccess ( VOP, ni ) ) {
             return 1;
         } else if ( this.isAccess ( AKICK, ni ) ) {
             return -1;
@@ -432,26 +454,7 @@ public class ChanInfo extends HashNumeric {
     /*** AKICK
      * @param in
      * @return  *******************************/
- 
-    public boolean delAkick ( String in )  {
-        HashString mask = new HashString (in);
-        CSAcc del = null;
-        
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : this.klist.entrySet() ) {
-            CSAcc akick = entry.getValue();
-            if ( akick.getMask ( ) != null )  {
-                if ( mask.is(akick.getMask()) ) {
-                    del = akick;
-                }
-            }
-        }
-        if ( del != null )  {
-            this.klist.remove ( del );
-            this.remAccList.add ( del );
-            return true;
-        } 
-        return false;
-    }    
+
    
     /**
      *
@@ -497,10 +500,7 @@ public class ChanInfo extends HashNumeric {
      * @return  *******************************/  
     
     public boolean isFounder ( NickInfo ni )  {
-        if ( ni == null ) {
-            return false;
-        }
-        return this.founder.hashCode ( ) == ni.hashCode ( );
+        return ni != null && this.founder != null && this.founder.is ( ni );
     }
     
     /**
@@ -545,6 +545,8 @@ public class ChanInfo extends HashNumeric {
     public HashMap<BigInteger,CSAcc> getAccessList ( HashString access ) {
         if      ( access.is(SOP) )          { return this.slist;                }
         else if ( access.is(AOP) )          { return this.alist;                }
+        else if ( access.is(HOP) )          { return this.hlist;                }
+        else if ( access.is(VOP) )          { return this.vlist;                }
         else if ( access.is(AKICK) )        { return this.klist;                }
         else {
             return new HashMap<>();
@@ -564,8 +566,12 @@ public class ChanInfo extends HashNumeric {
         this.removeFromAll ( acc );
         if      ( access.is(SOP) )          { this.slist.put ( code, acc );           }
         else if ( access.is(AOP) )          { this.alist.put ( code, acc );           }
+        else if ( access.is(HOP) )          { this.hlist.put ( code, acc );           }
+        else if ( access.is(VOP) )          { this.vlist.put ( code, acc );           }
         else if ( access.is(AKICK) )        { this.klist.put ( code, acc );           }
         
+        /* The latest change for a nick or mask is the one that counts */
+        this.dropPending ( code );
         this.addAccList.add ( acc );
         if ( acc.getNick() != null ) {
             acc.getNick().addToAccessList ( access, this );
@@ -621,7 +627,7 @@ public class ChanInfo extends HashNumeric {
      * @param user
      */
     public void updateLastOped ( User user ) {
-        HashString[] types = { AOP, SOP };
+        HashString[] types = { VOP, HOP, AOP, SOP };
         for ( HashString type : types ) {
             for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(type).entrySet() ) {
                 CSAcc acc = entry.getValue();
@@ -654,7 +660,7 @@ public class ChanInfo extends HashNumeric {
                     return;
                 }
             } else if ( acc.getMask() != null && a.getMask() != null ) {
-                if ( acc.getMask() == a.getMask() ) {
+                if ( acc.getMask().is ( a.getMask() ) ) {
                     return;
                 }
             }
@@ -669,56 +675,11 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public boolean isAccess ( HashString access, NickInfo ni )  {
+        if ( ni == null ) {
+            return false;
+        }
         return ( getAccessList(access).get(ni.getName().getCode()) != null );
     }
-
-    /**
-     *
-     * @param access
-     * @return
-     */
-    public String getAccessString ( HashString access ) {
-        String buf = "";
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
-            CSAcc acc = entry.getValue();
-        
-            if ( buf.isEmpty ( ) ) {
-                buf += acc.getNick().getString ( NAME );
-            } else {
-                buf += ", "+acc.getNick().getString ( NAME );
-            }
-        }      
-        return buf;
-    }
-
-/*    public void addAccess ( int access, CSAcc acc )  {
-       
-        System.out.println(" - 0");
-        if ( acc == null ) {
-        System.out.println(" - 1");
-            return;
-        }
-        System.out.println(" - 2");
-        if ( acc.getNick() != null ) {
-        System.out.println(" - 3");
-            this.removeFromAll ( acc.getNick() );
-        } else if ( acc.getMask() != null ) {
-        System.out.println(" - 4");
-            this.removeFromAll ( acc );
-        }
-        System.out.println(" - 5");
-        this.getAccessList (access).add ( acc );
-        System.out.println(" - 6");
-        this.addAccList.add ( acc );
-        System.out.println(" - 7");
-        if ( acc.getNick() != null ) {
-        System.out.println(" - 8");
-            acc.getNick().addToAccessList ( access, this );
-        }
-        System.out.println(" - 9");
-
-    }
-  */  
 
     /**
      *
@@ -726,9 +687,32 @@ public class ChanInfo extends HashNumeric {
      * @param acc
      */
   
+    /* Forget changes for this nick or mask that are not written yet. Adds
+       and removes are written in two passes, so "del, add" would otherwise
+       end as "add, del" in the database */
+    private void dropPending ( BigInteger code ) {
+        this.addAccList.removeIf ( a -> codeOf ( a ).equals ( code ) );
+        this.remAccList.removeIf ( a -> codeOf ( a ).equals ( code ) );
+    }
+    
+    private static BigInteger codeOf ( CSAcc acc ) {
+        return ( acc.isNick() ? acc.getNick().getName().getCode() : acc.getMask().getCode() );
+    }
+    
+    /**
+     * An access entry read from the database: it is already stored
+     * @param access
+     * @param acc
+     */
+    public void loadAccess ( HashString access, CSAcc acc ) {
+        this.addAccess ( access, acc );
+        this.addAccList.remove ( acc );
+    }
+    
     public void delAccess ( HashString access, CSAcc acc )  {
         BigInteger code = ( acc.isNick() ? acc.getNick().getName().getCode() : acc.getMask().getCode() );
         getAccessList(access).remove ( code );
+        this.dropPending ( code );
         this.remAccList.add ( acc );
         if ( acc.getNick() != null ) {
             acc.getNick().remFromAccessList ( access, this );
@@ -742,18 +726,12 @@ public class ChanInfo extends HashNumeric {
      * @return
      */
     public CSAcc getAccess ( HashString subcommand, NickInfo ni2 ) {
-        CSAcc acc = null;
         if ( ni2 == null ) {
             return null;
         }
-        int hash = ni2.hashCode();
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(subcommand).entrySet() ) {
-            CSAcc a = entry.getValue();
-            if ( a.getNick() != null && a.getNick().hashCode() == hash ) {
-                acc = a;
-            }
-        }
-        return acc;
+        /* The lists are keyed on the code of the nick or mask */
+        CSAcc acc = getAccessList ( subcommand ).get ( ni2.getName().getCode ( ) );
+        return ( acc != null && acc.getNick ( ) != null ) ? acc : null;
     }
     
     /**
@@ -793,7 +771,7 @@ public class ChanInfo extends HashNumeric {
      * @param acc
      */
     public void removeFromAll ( CSAcc acc ) {
-        HashString[] accessList = { SOP, AOP, AKICK };
+        HashString[] accessList = { SOP, AOP, HOP, VOP, AKICK };
         for ( HashString access : accessList ) {
             if ( acc.isNick() ) {
                 this.getAccessList(access).remove ( acc.getNick().getName().getCode() );
@@ -809,7 +787,7 @@ public class ChanInfo extends HashNumeric {
      * @param ni
      */
     public void removeFromAll ( NickInfo ni ) {
-        HashString[] accessList = { SOP, AOP, AKICK };
+        HashString[] accessList = { SOP, AOP, HOP, VOP, AKICK };
         for ( HashString access : accessList ) {
             this.getAccessList(access).remove ( ni.getName().getCode() );
             ni.remFromAccessList ( access, this );
@@ -826,56 +804,37 @@ public class ChanInfo extends HashNumeric {
      */
 
     public String getIsAccess ( HashString access, User user )  {
-        NickInfo ni;
-        if ( (ni = this.getNickByUser(user)) == null ) {
-            return null;
-          
-        } else if ( this.getAccessList(access).get(ni.getName().getCode()) != null ) {
+        NickInfo ni = this.getNickByUser ( user );
+        if ( ni != null && this.getAccessList(access).get(ni.getName().getCode()) != null ) {
             return ni.getNameStr();
-            
-        } else {
-            for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
-                CSAcc acc = entry.getValue();
-                if ( acc.matchUser ( user ) ) {
-                    return acc.getMaskStr();
-                }
+        }
+        /* No nick with access: the user can still match a mask */
+        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
+            CSAcc acc = entry.getValue();
+            if ( acc.getNick ( ) == null && acc.matchUser ( user ) ) {
+                return acc.getMaskStr();
             }
         }
         return null;
     }
-     
-    /**
-     *
-     * @param access
-     * @param chanAccess
-     */
-    public void setAccessList ( HashString access, HashMap<BigInteger,CSAcc> chanAccess ) {
-        this.getAccessList(access).putAll(chanAccess);
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
-            CSAcc csa = entry.getValue();
-            if ( csa.getNick() != null ) {
-                csa.getNick().addToAccessList ( csa.getAccess(), this );
-            }
-        }
-    }
+
      
     /**
      *
      * @param access
      */
     public void wipeAccessList ( HashString access )  {
-        if ( access.is(SOP) ) {
-            this.slist.clear ( ); 
-            this.slist.clear ( );
-        
-        } else if ( access.is(AOP) ) {
-            this.alist.clear ( ); 
-            this.alist.clear ( );
-        
-        } else if ( access.is(AKICK) ) {
-            this.klist.clear ( ); 
-            this.klist.clear ( );
+        HashMap<BigInteger,CSAcc> list = this.getAccessList ( access );
+        /* Nicks keep a list of their channels (CHANLIST), update it too */
+        for ( CSAcc acc : list.values ( ) ) {
+            if ( acc.getNick ( ) != null ) {
+                acc.getNick().remFromAccessList ( access, this );
+            }
         }
+        /* The list is already wiped in the database, nothing pending for it */
+        this.addAccList.removeIf ( a -> list.containsValue ( a ) );
+        this.remAccList.removeIf ( a -> a.getAccess ( ) != null && a.getAccess().is ( access ) );
+        list.clear ( );
     }
     
     /**
@@ -900,6 +859,10 @@ public class ChanInfo extends HashNumeric {
             access = "Sop";
         } else if ( this.isAccess ( AOP, user ) ) {
             access = "Aop";
+        } else if ( this.isAccess ( HOP, user ) ) {
+            access = "Hop";
+        } else if ( this.isAccess ( VOP, user ) ) {
+            access = "Vop";
         } else if ( this.isAkick ( user ) ) {
             access = "AKick";
         } else {
@@ -918,6 +881,8 @@ public class ChanInfo extends HashNumeric {
         if ( ( holder = this.getIsFounder ( user ) ) != null ) {
         } else if ( ( holder = this.getIsAccess ( SOP, user ) ) != null ) {
         } else if ( ( holder = this.getIsAccess ( AOP, user ) ) != null ) {
+        } else if ( ( holder = this.getIsAccess ( HOP, user ) ) != null ) {
+        } else if ( ( holder = this.getIsAccess ( VOP, user ) ) != null ) {
         } else if ( ( holder = this.getIsAccess ( AKICK, user ) ) != null ) {
         } 
         return holder;
@@ -933,6 +898,9 @@ public class ChanInfo extends HashNumeric {
             reason = "Masskick";
         }
         Chan c = Handler.findChan ( this.name );
+        if ( c == null ) {
+            return; /* nobody is in the channel */
+        }
         c.clearUsers ( );
         Handler.getChanServ().sendCmd ( "SVSHOLD "+c.getString ( NAME ) +" 60 :"+reason );
         Handler.getChanServ().sendCmd ( "CHANKILL "+c.getString ( NAME ) +" :"+reason );
@@ -955,6 +923,42 @@ public class ChanInfo extends HashNumeric {
     public boolean isAtleastAop ( NickInfo ni ) {
         return ( this.isFounder ( ni ) || this.isAccess ( SOP, ni ) || this.isAccess ( AOP, ni ) );
     } 
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
+    public boolean isAtleastHop ( NickInfo ni ) {
+        return ( this.isAtleastAop ( ni ) || this.isAccess ( HOP, ni ) );
+    } 
+
+    /**
+     *
+     * @param ni
+     * @return
+     */
+    public boolean isAtleastVop ( NickInfo ni ) {
+        return ( this.isAtleastHop ( ni ) || this.isAccess ( VOP, ni ) );
+    } 
+
+    /**
+     *
+     * @param user
+     * @return
+     */
+    public boolean isAtleastHop ( User user ) {
+        return this.isAtleastAop ( user ) || this.isAccess ( HOP, user );
+    }
+
+    /**
+     *
+     * @param user
+     * @return
+     */
+    public boolean isAtleastVop ( User user ) {
+        return this.isAtleastHop ( user ) || this.isAccess ( VOP, user );
+    }
 
     /* For Transparancy */
 

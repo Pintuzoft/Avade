@@ -17,17 +17,14 @@
  */
 package memoserv;
 
-import nickserv.NSDatabase;
 import nickserv.NickServ;
 import nickserv.NickInfo;
 import core.Database;
-import core.Handler;
 import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
@@ -36,9 +33,7 @@ import java.util.ArrayList;
  */
 
 public class MSDatabase extends Database {
-    private static Statement            s;
     private static ResultSet            res;
-    private static ResultSet            res2;
     private static PreparedStatement    ps;
 
     /* NickServ Methods */
@@ -80,8 +75,7 @@ public class MSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "storeMemo ( ) " );
         } catch  ( SQLException ex )  {
-            /* Nick already exists? return -1 */
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
             return null;
         }
         return memo;
@@ -112,7 +106,7 @@ public class MSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "getMemosByNick ( ) " );
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
         }
         return mList;
     }
@@ -120,10 +114,10 @@ public class MSDatabase extends Database {
     /**
      *
      */
-    public static void loadAllMemos ( )  {
+    public static boolean loadAllMemos ( )  {
         NickInfo ni;
         if ( ! activateConnection ( )  )  {
-            return;
+            return false;
         }
         try {
             String query = "SELECT id,name,sender,message,stamp,readflag FROM memo order by stamp;";
@@ -141,9 +135,10 @@ public class MSDatabase extends Database {
             ps.close ( );
             idleUpdate ( "getMemosByNick ( ) " );
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
+            return false;
         }
-        return;
+        return true;
     }
 
     /**
@@ -166,7 +161,7 @@ public class MSDatabase extends Database {
             idleUpdate ( "delMemo ( ) " ); 
             return true;
         } catch  ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
         }
         return false;
     }
@@ -193,7 +188,7 @@ public class MSDatabase extends Database {
             idleUpdate ( "delMemo ( ) " );
             return true;
         } catch ( SQLException ex )  {
-            Proc.log ( NSDatabase.class.getName ( ) , ex );
+            Proc.log ( MSDatabase.class.getName ( ) , ex );
         }
         return false;
     }

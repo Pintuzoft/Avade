@@ -96,6 +96,18 @@ class OSHelper extends Helper {
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user );
         
+        } else if ( command.is(CLONE) ) {
+            this.clone ( user );
+        
+        } else if ( command.is(UHM) ) {
+            this.uhm ( user );
+        
+        } else if ( command.is(SJR) ) {
+            this.sjr ( user );
+        
+        } else if ( command.is(VHOST) ) {
+            this.vhost ( user );
+        
         } else if ( command.is(BAHAMUT) ) {
             this.bahamut ( user );
         
@@ -155,7 +167,7 @@ class OSHelper extends Helper {
     public void akill ( User user )  { 
         this.showStart ( user, "AKill" );
         this.service.sendMsg ( user, "   "                                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ AKILL <ADD|TIME|DEL|LIST> <minutes> <nick!user@host> <REASON>"+f.b ( ) +""   );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ AKILL <ADD|TIME|DEL|LIST> <minutes|20m|12h|7d> <nick!user@host> <REASON>"+f.b ( ) +""   );
         this.service.sendMsg ( user, "   "+f.b ( ) +"    Ex: /OperServ AKILL ADD 180 *!*@1.2.3.4 Flooding is not permitted"+f.b ( )+""              );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   AKill is a powerful command and allow staff remove unwanted clients from"                                  );
@@ -243,10 +255,13 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "     H+     Held               Held"                                                                          );
         this.service.sendMsg ( user, "     H-     UnHeld             UnHeld"                                                                        );
         this.service.sendMsg ( user, "     GE     GetEmail"                                                                                         );
-        this.service.sendMsg ( user, "     GP     GetPass            GetPass"                                                                       );
+        this.service.sendMsg ( user, "     GP     GetPass            GetPass (old versions)"                                                        );
         this.service.sendMsg ( user, "     Md                        Mass-deop"                                                                     );
         this.service.sendMsg ( user, "     Mk                        Mass-kick"                                                                     );
+        this.service.sendMsg ( user, "     p      Password set       Password set (founder)"                                                        );
+        this.service.sendMsg ( user, "     P!     SetPass (staff)    SetPass (staff)"                                                               );
         this.service.sendMsg ( user, "     R      Register           Register"                                                                      );
+        this.service.sendMsg ( user, "     Rp     ResetPass"                                                                                        );
         this.service.sendMsg ( user, "     SJ                        SAJOIN"                                                                        );
         this.service.sendMsg ( user, "     SP     SendPass           SendPass"                                                                      );
         this.service.sendMsg ( user, "     T                         Topic wipe (CSop)"                                                             );
@@ -309,6 +324,11 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "     SA-         Removed as Services Admin"                                                                   );
         this.service.sendMsg ( user, "     IRCOP+      Added as IRC Operator"                                                                       );
         this.service.sendMsg ( user, "     IRCOP-      Removed as IRC Operator"                                                                     );
+        this.service.sendMsg ( user, "     Global      Sent a global message"                                                                       );
+        this.service.sendMsg ( user, "     FN          Forced a nick change"                                                                        );
+        this.service.sendMsg ( user, "     VHost       Set or removed a vhost"                                                                      );
+        this.service.sendMsg ( user, "     UHM         Changed the host-masking of the network"                                                     );
+        this.service.sendMsg ( user, "     SJR         Changed the join requests of the network"                                                    );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Never share the information that is delivered by this command as it will show ips"                         );
@@ -336,7 +356,7 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "                  /OperServ STAFF CSOP ADD DreamHealer"                                                       );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   Different accesses unlocks different commands. IRCop's can see nick/chan logs. SA's is"                    );
-        this.service.sendMsg ( user, "   allowed to use usermode +a, Akill and see staff audit logs. CSop's can access getpass/getemail"            );
+        this.service.sendMsg ( user, "   allowed to use usermode +a, Akill and see staff audit logs. CSop's can access setpass/getemail"            );
         this.service.sendMsg ( user, "   and freeze/close nicks and chans. SRA's can add people as CSop, rehash services config and jupe"           );
         this.service.sendMsg ( user, "   servers, and send raw services commands. Finally the Master is the only one capable of "                   );
         this.service.sendMsg ( user, "   adding SRA's."                                                                                             );
@@ -501,6 +521,68 @@ class OSHelper extends Helper {
         this.showEnd ( user );
     }
     
+    private void uhm ( User user ) {
+        this.showStart ( user, "UHM" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ UHM"+f.b ( ) +""                                                             );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ UHM <type> <0|1|2>"+f.b ( ) +""                                              );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Shows or sets the user host-masking of the network. The servers need a masking"                            );
+        this.service.sendMsg ( user, "   module loaded, the type is the kind of masking that module should do and 0 turns"                          );
+        this.service.sendMsg ( user, "   it off. The second value is for usermode +H (masked host):"                                                );
+        this.service.sendMsg ( user, "       0 - users cannot use it"                                                                               );
+        this.service.sendMsg ( user, "       1 - it is set for everyone when they connect"                                                          );
+        this.service.sendMsg ( user, "       2 - users may set it themselves"                                                                       );
+        this.service.sendMsg ( user, "   The setting is sent to all servers, and they remember it."                                                 );
+        this.showEnd ( user );
+    }
+    
+    private void sjr ( User user ) {
+        this.showStart ( user, "SJR" );
+        this.service.sendMsg ( user, "   "                                                                                                        );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ SJR"+f.b ( ) +""                                                             );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ SJR <OFF|ON|ALL>"+f.b ( ) +""                                                );
+        this.service.sendMsg ( user, "   "                                                                                                        );
+        this.service.sendMsg ( user, "   Shows or sets services join requests on the network. With them the servers ask"                          );
+        this.service.sendMsg ( user, "   services before they let a user into a channel, so an AKICK, a RESTRICT and a ban"                       );
+        this.service.sendMsg ( user, "   that follows a person stop the user before the join, not with a kick after it."                          );
+        this.service.sendMsg ( user, "       OFF - the servers decide all joins themselves"                                                       );
+        this.service.sendMsg ( user, "       ON  - services decide for the channels that have the chanflag SJR"                                   );
+        this.service.sendMsg ( user, "       ALL - services decide every join on the network"                                                     );
+        this.service.sendMsg ( user, "   The servers check nothing for these joins: services check the key, the limit, the"                       );
+        this.service.sendMsg ( user, "   bans, the exception and invite lists, +i, +O, +R, +S and the join rate (+j) the way"                     );
+        this.service.sendMsg ( user, "   the ircd does. With services off the network the servers decide again."                                  );
+        this.service.sendMsg ( user, "   "                                                                                                        );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   With ALL nobody joins any channel while services are slow to answer. Use ON, and"                        );
+        this.service.sendMsg ( user, "   ALL only on a network that needs it. This command is logged and sent as globops."                        );
+        this.showEnd ( user );
+    }
+    
+    private void clone ( User user ) {
+        this.showStart ( user, "Clone" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ CLONE ADD <ip|a.b.c.*> <limit> [<reason>]"+f.b ( ) +""                       );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ CLONE DEL <ip|a.b.c.*>"+f.b ( ) +""                                           );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ CLONE LIST"+f.b ( ) +""                                                       );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Sets how many clients may connect from an ip or a range on the whole network, for"                         );
+        this.service.sendMsg ( user, "   example a school or a company behind one ip. The limit is sent to all servers and"                         );
+        this.service.sendMsg ( user, "   replaces the clone trigger for that ip/range. A limit on an ip also exempts it from"                        );
+        this.service.sendMsg ( user, "   the limit of its range. IPv6 limits are for single addresses only."                                        );
+        this.showEnd ( user );
+    }
+
+    private void vhost ( User user ) {
+        this.showStart ( user, "Vhost" );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ VHOST <nick> <host|OFF>"+f.b ( ) +""                                         );
+        this.service.sendMsg ( user, "   "                                                                                                          );
+        this.service.sendMsg ( user, "   Sets or removes the vhost of a registered nick, for staff hosts or to remove a vhost"                      );
+        this.service.sendMsg ( user, "   that is abused. Not limited by vhostforbidden in the config."                                               );
+        this.showEnd ( user );
+    }
+
     private void forcenick ( User user ) {
         this.showStart ( user, "ForceNick" );
         this.service.sendMsg ( user, "   "                                                                                                          );

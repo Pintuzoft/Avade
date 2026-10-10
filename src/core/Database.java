@@ -26,8 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import monitor.SnoopLog;
 import nickserv.NickInfo;
 import nickserv.NickServ;
@@ -58,6 +56,10 @@ public class Database extends HashNumeric {
      */
     public static PreparedStatement ps;
     private static long lastConnectAttempt;
+    private static long lastValidated;          /* when we last asked the server if the connection works */
+    private static volatile boolean connValid;
+    private static final long VALIDATE_INTERVAL = 5000;    /* ms */
+    private static final long RECONNECT_INTERVAL = 30000;  /* ms between attempts while the database is down */
     private static long lastGlobops;
     private static int attempts;
     private static ResultSet res;
@@ -90,13 +92,25 @@ public class Database extends HashNumeric {
      */
     protected static void connect ( )  {
         try {
-            if ( ( sql == null || ! sql.isValid ( 1 ) ) &&
-                System.currentTimeMillis() - lastConnectAttempt >= 5000 ) {
+            if ( ! checkConn ( ) &&
+                System.currentTimeMillis() - lastConnectAttempt >= ( attempts == 0 ? 0 : RECONNECT_INTERVAL ) ) {
+                    lastConnectAttempt = System.currentTimeMillis();
+                    closeQuietly ( );
+                    /* Timeouts so a database that stops answering can never
+                       block services (and make the hub ping us out) for long.
+                       dontTrackOpenResources: the connection keeps no list of
+                       its statements, so one that is not closed after an error
+                       is garbage like any other object. With the list they
+                       piled up until the connection was replaced */
                     sql = DriverManager.getConnection ( 
-                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString(), 
+                            "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString()
+                            +"?characterEncoding=UTF-8&connectionCollation=utf8mb4_swedish_ci"
+                            +"&connectTimeout=5000&socketTimeout=20000&tcpKeepAlive=true&dontTrackOpenResources=true", 
                             Proc.getConf().get(MYSQLUSER).getString(), 
                             Proc.getConf().get(MYSQLPASS).getString()
                     );           
+                    connValid = true;
+                    lastValidated = System.currentTimeMillis();
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
                         Handler.getOperServ().sendGlobOp ( "Database connection established - "+getServiceStats ( ) );
@@ -105,6 +119,7 @@ public class Database extends HashNumeric {
        
         } catch  ( SQLException | NumberFormatException ex )  {
             sql = null;
+            connValid = false;
             attempts++;
             if ( System.currentTimeMillis() - lastGlobops >= 10000 ) {
                 if ( attempts == 1 ) {
@@ -138,6 +153,27 @@ public class Database extends HashNumeric {
      *
      * @param where
      */
+    /* All or nothing for a register that is several inserts: without it a
+       failure half way leaves a row that makes every retry fail on the
+       primary key, and a nick or channel that cannot be loaded */
+    protected static void begin ( ) throws SQLException {
+        sql.setAutoCommit ( false );
+    }
+    
+    protected static void commit ( ) throws SQLException {
+        sql.commit ( );
+        sql.setAutoCommit ( true );
+    }
+    
+    protected static void rollback ( ) {
+        try {
+            sql.rollback ( );
+            sql.setAutoCommit ( true );
+        } catch ( SQLException ex ) {
+            /* the connection is gone, a new one starts in autocommit */
+        }
+    }
+    
     protected static void idleUpdate ( String where )  {
         if ( debug )  {
             System.out.println ( "DEBUG: "+where );
@@ -224,7 +260,6 @@ public class Database extends HashNumeric {
      */
     public final static int MODERATED       = 24;
     
-    private final static int MODE_COUNT     = 24;
     
     /**
      *
@@ -248,7 +283,7 @@ public class Database extends HashNumeric {
         if ( ! checkConn ( )  )  { 
             connect ( ); 
         }        
-        return checkConn ( );
+        return connValid;
     }
     
     /**
@@ -256,12 +291,41 @@ public class Database extends HashNumeric {
      * @return
      */
     public static boolean checkConn ( )  {
-        try {
-            return ! ( sql == null || ! sql.isValid ( 1 ) );
-        } catch (SQLException ex) {
-            Logger.getLogger(Database.class.getName()).log(Level.SEVERE, null, ex);
+        if ( sql == null ) {
+            return false;
         }
-        return false;
+        /* Asking the server costs a round trip, only do it every few seconds */
+        if ( connValid && System.currentTimeMillis() - lastValidated < VALIDATE_INTERVAL ) {
+            return true;
+        }
+        if ( ! connValid ) {
+            return false;
+        }
+        lastValidated = System.currentTimeMillis();
+        try {
+            connValid = sql.isValid ( 2 );
+        } catch (SQLException ex) {
+            connValid = false;
+        }
+        return connValid;
+    }
+
+    /**
+     * The connection failed (network error or timeout), stop using it and
+     * reconnect. Called from Proc.log for connection related SQLExceptions.
+     */
+    public static void invalidate ( )  {
+        connValid = false;
+    }
+
+    private static void closeQuietly ( )  {
+        if ( sql != null ) {
+            try {
+                sql.close ( );
+            } catch ( SQLException ex ) {
+                /* already broken */
+            }
+        }
     }
 
     /* Database changes */
@@ -453,9 +517,39 @@ public class Database extends HashNumeric {
             ps.close ( ); 
             
         } catch ( SQLException ex ) {
+            Proc.log ( Database.class.getName ( ) , ex );
             return false;
         }
+        sid.setStored ( true );
         return true;             
+    }
+
+    /**
+     * Remove the rows of services IDs that nobody uses any more
+     * @param sids a few hundred at most, they go in one statement
+     * @return false if they could not be removed
+     */
+    public static boolean deleteServicesIDs ( ArrayList<ServicesID> sids ) {
+        if ( sids.isEmpty ( ) ) {
+            return true;
+        }
+        if ( ! activateConnection ( ) ) {
+            return false;
+        }
+        StringBuilder marks = new StringBuilder ( "?" );
+        for ( int i = 1; i < sids.size ( ); i++ ) {
+            marks.append ( ",?" );
+        }
+        try ( PreparedStatement del = sql.prepareStatement ( "delete from servicesid where id in ("+marks+")" ) ) {
+            for ( int i = 0; i < sids.size ( ); i++ ) {
+                del.setLong ( i + 1, sids.get ( i ).getID ( ) );
+            }
+            del.executeUpdate ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( Database.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
     }
 
     /**

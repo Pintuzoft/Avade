@@ -23,7 +23,6 @@ import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
@@ -31,7 +30,6 @@ import java.util.ArrayList;
  * @author DreamHealer
  */
 public class OSDatabase extends Database {
-    private static Statement            s;
     private static ResultSet            res;
     private static ResultSet            res2;
     private static PreparedStatement    ps;
@@ -100,10 +98,8 @@ public class OSDatabase extends Database {
             return false;
         }
         try { 
-            ban.printData();
             String query = "insert into "+list+" ( id,mask,reason,instater,stamp,expire ) VALUES "
                           +" ( ?, ?, ?, ?, ?, ? );";
-            System.out.println(query);
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, ban.getID().getString() );
             ps.setString ( 2, ban.getMask().getString() );
@@ -245,9 +241,117 @@ public class OSDatabase extends Database {
     }
     
     /**
-     *
-     * @return
+     * @param name
+     * @return the value in the settings table, null when there is none or
+     *         it could not be read
      */
+    public static String getSetting ( String name ) {
+        if ( ! activateConnection ( ) )  {
+            return null;
+        }
+        try ( PreparedStatement get = sql.prepareStatement ( "select value from settings where name = ?" ) ) {
+            get.setString ( 1, name );
+            try ( ResultSet row = get.executeQuery ( ) ) {
+                return row.next ( ) ? row.getString ( 1 ) : null;
+            }
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return null;
+        }
+    }
+
+    /**
+     * @param name
+     * @param value
+     * @return false if it could not be written
+     */
+    public static boolean saveSetting ( String name, String value ) {
+        if ( ! activateConnection ( ) )  {
+            return false;
+        }
+        try ( PreparedStatement set = sql.prepareStatement ( "insert into settings ( name, value ) values ( ?, ? ) "
+                                                           + "on duplicate key update value = ?" ) ) {
+            set.setString ( 1, name );
+            set.setString ( 2, value );
+            set.setString ( 3, value );
+            set.execute ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @return all clone limits, or null if they could not be loaded
+     */
+    public static ArrayList<CloneLimit> getCloneLimits ( ) {
+        ArrayList<CloneLimit> list = new ArrayList<>();
+        if ( ! activateConnection ( ) )  {
+            return null;
+        }
+        try {
+            ps = sql.prepareStatement ( "select mask,maxclones,reason,instater,stamp from clonelimit order by mask" );
+            res2 = ps.executeQuery ( );
+            while ( res2.next ( ) ) {
+                list.add ( new CloneLimit ( res2.getString ( 1 ), res2.getInt ( 2 ), res2.getString ( 3 ), res2.getString ( 4 ), res2.getString ( 5 ) ) );
+            }
+            res2.close ( );
+            ps.close ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return null;
+        }
+        return list;
+    }
+
+    /**
+     * @param cl
+     * @return false if it could not be written
+     */
+    public static boolean saveCloneLimit ( CloneLimit cl ) {
+        if ( ! activateConnection ( ) )  {
+            return false;
+        }
+        try {
+            ps = sql.prepareStatement ( "insert into clonelimit ( mask, maxclones, reason, instater, stamp ) values ( ?, ?, ?, ?, now() ) "
+                                      + "on duplicate key update maxclones = ?, reason = ?, instater = ?, stamp = now()" );
+            ps.setString ( 1, cl.getMask ( ) );
+            ps.setInt    ( 2, cl.getLimit ( ) );
+            ps.setString ( 3, cl.getReason ( ) );
+            ps.setString ( 4, cl.getInstater ( ) );
+            ps.setInt    ( 5, cl.getLimit ( ) );
+            ps.setString ( 6, cl.getReason ( ) );
+            ps.setString ( 7, cl.getInstater ( ) );
+            ps.execute ( );
+            ps.close ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param mask
+     * @return false if it could not be removed
+     */
+    public static boolean deleteCloneLimit ( String mask ) {
+        if ( ! activateConnection ( ) )  {
+            return false;
+        }
+        try {
+            ps = sql.prepareStatement ( "delete from clonelimit where mask = ?" );
+            ps.setString ( 1, mask );
+            ps.execute ( );
+            ps.close ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
     public static ArrayList<SpamFilter> getSpamFilters ( ) {
         ArrayList<SpamFilter> sfList = new ArrayList<>();
         String query;
@@ -255,23 +359,23 @@ public class OSDatabase extends Database {
             return sfList;
         }
         try {
-            query = "select id,pattern,flags,instater,reason,stamp "+
+            query = "select id,pattern,flags,instater,reason,stamp,target "+
                     "from spamfilter "+
                     "order by pattern asc";
             ps = sql.prepareStatement ( query );
             res2 = ps.executeQuery ( );
             
             while ( res2.next ( ) ) {
-                sfList.add (
-                    new SpamFilter (
-                        res2.getLong ( "id" ),
-                        res2.getString ( "pattern" ),
-                        res2.getString ( "flags" ),
-                        res2.getString ( "instater" ),
-                        res2.getString ( "reason" ),
-                        res2.getString ( "stamp" )
-                    )
+                SpamFilter sf = new SpamFilter (
+                    res2.getLong ( "id" ),
+                    res2.getString ( "pattern" ),
+                    res2.getString ( "flags" ),
+                    res2.getString ( "instater" ),
+                    res2.getString ( "reason" ),
+                    res2.getString ( "stamp" )
                 );
+                sf.setTarget ( res2.getString ( "target" ) );
+                sfList.add ( sf );
             }
             res2.close ( );
             ps.close ( );
@@ -429,7 +533,7 @@ public class OSDatabase extends Database {
                     )
                 );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             idleUpdate ( "getLogSearchList ( ) " );
          
@@ -463,7 +567,7 @@ public class OSDatabase extends Database {
                     (res.getString(3)!=null?res.getString(3):null) )
                 );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             idleUpdate ( "getLogSearchList ( ) " );
          
@@ -493,7 +597,7 @@ public class OSDatabase extends Database {
                                          res.getString ( 3 ) );
                 sList.add ( server );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             
         } catch ( SQLException ex ) {
@@ -513,7 +617,6 @@ public class OSDatabase extends Database {
             ps = sql.prepareStatement ( query );
             ps.setString ( 1, server.getNameStr() );
             ps.execute ( );
-            res2.close ( );
             ps.close ( );
             deleted = true;
             
@@ -544,7 +647,6 @@ public class OSDatabase extends Database {
             ps.setString ( 2, server.getNameStr() );
             ps.execute();
 
-            res2.close ( );
             ps.close ( );
             return true;
             
@@ -568,7 +670,6 @@ public class OSDatabase extends Database {
             ps.setString ( 3, server.getNameStr() );
             ps.execute();
 
-            res2.close ( );
             ps.close ( );
             return true;
             
@@ -594,7 +695,7 @@ public class OSDatabase extends Database {
             ps.setString ( 1, name.getString() );
             res = ps.executeQuery ( );
             found = res.next();
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             
         } catch ( SQLException ex ) {
@@ -628,7 +729,7 @@ public class OSDatabase extends Database {
                 comment = new Comment ( res.getString(1), res.getString(2), res.getString(3), res.getString(4) );
                 cList.add ( comment );
             }
-            res2.close ( );
+            res.close ( );
             ps.close ( );
             idleUpdate ( "getCommentList ( ) " );
 
@@ -646,7 +747,6 @@ public class OSDatabase extends Database {
         if ( ! activateConnection ( ) )  {
             return lsList;
         }
-        System.out.println("OSDatabase: "+target);
         try {
             if ( target == null || target.length() < 1 ) {
                 query = "select name,flag,usermask,oper,stamp,null as global from nicklog "+
@@ -848,8 +948,8 @@ public class OSDatabase extends Database {
             return false;
         }
         query = "insert into spamfilter "+
-                "(id,pattern,flags,instater,reason,stamp) "+
-                "values (?,?,?,?,?,?)";
+                "(id,pattern,flags,instater,reason,stamp,target) "+
+                "values (?,?,?,?,?,?,?)";
         
         try {
             ps = sql.prepareStatement ( query );
@@ -859,6 +959,7 @@ public class OSDatabase extends Database {
             ps.setString   ( 4, sf.getInstater ( ) );
             ps.setString   ( 5, sf.getReason ( ) );
             ps.setString   ( 6, sf.getStamp ( ) );
+            ps.setString   ( 7, sf.getTarget ( ) );
             ps.execute ( );
             ps.close ( );
             

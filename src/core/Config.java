@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import user.User;
 /**
@@ -38,12 +40,16 @@ public class Config extends HashNumeric {
     private HashMap<BigInteger,Integer> configInt;
     private HashMap<BigInteger,Boolean> configBool;
     private HashMap<BigInteger,HashString> whiteList;
+    private ArrayList<String> vhostForbidden = new ArrayList<>();
+    private String uhmSalt;     /* host-masking salt, null when the network does not use the module */
+    private String uhmPrefix;
     private HashMap<BigInteger,Integer> commands;
     private static final HashString[] cList = { 
         STOP,REHASH,BAHAMUT,SPAMFILTER,SRAW,PANIC,UINFO,CINFO,NINFO,SINFO,ULIST,CLIST,SLIST,JUPE,
-        DELETE,SQLINE,SGLINE,CLOSE,FREEZE,HOLD,MARK,NOGHOST,GETPASS,GETEMAIL,
+        DELETE,SQLINE,SGLINE,CLOSE,FREEZE,HOLD,MARK,NOGHOST,SETPASS,GETEMAIL,
         AKILL,MAKILL,BANLOG,GLOBAL,IGNORE,AUDIT,SERVER,CHANLIST,LIST,AUDITORIUM,
-        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG,SHOWCONFIG,SRA
+        STAFF,SEARCHLOG,UPTIME,COMMENT,TOPICLOG,FORCENICK,SNOOPLOG,SHOWCONFIG,SRA,
+        VHOST,CLONE,UHM,SJR
     };
     private static final HashString[] keyStrings = {
         NAME,DOMAIN,NETNAME,STATS,MASTER,AUTHURL, LOGFILE, EXPIRE, SECRETSALT,
@@ -84,13 +90,11 @@ public class Config extends HashNumeric {
         this.loadYamlConf();
     }
     
-    private void printErrorAndExit ( String error ) {
-        System.out.println ( "ConfigError: "+error );
-        System.exit ( 1 );
-    }
     private HashString parseKey ( Map<String,Object> result, String key ) {
         if ( result.get ( key ) == null ) {
-            printErrorAndExit ( key );
+            /* Not valid: stops a start, and a REHASH keeps the old config */
+            System.out.println ( "ConfigError: "+key+" is missing in services.conf" );
+            throw new IllegalStateException ( "ConfigError: "+key );
         }
         return new HashString ( result.get(key).toString() );
     }
@@ -131,12 +135,15 @@ public class Config extends HashNumeric {
      * Load config and validate it at the same time
      */
     private void loadYamlConf ( ) {
-        Yaml yaml = new Yaml();
+        /* Only maps, lists and plain values, never objects named by a tag in the file */
+        Yaml yaml = new Yaml ( new SafeConstructor ( new LoaderOptions ( ) ) );
         String fileName = "services.conf";
         
         try {
-            InputStream ios = new FileInputStream ( new File ( fileName ) );
-            Map<String,Object> result = safelyCastToMap(yaml.load ( ios ));
+            Map<String,Object> result;
+            try ( InputStream ios = new FileInputStream ( new File ( fileName ) ) ) {
+                result = safelyCastToMap ( yaml.load ( ios ) );
+            }
             
             HashString[] types = { STRING, BOOLEAN, INTEGER };
             for ( HashString type : types ) {
@@ -166,6 +173,41 @@ public class Config extends HashNumeric {
                 System.out.println("Warning!: The whitelist is empty, add services ip and staff addresses");
             }
               
+            /* VHOSTFORBIDDEN (optional): wildcard patterns users can't use as vhost */
+            Object forbidden = result.get ( "vhostforbidden" );
+            if ( forbidden instanceof java.util.List ) {
+                for ( Object o : (java.util.List<?>) forbidden ) {
+                    if ( o != null && ! o.toString().trim().isEmpty() ) {
+                        this.vhostForbidden.add ( o.toString().trim() );
+                    }
+                }
+            }
+
+            /* Host-masking with the avade_uhm module of the ircd (optional).
+               Only letters and digits, it is sent to the servers as one word */
+            Object salt = result.get ( "uhmsalt" );
+            if ( salt != null && ! salt.toString().trim().isEmpty ( ) ) {
+                this.uhmSalt = salt.toString().trim ( );
+                if ( ! this.uhmSalt.matches ( "[A-Za-z0-9]{16,128}" ) ) {
+                    System.out.println ( "ConfigError: uhmsalt must be 16 to 128 letters and digits" );
+                    throw new IllegalStateException ( "ConfigError: uhmsalt" );
+                }
+                /* The masking salt goes out to every server, the database salt
+                   must never leave services: they can not be the same value */
+                HashString dbSalt = this.get ( SECRETSALT );
+                if ( dbSalt != null && this.uhmSalt.equals ( dbSalt.getString ( ) ) ) {
+                    System.out.println ( "ConfigError: uhmsalt is the same as secretsalt. The uhmsalt is sent to the servers, "+
+                                         "use a value of its own (./avade.sh gensalt)" );
+                    throw new IllegalStateException ( "ConfigError: uhmsalt equals secretsalt" );
+                }
+                Object prefix = result.get ( "uhmprefix" );
+                this.uhmPrefix = ( prefix != null ? prefix.toString().trim ( ) : "user" );
+                if ( ! this.uhmPrefix.matches ( "[A-Za-z0-9]{1,16}" ) ) {
+                    System.out.println ( "ConfigError: uhmprefix must be 1 to 16 letters and digits" );
+                    throw new IllegalStateException ( "ConfigError: uhmprefix" );
+                }
+            }
+
             /* COMMANDS */
             HashString[] accesses = { SRA, CSOP, SA, IRCOP };
             for ( HashString access : accesses ) {
@@ -191,10 +233,7 @@ public class Config extends HashNumeric {
     private void setCommand ( HashString command, int access ) {
         this.commands.put(command.getCode(), access);
     }
- 
-    private void parseValue ( String key, String val ) {
-        //System.out.println ( "DEBUG: key:"+key+", val:"+val );
-    }
+
     
     /* return the int value of the string input, else secure the command */
     private static int str2acc ( HashString it )  {
@@ -215,6 +254,27 @@ public class Config extends HashNumeric {
      *
      * @return
      */
+    /**
+     * @return wildcard patterns that users may not use as vhost
+     */
+    public ArrayList<String> getVhostForbidden ( ) {
+        return this.vhostForbidden;
+    }
+
+    /**
+     * @return the salt of the host-masking, null if it is not configured
+     */
+    public String getUhmSalt ( ) {
+        return this.uhmSalt;
+    }
+
+    /**
+     * @return the prefix of masked host names ("prefix-hash.isp.net")
+     */
+    public String getUhmPrefix ( ) {
+        return this.uhmPrefix;
+    }
+
     public HashMap<BigInteger,HashString> getWhiteList ( ) {
         return this.whiteList;
     }
@@ -292,7 +352,8 @@ public class Config extends HashNumeric {
     private ArrayList<String> getCommandsByAccess ( int access ) {
         ArrayList<String> list = new ArrayList<>();
         for ( HashString cmd : cList ) {
-            if ( this.commands.get(cmd.getCode()) == access ) {
+            Integer level = this.commands.get ( cmd.getCode ( ) );
+            if ( level != null && level == access ) {
                 list.add ( " - "+cmd.getString().toLowerCase() );
             }
         }
@@ -312,7 +373,10 @@ public class Config extends HashNumeric {
             System.out.println("commands is null!!");
         }     
         if ( commands.get(name.getCode()) == null ) {
-            System.out.println("commands.get is null!!");
+            /* Not in services.conf (e.g. a command added in a newer version):
+               only SRA+ may use it until it is configured */
+            System.out.println("Warning: command "+name.getString()+" has no access level in services.conf, using SRA");
+            return 4;
         }     
         
         return commands.get(name.getCode());

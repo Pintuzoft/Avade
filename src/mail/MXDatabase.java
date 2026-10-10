@@ -19,18 +19,13 @@ package mail;
 
 import core.Database;
 import core.Proc;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  *
  * @author DreamHealer
  */
 public class MXDatabase extends Database {
-    private static Statement s;
-    private static ResultSet res;
-    private static ResultSet res2;
     
     /* NickServ Methods */
 

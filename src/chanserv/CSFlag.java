@@ -36,6 +36,11 @@ public class CSFlag extends HashNumeric {
     private boolean hidemodelists = false;
     private boolean nonickchange = false;
     private boolean noutf8 = false;
+    private boolean userverbose = false;
+    private boolean operverbose = false;
+    private boolean sjr = false;        /* the ircd asks services before it lets someone join */
+    private long refusedReport = 0;     /* OPER_VERBOSE: when refused joins were last reported */
+    private int refused = 0;            /* and how many there have been since */
     private String greetmsg = null;
     
     /**
@@ -94,16 +99,16 @@ public class CSFlag extends HashNumeric {
         this.nonotice = no_notice;
         this.noctcp = no_ctcp;
         this.nopartmsg = no_part_msg;
-        this.noquitmsg = no_part_msg;
+        this.noquitmsg = no_quit_msg;
         this.exemptopped = exempt_opped;
         this.exemptvoiced = exempt_voiced;
         this.exemptidentd = exempt_identd;
         this.exemptregistered = exempt_registered;
         this.exemptinvites = exempt_invites;
         this.exemptwebirc = exempt_webirc;
-        this.exemptwebirc = hide_mode_lists;
+        this.hidemodelists = hide_mode_lists;
         this.nonickchange = no_nick_change;
-        this.nonickchange = no_utf8;
+        this.noutf8 = no_utf8;
         this.greetmsg = greetmsg;
     }
     
@@ -177,16 +182,28 @@ public class CSFlag extends HashNumeric {
             values = this.addToValues (values, "NO_NICK_CHANGE:"+( this.nonickchange ? "ON" : "OFF" ) );
         }
         
-        if ( this.nonickchange ) {
+        if ( this.noutf8 ) {
             values = this.addToValues (values, "NO_UTF8:"+( this.noutf8 ? "ON" : "OFF" ) );
         }
         
-        if ( values.length() > 0 ) {
-            Handler.getChanServ().sendServ ( "SVSXCF "+this.name.getString()+" "+values );
+        if ( this.userverbose ) {
+            values = this.addToValues (values, "USER_VERBOSE:ON" );
         }
         
-        if ( this.greetmsg != null ) {
-            Handler.getChanServ().sendServ ( "SVSXCF "+this.name+" GREETMSG:"+this.greetmsg );
+        if ( this.operverbose ) {
+            values = this.addToValues (values, "OPER_VERBOSE:ON" );
+        }
+        
+        if ( this.sjr ) {
+            values = this.addToValues (values, "SJR:ON" );
+        }
+        
+        /* Start from the defaults so flags that were turned off are reset too */
+        Handler.getChanServ().sendServ ( "SVSXCF "+this.name.getString()+" DEFAULT"+( values.length() > 0 ? " "+values : "" ) );
+        
+        if ( this.isGreetmsg ( ) ) {
+            /* The greet message is a trailing parameter of its own */
+            Handler.getChanServ().sendServ ( "SVSXCF "+this.name.getString()+" GREETMSG :"+this.greetmsg );
         }
     }
     
@@ -355,6 +372,45 @@ public class CSFlag extends HashNumeric {
      * getGreetmsg
      * @return
      */
+    public boolean isUserverbose() {
+        return this.userverbose;
+    }
+
+    public boolean isOperverbose() {
+        return this.operverbose;
+    }
+
+    public void setVerbose ( boolean user, boolean oper ) {
+        this.userverbose = user;
+        this.operverbose = oper;
+    }
+
+    public boolean isSjr() {
+        return this.sjr;
+    }
+
+    /**
+     * Count a join that services refused. A join flood must not become a
+     * flood of notices to the opers: one report per ten seconds.
+     * @return how many joins were refused since the last report when it is
+     *         time for a new one, else 0
+     */
+    public int refusedJoin ( ) {
+        long now = System.currentTimeMillis ( );
+        this.refused++;
+        if ( now - this.refusedReport < 10000 ) {
+            return 0;
+        }
+        int count = this.refused;
+        this.refused = 0;
+        this.refusedReport = now;
+        return count;
+    }
+
+    public void setSjr ( boolean sjr ) {
+        this.sjr = sjr;
+    }
+
     public String getGreetmsg() {
         return this.greetmsg;
     }
@@ -401,6 +457,9 @@ public class CSFlag extends HashNumeric {
         else if ( flag.is(HIDE_MODE_LISTS) )        { this.hidemodelists = in;     }
         else if ( flag.is(NO_NICK_CHANGE) )         { this.nonickchange = in;     }
         else if ( flag.is(NO_UTF8) )                { this.noutf8 = in;     }
+        else if ( flag.is(USER_VERBOSE) )           { this.userverbose = in;     }
+        else if ( flag.is(OPER_VERBOSE) )           { this.operverbose = in;     }
+        else if ( flag.is(SJR) )                    { this.sjr = in;             }
     }
 
     /**
@@ -454,6 +513,9 @@ public class CSFlag extends HashNumeric {
             flag.is(HIDE_MODE_LISTS) ||
             flag.is(NO_NICK_CHANGE) ||
             flag.is(NO_UTF8) ||
+            flag.is(USER_VERBOSE) ||
+            flag.is(OPER_VERBOSE) ||
+            flag.is(SJR) ||
             flag.is(GREETMSG) ||
             flag.is(LIST) 
         );
@@ -513,7 +575,7 @@ public class CSFlag extends HashNumeric {
         
         } else if ( flag.is(MAX_MSG_TIME) ) {
             Pattern pattern = Pattern.compile("^\\d{1,3}:\\d{1,3}$");
-            Matcher matcher = pattern.matcher(flag.getString());
+            Matcher matcher = pattern.matcher ( value );
             return matcher.find();
         
         } else if ( 
@@ -529,7 +591,10 @@ public class CSFlag extends HashNumeric {
                 flag.is(EXEMPT_WEBIRC) ||
                 flag.is(HIDE_MODE_LISTS) ||
                 flag.is(NO_NICK_CHANGE) ||
-                flag.is(NO_UTF8)
+                flag.is(NO_UTF8) ||
+                flag.is(USER_VERBOSE) ||
+                flag.is(OPER_VERBOSE) ||
+                flag.is(SJR)
                 ) {
             hashVal = new HashString ( value );
             return ( hashVal.is(ON) || hashVal.is(OFF) );

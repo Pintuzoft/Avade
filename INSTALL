@@ -10,54 +10,116 @@ These installation instructions will only describe the process of installing
 Avade IRC Services and not anything else. 
 
 
+### The short way ###
+
+As the user that will run services (not root):
+
+    git clone https://github.com/Pintuzoft/Avade.git
+    cd Avade
+    ./install.sh
+
+install.sh checks that the machine has Java 17, puts everything in ~/avade/,
+and starts services. The first time there is no services.conf, so it asks a
+few questions (your network, the hub, the database) and writes it for you:
+
+- it tries the database login while you answer, and when that does not work
+  it shows the lines to run as the root user of the database
+- it shows the lines the hub needs in its ircd.conf, with your names and
+  password filled in (also saved in ~/avade/hub-setup.txt)
+- the secret salt and the passwords you do not type are made for you
+
+Mail to users is the same: "./avade.sh mailer start" asks for your mail server
+the first time, sends a test mail and writes mailer.conf (see 11.).
+
+To upgrade, get the new version and run ./install.sh again. It offers to take
+a backup of the database first, keeps services.conf, adds the commands the new
+version brought to its access lists, and restarts services.
+
+What you need before you start: a bahamut hub you can change the ircd.conf of,
+and MariaDB (or MySQL) with its root login.
+
+The rest of this file describes each step, for when you want to do it by hand
+or want to know what happens.
+
+
 ### Install & Update ###
 
 
 1. Dependencies
 
-CentOS:
-yum install openjdk
-yum install openjdk-devel
-yum install ant
+Java 17 or newer. Avade comes built (dist/), so the Java runtime is enough:
+
+    Fedora, RHEL, CentOS:   sudo dnf install java-17-openjdk-headless
+    Debian, Ubuntu:         sudo apt-get install openjdk-17-jre-headless
+
+To build it yourself you need the JDK (java-17-openjdk-devel, openjdk-17-jdk).
+ant is used when it is there, without it ./make.sh builds with javac.
 
 
 2. Download
 
 Goto and download the latest release from:
 https://github.com/Pintuzoft/Avade/releases
+or clone the repository as in the short way above.
 
 
 3. Install
 
 tar -zxvf Avade-<version>.tar.gz
 cd Avade-<version>
-./make.sh
-./make.sh install
+./install.sh
+
+By hand instead: "./make.sh" builds and "./make.sh install" puts everything in
+~/avade/.
 
 
 4. Setup Database ( MariaDB / MySQL )
 
-create database avade;
-grant all privileges on avade.* to 'avade'@'localhost' identified by 'avade123';
+The setup tries the login and shows these lines with your names when they are
+needed. As the root user of the database:
+
+create database if not exists avade;
+create user if not exists 'services'@'localhost' identified by 'CHOOSE-A-PASSWORD';
+grant all privileges on avade.* to 'services'@'localhost';
 
 
 5. Services Configuration
 
-Under "~/avade/" you will find, if installed correctly. the template.conf file.
-Use the template.conf file and create from it the file services.conf. Add the
-proper database login information into the services.conf file 
+"./avade.sh start" writes services.conf for you the first time, by asking what
+is needed. "./avade.sh setup" does only that. The same command, with a
+services.conf that is already there, adds the commands a new version brought.
+
+By hand instead: under "~/avade/" you will find the template.conf file. Copy
+it to services.conf and set the values. reference.conf explains every setting.
 
 Dont forget to set network name and change the salt to something completely 
 random. After setting the salt value please save it in a secure place perhaps in
-keepass or similar software. Avade uses the salt to encrypt and decrypt password
-and email information stored in the database so if you loose the salt value you 
-will loose your ability to encrypt/decrypt passwords and emails.
+keepass or similar software. Avade uses the salt to encrypt and decrypt the email
+addresses stored in the database, so if you loose the salt value you will loose
+the email addresses. Passwords are stored as one way hashes that nobody can read
+back; the salt is only needed once for them, when a database from before
+1.2609-8 is upgraded.
 
 Set the master nick correctly. This should be the nick you are using on the
 server.
 
 
 6. Starting Services
+
+cd ~/avade
+./avade.sh start
+
+start tells whether services linked to the hub, and when they did not, what
+is in the way (the hub does not answer, the hub closed the link and why, or
+the database can not be reached). Services keep trying by themselves.
+
+Other actions: stop, restart, status, setup, check and log. The output of
+services ends up in ~/avade/avade.out (the five latest are kept).
+
+To bring services back after a reboot or a crash, add this to the crontab of
+the user running services (crontab -e):
+
+*/5 * * * * $HOME/avade/avade.sh check
 
 The first time you start services it will look at the services configuration 
 and try login to the database. Once it does this it will look at the database
@@ -71,17 +133,23 @@ created (if not already existing) and give the nickname master access.
 
 7. Stopping Services
 
-Try avoid killing the process as this will potentially mean loss of data. Rather
-use the /RootServ STOP command to stop services. This will set services into a
-mode where it doesnt allow users to issue service commands and then try to work
-off all pending database work it can find. This means any pending nick or chan
-registration etc, or services logs that needs to be stored.
+Use "./avade.sh stop" or the /RootServ STOP command. Both set services into a
+mode where it tries to work off all pending database work it can find before
+it exits. This means any pending nick or chan registration etc, or services
+logs that needs to be stored.
 
-So in short, use RootServ STOP to stop services..
+A normal kill does the same thing. Avoid "kill -9" as that will potentially
+mean loss of data.
 
 
 8. Updating Services
 
+Get the new version as described in step 2 and run ./install.sh in it. It
+offers to take a backup of the database (to ~/avade/backup/), installs the
+new version, adds new commands to the access lists of services.conf, and
+restarts services.
+
+By hand instead:
 - Take a backup of the database!
 - Then start the new version of Avade
 
@@ -107,6 +175,346 @@ altering data in the database it should be fine. This also means that you
 essentially doesnt have to put much thought into the database during updates. 
 All you need to remember is to take a backup of the database before starting
 the new version of Avade IRC Services.
+
+
+10. Host-masking (optional)
+
+Avade can hide the real host of users from other users, together with the
+avade_uhm module for bahamut that comes with Avade (the bahamut-module
+directory). bahamut itself is not changed.
+
+c-83-233-12-7.bredband.telia.com  ->  mynet-0cabd86f.bredband.telia.com
+192.0.2.44                        ->  6c13e277.8057c675.1b690abc.ip
+
+IRC operators still see the real host. How the masks are made is described in
+bahamut-module/README.md.
+
+Steps 10.1 and 10.2 are done on every server of the network, the rest once.
+
+Needed on every server:
+- bahamut 2.2.0 or newer, check with /VERSION
+- the bahamut source that the running ircd was built from, with ./configure
+  run in it
+- gcc and the OpenSSL headers
+
+CentOS:
+yum install gcc
+yum install openssl-devel
+
+
+10.1 Build the module (every server)
+
+cd Avade-<version>/bahamut-module
+./build.sh /path/to/bahamut-source /path/to/ircd
+
+The first path is the bahamut source. The second is the directory of the
+running ircd, where its ircd.conf is. The module is put in
+/path/to/ircd/modules/avade_uhm.so.
+
+The source must be of the same bahamut version as the ircd that runs. If the
+machine has several, this shows the version of a source directory:
+
+cd /path/to/bahamut-source
+grep -E "define (MAJOR|MINOR|PATCH) " include/patchlevel.h
+
+When bahamut is upgraded the module has to be built again from the new source.
+
+
+10.2 Load the module (every server)
+
+Add this to ircd.conf, so the module is loaded every time the ircd starts:
+
+modules { path modules; autoload avade_uhm; };
+
+The line is only used when the ircd starts. A /REHASH does not load the module.
+To load it without restarting the ircd, as a server admin (oper access A)
+connected to that server:
+
+/MODULE LOAD avade_uhm
+/MODULE LIST
+
+The list should show:
+
+Module: avade_uhm    Version: 1.0
+  - User host-masking that Avade IRC Services can follow
+
+Until services have sent the salt (10.3) the module masks with a random one.
+No real host is shown, but the masks are not the ones services expect.
+
+
+10.3 The salt
+
+The masks are made with a secret salt. Anyone who has it can work out which
+mask belongs to which ip, so treat it like a database password.
+
+It is set in one place, the services.conf of Avade. Nothing is put on a server
+by hand: Avade sends the salt to the servers, and each server keeps it in the
+file avade_uhm.salt next to its ircd.conf.
+
+Make a salt:
+
+cd ~/avade
+./avade.sh gensalt
+
+"openssl rand -hex 24" works as well. Put it in services.conf:
+
+uhmsalt: <the salt>
+uhmprefix: mynet
+
+- uhmsalt is 16 to 128 letters and digits, nothing else
+- uhmsalt must not be the same as secretsalt, services do not start if it is
+- uhmprefix is the first part of masked host names, 1 to 16 letters and digits
+
+Restart services:
+
+./avade.sh restart
+
+The opers on the servers get this notice:
+
+*** Notice -- avade_uhm: host-masking salt set by OperServ
+
+It can also be checked on each server, as server admin:
+
+/MODULE CMD avade_uhm
+
+which should answer "salt set by services".
+
+Changing the salt later changes every mask. Bans, akicks and access masks that
+were set on the old masks stop matching.
+
+
+10.4 Turn it on
+
+/OperServ UHM 1 1
+
+The first value is the type of masking: 1 is the one the module does, 0 is off.
+The second value is the user mode +H:
+
+0   users cannot use it
+1   everyone gets it when they connect
+2   users may set it themselves
+
+"/OperServ UHM" shows the setting and "/OperServ UHM 0 0" turns the masking
+off. The servers remember the setting.
+
+Users that were already online keep the host they had until they reconnect.
+
+A user who wants to show the real host can turn the mask off for themselves
+with "/NickServ SET SHOWHOST ON". A vhost (SET VHOST) goes before both.
+
+
+10.5 Check that it works
+
+Services and every server must give the same mask for the same host:
+
+/MODULE CMD avade_uhm TEST c-83-233-12-7.bredband.telia.com 83.233.12.7
+/OperServ UHM TEST c-83-233-12-7.bredband.telia.com 83.233.12.7
+
+Then connect a new client. It gets +H, and a /WHOIS on it shows the masked
+host. "/OperServ UINFO <nick>" shows the same host on the line "Shown as".
+
+
+10.6 If something goes wrong
+
+"Module load error for avade_uhm: Incompatible module (My interface version:
+1011 Module version: 1010)"
+    The module was built from the source of another bahamut version than the
+    one that runs. Build it again from the right source (10.1).
+
+build.sh: "has module interface 1010, bahamut 2.2.0 or newer (1011) is needed"
+    The same thing: that source directory is older than bahamut 2.2.0.
+
+build.sh: "run ./configure in ... first"
+    Run ./configure in the bahamut source, with the same options as when the
+    ircd was built. It does not have to be compiled or installed again.
+
+"Module load error for avade_uhm: ... cannot open shared object file"
+    avade_uhm.so is not in the modules directory of the ircd. Give build.sh
+    the directory of the running ircd as the second path.
+
+"Permission Denied, You do not have the correct irc operator privileges"
+    MODULE LOAD and MODULE CMD are for server admins (access A in the oper
+    block), and only on the server they are connected to.
+
+"I don't have module support."
+    The ircd was built with --disable-hookmodules. Build bahamut again
+    without it.
+
+/MODULE LIST is empty after a /REHASH
+    A rehash does not load modules: use /MODULE LOAD avade_uhm (10.2).
+
+/MODULE CMD avade_uhm says "salt not set yet"
+    Services have not sent the salt to that server. Check that uhmsalt is in
+    services.conf, that services are linked, and that the name of services is
+    in the super block of the ircd.conf.
+
+The two TEST commands in 10.5 give different masks
+    That server does not have the salt from services (see above).
+
+"ConfigError: uhmsalt ..." or "ConfigError: uhmprefix ..." when services start
+    The salt has other characters than letters and digits, is shorter than 16
+    or longer than 128, or is the same as secretsalt. The prefix is 1 to 16
+    letters and digits.
+
+
+11. Mail
+
+Avade mails users to confirm the mail address of a new nick, a new address or
+a new password (SET EMAIL, SET PASSWD), and to send a code with which a lost
+password can be replaced (/NickServ RESETPASS).
+
+How it works:
+
+    Avade --(insert, status 1)--> mailbox table <--(read, set status)-- AvadeMailer --> mail server
+
+- Avade never talks to a mail server. It puts every mail in the mailbox table
+  of the database and goes on, so services never wait for a slow or broken
+  mail server.
+- AvadeMailer (mailer.jar) is a program of its own. It looks in the mailbox
+  every few seconds, sends what is waiting and sets the status. It can be
+  stopped, restarted or moved to another machine without touching services,
+  it only needs the database.
+- The mail addresses are kept encrypted with secretsalt (table maillog). The
+  mailbox has the address of each mail in clear, so the mailer does not need
+  the salt, and should not have it.
+- Finished mails (sent, not sent, failed) are removed from the mailbox after
+  14 days: they hold addresses and codes in clear.
+
+The status of a mail in the mailbox:
+
+    1    waiting, put there by Avade
+    2    being sent right now
+    0    sent
+    3    not sent, because mailer.conf has "send: false"
+    500  failed: the mail server refused it (5xx), or turned it away for now
+         (4xx) more times than "retries", or the mailer stopped while sending it
+
+A mail is never sent twice by itself. A mail that was being sent when the
+mailer stopped may or may not have gone out, so it is marked failed and is
+only sent again with "resend".
+
+11.1 A database user for the mailer (optional)
+
+The mailer can use the database login of services, which is the simplest. A
+user of its own that can do nothing but use the mailbox table is safer:
+
+    grant select, update, delete on avade.mailbox to 'mailer'@'localhost' identified by 'MAILERPASS';
+
+Use the host the mailer connects from instead of localhost when it runs on
+another machine.
+
+11.2 mailer.conf
+
+"./avade.sh mailer start" writes mailer.conf for you the first time: it asks
+for the database login (the one of services, or the user from 11.1) and the
+mail server, sends a test mail to an address you give, and asks whether mails
+should be sent for real. "./avade.sh mailer setup" does only that.
+
+By hand instead:
+
+    cd ~/avade
+    cp mailer-template.conf mailer.conf
+    chmod 600 mailer.conf
+
+Set the database user from 11.1 (the mysql settings have the same names as in
+services.conf), the mail server, and "send: true". Every setting is explained
+in mailer-reference.conf.
+
+With Amazon SES:
+- smtphost email-smtp.<region>.amazonaws.com, smtpport 587, smtptls: true,
+  smtpauth: true.
+- smtpuser and smtppass are the SMTP credentials made in the SES console, not
+  the AWS access keys.
+- smtpfrom must be a verified address, or an address in a verified domain.
+- A new SES account is in the sandbox: it only sends to verified addresses,
+  one mail a second. Ask AWS for production access before going live.
+
+With a mail server on the same machine (postfix, sendmail): smtphost
+localhost, smtpport 25, smtptls: false, smtpauth: false.
+
+11.3 Starting and checking
+
+    ./avade.sh mailer start
+    ./avade.sh mailer queue         # mails per status
+    ./avade.sh mailer log           # follow the output
+
+mailer.log has one line per mail: its id and subject, never the address or
+the text. To find the address of a mail, look it up by id in the mailbox.
+
+./avade.sh check (the cron line in 6.) also starts the mailer when it is not
+running, as soon as mailer.conf exists.
+
+11.4 Commands
+
+    ./avade.sh mailer start|stop|restart|status|log
+    ./avade.sh mailer queue                 mails in the mailbox per status
+    ./avade.sh mailer resend <id>           send that mail again
+    ./avade.sh mailer resend failed         send all failed mails again
+    ./avade.sh mailer test <address>        send a test mail
+    ./avade.sh mailer setup                 write mailer.conf by asking
+
+11.5 A test network with a copy of real data
+
+The addresses in a copy of a production database belong to real people. Set
+"send: false": every mail is marked not sent (3) and logged, nothing leaves
+the machine. Never run a mailer with "send: true" against such a copy.
+
+11.6 Moving from an older mailer
+
+AvadeMailer uses the same statuses as the mailers before it (1 waiting, 0
+sent, 500 failed). Stop the old mailer first, then start this one: two
+mailers on the same mailbox send every mail twice.
+
+11.7 When something is wrong
+
+"Config error: ..." when the mailer starts
+    A setting is missing or wrong, the message tells which.
+
+"No database connection: ..."
+    Check the mysql settings and the grant in 11.1. It tries again by itself.
+
+"Mail server problem, trying again later: ..."
+    The mail server could not be reached, the login failed, or the certificate
+    is not valid for the host (smtptls: true checks it). The mail stays waiting
+    and is sent when the server works again.
+
+"Failed: mail <id>, the server answered 554" (or another 5xx)
+    The mail server refused the mail. With SES this is often a sender that is
+    not verified, or a recipient that is not verified while in the sandbox.
+
+Mails stay at status 1
+    The mailer is not running: ./avade.sh mailer status
+
+
+12. Join requests (optional)
+
+Normally a server lets a user into a channel and services react afterwards: a
+user on the AKICK list of a channel joins, and is banned and kicked. With
+services join requests the server asks services first, and the user is let in
+only when services say so.
+
+/OperServ SJR ON                        for the network, by the staff
+/ChanServ CHANFLAG #channel SJR ON      for a channel, by its founder
+
+Both are needed. Who may use the OperServ command is set in services.conf
+(sjr, in the sra list of template.conf). "/OperServ SJR" shows the setting and "/OperServ SJR OFF"
+turns it off. Services remember it and tell every server when they link, a
+server does not keep it over a restart.
+
+- A user on the AKICK list, or without access to a channel with RESTRICT, is
+  refused before the join. The channel never sees the user.
+- The server checks nothing for these joins. Services check the key, the
+  limit, the bans, the exception and invite lists, +i, +O, +R, +S, the join
+  rate (+j) and the chanflag JOIN_CONNECT_TIME the way the ircd does.
+- A channel that is empty does not exist for the ircd, so the first user in
+  is not asked about. Services set the flag when the channel is created.
+- While services are not on the network the servers decide all joins.
+
+"/OperServ SJR ALL" sends every join on the network to services, also for
+channels without the flag and channels that do not exist yet. Then nobody
+joins any channel while services are slow to answer, so use it only when the
+network needs it.
+
 
 
 ############

@@ -24,14 +24,11 @@ import core.Proc;
 import core.StringMatch;
 import core.Service;
 import java.math.BigInteger;
-import java.text.DateFormat;
 import user.User;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.Timer;
 import nickserv.NickInfo;
 import server.Server;
 
@@ -72,12 +69,8 @@ public class OperServ extends Service {
     private OSExecutor executor;   /* Object that parse and execute commands */
     private OSHelper helper;     /* Object that parse and respond to help queries */
     private OSSnoop snoop;      /* Object for monitoring and reporting */
-    private SimpleDateFormat sdf;
     
-    private Oper operNick = new Oper ( "OperServ", 4, "OperServ" );
-    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
-    private static ArrayList<Timer> timerList = new ArrayList<>();
     
     /**
      *
@@ -97,6 +90,8 @@ public class OperServ extends Service {
         sqlines         = OSDatabase.getServicesBans ( SQLINE );
         sglines         = OSDatabase.getServicesBans ( SGLINE );
         spamfilters     = OSDatabase.getSpamFilters ( );
+        loadCloneLimits ( );
+        loadJoinRequests ( );
         staff           = OSDatabase.getAllStaff ( );
         servers         = OSDatabase.getServerList ( );
         setCommands ( );
@@ -110,7 +105,8 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "HELP",      1,                         "Show help information" )                       );
         cmdList.add ( new CommandInfo ( "UINFO",     CMDAccess ( UINFO ),       "Show user information" )                       );
         cmdList.add ( new CommandInfo ( "CINFO",     CMDAccess ( CINFO ),       "Show channel information" )                    );
-        cmdList.add ( new CommandInfo ( "NINFO",     CMDAccess ( CINFO ),       "Show nick information" )                       );
+        cmdList.add ( new CommandInfo ( "NINFO",     CMDAccess ( NINFO ),       "Show nick information" )                       );
+        cmdList.add ( new CommandInfo ( "SINFO",     CMDAccess ( SINFO ),       "Show server information" )                     );
         cmdList.add ( new CommandInfo ( "ULIST",     CMDAccess ( ULIST ),       "Show user list" )                              );
         cmdList.add ( new CommandInfo ( "CLIST",     CMDAccess ( CLIST ),       "Show user list" )                              );
         cmdList.add ( new CommandInfo ( "SLIST",     CMDAccess ( SLIST ),       "Show server list" )                            );
@@ -130,6 +126,10 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "JUPE",      CMDAccess ( JUPE ),        "Jupiter a server" )                            );
         cmdList.add ( new CommandInfo ( "SERVER",    CMDAccess ( SERVER ),      "Handle server list" )                          );
         cmdList.add ( new CommandInfo ( "FORCENICK", CMDAccess ( FORCENICK ),   "Forcefully change a users nickname" )          );
+        cmdList.add ( new CommandInfo ( "VHOST",     CMDAccess ( VHOST ),       "Set or remove the vhost of a nick" )           );
+        cmdList.add ( new CommandInfo ( "CLONE",     CMDAccess ( CLONE ),       "Manage clone limits for ips and ranges" )      );
+        cmdList.add ( new CommandInfo ( "UHM",       CMDAccess ( UHM ),         "Control user host-masking on the network" )    );
+        cmdList.add ( new CommandInfo ( "SJR",       CMDAccess ( SJR ),         "Control services join requests on the network" ) );
         cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )         );
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }
@@ -477,12 +477,12 @@ public class OperServ extends Service {
                         if ( ban != null ) {
                             newName = "SQLined"+rand.nextInt(99999);
                             this.ban ( u, ban );
+                            /* the ircd answers with a NICK line, that renames the user here */
                             this.sendServ ( "SVSNICK "+u.getString ( NAME )+" "+newName+" :0" );
-                            u.setName ( newName );
                         }
                     
                     } else if ( command.is(SGLINE) ) {
-                        ban = findBan ( command, u.getString ( REALNAME ) );
+                        ban = findSGLine ( u.getString ( REALNAME ) );
                         if ( ban != null ) {
                             this.ban ( u, ban );
                             Handler.deleteUser ( u );
@@ -497,15 +497,10 @@ public class OperServ extends Service {
             }
         }
         this.chList.removeAll ( checked );
-        
-        for ( User u2 : this.chList ) {
-            System.out.println("QUEUE: "+u2.getString ( NAME ) );
-        }
-        
     }
     
     private void expireBans ( ) {
-        HashString[] commands = { AKILL, SGLINE, SQLINE };
+        HashString[] commands = { AKILL, SGLINE, SQLINE, IGNORE };
         ArrayList<ServicesBan> delList = new ArrayList<>( );
         ArrayList<ServicesBan> list = null;
         for ( HashString command : commands ) {
@@ -534,6 +529,7 @@ public class OperServ extends Service {
         if      ( name.is(AKILL) )          { return akills;        }
         else if ( name.is(SQLINE) )         { return sqlines;       }
         else if ( name.is(SGLINE) )         { return sglines;       }
+        else if ( name.is(IGNORE) )         { return ignores;       }
         else {
             return null;
         }
@@ -554,7 +550,6 @@ public class OperServ extends Service {
         HashString command = new HashString ( cmd[3] );
         
         if ( user == null ) {
-            System.out.println("DEBUG: parse() -> no user");
             return;
         } else if ( ! user.isOper ( ) )  {
             this.sendMsg ( user, "IRC Operator Services are for IRC Operators only .. *sigh*" );
@@ -567,7 +562,7 @@ public class OperServ extends Service {
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         } else {
-            this.executor.parse ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         }
         
     }
@@ -607,17 +602,6 @@ public class OperServ extends Service {
     }
 
     
-/*    public boolean isBanned ( User u )  {
-        if ( u == null )  { return true; } 
-        for ( ServicesBan ban : akills )  {
-            if ( ban.match ( u.getString ( USER ) +"@"+u.getString ( HOST ) ) )  {
-                ban ( ban ); 
-                return true;
-            }
-        }
-        return false;
-    }
- */   
 
     /**
      *
@@ -722,7 +706,7 @@ public class OperServ extends Service {
                 for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
                     u = entry.getValue();
                     nick = u.getString ( NAME );
-                    if ( StringMatch.nickWild ( nick, ban.getMask().getString() ) ) {
+                    if ( StringMatch.matches ( nick, ban.getMask().getString() ) ) {
                         while ( ( buf = Handler.findUser ( prefix+index ) ) != null ) {
                             index++;
                         }
@@ -736,7 +720,7 @@ public class OperServ extends Service {
                 this.sendServ ( "SGLINE "+ban.getMask().length()+" :"+ban.getMask()+":"+ban.getReason() );
                 for ( HashMap.Entry<BigInteger,User> entry : Handler.getUserList().entrySet() ) {
                     u = entry.getValue();
-                    if ( StringMatch.wild ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
+                    if ( StringMatch.matches ( u.getString ( REALNAME ), ban.getMask().getString() ) ) {
                         this.sendServ ( "KILL "+u.getString(NAME)+" :gcos violation [Ticket: SG"+ban.getID()+"]" );
                     }
                 }                
@@ -846,7 +830,7 @@ public class OperServ extends Service {
                 }   
             }            
         
-        } else if ( command.is(SQLINE) ) {
+        } else if ( command.is(SGLINE) ) {
             for ( ServicesBan ban : sglines ) {
                 if ( StringMatch.wild ( ban.getMask().getString(), pattern) ) {
                     bList.add ( ban );
@@ -862,6 +846,36 @@ public class OperServ extends Service {
      * @param usermask
      * @return
      */
+    /* The ban with exactly this mask (for DEL: "AKILL DEL *" must not
+       remove whatever ban happens to match first) */
+    public static ServicesBan findBanExact ( HashString command, String mask )  {
+        ArrayList<ServicesBan> list = getListByCommand ( command );
+        if ( list == null ) {
+            return null;
+        }
+        HashString hash = new HashString ( mask );
+        for ( ServicesBan ban : list ) {
+            if ( ban.isMask ( hash ) ) {
+                return ban;
+            }
+        }
+        return null;
+    }
+    
+    /* The realname of a user is data, never a pattern: a realname of "*"
+       must not match every SGLINE */
+    private static ServicesBan findSGLine ( String realname ) {
+        if ( realname == null ) {
+            return null;
+        }
+        for ( ServicesBan ban : sglines ) {
+            if ( StringMatch.matches ( realname, ban.getMask().getString ( ) ) ) {
+                return ban;
+            }
+        }
+        return null;
+    }
+    
     public static ServicesBan findBan ( HashString command, String usermask )  {
         if ( command.is(AKILL) ) {
             for ( ServicesBan a : akills )  {
@@ -891,40 +905,11 @@ public class OperServ extends Service {
         return null;
     }
      
-/*    public String output ( int code, String... args )  {
-        switch ( code )  {
-            case AKILL_EXPIRE :
-                return "Akill "+args[0]+" [Ticket:"+args[1]+"] [by:"+args[2]+"] has expired.";
-                
-            case AKILL_FAIL_EXPIRE :
-                return "Akill "+args[0]+" [Ticket:"+args[1]+"] [by:"+args[2]+"] failed to expired.";
-                
-            default:
-                return ""; 
-            
-        }
-    }     
-    private static final int AKILL_EXPIRE           = 1001;
-    private static final int AKILL_FAIL_EXPIRE      = 1002;
-*/
 
     /**
      *
      * @return
      */
-
-    
-    public int getAkillCount() {
-        return akills.size();
-    }
-
-    /**
-     *
-     * @return
-     */
-    public int getIgnoreCount() {
-        return ignores.size();
-    }
 
     /**
      *
@@ -1045,6 +1030,7 @@ public class OperServ extends Service {
             }
         }
         NetServer server = new NetServer ( name.getString(), null, null );
+        servers.add ( server );     /* known at once, not first after a restart */
         addServers.add ( server );
     }
 
@@ -1106,14 +1092,6 @@ public class OperServ extends Service {
             }
         }
         return oList;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public static ArrayList<Oper> getMaster ( ) {
-        return getStaffByAccess ( 5 );
     }
 
     /**
@@ -1209,9 +1187,100 @@ public class OperServ extends Service {
     /**
      *
      */
+    private static HashMap<String,CloneLimit> cloneLimits = new HashMap<>();
+
+    private static void loadCloneLimits ( ) {
+        ArrayList<CloneLimit> list = OSDatabase.getCloneLimits ( );
+        if ( list == null ) {
+            return;
+        }
+        cloneLimits.clear ( );
+        for ( CloneLimit cl : list ) {
+            cloneLimits.put ( cl.getMask().toLowerCase ( ), cl );
+        }
+    }
+
+    /**
+     * @param mask ip, a.b.c.* or IPv6 address
+     * @return the clone limit for it or null
+     */
+    public static CloneLimit findCloneLimit ( String mask ) {
+        return mask == null ? null : cloneLimits.get ( mask.toLowerCase ( ) );
+    }
+
+    /**
+     * @return all clone limits sorted by mask
+     */
+    public static ArrayList<CloneLimit> getCloneLimits ( ) {
+        ArrayList<CloneLimit> list = new ArrayList<> ( cloneLimits.values ( ) );
+        list.sort ( ( a, b ) -> a.getMask().compareToIgnoreCase ( b.getMask() ) );
+        return list;
+    }
+
+    /**
+     * @param cl
+     */
+    public static void addCloneLimit ( CloneLimit cl ) {
+        cloneLimits.put ( cl.getMask().toLowerCase ( ), cl );
+    }
+
+    /**
+     * @param mask
+     */
+    public static void delCloneLimit ( String mask ) {
+        cloneLimits.remove ( mask.toLowerCase ( ) );
+    }
+
+    /* Services join requests on the network (SVSCTRL SJR): 0 = off, 1 = for
+       the channels with the chanflag SJR, 2 = for every channel */
+    private static int joinRequests = 0;
+
+    /**
+     * Read the setting from the database. Off when it can not be read:
+     * then the servers decide the joins themselves.
+     */
+    public static void loadJoinRequests ( ) {
+        String value = OSDatabase.getSetting ( "sjr" );
+        if ( value != null && value.matches ( "[012]" ) ) {
+            joinRequests = Integer.parseInt ( value );
+        }
+    }
+
+    public static int getJoinRequests ( ) {
+        return joinRequests;
+    }
+
+    public static void setJoinRequests ( int mode ) {
+        joinRequests = mode;
+    }
+
+    /**
+     * A server forgets the setting when it restarts and the servers do not
+     * tell each other, so every server gets it when we link and when it links.
+     * @param server the one to tell, null for all of them
+     */
+    public void sendJoinRequests ( Server server ) {
+        if ( server != null ) {
+            this.sendServ ( "SVSCTRL "+server.getName ( )+" SJR "+joinRequests );
+            return;
+        }
+        for ( Server s : Handler.getServerList ( ) ) {
+            this.sendServ ( "SVSCTRL "+s.getName ( )+" SJR "+joinRequests );
+        }
+    }
+
+    /**
+     * The ircd only keeps clone limits in memory, send them when we link
+     */
+    public void sendCloneLimits ( ) {
+        for ( CloneLimit cl : cloneLimits.values ( ) ) {
+            this.sendServ ( "SVSCLONE "+cl.getMask()+" "+cl.getLimit() );
+        }
+    }
+
     public void sendSpamFilter ( ) {
         for ( SpamFilter sf : spamfilters ) {
-            this.sendServ ( "SF "+sf.getPattern()+" "+sf.getBitFlags()+" :"+sf.getReason() );
+            this.sendServ ( sf.toServerLine ( ) );
         }
     }
 
@@ -1238,6 +1307,9 @@ public class OperServ extends Service {
         //:testnet.avade.net OS SFAKILL fredde 1539289892 hello to you too!
         //                 0  1       2      3          4 5+
         String[] buf = data[3].split("@");
+        if ( buf.length < 2 || isWhiteListed ( "*!*@"+buf[1] ) ) {
+            return; /* nothing to ban, or an address that must never be banned */
+        }
         String host = buf[1];
         String reason = Handler.cutArrayIntoString ( data, 5 );
         ServicesBan ban = this.findBan ( AKILL, "*@"+host );
@@ -1284,18 +1356,19 @@ public class OperServ extends Service {
      */
     public static boolean isWhiteListed ( HashString usermask ) {
         for ( Map.Entry<BigInteger,HashString> white : Proc.getConf().getWhiteList().entrySet() ) {
-            if ( StringMatch.maskWild ( usermask.getString(), "*"+white.getValue() ) ) {
+            /* The ban ends with the address, or is a pattern that covers it */
+            if ( StringMatch.matches ( usermask.getString(), "*"+white.getValue() ) ||
+                 StringMatch.matches ( "x!y@"+white.getValue(), usermask.getString() ) ) {
                 return true;
             }
         }
         return false;
     }
     
-    static void addOper ( Oper oper ) {
+    public static void addOper ( Oper oper ) {
         Oper rem = null;
         HashString hash = oper.getName();
         for ( Oper o : staff ) {
-            System.out.println("addOper: "+hash+":"+o.getName().hashCode());
             if ( o.getName().is(hash) ) {
                 rem = o;
             }
@@ -1332,22 +1405,6 @@ public class OperServ extends Service {
         logs.add ( log );
     }
     
-    /**
-     *
-     * @param task
-     */
-    public static void addTimer ( Timer task ) {
-        timerList.add ( task );
-    }
-    
-    /**
-     *
-     * @param task
-     */
-    public static void remTimer ( Timer task ) {
-        timerList.remove ( task );
-    }
-
     /**
      *
      * @param string
