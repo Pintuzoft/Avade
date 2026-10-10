@@ -1474,17 +1474,18 @@ def test_database_down():
         told = ''
         end = time.time() + 40
         while time.time() < end:
-            lines = [l for l in mm.since(mg) if 'Waiting to be written' in l and 'new channel' in l]
+            lines = [l for l in mm.since(mg) if 'Database down, waiting:' in l and 'chans +' in l]
             if lines:
                 told = lines[-1]
                 break
             time.sleep(1)
-        check(all(w in told for w in ('new nick', 'new channel', 'dropped channel', 'access change', 'memo', 'mail', 'oper change')),
-              'the notice to the staff says what waits to be written', told[-220:])
+        check(re.search(r'waiting: nicks \+\d+.* -\d+, chans \+\d+.* -\d+, access \d+, memos \d+, mails \d+, oper \d+, other \d+$', told)
+              and len(told.split('waiting:')[-1]) < 100,
+              'the notice to the staff says what waits to be written, in one short line', told[-160:])
     finally:
         subprocess.run(['docker', 'start', ENV['DB_CONTAINER']], capture_output=True)
     check(wait_db("select 1", 60) == '1', '(the database is back)')
-    check(mm.saw(r'Database connection established', mg, 45), 'and that the database is back')
+    check(mm.saw(r'Database back, writing: ', mg, 45), 'and that the database is back')
 
     check(wait_db("select name from nick where name = 'Dbdownnick'", 60) != '', 'the new nick is written when the database is back')
     check(wait_db("select count(*) from passlog where nick = 'Dbdownnick' having count(*) > 0", 30) != '', 'with its password')

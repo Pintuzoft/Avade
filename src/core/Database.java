@@ -116,7 +116,7 @@ public class Database extends HashNumeric {
                     lastValidated = System.currentTimeMillis();
                     attempts = 0;
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database connection established. To be written: "+getServiceStats ( ) );
+                        Handler.getOperServ().sendGlobOp ( "Database back, writing: "+getServiceStats ( ) );
                     }
                 } 
        
@@ -131,7 +131,7 @@ public class Database extends HashNumeric {
                     }
                 } else {
                     if ( Handler.getOperServ() != null ) {
-                        Handler.getOperServ().sendGlobOp ( "Database is not reachable, services work from memory. Waiting to be written: "+getServiceStats ( ) );
+                        Handler.getOperServ().sendGlobOp ( "Database down, waiting: "+getServiceStats ( ) );
                     }
                 }
                 lastGlobops = System.currentTimeMillis();
@@ -141,40 +141,41 @@ public class Database extends HashNumeric {
     }
 
     /**
-     * @return what waits to be written, in words for the staff:
-     *         "1 new nick, 2 changed channels, 1 memo", or "nothing"
+     * @return what waits to be written, in one short line for the staff (it
+     *         is sent every 30 seconds while the database is away):
+     *         "nicks +1 ~2, chans ~1 -1, access 3, memos 1, other 14".
+     *         + is new, ~ changed, - dropped. What is zero is left out.
+     *         "other" is the small things: mail and password codes,
+     *         sessions and log rows.
      */
     protected static String getServiceStats ( ) {
         StringBuilder text = new StringBuilder ( );
-        count ( text, Handler.getNickServ().getNickRegStats ( ),    "new nick" );
-        count ( text, Handler.getNickServ().getChangesStats ( ),    "changed nick" );
-        count ( text, NickServ.waitingDeletes ( ),                  "dropped nick" );
-        count ( text, NickServ.waitingAuths ( ),                    "mail or password change" );
-        count ( text, Handler.getChanServ().getChanRegStats ( ),    "new channel" );
-        count ( text, Handler.getChanServ().getChangesStats ( ),    "changed channel" );
-        count ( text, ChanServ.waitingDeletes ( ),                  "dropped channel" );
-        count ( text, ChanServ.waitingAccess ( ),                   "access change" );
-        count ( text, MemoServ.waiting ( ),                         "memo" );
-        count ( text, MXDatabase.waiting ( ),                       "mail" );
-        count ( text, OperServ.waiting ( ),                         "oper change" );
-        count ( text, Handler.waitingSIDs ( ),                      "session" );
-        count ( text, NickServ.waitingLogs ( ) + ChanServ.waitingLogs ( ) + OperServ.waitingLogs ( ) + Snoop.waiting ( ), "log row" );
+        group ( text, "nicks", Handler.getNickServ().getNickRegStats ( ), Handler.getNickServ().getChangesStats ( ), NickServ.waitingDeletes ( ) );
+        group ( text, "chans", Handler.getChanServ().getChanRegStats ( ), Handler.getChanServ().getChangesStats ( ), ChanServ.waitingDeletes ( ) );
+        count ( text, "access", ChanServ.waitingAccess ( ) );
+        count ( text, "memos",  MemoServ.waiting ( ) );
+        count ( text, "mails",  MXDatabase.waiting ( ) );
+        count ( text, "oper",   OperServ.waiting ( ) );
+        count ( text, "other",  NickServ.waitingAuths ( ) + Handler.waitingSIDs ( ) + NickServ.waitingLogs ( ) +
+                                ChanServ.waitingLogs ( ) + OperServ.waitingLogs ( ) + Snoop.waiting ( ) );
         return ( text.length ( ) > 0 ? text.toString ( ) : "nothing" );
     }
 
-    private static void count ( StringBuilder text, int count, String what ) {
-        if ( count > 0 ) {
-            text.append ( text.length ( ) > 0 ? ", " : "" ).append ( count ).append ( " " ).append ( what ).append ( count == 1 ? "" : "s" );
+    private static void group ( StringBuilder text, String what, int added, int changed, int dropped ) {
+        if ( added + changed + dropped > 0 ) {
+            text.append ( text.length ( ) > 0 ? ", " : "" ).append ( what )
+                .append ( added   > 0 ? " +"+added   : "" )
+                .append ( changed > 0 ? " ~"+changed : "" )
+                .append ( dropped > 0 ? " -"+dropped : "" );
         }
     }
-    
-    /**
-     *
-     * @param where
-     */
-    /* All or nothing for a register that is several inserts: without it a
-       failure half way leaves a row that makes every retry fail on the
-       primary key, and a nick or channel that cannot be loaded */
+
+    private static void count ( StringBuilder text, String what, int count ) {
+        if ( count > 0 ) {
+            text.append ( text.length ( ) > 0 ? ", " : "" ).append ( what ).append ( " " ).append ( count );
+        }
+    }
+
     /* The last error of the database, for WorkGuard: it tells an item the
        database will never take from a server that can not do it right now */
     private static String lastState = null;
