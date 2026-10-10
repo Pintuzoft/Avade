@@ -38,6 +38,9 @@ public class CSFlag extends HashNumeric {
     private boolean noutf8 = false;
     private boolean userverbose = false;
     private boolean operverbose = false;
+    private boolean sjr = false;        /* the ircd asks services before it lets someone join */
+    private long refusedReport = 0;     /* OPER_VERBOSE: when refused joins were last reported */
+    private int refused = 0;            /* and how many there have been since */
     private String greetmsg = null;
     
     /**
@@ -189,6 +192,10 @@ public class CSFlag extends HashNumeric {
         
         if ( this.operverbose ) {
             values = this.addToValues (values, "OPER_VERBOSE:ON" );
+        }
+        
+        if ( this.sjr ) {
+            values = this.addToValues (values, "SJR:ON" );
         }
         
         /* Start from the defaults so flags that were turned off are reset too */
@@ -378,6 +385,32 @@ public class CSFlag extends HashNumeric {
         this.operverbose = oper;
     }
 
+    public boolean isSjr() {
+        return this.sjr;
+    }
+
+    /**
+     * Count a join that services refused. A join flood must not become a
+     * flood of notices to the opers: one report per ten seconds.
+     * @return how many joins were refused since the last report when it is
+     *         time for a new one, else 0
+     */
+    public int refusedJoin ( ) {
+        long now = System.currentTimeMillis ( );
+        this.refused++;
+        if ( now - this.refusedReport < 10000 ) {
+            return 0;
+        }
+        int count = this.refused;
+        this.refused = 0;
+        this.refusedReport = now;
+        return count;
+    }
+
+    public void setSjr ( boolean sjr ) {
+        this.sjr = sjr;
+    }
+
     public String getGreetmsg() {
         return this.greetmsg;
     }
@@ -426,6 +459,7 @@ public class CSFlag extends HashNumeric {
         else if ( flag.is(NO_UTF8) )                { this.noutf8 = in;     }
         else if ( flag.is(USER_VERBOSE) )           { this.userverbose = in;     }
         else if ( flag.is(OPER_VERBOSE) )           { this.operverbose = in;     }
+        else if ( flag.is(SJR) )                    { this.sjr = in;             }
     }
 
     /**
@@ -481,6 +515,7 @@ public class CSFlag extends HashNumeric {
             flag.is(NO_UTF8) ||
             flag.is(USER_VERBOSE) ||
             flag.is(OPER_VERBOSE) ||
+            flag.is(SJR) ||
             flag.is(GREETMSG) ||
             flag.is(LIST) 
         );
@@ -558,7 +593,8 @@ public class CSFlag extends HashNumeric {
                 flag.is(NO_NICK_CHANGE) ||
                 flag.is(NO_UTF8) ||
                 flag.is(USER_VERBOSE) ||
-                flag.is(OPER_VERBOSE)
+                flag.is(OPER_VERBOSE) ||
+                flag.is(SJR)
                 ) {
             hashVal = new HashString ( value );
             return ( hashVal.is(ON) || hashVal.is(OFF) );

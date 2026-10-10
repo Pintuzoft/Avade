@@ -1048,6 +1048,7 @@ public class CSHelper extends Helper {
         if ( user.isAtleast ( SA ) ) {
             this.service.sendMsg ( user, "     OPER_VERBOSE <ON|OFF>        - Report what the ChanFlags stopped to IRC operators (SA+)" );
         }
+        this.service.sendMsg ( user, "     SJR <ON|OFF>                 - ChanServ decides who may join, see below"                 );
         this.service.sendMsg ( user, "     GREETMSG <greeting>          - Set join greeting message for warning users they might"   );
         this.service.sendMsg ( user, "                                    get match by the ChanFlags."                              );
         this.service.sendMsg ( user, "     LIST                         - Will list current configuration"                          );
@@ -1055,6 +1056,12 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   These channel flags is temporary on the IRCd and will be unset if the channel is recreated");
         this.service.sendMsg ( user, "   but with ChanFlag command these flags get persistent just like keeptopic keeps the topic"  );
         this.service.sendMsg ( user, "   set on the channel even if the channel is recreated"                                       );
+        this.service.sendMsg ( user, "   "                                                                                          );
+        this.service.sendMsg ( user, "   With SJR the server asks ChanServ before it lets someone into the channel. Users who are"  );
+        this.service.sendMsg ( user, "   on the AKICK list, or have no access to a RESTRICT channel, are then stopped before they"  );
+        this.service.sendMsg ( user, "   join and are not kicked afterwards. Bans, the key, the limit and the other modes work as"  );
+        this.service.sendMsg ( user, "   before. It only has effect on a network where the IRC operators have turned join"          );
+        this.service.sendMsg ( user, "   requests on, and from the second user in: the first one creates the channel."              );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                );
         this.service.sendMsg ( user, "   Before setting any flags on your channel please observe and identify the key aspects of"   );

@@ -807,6 +807,17 @@ public abstract class HashNumeric extends TextFormat {
     public static HashString OPER_VERBOSE = new HashString ( "OPER_VERBOSE" );
 
     /**
+     * Services join requests: the command from the ircd, the chanflag and
+     * the OperServ command
+     */
+    public static HashString SJR = new HashString ( "SJR" );
+
+    /**
+     * Usermode +S, the user is connected with SSL
+     */
+    public static HashString SSL = new HashString ( "SSL" );
+
+    /**
      *
      */
     public static HashString ALL = new HashString ( "ALL" );
@@ -2750,6 +2761,11 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public static final int MODE_v                      = 118;
+
+    /**
+     *
+     */
+    public static final int MODE_S                      = 83;
 
         /* CHANNEL */
 

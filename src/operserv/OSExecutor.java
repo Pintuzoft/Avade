@@ -145,6 +145,9 @@ public class OSExecutor extends Executor {
         } else if ( command.is(UHM) ) {
             this.doUhm ( user, cmd );
             
+        } else if ( command.is(SJR) ) {
+            this.doSjr ( user, cmd );
+            
         } else if ( command.is(FORCENICK) ) {
             this.forcenick ( user, cmd );
         
@@ -1063,6 +1066,51 @@ public class OSExecutor extends Executor {
         OSDatabase.logEvent ( log );
     }
     
+    /* SJR [OFF|ON|ALL]
+       Services join requests (SVSCTRL SJR): the servers ask services before
+       they let a user join, and services decide. ON is for the channels
+       with the chanflag SJR, ALL is for every channel on the network. */
+    private void doSjr ( User user, String[] cmd ) {
+        // :Oper PRIVMSG OperServ@stats.avade.net :SJR ON
+        //   0      1        2                      3  4   = 5
+        if ( cmd.length < 5 ) {
+            this.service.sendMsg ( user, "Join requests: "+sjrStr ( OperServ.getJoinRequests ( ) ) );
+            return;
+        }
+        HashString sub = new HashString ( cmd[4] );
+        int mode;
+        if ( sub.is(OFF) ) {
+            mode = 0;
+        } else if ( sub.is(ON) ) {
+            mode = 1;
+        } else if ( sub.is(ALL) ) {
+            mode = 2;
+        } else {
+            this.service.sendMsg ( user, output ( SYNTAX_ERROR, "SJR [OFF|ON|ALL]" ) );
+            return;
+        }
+        if ( ! OSDatabase.saveSetting ( "sjr", ""+mode ) ) {
+            this.service.sendMsg ( user, "Error: Database not available, try again later." );
+            return;
+        }
+        OperServ.setJoinRequests ( mode );
+        Handler.getOperServ().sendJoinRequests ( null );
+        String string = user.getOper().getNameStr()+" set join requests to "+sjrStr ( mode );
+        this.service.sendMsg ( user, string );
+        this.service.sendGlobOp ( string );
+        OSLogEvent log = new OSLogEvent ( user.getName ( ), SJR, user, user.getOper().getNick ( ) );
+        log.setData ( string );
+        OSDatabase.logEvent ( log );
+    }
+    
+    private static String sjrStr ( int mode ) {
+        switch ( mode ) {
+            case 1  : return "ON (the channels with the chanflag SJR)";
+            case 2  : return "ALL (every channel)";
+            default : return "OFF";
+        }
+    }
+
     private static String uhmUmodeHStr ( int umodeH ) {
         switch ( umodeH ) {
             case 1  : return "1 (set for everyone at connect)";

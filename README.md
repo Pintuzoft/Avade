@@ -125,6 +125,15 @@ funcationality in services will automatically do some initial checks and then
 register the relay channel as "#channame-relay" for where chat from regular users 
 (-ov) will end up. The +A channel mode will then be applied to the main channel.
 
+#### Join requests
+
+With services join requests the servers ask Avade before they let a user into a 
+channel. A user on the AKICK list, or without access to a RESTRICT channel, is then 
+stopped before the join and not kicked after it, and the channel never sees the user. 
+The key, the limit, bans, exception and invite lists and the other modes are checked 
+by Avade the way the ircd does. The staff turn it on for the network 
+(/OperServ SJR ON), a founder for a channel (/ChanServ CHANFLAG #channel SJR ON).
+
 #### Audit staff
 
 Ofcourse IRC is a text based power struggle game, and this also applies to your 

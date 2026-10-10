@@ -243,9 +243,47 @@ public class OSDatabase extends Database {
     }
     
     /**
-     *
-     * @return
+     * @param name
+     * @return the value in the settings table, null when there is none or
+     *         it could not be read
      */
+    public static String getSetting ( String name ) {
+        if ( ! activateConnection ( ) )  {
+            return null;
+        }
+        try ( PreparedStatement get = sql.prepareStatement ( "select value from settings where name = ?" ) ) {
+            get.setString ( 1, name );
+            try ( ResultSet row = get.executeQuery ( ) ) {
+                return row.next ( ) ? row.getString ( 1 ) : null;
+            }
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return null;
+        }
+    }
+
+    /**
+     * @param name
+     * @param value
+     * @return false if it could not be written
+     */
+    public static boolean saveSetting ( String name, String value ) {
+        if ( ! activateConnection ( ) )  {
+            return false;
+        }
+        try ( PreparedStatement set = sql.prepareStatement ( "insert into settings ( name, value ) values ( ?, ? ) "
+                                                           + "on duplicate key update value = ?" ) ) {
+            set.setString ( 1, name );
+            set.setString ( 2, value );
+            set.setString ( 3, value );
+            set.execute ( );
+        } catch ( SQLException ex ) {
+            Proc.log ( OSDatabase.class.getName ( ) , ex );
+            return false;
+        }
+        return true;
+    }
+
     /**
      * @return all clone limits, or null if they could not be loaded
      */

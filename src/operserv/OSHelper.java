@@ -102,6 +102,9 @@ class OSHelper extends Helper {
         } else if ( command.is(UHM) ) {
             this.uhm ( user );
         
+        } else if ( command.is(SJR) ) {
+            this.sjr ( user );
+        
         } else if ( command.is(VHOST) ) {
             this.vhost ( user );
         
@@ -321,6 +324,11 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "     SA-         Removed as Services Admin"                                                                   );
         this.service.sendMsg ( user, "     IRCOP+      Added as IRC Operator"                                                                       );
         this.service.sendMsg ( user, "     IRCOP-      Removed as IRC Operator"                                                                     );
+        this.service.sendMsg ( user, "     Global      Sent a global message"                                                                       );
+        this.service.sendMsg ( user, "     FN          Forced a nick change"                                                                        );
+        this.service.sendMsg ( user, "     VHost       Set or removed a vhost"                                                                      );
+        this.service.sendMsg ( user, "     UHM         Changed the host-masking of the network"                                                     );
+        this.service.sendMsg ( user, "     SJR         Changed the join requests of the network"                                                    );
         this.service.sendMsg ( user, "   "                                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
         this.service.sendMsg ( user, "   Never share the information that is delivered by this command as it will show ips"                         );
@@ -526,6 +534,28 @@ class OSHelper extends Helper {
         this.service.sendMsg ( user, "       1 - it is set for everyone when they connect"                                                          );
         this.service.sendMsg ( user, "       2 - users may set it themselves"                                                                       );
         this.service.sendMsg ( user, "   The setting is sent to all servers, and they remember it."                                                 );
+        this.showEnd ( user );
+    }
+    
+    private void sjr ( User user ) {
+        this.showStart ( user, "SJR" );
+        this.service.sendMsg ( user, "   "                                                                                                        );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ SJR"+f.b ( ) +""                                                             );
+        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /OperServ SJR <OFF|ON|ALL>"+f.b ( ) +""                                                );
+        this.service.sendMsg ( user, "   "                                                                                                        );
+        this.service.sendMsg ( user, "   Shows or sets services join requests on the network. With them the servers ask"                          );
+        this.service.sendMsg ( user, "   services before they let a user into a channel, so an AKICK, a RESTRICT and a ban"                       );
+        this.service.sendMsg ( user, "   that follows a person stop the user before the join, not with a kick after it."                          );
+        this.service.sendMsg ( user, "       OFF - the servers decide all joins themselves"                                                       );
+        this.service.sendMsg ( user, "       ON  - services decide for the channels that have the chanflag SJR"                                   );
+        this.service.sendMsg ( user, "       ALL - services decide every join on the network"                                                     );
+        this.service.sendMsg ( user, "   The servers check nothing for these joins: services check the key, the limit, the"                       );
+        this.service.sendMsg ( user, "   bans, the exception and invite lists, +i, +O, +R, +S and the join rate (+j) the way"                     );
+        this.service.sendMsg ( user, "   the ircd does. With services off the network the servers decide again."                                  );
+        this.service.sendMsg ( user, "   "                                                                                                        );
+        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                             );
+        this.service.sendMsg ( user, "   With ALL nobody joins any channel while services are slow to answer. Use ON, and"                        );
+        this.service.sendMsg ( user, "   ALL only on a network that needs it. This command is logged and sent as globops."                        );
         this.showEnd ( user );
     }
     

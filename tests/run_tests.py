@@ -72,6 +72,16 @@ def close(*clients):
     time.sleep(0.5)
 
 
+def link_leaf(oper):
+    """Link the leaf to the hub when it is not: it does not come back by itself after a hub restart."""
+    m = oper.mark()
+    oper.send('LINKS')
+    oper.wait(r' 365 ', 10, m)
+    if not any(' 364 ' in l and ' %s ' % ENV['LEAF_NAME'] in l for l in oper.since(m)):
+        oper.send('CONNECT %s %s' % (ENV['LEAF_NAME'], ENV['LEAF_SERVER_PORT']))
+        time.sleep(8)
+
+
 def register_chan(founder, chan, password='chanpw12'):
     founder.join(chan)
     r = founder.svc('ChanServ', 'REGISTER %s %s test channel' % (chan, password))
@@ -481,6 +491,167 @@ def test_clone_limit():
     close(mm)
 
 
+def test_join_requests():
+    """Services join requests (SJR): the ircd asks, ChanServ decides who gets into the channel."""
+    chan, new = '#t_sjr', '#t_sjr_new'
+    mm, a = master(), login('Alice')
+    register_chan(a, chan)
+
+    def try_join(c, target=chan, key=None):
+        """'joined', the numeric of the refusal, or 'nothing'."""
+        m = c.mark()
+        c.send('JOIN %s%s' % (target, ' ' + key if key else ''))
+        try:
+            line = c.wait(r'( JOIN :?%s\b| 47[1-7] \S+ %s | 488 )' % (re.escape(target), re.escape(target)), 8, m)
+        except TimeoutError:
+            return 'nothing'
+        return 'joined' if ' JOIN ' in line else line.split()[1]
+
+    def leave(*clients):
+        for c in clients:
+            c.send('PART ' + chan)
+        time.sleep(1)
+
+    def mode(change):
+        a.send('MODE %s %s' % (chan, change))
+        time.sleep(1)
+
+    def on_ircd(target=chan):
+        m = mm.mark()
+        mm.send('CHECK CHANNEL ' + target)
+        time.sleep(1.5)
+        return ' | '.join(mm.since(m))
+
+    mm.svc('OperServ', 'SJR OFF')           # whatever a run that was stopped left behind
+    check(has(mm.svc('OperServ', 'SJR'), 'Join requests: OFF'), 'OperServ SJR shows that join requests are off')
+    check(not has(a.svc('OperServ', 'SJR ON'), 'set join requests'), 'a user can not turn them on')
+    check(has(mm.svc('OperServ', 'SJR maybe'), 'Syntax'), 'a value that is not OFF, ON or ALL is refused')
+    r = a.svc('ChanServ', 'CHANFLAG %s SJR ON' % chan)
+    check(has(r, 'has now been set') and has(r, 'turned off on this network'),
+          'CHANFLAG SJR is set, with a note while the network has them off', r)
+    check(has(a.svc('ChanServ', 'CHANFLAG %s LIST' % chan), 'SJR: ON'), 'CHANFLAG LIST shows it')
+    row = wait_db("select sjr from chanflag where name = '%s' and sjr = 1" % chan, 90)
+    check(row == '1', 'and it is stored in the database', row)
+    check('SJR: On' in on_ircd(), 'the ircd has the flag on the channel', on_ircd()[-200:])
+    a.svc('ChanServ', 'AKICK %s ADD Evil*!*@*' % chan)
+    a.svc('ChanServ', 'AOP %s ADD Bob' % chan)
+
+    r = mm.svc('OperServ', 'SJR ON')
+    check(has(r, 'set join requests to ON'), 'an oper turns join requests on', r)
+    check(has(mm.svc('OperServ', 'SJR'), 'Join requests: ON'), 'OperServ SJR shows it')
+    check(db("select value from settings where name = 'sjr'") == '1', 'and it is stored in the database')
+    check(not has(a.svc('ChanServ', 'CHANFLAG %s SJR ON' % chan), 'turned off'), 'no note about the network now')
+
+    c = login('Carol')
+    check(try_join(c) == 'joined', 'a user joins a channel with SJR, through services')
+    check(has(mm.svc('OperServ', 'CINFO ' + chan), 'Carol'), 'services know that the user is in the channel')
+    e = Client('EvilOne')
+    m = a.mark()
+    check(try_join(e) == '474', 'an akicked user is refused (474) instead of kicked')
+    time.sleep(1)
+    check(not any('EvilOne' in l for l in a.since(m)), 'and the channel never sees the user', a.since(m)[-3:])
+    b = login('Bob')
+    m = b.mark()
+    check(try_join(b) == 'joined' and b.saw(r' MODE %s \+o Bob' % chan, m, 5), 'someone on the AOP list joins and gets op')
+
+    mode('+k hemlig')
+    d = login('Dave')
+    check(try_join(d) == '475', 'services check the key: no key is refused (475)')
+    check(try_join(d, key='fel') == '475', 'a wrong key too')
+    check(try_join(d, key='hemlig') == 'joined', 'the right key gets in')
+    mode('-k hemlig')
+    leave(d)
+    mode('+i')
+    check(try_join(d) == '473', 'an invite only channel is refused (473)')
+    a.send('INVITE Dave ' + chan)
+    time.sleep(1)
+    check(try_join(d) == 'joined', 'and an INVITE gets in')
+    leave(d)
+    mode('-i+I Dave!*@*')
+    mode('+i')
+    check(try_join(d) == 'joined', 'the invite list (+I) gets in too')
+    mode('-iI Dave!*@*')
+    leave(d)
+    mode('+l 3')                            # Alice, Carol and Bob are in
+    check(try_join(d) == '471', 'a full channel is refused (471)')
+    mode('-l')
+    mode('+b *!*dave@*')
+    check(try_join(d) == '474', 'a ban is refused (474)')
+    mode('+e Dave!*@*')
+    check(try_join(d) == 'joined', 'and an exception (+e) gets around the ban')
+    mode('-e Dave!*@*')
+    leave(d)
+    r = a.svc('ChanServ', 'UNBAN %s Dave' % chan)
+    check(try_join(d) == 'joined', 'ChanServ UNBAN takes the ban away for services too', r)
+    leave(d)
+    p = Client('Passerby')
+    mode('+R')
+    check(try_join(p) == '477', 'a channel for registered nicks refuses a nick that is not identified (477)')
+    check(try_join(d) == 'joined', 'and lets an identified nick in')
+    mode('-R')
+    leave(d)
+    a.svc('ChanServ', 'CHANFLAG %s JOIN_CONNECT_TIME 3600' % chan)
+    m = p.mark()
+    check(try_join(p) == '473' and p.saw('You must wait', m, 3),
+          'the chanflag JOIN_CONNECT_TIME is checked by services, and they say how long to wait')
+    a.svc('ChanServ', 'CHANFLAG %s JOIN_CONNECT_TIME 0' % chan)
+    mode('+j 2:10')
+    check(try_join(p) == '471', 'the join rate (+j) is kept by services: nobody joins right after it is set')
+    time.sleep(6)
+    check(try_join(p) == 'joined', 'and someone does when the time has passed')
+    mode('-j')
+    close(p)
+
+    a.svc('ChanServ', 'SET %s RESTRICT ON' % chan)
+    m = d.mark()
+    check(try_join(d) == '473' and d.saw('restricted to the users on its access lists', m, 3),
+          'a RESTRICT channel refuses a user without access, and says why')
+    leave(b)
+    check(try_join(b) == 'joined', 'and lets someone on an access list in')
+    a.svc('ChanServ', 'SET %s RESTRICT OFF' % chan)
+
+    link_leaf(mm)                           # a server that links now gets the setting too
+    x = login('Erin', port=LEAF_PORT, host='::1')
+    check(try_join(x) == 'joined', 'a user on another server joins through services')
+    y = Client('EvilTwo', LEAF_PORT, host='::1')
+    check(try_join(y) == '474', 'and an akicked user there is refused')
+    close(c, d, x, y)
+
+    # A services restart: the setting is sent to the servers again
+    close(mm, a, b)
+    avade('restart')
+    mm, a = master(), login('Alice')
+    check(has(mm.svc('OperServ', 'SJR'), 'Join requests: ON'), 'join requests are still on after a restart')
+    check(try_join(a) == 'joined', 'a user joins through the restarted services')
+    time.sleep(1)       # the channel is new, services give it its flags when it is created
+    check('SJR: On' in on_ircd(), 'a channel that is created again gets the flag from services', on_ircd()[-200:])
+    check(try_join(e) == '474', 'and the akicked user is still refused')
+
+    # ALL: also channels without the flag, and channels that do not exist yet
+    check(has(mm.svc('OperServ', 'SJR ALL'), 'set join requests to ALL'), 'join requests for every channel')
+    z = login('Zed')
+    m = z.mark()
+    check(try_join(z, new) == 'joined' and z.saw(r' 353 .* %s :@Zed' % new, m, 5),
+          'a new channel is created through services, with op for the first user')
+    check(has(mm.svc('OperServ', 'CINFO ' + new), 'Zed'), 'services know the new channel')
+    z.send('MODE %s +b *!*carol@*' % new)
+    time.sleep(1)
+    c = login('Carol')
+    check(try_join(c, new) == '474', 'a ban in a channel that is not registered is checked by services')
+    z.send('MODE %s -b *!*carol@*' % new)
+    time.sleep(1)
+    check(try_join(c, new) == 'joined', 'and without the ban the user joins')
+
+    check(has(mm.svc('OperServ', 'SJR OFF'), 'set join requests to OFF'), 'join requests are turned off')
+    m = e.mark()
+    e.send('JOIN ' + chan)
+    check(e.saw(r' KICK %s EvilOne ' % chan, m, 8), 'the akicked user is let in by the ircd and kicked, like before')
+    a.svc('ChanServ', 'CHANFLAG %s SJR OFF' % chan)
+    a.svc('ChanServ', 'AKICK %s DEL Evil*!*@*' % chan)
+    a.svc('ChanServ', 'AOP %s DEL Bob' % chan)
+    close(mm, a, c, e, z)
+
+
 def test_spamfilter_target():
     chan, other = '#t_sf', '#t_sf2'
     mm, b = master(), login('Bob')
@@ -752,6 +923,7 @@ def test_host_masking():
     check(not diff, 'Avade and the ircd get the same mask for %d hosts and addresses' % len(cases), diff)
 
     # The same on the leaf: services sent the salt to every server
+    link_leaf(mm)
     close(mm)
     # (over ::1: bahamut throttles an address network wide, also when the allow block
     #  says no throttling, and too many test clients from 127.0.0.1 would get refused)
@@ -1044,11 +1216,7 @@ def test_drop_and_hold():
 def test_leaf_split():
     chan = '#t_split'
     mm = master()
-    mm.send('LINKS')
-    time.sleep(1)
-    if not any(' 364 ' in l and ' leaf.test.net ' in l for l in mm.since(0)):
-        mm.send('CONNECT leaf.test.net 7016')
-        time.sleep(8)
+    link_leaf(mm)
     d = login('Dave', port=LEAF_PORT, host='::1')    # see test_host_masking about the throttle
     mm.join(chan)
     d.join(chan)
@@ -1089,7 +1257,7 @@ def test_hub_restart():
 
 TESTS = [test_config_files, test_setup, test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
-         test_clone_limit, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
+         test_clone_limit, test_join_requests, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
          test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
          test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]

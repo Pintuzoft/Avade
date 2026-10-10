@@ -143,6 +143,9 @@ public class Handler extends HashNumeric {
             sList.add ( server );
             if ( syncFinished ) {
                 sendUhmSalt ( );    /* a server that linked later needs the salt too */
+                if ( oper != null ) {
+                    oper.sendJoinRequests ( server );
+                }
             }
         }
     }
@@ -247,6 +250,12 @@ public class Handler extends HashNumeric {
         Proc.log ( "Nicks and channels loaded, checking all users" );
         oper.sendGlobOp ( "Nicks and channels loaded from the database, checking all users" );
         Database.loadSIDs ( );
+        /* The setting could not be read either, and the servers may still
+           send join requests from before */
+        OperServ.loadJoinRequests ( );
+        if ( isSynced ( ) ) {
+            oper.sendJoinRequests ( null );
+        }
         for ( User u : new ArrayList<> ( uList.values ( ) ) ) {
             ServicesID sid;
             if ( u.getServiceStamp ( ) > 999 && ( sid = findSid ( u.getServiceStamp ( ) ) ) != null ) {
@@ -458,6 +467,10 @@ public class Handler extends HashNumeric {
                     } else if ( this.command.is(SJOIN) ) {
                         doSJoin ( user );
                     
+                    } else if ( this.command.is(SJR) ) {
+                        /* :nick SJR <invited> #chan [:key], the user waits for our answer */
+                        chan.joinRequest ( user, this.data );
+                    
                     } else if ( this.command.is(TOPIC) ) {
                         doTopic ( user, this.data );
                     
@@ -548,6 +561,11 @@ public class Handler extends HashNumeric {
         Chan c;
         ChanInfo ci;
         if ( ( c = Handler.findChan ( this.data[3] ) ) != null ) {
+            try {
+                c.sawStamp ( Long.parseLong ( this.data[2] ) );
+            } catch ( NumberFormatException ex ) {
+                /* keep the one we have */
+            }
             c.addUserList(data, 5);
         } else {
             c = new Chan ( this.data );
@@ -559,6 +577,21 @@ public class Handler extends HashNumeric {
             
         }
         
+    }
+
+    /**
+     * A channel that someone created through a join request (AJ). The ircd
+     * tells services nothing about it, so add it the way its SJOIN would.
+     * @param name
+     * @param stamp the TS we gave the channel
+     * @param user the one who joined, and got op
+     */
+    public static void newChan ( String name, long stamp, User user ) {
+        String[] sjoin = { ":"+Proc.getConf().get ( NAME ), "SJOIN", ""+stamp, name, "+", ":@"+user.getNameStr ( ) };
+        Chan c = new Chan ( sjoin );
+        c.addUserList ( sjoin, 5 );
+        cList.put ( c.getName().getCode(), c );
+        chan.checkSettings ( c );
     }
     
     //     :Guest12203 PRIVMSG NickServ@services.sshd.biz :identify asd.
@@ -836,6 +869,14 @@ public class Handler extends HashNumeric {
             user.setName ( this.data[2] );
             uList.put ( user.getName().getCode(), user );
         }
+        if ( this.data.length >= 4 ) {
+            /* :old NICK new :<ts> */
+            try {
+                user.setNickStamp ( Long.parseLong ( this.data[3].startsWith ( ":" ) ? this.data[3].substring ( 1 ) : this.data[3] ) );
+            } catch ( NumberFormatException ex ) {
+                /* keep the one we have */
+            }
+        }
         ni = NickServ.findNick ( user.getName ( )  );
         user.getModes().set ( IDENT, user.isIdented ( ni ) );
         nick.fixIdentState ( user );
@@ -856,6 +897,9 @@ public class Handler extends HashNumeric {
         
         if ( user == null || (c = findChan( this.data[3] )) == null ) {
             return;
+        }
+        if ( ! c.nickIsPresent ( user.getName ( ) ) ) {
+            c.countJoin ( );
         }
         c.addUser ( USER, user );
         user.addChan ( c );
@@ -1681,6 +1725,7 @@ public class Handler extends HashNumeric {
         root.fixMaster ( );
         oper.sendSpamFilter ( );
         oper.sendCloneLimits ( );
+        oper.sendJoinRequests ( null );
         sendUhmSalt ( );
     }
 

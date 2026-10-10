@@ -486,6 +486,37 @@ Mails stay at status 1
     The mailer is not running: ./avade.sh mailer status
 
 
+12. Join requests (optional)
+
+Normally a server lets a user into a channel and services react afterwards: a
+user on the AKICK list of a channel joins, and is banned and kicked. With
+services join requests the server asks services first, and the user is let in
+only when services say so.
+
+/OperServ SJR ON                        for the network, by the staff
+/ChanServ CHANFLAG #channel SJR ON      for a channel, by its founder
+
+Both are needed. Who may use the OperServ command is set in services.conf
+(sjr, in the sra list of template.conf). "/OperServ SJR" shows the setting and "/OperServ SJR OFF"
+turns it off. Services remember it and tell every server when they link, a
+server does not keep it over a restart.
+
+- A user on the AKICK list, or without access to a channel with RESTRICT, is
+  refused before the join. The channel never sees the user.
+- The server checks nothing for these joins. Services check the key, the
+  limit, the bans, the exception and invite lists, +i, +O, +R, +S, the join
+  rate (+j) and the chanflag JOIN_CONNECT_TIME the way the ircd does.
+- A channel that is empty does not exist for the ircd, so the first user in
+  is not asked about. Services set the flag when the channel is created.
+- While services are not on the network the servers decide all joins.
+
+"/OperServ SJR ALL" sends every join on the network to services, also for
+channels without the flag and channels that do not exist yet. Then nobody
+joins any channel while services are slow to answer, so use it only when the
+network needs it.
+
+
+
 ############
 ### HELP ###
 ############

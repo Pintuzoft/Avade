@@ -380,6 +380,129 @@ public class ChanServ extends Service {
     }
      
     /**
+     * A join request (SJR): the ircd checked nothing and lets the user in
+     * only when we answer with AJ. So the checks of the ircd are done here
+     * (modes, key, limit, bans, see Chan.joinRefusal), and those ChanServ
+     * otherwise does with a ban and a kick after the join.
+     * @param user
+     * @param data :nick SJR <invited 0|1> <#chan> [:key]
+     */
+    public void joinRequest ( User user, String[] data ) {
+        if ( data.length < 4 || ! Handler.isChanName ( data[3] ) ) {
+            return;
+        }
+        HashString name = new HashString ( data[3] );
+        boolean invited = data[2].equals ( "1" );
+        String key      = ( data.length > 4 ? data[4] : null );
+        if ( key != null && key.startsWith ( ":" ) ) {
+            key = key.substring ( 1 );
+        }
+        Chan c          = Handler.findChan ( name );
+        /* Without the registered channels only the checks of the ircd are left */
+        ChanInfo ci     = ( Handler.isDataLoaded ( ) ? findChan ( name ) : null );
+        ChanInfo relay  = ( Handler.isDataLoaded ( ) && c != null && c.isRelay ( ) ? findChan ( c.getRelay ( ) ) : null );
+        String stop     = null;
+        String why      = null;
+        
+        if ( relay != null && relay.isRelayed ( ) ) {
+            if ( ! relay.isAtleastAop ( user ) ) {
+                stop = "+i";
+                why  = data[3]+" is only for the staff of "+c.getRelay ( )+".";
+            }
+        } else if ( ci != null && ci.isSet ( CLOSED ) ) {
+            stop = "+b";
+            why  = data[3]+" is closed.";
+        } else if ( ci != null && ! ci.isSet ( FROZEN ) ) {
+            if ( c != null && c.evadedBan ( user ) != null && ! user.isOper ( ) ) {
+                stop = "+b";
+            } else if ( ci.isAtleastVop ( user ) ) {
+                /* on an access list: gets its status after the join */
+            } else if ( ci.isSet ( RESTRICT ) ) {
+                stop = "+i";
+                why  = data[3]+" is restricted to the users on its access lists.";
+            } else if ( ci.isAkick ( user ) ) {
+                stop = "+b";
+            }
+        }
+        /* An INVITE gets around the modes and the bans, like in the ircd */
+        if ( stop == null && ! invited && c != null ) {
+            stop = c.joinRefusal ( user, key, ( ci != null ? ci.getChanFlag ( ) : null ) );
+        }
+        
+        if ( stop != null ) {
+            this.refuseJoin ( user, data[3], stop, ci );
+            if ( why != null ) {
+                this.sendMsg ( user, why );
+            }
+            return;
+        }
+        
+        if ( c == null ) {
+            /* A new channel (join requests for all channels): the first one
+               in gets op like always, and the usual checks follow */
+            long stamp = System.currentTimeMillis ( ) / 1000;
+            this.sendServ ( "AJ @"+user.getNameStr ( )+" "+user.getNickStamp ( )+" "+data[3]+" "+stamp );
+            Handler.newChan ( data[3], stamp, user );
+            return;
+        }
+        this.sendServ ( "AJ "+user.getNameStr ( )+" "+user.getNickStamp ( )+" "+c.getNameStr ( )+" "+c.getCreatedOn ( ) );
+        /* The ircd tells services nothing more about this join */
+        if ( ! c.nickIsPresent ( user.getName ( ) ) ) {
+            c.countJoin ( );
+        }
+        c.addUser ( USER, user );
+        user.addChan ( c );
+        addCheckUser ( c, user );
+    }
+
+    /* The reply the ircd gives when a join is refused, and what it reports
+       for the chanflags USER_VERBOSE and OPER_VERBOSE */
+    private void refuseJoin ( User user, String chan, String stop, ChanInfo ci ) {
+        String nick = user.getNameStr ( );
+        CSFlag flags = ( ci != null ? ci.getChanFlag ( ) : null );
+        switch ( stop.charAt ( 1 ) ) {
+            case 'b' :
+                this.sendServ ( "474 "+nick+" "+chan+" :Cannot join channel (+b)" );
+                break;
+            case 'k' :
+                this.sendServ ( "475 "+nick+" "+chan+" :Cannot join channel (+k)" );
+                break;
+            case 'l' :
+            case 'j' :
+                this.sendServ ( "471 "+nick+" "+chan+" :Cannot join channel ("+stop+")" );
+                break;
+            case 'S' :
+                this.sendServ ( "488 "+nick+" :SSL Only channel (+S), You must connect using SSL to join this channel." );
+                break;
+            case 'R' :
+                this.sendServ ( "477 "+nick+" "+chan+" :You need to identify to a registered nick to join "+chan+
+                                ". For help with registering your nickname, type \"/msg "+Handler.getNickServ().getNameStr ( )+"@"+Proc.getConf().get ( NAME )+" help register\"" );
+                break;
+            case 'X' :
+                long left = user.getSignOn ( ) + ( flags != null ? flags.getJoinconnecttime ( ) : 0 ) - System.currentTimeMillis ( ) / 1000;
+                this.sendServ ( "473 "+nick+" "+chan+" :Cannot join channel (+X)" );
+                this.sendMsg ( user, "You must wait "+Math.max ( left, 1 )+" seconds before you will be able to join "+chan+"." );
+                break;
+            default :
+                this.sendServ ( "473 "+nick+" "+chan+" :Cannot join channel ("+stop+")" );
+        }
+        if ( flags == null ) {
+            return;
+        }
+        String failed = "Failed join by "+nick+"!"+user.getString ( USER )+"@";
+        Chan relay;
+        if ( flags.isUserverbose ( ) && ( relay = Handler.findChan ( chan+"-relay" ) ) != null && ! relay.getModes().is ( MODE_m ) ) {
+            String shown = user.getShownHost ( );
+            this.sendCmd ( "PRIVMSG "+relay.getNameStr ( )+" :"+failed+( shown != null ? shown : user.getHost ( ) )+" - "+stop );
+        }
+        int refused;
+        if ( flags.isOperverbose ( ) && stop.charAt ( 1 ) != 'j' && ( refused = flags.refusedJoin ( ) ) > 0 ) {
+            Handler.getOperServ().sendGlobOp ( "Flood -- "+failed+user.getHost ( )+" in "+chan+" - "+stop+
+                                               ( refused > 1 ? " ("+refused+" refused joins since the last report)" : "" ) );
+        }
+    }
+
+    /**
      *
      * @param c
      */
@@ -636,6 +759,7 @@ public class ChanServ extends Service {
      */
     public void unBanUser ( Chan c, User user )  {
         this.sendCmd ( "SVSMODE "+c.getString ( NAME ) +" -b "+user.getString ( NAME )  );
+        c.removeBansOn ( user );
     }
     
     /**

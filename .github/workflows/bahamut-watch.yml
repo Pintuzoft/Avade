@@ -142,7 +142,9 @@ jobs:
                /tmp/bahamut, read CHANGES and `git diff`. Look for what touches services: the
                server protocol (NICK, SJOIN, MODE, TOPIC, CAPAB, numerics), SVS* commands,
                user and channel modes, chanflags (SVSXCF), anything services can or must
-               control, and changes that explain failing tests.
+               control, and changes that explain failing tests. Also what decides a join
+               (can_join and m_join in src/channel.c): for join requests Avade does those
+               checks itself, in Chan.joinRefusal, and must follow every change there.
             2. Decide if Avade needs changes: protocol changes it must follow, or new things
                the network wants to control through services.
             3. If no change is needed and the tests passed, change nothing.

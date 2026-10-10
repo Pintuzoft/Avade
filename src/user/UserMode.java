@@ -29,6 +29,7 @@ public class UserMode extends HashNumeric {
     private boolean sadmin;
     private boolean admin;
     private boolean ident;
+    private boolean ssl;        /* +S, set by the server the user is on */
     
     /**
      *
@@ -38,6 +39,7 @@ public class UserMode extends HashNumeric {
         this.sadmin = false;
         this.admin  = false;
         this.ident  = false;
+        this.ssl    = false;
     }
 
     /**
@@ -87,6 +89,10 @@ public class UserMode extends HashNumeric {
                     this.set ( IDENT, state );
                     break;
                     
+                case MODE_S :
+                    this.set ( SSL, state );
+                    break;
+                    
                 default : 
             } 
         }
@@ -110,6 +116,9 @@ public class UserMode extends HashNumeric {
 
         } else if ( mode.is(IDENT) ) {
             this.ident = state;
+
+        } else if ( mode.is(SSL) ) {
+            this.ssl = state;
         }
     }
       
@@ -130,6 +139,9 @@ public class UserMode extends HashNumeric {
         
         } else if ( mode.is(IDENT) ) {
             return this.ident;
+        
+        } else if ( mode.is(SSL) ) {
+            return this.ssl;
         }
         return false;
     } 

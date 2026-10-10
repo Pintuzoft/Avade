@@ -30,6 +30,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import nickserv.NickInfo;
 import nickserv.NickServ;
+import operserv.OperServ;
 import user.User;
 import java.util.ArrayList;
 import java.util.Date;
@@ -1873,7 +1874,8 @@ public class CSExecutor extends Executor {
                 command.is(NO_UTF8) ||
                 command.is(HIDE_MODE_LISTS) ||
                 command.is(USER_VERBOSE) ||
-                command.is(OPER_VERBOSE)
+                command.is(OPER_VERBOSE) ||
+                command.is(SJR)
                 ) {
             boolean boo = ( commandVal.equalsIgnoreCase ( "ON" ) );
             ci.getChanFlag().setBooleanFlag ( command, boo );
@@ -1881,6 +1883,9 @@ public class CSExecutor extends Executor {
             ci.changed(command);
             this.service.sendServ ( "SVSXCF "+ci.getName()+" "+commandStr+":"+commandVal );
             this.service.sendMsg ( user, "ChanFlag "+commandStr+" has now been set to: "+commandVal );
+            if ( command.is(SJR) && boo && OperServ.getJoinRequests ( ) == 0 ) {
+                this.service.sendMsg ( user, "Note: join requests are turned off on this network, the flag does nothing until an IRC operator turns them on." );
+            }
             this.snoop.msg ( true, CHAN_SET_FLAG, ci.getName(), user, cmd );
         
         } else if ( command.is(GREETMSG) ) {
@@ -1919,6 +1924,7 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, "  - NO_UTF8: "+( cf.isNoutf8()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - USER_VERBOSE: "+( cf.isUserverbose()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - OPER_VERBOSE: "+( cf.isOperverbose()? "ON" : "OFF" ) );
+            this.service.sendMsg ( user, "  - SJR: "+( cf.isSjr()? "ON" : "OFF" ) );
             this.service.sendMsg ( user, "  - GREETMSG: "+( cf.isGreetmsg() ? cf.getGreetmsg() : "NONE" ) );
             this.service.sendMsg ( user, "*** End of List ***" );
             this.snoop.msg ( true, SHOW_LIST, ci.getName(), user, cmd );

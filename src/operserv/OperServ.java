@@ -96,6 +96,7 @@ public class OperServ extends Service {
         sglines         = OSDatabase.getServicesBans ( SGLINE );
         spamfilters     = OSDatabase.getSpamFilters ( );
         loadCloneLimits ( );
+        loadJoinRequests ( );
         staff           = OSDatabase.getAllStaff ( );
         servers         = OSDatabase.getServerList ( );
         setCommands ( );
@@ -133,6 +134,7 @@ public class OperServ extends Service {
         cmdList.add ( new CommandInfo ( "VHOST",     CMDAccess ( VHOST ),       "Set or remove the vhost of a nick" )           );
         cmdList.add ( new CommandInfo ( "CLONE",     CMDAccess ( CLONE ),       "Manage clone limits for ips and ranges" )      );
         cmdList.add ( new CommandInfo ( "UHM",       CMDAccess ( UHM ),         "Control user host-masking on the network" )    );
+        cmdList.add ( new CommandInfo ( "SJR",       CMDAccess ( SJR ),         "Control services join requests on the network" ) );
         cmdList.add ( new CommandInfo ( "BAHAMUT",   CMDAccess ( BAHAMUT ),     "Print bahamut compatibility version" )         );
         cmdList.add ( new CommandInfo ( "MAKILL",    CMDAccess ( MAKILL ),      "Mass Akill command" )                          );
     }
@@ -1253,6 +1255,44 @@ public class OperServ extends Service {
      */
     public static void delCloneLimit ( String mask ) {
         cloneLimits.remove ( mask.toLowerCase ( ) );
+    }
+
+    /* Services join requests on the network (SVSCTRL SJR): 0 = off, 1 = for
+       the channels with the chanflag SJR, 2 = for every channel */
+    private static int joinRequests = 0;
+
+    /**
+     * Read the setting from the database. Off when it can not be read:
+     * then the servers decide the joins themselves.
+     */
+    public static void loadJoinRequests ( ) {
+        String value = OSDatabase.getSetting ( "sjr" );
+        if ( value != null && value.matches ( "[012]" ) ) {
+            joinRequests = Integer.parseInt ( value );
+        }
+    }
+
+    public static int getJoinRequests ( ) {
+        return joinRequests;
+    }
+
+    public static void setJoinRequests ( int mode ) {
+        joinRequests = mode;
+    }
+
+    /**
+     * A server forgets the setting when it restarts and the servers do not
+     * tell each other, so every server gets it when we link and when it links.
+     * @param server the one to tell, null for all of them
+     */
+    public void sendJoinRequests ( Server server ) {
+        if ( server != null ) {
+            this.sendServ ( "SVSCTRL "+server.getName ( )+" SJR "+joinRequests );
+            return;
+        }
+        for ( Server s : Handler.getServerList ( ) ) {
+            this.sendServ ( "SVSCTRL "+s.getName ( )+" SJR "+joinRequests );
+        }
     }
 
     /**

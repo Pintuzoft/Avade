@@ -188,6 +188,7 @@ public abstract class LogEvent extends HashNumeric {
         else if ( hash.is(FORCENICK) )      { return "FN";          }
         else if ( hash.is(VHOST) )          { return "VHost";       }
         else if ( hash.is(UHM) )            { return "UHM";         }
+        else if ( hash.is(SJR) )            { return "SJR";         }
         else {
             return null;
         }

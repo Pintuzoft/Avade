@@ -110,16 +110,16 @@ every setting.
     ./avade.sh log        # follow the output, ctrl-c only stops the viewing
 
 The first start upgrades the database from the version production runs to
-1.2609-8, one step at a time. The step that changes the character set to
+1.2610-1, one step at a time. The step that changes the character set to
 utf8mb4 goes through every table and can take a while on a big database.
 
 Check afterwards:
 
     mysql -u avade -p avadetest -e "select * from settings"
 
-The version must be `1.2609-8`.
+The version must be `1.2610-1`.
 
-The last step turns every password into a one way hash. It takes about 70 ms
+The step to 1.2609-8 turns every password into a one way hash. It takes about 70 ms
 per password and core, so a few thousand nicks take a few minutes. Old
 passwords (the history) are removed. Afterwards this must give 0:
 

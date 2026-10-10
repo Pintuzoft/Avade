@@ -85,6 +85,12 @@ Look at a similar existing command and touch the same places:
 Messages to the ircd go through `Service.sendServ`/`sendRaw`; what the ircd
 sends is parsed in `core/Handler.java`. Chanflags are bahamut's XFLAGS (SVSXCF).
 
+With join requests (`/OperServ SJR`, chanflag `SJR`) the ircd checks nothing
+before a join and services decide: `ChanServ.joinRequest`. `Chan.joinRefusal`
+is bahamut's `can_join` (`src/channel.c`), so a new channel mode or a changed
+check there has to be followed here. The ircd does not send services' own
+changes back (modes, bans, an `AJ` join): update `Chan` where they are sent.
+
 ## Database
 
 - Every schema or data change is a new step in `src/core/DBChanges.java`: a new

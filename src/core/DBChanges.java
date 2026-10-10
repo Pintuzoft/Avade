@@ -226,6 +226,11 @@ public class DBChanges extends HashNumeric {
                 qList.addAll ( this.db126098 ( ) );
                 qList.add ( "update settings set value = '1.2609-8' where name = 'version'" );
 
+            case 126101 :
+                qList.add ( "to: v1.2610-1");
+                qList.addAll ( this.db126101 ( ) );
+                qList.add ( "update settings set value = '1.2610-1' where name = 'version'" );
+
                 break;
                 
             default :
@@ -713,6 +718,13 @@ public class DBChanges extends HashNumeric {
         /* Only hashes left, they are plain text */
         qList.add("alter table passlog modify pass varchar(128)");
         qList.add("alter table chan modify pass varchar(128) default null");
+        return qList;
+    }
+
+    private ArrayList<String> db126101 ( ) {
+        ArrayList<String> qList = new ArrayList<>();
+        /* Chanflag SJR: the ircd asks services before it lets someone join */
+        qList.add("alter table chanflag add sjr tinyint(1) default 0 after oper_verbose");
         return qList;
     }
 

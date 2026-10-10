@@ -42,7 +42,8 @@ public class User extends HashNumeric {
     private HashString                  user;
     private HashString                  gcos;
     private Server                      server;
-    private long                        signOn;
+    private long                        signOn;         /* when the user connected */
+    private long                        nickStamp;      /* TS of the nick, new at every nick change */
     private Date                        date;
     private int                         state; 
     private UserMode                    modes; 
@@ -73,6 +74,7 @@ public class User extends HashNumeric {
         sidBuf          = Long.parseLong ( data[8] ); /* buffer */ 
         this.serviceStamp = sidBuf;
         this.signOn     = Long.parseLong ( data[3] ); 
+        this.nickStamp  = this.signOn;
         this.modes      = new UserMode ( );
         this.modes.set ( SERVER, data );
         this.cList      = new ArrayList<> ( );
@@ -269,6 +271,28 @@ public class User extends HashNumeric {
         }
         this.name = nameHash;
     } /* /nick */
+
+    /**
+     * @return when the user connected, in seconds
+     */
+    public long getSignOn ( ) {
+        return this.signOn;
+    }
+
+    /**
+     * @return the TS of the nick the user has now, the ircd checks it when
+     *         we name a user (AJ)
+     */
+    public long getNickStamp ( ) {
+        return this.nickStamp;
+    }
+
+    /**
+     * @param stamp the TS the ircd sent with a nick change
+     */
+    public void setNickStamp ( long stamp ) {
+        this.nickStamp = stamp;
+    }
      
     /**
      *

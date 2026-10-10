@@ -17,13 +17,17 @@
  */
 package channel;
 
+import chanserv.CSAcc;
+import chanserv.CSFlag;
 import chanserv.ChanServ;
+import core.CIDRUtils;
 import core.Handler;
 import core.Proc;
 import core.HashNumeric;
 import core.HashString;
 import core.StringMatch;
 import user.User;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,6 +62,13 @@ public class Chan extends HashNumeric {
        case. A shown host can change, the ban should follow the person.
        Never shown to anyone. */
     private HashMap<String,HashSet<String>> followBans = new HashMap<>( );
+    /* Join throttling like in the ircd (+j joins:seconds, 8:6 when not set):
+       a bucket that gets <joins> a second up to joins*seconds, and every
+       join takes <seconds> out of it */
+    private int                 jrNum       = 8;
+    private int                 jrTime      = 6;
+    private int                 jrBucket;
+    private long                jrLast;                             /* in seconds, 0 = full */
     
     private boolean             isRelay;
     private HashString          relay;
@@ -213,6 +224,8 @@ public class Chan extends HashNumeric {
             if ( ! takesParam ( ch, state ) ) {
                 if ( ch == 'l' ) {
                     this.limit = 0;     /* -l has no argument */
+                } else if ( ch == 'j' ) {
+                    this.setJoinRate ( null );
                 }
                 continue;
             }
@@ -265,6 +278,9 @@ public class Chan extends HashNumeric {
                 } catch ( NumberFormatException ex ) {
                     this.limit = 0;
                 }
+                return;
+            case 'j' :
+                this.setJoinRate ( adding ? arg : null );
                 return;
             case 'b' : list = this.bans;    break;
             case 'e' : list = this.excepts; break;
@@ -343,13 +359,177 @@ public class Chan extends HashNumeric {
         }
     }
     
-    /* The arguments of the modes in a SJOIN: "+kl key 10 :nicks" */
+    /* The arguments of the modes in a SJOIN: "+ljk 10 8:6 key :nicks" */
     private void setSjoinModeArgs ( String[] data ) {
         int param = 5;
         for ( char ch : data[4].toCharArray ( ) ) {
-            if ( ( ch == 'k' || ch == 'l' ) && param < data.length && ! data[param].startsWith ( ":" ) ) {
+            if ( ( ch == 'k' || ch == 'l' || ch == 'j' ) && param < data.length && ! data[param].startsWith ( ":" ) ) {
                 this.setModeArg ( ch, true, data[param++] );
             }
+        }
+    }
+
+    /* +j <joins>:<seconds>, +j 0 turns the throttling off and -j (null)
+       gives the default back. The ircd starts with an empty bucket then */
+    private void setJoinRate ( String arg ) {
+        int num  = 8;
+        int time = 6;
+        if ( arg != null ) {
+            try {
+                String[] parts = arg.split ( ":" );
+                num  = Integer.parseInt ( parts[0] );
+                time = ( parts.length > 1 ? Integer.parseInt ( parts[1] ) : 0 );
+            } catch ( NumberFormatException ex ) {
+                num = 0;
+            }
+            if ( num < 1 || time < 1 ) {
+                num  = 0;
+                time = 0;
+            }
+        }
+        this.jrNum      = num;
+        this.jrTime     = time;
+        this.jrBucket   = 0;
+        this.jrLast     = System.currentTimeMillis ( ) / 1000;
+    }
+
+    private boolean joinRateOk ( ) {
+        int size = this.jrNum * this.jrTime;
+        if ( size == 0 ) {
+            return true;
+        }
+        long now = System.currentTimeMillis ( ) / 1000;
+        if ( this.jrBucket < size && now > this.jrLast ) {
+            long fill = now - this.jrLast;
+            int room  = size - this.jrBucket;
+            if ( fill < room ) {
+                fill *= this.jrNum;
+            }
+            this.jrBucket  += (int) Math.min ( fill, room );
+            this.jrLast     = now;
+        }
+        return this.jrBucket >= this.jrTime;
+    }
+
+    /**
+     * Someone joined: count it for the join throttling
+     */
+    public void countJoin ( ) {
+        int size = this.jrNum * this.jrTime;
+        if ( size == 0 ) {
+            return;
+        }
+        this.joinRateOk ( );    /* fills the bucket for the time that has passed */
+        if ( this.jrBucket >= -( size - this.jrTime ) ) {
+            this.jrBucket  -= this.jrTime;
+            this.jrLast     = System.currentTimeMillis ( ) / 1000;
+        }
+    }
+
+    /**
+     * Decide a join the way the ircd does (can_join), for a join request:
+     * with those the ircd checks nothing itself.
+     * @param user
+     * @param key the key the user gave, or null
+     * @param flags the chanflags of the channel, null when it is not registered
+     * @return what stops the user ("+b", "+i", "+k", "+l", "+j", "+O", "+S",
+     *         "+R", or "+X" for JOIN_CONNECT_TIME), null when the user may join
+     */
+    public String joinRefusal ( User user, String key, CSFlag flags ) {
+        String stop = null;
+        boolean wait = false;
+        boolean oper = user.getModes().is ( OPER );
+        long now = System.currentTimeMillis ( ) / 1000;
+        
+        if ( flags != null && flags.getJoinconnecttime ( ) > 0 &&
+             user.getSignOn ( ) + flags.getJoinconnecttime ( ) > now &&
+             ! oper &&
+             ! ( flags.isExemptregistered ( ) && user.getModes().is ( IDENT ) ) &&
+             ! ( flags.isExemptidentd ( ) && ! user.getString ( USER ).startsWith ( "~" ) ) ) {
+            stop = "+X";
+            wait = true;
+        } else if ( this.modes.is ( MODE_i ) ) {
+            stop = "+i";
+        } else if ( this.modes.is ( MODE_O ) && ! oper ) {
+            stop = "+O";
+        } else if ( this.limit > 0 && this.size ( ) >= this.limit ) {
+            stop = "+l";
+        } else if ( this.modes.is ( MODE_S ) && ! user.getModes().is ( SSL ) ) {
+            stop = "+S";
+        } else if ( this.modes.is ( MODE_R ) && ! user.getModes().is ( IDENT ) ) {
+            stop = "+R";
+        } else if ( this.key != null && ( key == null || ! this.key.equalsIgnoreCase ( key ) ) ) {
+            stop = "+k";
+        } else if ( ! this.joinRateOk ( ) ) {
+            return "+j";    /* the invite list does not get around the throttling */
+        }
+        
+        /* The invite list (+I) gets around all of the above, the wait only
+           with the chanflag EXEMPT_INVITES */
+        if ( stop != null && ( ! wait || flags.isExemptinvites ( ) ) && hits ( this.invites, user ) ) {
+            stop = null;
+        }
+        if ( stop == null && hits ( this.bans, user ) && ! hits ( this.excepts, user ) ) {
+            stop = "+b";
+        }
+        return stop;
+    }
+
+    /* Is the user in a +b, +e or +I list? */
+    private static boolean hits ( ArrayList<String> masks, User user ) {
+        return ! masks.isEmpty ( ) && ! matching ( masks, user, false ).isEmpty ( );
+    }
+
+    /* The masks of a list that the user is in (the first one, or all). Like
+       the ircd: the real host, the ip and the host that is shown are all
+       tried, and ip/bits is a range */
+    private static ArrayList<String> matching ( ArrayList<String> masks, User user, boolean all ) {
+        ArrayList<String> found = new ArrayList<>( );
+        String who   = user.getString ( NAME )+"!"+user.getString ( USER )+"@";
+        String shown = user.getShownHost ( );
+        String ip    = ( validIp ( user.getIp ( ) ) ? user.getIp ( ) : null );
+        for ( String mask : masks ) {
+            if ( StringMatch.matches ( who+user.getHost ( ), mask ) ||
+                 ( ip != null && StringMatch.matches ( who+ip, mask ) ) ||
+                 ( shown != null && StringMatch.matches ( who+shown, mask ) ) ||
+                 ( ip != null && inRange ( mask, who, ip ) ) ) {
+                found.add ( mask );
+                if ( ! all ) {
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
+    /**
+     * Services asked the ircd to remove every ban on this user (SVSMODE -b
+     * nick). It does not send our own changes back, so forget them here too.
+     * @param user
+     */
+    public void removeBansOn ( User user ) {
+        for ( String mask : matching ( this.bans, user, true ) ) {
+            this.setModeArg ( 'b', false, mask );
+        }
+    }
+
+    /* nick!user@ip/bits. Only an ip is accepted in the mask: looking up a
+       host name would stop the main loop */
+    private static boolean inRange ( String mask, String who, String ip ) {
+        int at    = mask.lastIndexOf ( '@' );
+        int slash = mask.lastIndexOf ( '/' );
+        if ( at < 1 || slash < at ) {
+            return false;
+        }
+        String addr = mask.substring ( at + 1, slash );
+        if ( ! CSAcc.isIPv4Address ( addr ) && ! CSAcc.isIPv6Address ( addr ) ) {
+            return false;
+        }
+        try {
+            return StringMatch.matches ( who, mask.substring ( 0, at + 1 ) ) &&
+                   new CIDRUtils ( mask.substring ( at + 1 ) ).isInRange ( ip );
+        } catch ( UnknownHostException | RuntimeException ex ) {
+            return false;   /* bits that are no number, or too many */
         }
     }
 
@@ -650,5 +830,15 @@ public class Chan extends HashNumeric {
      */
     public Long getCreatedOn ( ) {
         return this.createdOn;
+    }
+
+    /**
+     * The TS in a SJOIN for a channel we already know: the oldest one wins
+     * @param stamp
+     */
+    public void sawStamp ( long stamp ) {
+        if ( stamp > 0 && stamp < this.createdOn ) {
+            this.createdOn = stamp;
+        }
     }
 }

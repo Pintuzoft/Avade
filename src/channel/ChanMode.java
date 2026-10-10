@@ -25,6 +25,7 @@ import core.HashString;
  * @author DreamHealer
  */
 public class ChanMode extends HashNumeric {
+    private boolean modeS;      /* +S, only for users connected with SSL */
                     
     /**
      *
@@ -135,6 +136,10 @@ public class ChanMode extends HashNumeric {
                     this.set ( MODE_m, state );
                     break;
 
+                case MODE_S :
+                    this.set ( MODE_S, state );
+                    break;
+
                 default :
             }
         }   
@@ -208,6 +213,10 @@ public class ChanMode extends HashNumeric {
                 this.mode_m = state;
                 break;
 
+            case MODE_S :
+                this.modeS = state;
+                break;
+
             default :
 
         }
@@ -267,6 +276,9 @@ public class ChanMode extends HashNumeric {
             case MODE_m :
                 return this.mode_m;
 
+            case MODE_S :
+                return this.modeS;
+
             default :
                 return false;
 
@@ -293,6 +305,7 @@ public class ChanMode extends HashNumeric {
         buf += this.is ( MODE_c ) ? "c" : "";
         buf += this.is ( MODE_O ) ? "O" : "";
         buf += this.is ( MODE_m ) ? "m" : "";
+        buf += this.is ( MODE_S ) ? "S" : "";
         return buf;  
     }
 
