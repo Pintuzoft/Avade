@@ -1448,6 +1448,7 @@ def test_database_down():
         a.join(new)
         check(has(a.svc('ChanServ', 'REGISTER %s nykanalpw1 made without the database' % new), 'successfully registered'), 'a channel is registered')
         check(has(a.svc('ChanServ', 'AOP %s ADD Bob' % chan), 'added to the Aop'), 'an AOP is added')
+        when = int(time.time())
         check(has(a.svc('ChanServ', 'AKICK %s ADD Evil*!*@*' % chan), 'added'), 'an AKICK is added')
         a.send('TOPIC %s :satt utan databas' % chan)
         m = b.mark()
@@ -1513,6 +1514,11 @@ def test_database_down():
     row = wait_db("select count(*), max(readflag) from memo where name = 'Bob' and message = 'skickat utan databas'", 30)
     check(row.split() == ['1', '1'], 'the memo is stored, as read', row)
     check(db("select count(*) from memo where name = 'Bob'") == str(memos + 1), 'the memo that was deleted again is not', memos)
+    # what waited keeps the time it happened, not the time the database came back (a minute later)
+    late = db("select (select stamp from memo where name = 'Bob' and message = 'skickat utan databas') - %d, "
+              "(select unix_timestamp(max(stamp)) from chanacclog where name = '%s') - %d" % (when, chan, when))
+    check(len(late.split()) == 2 and all(abs(int(x)) < 30 for x in late.split()),
+          'the memo and the access log have the time they were made, not the time they were written', late)
     check(wait_db("select count(*) from mailbox where mail = 'bob@test.net' having count(*) > %d" % mails, 30) != '',
           'the mail about the new memo is sent')
     check(wait_db("select mask from akill where mask like '%%203.0.113.99%%'", 30) != '', 'the AKILL')

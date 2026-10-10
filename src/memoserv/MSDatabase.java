@@ -49,14 +49,16 @@ public class MSDatabase extends Database {
         }
         
         try {
+            /* The time it was sent: a memo can wait for the database */
             String query = "INSERT INTO memo  ( name,sender,message,stamp,readflag )  "
-                         + "VALUES  ( ?, ?, ?, UNIX_TIMESTAMP ( ) , ? ) ";
+                         + "VALUES  ( ?, ?, ?, ?, ? ) ";
 
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, memo.getName ( )  );
             ps.setString   ( 2, memo.getSender ( )  );
             ps.setString   ( 3, memo.getMessage ( )  );
-            ps.setInt      ( 4, memo.isRead ( ) ?1:0 );
+            ps.setLong     ( 4, memo.getStamp ( ) > 0 ? memo.getStamp ( ) : System.currentTimeMillis ( ) / 1000 );
+            ps.setInt      ( 5, memo.isRead ( ) ?1:0 );
             ps.execute ( );
             ps.close ( );
 

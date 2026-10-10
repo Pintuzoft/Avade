@@ -597,13 +597,14 @@ public class CSDatabase extends Database {
         
         try {
             String query = "insert into chanacclog ( name, target, access, instater, usermask, stamp ) "+
-                           "values ( ?, ?, ?, ?, ?, now() ) ";
+                           "values ( ?, ?, ?, ?, ?, coalesce ( ?, now() ) ) ";
             ps = sql.prepareStatement ( query );
             ps.setString   ( 1, log.getNameStr() );
             ps.setString   ( 2, log.getTarget() );
             ps.setString   ( 3, log.getFlagStr() );
             ps.setString   ( 4, log.getInstater() );
             ps.setString   ( 5, log.getUsermask() );
+            ps.setString   ( 6, log.getStamp() );   /* when it happened, the row can wait for the database */
             ps.execute ( );
             ps.close ( ); 
             return true;

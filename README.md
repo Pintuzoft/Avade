@@ -216,10 +216,26 @@ seen which filter stopped a message.
 A nick holds 30 memos, and 5 unread ones from the same sender. Every memo is also a 
 mail to the receiver, so one user can not fill the memo box or the inbox of another.
 
+#### Keeps working without the database
+
+Services live in memory. Nicks, channels, access lists, memos and bans are all 
+there, and every change waits in a list until the database has taken it. So when 
+the database goes away, for a restart, a full disk or a network that is down, 
+nobody on IRC notices: users register and identify, channels are registered and 
+dropped, memos are sent and read, opers set akills. The staff get a short notice 
+every half minute about what is waiting:
+
+    Database down, waiting: nicks 1, chans 1, access 3, memos 1, mails 1, other 14
+
+When the database is back everything is written, in an order that works, and 
+nothing is given up on because the server could not take it right then. The test 
+suite stops the database in the middle of all that and looks for every change 
+afterwards.
+
 #### Tested against a real bahamut
 
 `tests/` starts a network of its own, a bahamut hub and leaf, MariaDB, Avade and the 
-mailer, and goes through the features as a user and an oper would: about 300 checks. 
+mailer, and goes through the features as a user and an oper would: about 380 checks. 
 A weekly job runs the same suite against a new bahamut release when one comes out.
 
 #### Audit staff
