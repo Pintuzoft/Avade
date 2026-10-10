@@ -20,7 +20,6 @@ package core;
 import user.User;
 import server.ServSock;
 import server.Server;
-import monitor.Snoop;
 import channel.Chan;
 import channel.Topic;
 import chanserv.CSLogEvent;
@@ -63,7 +62,6 @@ public class Handler extends HashNumeric {
     private static Service                      global;
 
     private Services                            services;
-    private Snoop                               snoop;
     private Trigger                             trigger;
     private static HashMap<BigInteger, User>    uList = new HashMap<>();
 //    private static HashMap<BigInteger, ServicesID>    splitSIDs = new HashMap<>();
@@ -92,7 +90,6 @@ public class Handler extends HashNumeric {
     private static boolean                  sanity;
     private static int                      burstPings; /* PINGs seen since link, burst ends after the 2nd */
     private static boolean                  syncFinished;
-    private HashString bufhash;
     
     /**
      *
@@ -317,15 +314,6 @@ public class Handler extends HashNumeric {
         }
     }
 
-    public static void unloadServices ( ) {
-        root = null;
-        oper = null;
-        nick = null;
-        chan = null;
-        memo = null;
-        global = null;
-        guest = null;
-    }
     
     /**
      *
@@ -1208,29 +1196,6 @@ public class Handler extends HashNumeric {
 
     /**
      *
-     * @param u
-     */
-    public void doRecursiveUList ( User u )  { 
-        try {
-            Server sHub = findServer ( Proc.getConf().get ( HUBNAME ) );
-            if ( sHub != null )  {
-                sHub.recursiveUserList ( u, "" );
-            }
-        } catch ( Exception e )  { 
-            Proc.log ( Handler.class.getName ( ) , e );
-        }
-    }
-
-    /**
-     *
-     * @return
-     */
-    public static Database getDB ( )  {
-        return db; 
-    }
-
-    /**
-     *
      * @return
      */
     public static SimpleDateFormat getSdf ( ) { 
@@ -1577,50 +1542,7 @@ public class Handler extends HashNumeric {
         }
         return ul;
     }
-        
-    /**
-     *
-     * @param data
-     * @return
-     */
-    public static String expireToTime ( String data )  {
-        String          strBuf;
-        String          state;
-        String          timeUnit;
-        int             multiply=1;
-        int             amount=0;
-         
-        /* take all data except last char */
-        strBuf = data.substring ( 0, data.length ( ) - 1 ); 
-          
-        /* Try the value as an integer */
-        try { 
-            amount = Integer.parseInt ( strBuf );
-        } catch ( NumberFormatException e )  {
-            return "";
-        }
-        
-        /* take only the last char */
-        HashString ch = new HashString ( String.valueOf(data.charAt(data.length()-1)) );
-         
-        if ( ch.is(m) ) {
-            timeUnit = "MINUTE";
-        
-        } else if ( ch.is(h) ) {
-            timeUnit = "HOUR";
-        
-        } else if ( ch.is(d) ) {
-            timeUnit = "DAY";
-        
-        } else if ( ch.is(y) ) {
-            timeUnit = "YEAR";
-        
-        } else {
-            return "INTERVAL 0 DAYS";
-        }
-         
-        return  "INTERVAL "+( amount * multiply )+" "+timeUnit;
-    }
+
  
     /**
      *
@@ -1743,33 +1665,6 @@ public class Handler extends HashNumeric {
      */
     public static boolean sanityCheck() {
         return sanity;
-    }
-
-    private void nullService ( User user ) {
-        HashString name = user.getName();
-        
-        if ( name.is(ROOTSERV) ) {
-            root = null;
-        
-        } else if ( name.is(OPERSERV) ) {
-            oper = null;
-        
-        } else if ( name.is(NICKSERV) ) {
-            nick = null;
-        
-        } else if ( name.is(CHANSERV) ) {
-            chan = null;
-        
-        } else if ( name.is(MEMOSERV) ) {
-            memo = null;
-        
-        } else if ( name.is(GUESTSERV) ) {
-            guest = null;
-        
-        } else if ( name.is(GLOBAL) ) {
-            global = null;
-        }
-         
     }
 
     private void doError ( ) {

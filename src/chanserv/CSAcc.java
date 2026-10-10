@@ -290,32 +290,7 @@ public class CSAcc extends HashNumeric {
         }
         return false;
     }
-    
-    /**
-     *
-     * @param in
-     * @return
-     */
-    public boolean matchMask ( String in ) {
-        HashString maskVal = new HashString(in);
-        if ( this.mask != null ) {
-            return this.mask.is(maskVal);
-        }
-        return false;
-    }
-    
-    /**
-     *
-     * @param in
-     * @return
-     */
-    public boolean matchHashMask ( String in ) {
-        HashString maskVal = new HashString ( in );
-        if ( this.mask != null ) {
-            return this.mask.is(maskVal);
-        }
-        return false;
-    }
+
     
     /**
      * getHashMask

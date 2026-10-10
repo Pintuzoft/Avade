@@ -18,10 +18,8 @@
 package nickserv;
 
 import command.Command;
-import core.Config;
 import core.Expire;
 import core.Database;
-import core.Handler;
 import core.HashString;
 import core.LogEvent;
 import core.Proc;
@@ -29,7 +27,6 @@ import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,7 +40,6 @@ import user.User;
  * @author DreamHealer
  */
 public class NSDatabase extends Database {
-    private static Statement            s;
     private static ResultSet            res;
     private static ResultSet            res2;
     private static PreparedStatement    ps;

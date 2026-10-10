@@ -721,6 +721,32 @@ def test_akick_kicks():
     close(a, e)
 
 
+def test_common_errors():
+    """The replies for not registered, access denied, frozen and closed are one method for 18 commands."""
+    chan, none = '#t_err', '#t_err_never_registered'
+    mm, a, b = master(), login('Alice'), login('Bob')
+    register_chan(a, chan)
+    for command in ('INFO %s', 'AOP %s LIST', 'CHANFLAG %s LIST', 'WHY %s Alice', 'ACCESSLOG %s', 'LISTOPS %s',
+                    'IDENTIFY %s chanpw12', 'DROP %s chanpw12'):
+        r = a.svc('ChanServ', command % none, wait=0.4)
+        check(has(r, 'is not registered'), command.split()[0] + ' on a channel that is not registered says so', r)
+    for command in ('AOP %s ADD Carol', 'CHANFLAG %s NO_CTCP ON', 'ACCESSLOG %s', 'MKICK %s', 'MDEOP %s'):
+        r = b.svc('ChanServ', command % chan, wait=0.4)
+        check(has(r, 'Access denied'), command.split()[0] + ' without access is denied', r)
+    mm.svc('ChanServ', 'FREEZE ' + chan)
+    for command in ('AOP %s LIST', 'CHANFLAG %s LIST', 'OP %s Alice', 'LISTOPS %s', 'MKICK %s'):
+        r = a.svc('ChanServ', command % chan, wait=0.4)
+        check(has(r, 'is Frozen'), command.split()[0] + ' on a frozen channel says that it is frozen', r)
+    mm.svc('ChanServ', 'FREEZE -' + chan)
+    check(has(a.svc('ChanServ', 'AOP %s LIST' % chan), 'End of'), 'and works again when the channel is not frozen')
+    mm.svc('ChanServ', 'CLOSE ' + chan)
+    for command in ('AOP %s LIST', 'CHANFLAG %s LIST', 'ACCESSLOG %s', 'IDENTIFY %s chanpw12'):
+        r = a.svc('ChanServ', command % chan, wait=0.4)
+        check(has(r, 'is Closed'), command.split()[0] + ' on a closed channel says that it is closed', r)
+    mm.svc('ChanServ', 'CLOSE -' + chan)
+    close(mm, a, b)
+
+
 def test_mask_rank():
     """An AOP could move a mask from the SOP list down to the VOP list."""
     chan = '#t_rank'
@@ -762,6 +788,47 @@ def test_memo():
     check(len([x for x in r if 'abc' in x or 'READ' in x]) == 1, 'READ with a non-number gives one error', r)
     b.svc('MemoServ', 'DEL 1')
     close(a, b)
+
+
+def test_memo_limits():
+    """A nick holds 30 memos, and 5 unread ones from the same sender."""
+    mm = master()                           # an oper: the ircd does not slow down its 30 DELs
+    mm.svc('NickServ', 'SET MAILBLOCK ON')  # no mail per memo
+    def box():
+        m = re.search(r'of (\d+) memos', ' '.join(mm.svc('MemoServ', 'LIST', wait=0.5)))
+        return int(m.group(1)) if m else -1
+    def empty():
+        for i in range(max(box(), 0)):
+            mm.svc('MemoServ', 'DEL 1', wait=0.1)
+    empty()                                 # what a run that was stopped left behind
+    a = login('Alice')
+    for i in range(5):
+        r = a.svc('MemoServ', 'SEND %s memo %d' % (MASTER, i), wait=0.2)
+    check(has(r, 'Memo sent'), 'five memos to the same nick are sent', r)
+    r = a.svc('MemoServ', 'SEND %s one too many' % MASTER)
+    check(has(r, 'not read yet') and not has(r, 'Memo sent'), 'the 6th unread memo from the same sender is refused', r)
+    mm.svc('MemoServ', 'READ 1')
+    r = a.svc('MemoServ', 'SEND %s after one was read' % MASTER)
+    check(has(r, 'Memo sent'), 'and accepted when the receiver has read one', r)
+    for nick in ('Bob', 'Carol', 'Dave', 'Erin'):
+        c = login(nick)
+        for i in range(5):
+            c.svc('MemoServ', 'SEND %s memo %d' % (MASTER, i), wait=0.2)
+        close(c)
+    z = login('Zed')
+    for i in range(4):
+        r = z.svc('MemoServ', 'SEND %s memo %d' % (MASTER, i), wait=0.2)
+    check(has(r, 'Memo sent') and box() == 30, 'a memo box takes 30 memos', (r, box()))
+    r = z.svc('MemoServ', 'SEND %s number 31' % MASTER)
+    check(has(r, 'is full') and box() == 30, 'the 31st is refused', r)
+    count = db("select count(*) from memo where name = '%s'" % MASTER)
+    check(count == '30', 'and not stored', count)
+    mm.svc('MemoServ', 'DEL 1')
+    check(has(z.svc('MemoServ', 'SEND %s room again' % MASTER), 'Memo sent'), 'until the receiver deletes one')
+    empty()
+    check(box() == 0, 'the box is empty again', box())
+    mm.svc('NickServ', 'SET MAILBLOCK OFF')
+    close(mm, a, z)
 
 
 def test_nick_privacy_and_mail():
@@ -1258,7 +1325,7 @@ def test_hub_restart():
 TESTS = [test_config_files, test_setup, test_identify, test_throttle, test_access_security, test_topic_sync, test_old_null_topic, test_topiclock,
          test_sessions_survive_restart, test_vop_hop, test_ipv6, test_chanflags, test_vhost,
          test_clone_limit, test_join_requests, test_spamfilter_target, test_staff_in_whois, test_panic_without_state,
-         test_akick_kicks, test_mask_rank, test_dash_in_channel_name, test_memo, test_nick_privacy_and_mail,
+         test_akick_kicks, test_common_errors, test_mask_rank, test_dash_in_channel_name, test_memo, test_memo_limits, test_nick_privacy_and_mail,
          test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file, test_bans,
          test_drop_and_hold, test_leaf_split, test_services_relink, test_hub_restart]
 

@@ -25,7 +25,6 @@ import java.sql.PreparedStatement;
 import nickserv.NickInfo;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import nickserv.NickServ;
 
@@ -34,9 +33,7 @@ import nickserv.NickServ;
  * @author DreamHealer
  */
 public class RSDatabase extends Database {
-    private static Statement s;
     private static ResultSet res;
-    private static ResultSet res2;
 
   /*
     mysql> select * from oper;                                                                                                                                                                                                                   

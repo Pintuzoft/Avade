@@ -22,7 +22,6 @@ import channel.Topic;
 import core.Executor;
 import core.Handler;
 import core.HashString;
-import core.Proc;
 import core.StringMatch;
 import core.TextFormat;
 import java.math.BigInteger;
@@ -64,7 +63,7 @@ public class CSExecutor extends Executor {
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd )  {
+    public void parse ( User user, String[] cmd, HashString command )  {
          
         try {
             if ( cmd[3].isEmpty ( )  )  {
@@ -75,8 +74,6 @@ public class CSExecutor extends Executor {
             this.help ( user );
             return;
         }
-        
-        HashString command = new HashString ( cmd[3] );
         
         if      ( command.is(REGISTER) )    { this.register ( user, cmd );                  }
         else if ( command.is(IDENTIFY) )    { this.identify ( user, cmd );                  }
@@ -181,29 +178,11 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1 ( ), user, cmd );
             return;
         
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output ( CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-        
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output ( CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-        
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr() ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-        
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
-            return;
-            
         } else if ( result.was(NICK_NOT_PRESENT) ) {
             this.service.sendMsg (user, output (NICK_NOT_PRESENT, result.getString1().getString() ) ); 
             this.snoop.msg (false, NICK_NOT_PRESENT, result.getString1 ( ), user, cmd );
+            return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -279,26 +258,6 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1 ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr() ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
-            return;
-            
         } else if ( result.was(NICK_NOT_PRESENT) ) {
             this.service.sendMsg (user, output (NICK_NOT_PRESENT, result.getString1().getString() ) ); 
             this.snoop.msg (false, NICK_NOT_PRESENT, result.getString1 ( ), user, cmd );
@@ -307,6 +266,8 @@ public class CSExecutor extends Executor {
         } else if ( result.was(NOT_ENOUGH_ACCESS) ) {
             this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1().getString() ) ); 
             this.snoop.msg (false, NOT_ENOUGH_ACCESS, result.getString1 ( ), user, cmd );
+            return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }        
          
@@ -457,21 +418,6 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
             return;
         
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-        
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-        
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-        
         } else if ( result.was(IS_THROTTLED) ) {
             this.service.sendMsg (user, output (IS_THROTTLED, result.getChanInfo().getNameStr ( ) ) );
             this.snoop.msg (false, IS_THROTTLED, result.getChanInfo().getName ( ), user, cmd );
@@ -481,6 +427,8 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, output ( INVALID_PASSWORD, "" ) ); 
             this.snoop.msg ( false, INVALID_PASSWORD, user.getName ( ), user, cmd );
             return; 
+        } else if ( this.commonError ( result, user, cmd ) ) {
+            return;
         }
          
         ChanInfo ci = result.getChanInfo ( );
@@ -501,21 +449,6 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, INVALID_PASSWORD, user.getName ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
         } else if ( result.was(INVALID_PASSWORD) ) {
             this.service.sendMsg ( user, output ( INVALID_PASSWORD, "" ) ); 
             this.snoop.msg ( false, INVALID_PASSWORD, user.getName ( ), user, cmd );
@@ -524,6 +457,8 @@ public class CSExecutor extends Executor {
         } else if ( result.was(IS_MARKED) ) {
             this.service.sendMsg (user, output (IS_MARKED, result.getChanInfo().getNameStr ( ) ) ); 
             this.snoop.msg (false, IS_MARKED, result.getChanInfo().getName ( ), user, cmd );
+            return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -588,19 +523,7 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
         
@@ -746,24 +669,7 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -856,21 +762,6 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, NICK_NOT_AUTHED, result.getNick2().getNameStr(), user, cmd );
             return; 
 
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName(), user, cmd );
-            return;
-
         } else if ( result.was(ACCESS_DENIED) ) {
             this.service.sendMsg (user, output (ACCESS_DENIED, result.getString1().getString() ) ); 
             this.snoop.msg (false, ACCESS_DENIED, result.getString1(), user, cmd );
@@ -899,6 +790,8 @@ public class CSExecutor extends Executor {
         } else if ( result.was(XOP_ALREADY_PRESENT) ) {
             this.service.sendMsg (user, output (XOP_ALREADY_PRESENT, result.getString1().getString(), this.getListStr ( access ) ) ); 
             this.snoop.msg (false, XOP_ALREADY_PRESENT, result.getString1(), user, cmd );
+            return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -972,11 +865,6 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1(), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
         } else if ( result.was(NICK_NOT_EXIST) ) {
             this.service.sendMsg (user, output (NICK_NOT_EXIST, result.getString1().getString() ) ); 
             this.snoop.msg (false, NICK_NOT_EXIST, result.getString1 ( ), user, cmd );
@@ -987,16 +875,8 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, NICK_ACCESS_DENIED, result.getChanInfo().getName ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
         }
          
         Chan c = result.getChan ( );
@@ -1029,24 +909,12 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1(), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
         } else if ( result.was(NICK_ACCESS_DENIED) ) {
             this.service.sendMsg (user, output (NICK_ACCESS_DENIED, result.getChanInfo().getNameStr ( ) ) ); 
             this.snoop.msg (false, NICK_ACCESS_DENIED, result.getChanInfo().getName ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -1073,19 +941,12 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1(), user, cmd );
-            return;
-            
         } else if ( result.was(NICK_NOT_EXIST) ) {
             this.service.sendMsg (user, output (NICK_NOT_EXIST, result.getString1().getString() ) ); 
             this.snoop.msg (false, NICK_NOT_EXIST, result.getString1 ( ), user, cmd );
             return;
             
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -1333,11 +1194,6 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, ACCESS_DENIED, result.getString1 ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
         } else if ( result.was(CHANFLAG_EXIST) ) {
             this.service.sendMsg (user, output (CHANFLAG_EXIST, result.getChanInfo().getNameStr(), result.getString1().getString() ) ); 
             this.snoop.msg (false, CHANFLAG_EXIST, result.getString1 ( ), user, cmd );
@@ -1346,6 +1202,8 @@ public class CSExecutor extends Executor {
         } else if ( result.was(IS_MARKED) ) {
             this.service.sendMsg (user, output (IS_MARKED, result.getChanInfo().getNameStr ( ) ) ); 
             this.snoop.msg (false, IS_MARKED, result.getChanInfo().getNameStr(), user, cmd );
+            return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
          
@@ -1553,19 +1411,11 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1 ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1(), user, cmd );
-            return;
-            
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
-            return;
-            
         } else if ( result.was(NOT_ENOUGH_ACCESS) ) {
             this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1().getString() ) ); 
             this.snoop.msg (false, NOT_ENOUGH_ACCESS, result.getString1 ( ), user, cmd );
+            return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
 
@@ -1611,21 +1461,13 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, CHAN_NOT_EXIST, result.getString1 ( ), user, cmd );
             return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
-            return;
-            
         } else if ( result.was(NOT_ENOUGH_ACCESS) ) {
             this.service.sendMsg (user, output (NOT_ENOUGH_ACCESS, result.getString1().getString() ) ); 
             this.snoop.msg (false, NOT_ENOUGH_ACCESS, result.getString1 ( ), user, cmd );
             return;
             
+        } else if ( this.commonError ( result, user, cmd ) ) {
+            return;
         }
          
         Chan c = result.getChan ( );
@@ -1669,9 +1511,7 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
             return;
         
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
         }
        
@@ -1706,21 +1546,8 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
             return;
             
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
-            
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) );
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1(), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) );
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName(), user, cmd );
-            return;
-            
         }
          
         NickInfo ni = result.getNick ( );
@@ -1753,21 +1580,8 @@ public class CSExecutor extends Executor {
             this.snoop.msg (false, SYNTAX_ERROR, user.getName(), user, cmd );
             return;
 
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
-
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) );
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1(), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) );
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName(), user, cmd );
-            return;
-            
         }
          
         NickInfo ni = result.getNick ( );
@@ -1792,26 +1606,6 @@ public class CSExecutor extends Executor {
                 this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
                 return;
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) );
-                this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1(), user, cmd );
-                return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr() ) );
-                this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName(), user, cmd );
-                return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr() ) );
-                this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName(), user, cmd );
-                return;
-            
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
-                this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
-                return;
-            
         } else if ( result.was(NO_SUCH_CHANFLAG) ) {
             this.service.sendMsg (user, output (NO_SUCH_CHANFLAG, result.getString1().getString() ) );
                 this.snoop.msg (false, NO_SUCH_CHANFLAG, result.getString1 ( ), user, cmd );
@@ -1821,6 +1615,8 @@ public class CSExecutor extends Executor {
             this.service.sendMsg ( user, output ( BAD_CHANFLAG_VALUE ) );
                 this.snoop.msg ( false, BAD_CHANFLAG_VALUE, user.getName(), user, cmd );
                 return;
+        } else if ( this.commonError ( result, user, cmd ) ) {
+            return;
         }
         
         ChanInfo ci = result.getChanInfo ( );
@@ -1950,26 +1746,8 @@ public class CSExecutor extends Executor {
             this.snoop.msg ( false, SYNTAX_ERROR, user.getName(), user, cmd );
             return; 
             
-        } else if ( result.was(CHAN_NOT_REGISTERED) ) {
-            this.service.sendMsg (user, output (CHAN_NOT_REGISTERED, result.getString1().getString() ) ); 
-            this.snoop.msg (false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
+        } else if ( this.commonError ( result, user, cmd ) ) {
             return;
-            
-        } else if ( result.was(CHAN_IS_FROZEN) ) {
-            this.service.sendMsg (user, output (CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(CHAN_IS_CLOSED) ) {
-            this.service.sendMsg (user, output (CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) ); 
-            this.snoop.msg (false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
-            return;
-            
-        } else if ( result.was(ACCESS_DENIED) ) {
-            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) ); 
-            this.snoop.msg ( false, ACCESS_DENIED, user.getName(), user, cmd );
-            return;
-      
         }
        
         HashString[] lists = { SOP, AOP };
@@ -1996,6 +1774,32 @@ public class CSExecutor extends Executor {
 
     
     
+    /* The results nearly every command can end in. The replies were copied
+       into each command and got out of step there.
+       @return true when the command has been answered */
+    private boolean commonError ( CMDResult result, User user, String[] cmd ) {
+        if ( result.was(CHAN_NOT_REGISTERED) ) {
+            this.service.sendMsg ( user, output ( CHAN_NOT_REGISTERED, result.getString1().getString ( ) ) );
+            this.snoop.msg ( false, CHAN_NOT_REGISTERED, result.getString1 ( ), user, cmd );
+            
+        } else if ( result.was(CHAN_IS_FROZEN) ) {
+            this.service.sendMsg ( user, output ( CHAN_IS_FROZEN, result.getChanInfo().getNameStr ( ) ) );
+            this.snoop.msg ( false, CHAN_IS_FROZEN, result.getChanInfo().getName ( ), user, cmd );
+            
+        } else if ( result.was(CHAN_IS_CLOSED) ) {
+            this.service.sendMsg ( user, output ( CHAN_IS_CLOSED, result.getChanInfo().getNameStr ( ) ) );
+            this.snoop.msg ( false, CHAN_IS_CLOSED, result.getChanInfo().getName ( ), user, cmd );
+            
+        } else if ( result.was(ACCESS_DENIED) ) {
+            this.service.sendMsg ( user, output ( ACCESS_DENIED, "" ) );
+            this.snoop.msg ( false, ACCESS_DENIED, user.getName ( ), user, cmd );
+            
+        } else {
+            return false;
+        }
+        return true;
+    }
+
     private CMDResult validateCommandData ( User user, HashString command, String[] cmd )  {
         Chan c;
         Chan c2;
@@ -2661,17 +2465,6 @@ public class CSExecutor extends Executor {
         } else {
             return "Undefined";
         }
-    }
-    
-    private HashString isAddOrDel ( HashString command ) {
-        if ( command == null ) {
-            return null;
-        }
-        if ( command.is(ADD) ||
-             command.is(DEL) ) {
-            return command;
-        } 
-        return null;
     }
 
     /**

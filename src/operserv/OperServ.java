@@ -24,9 +24,7 @@ import core.Proc;
 import core.StringMatch;
 import core.Service;
 import java.math.BigInteger;
-import java.text.DateFormat;
 import user.User;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,10 +69,7 @@ public class OperServ extends Service {
     private OSExecutor executor;   /* Object that parse and execute commands */
     private OSHelper helper;     /* Object that parse and respond to help queries */
     private OSSnoop snoop;      /* Object for monitoring and reporting */
-    private SimpleDateFormat sdf;
     
-    private Oper operNick = new Oper ( "OperServ", 4, "OperServ" );
-    private static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"); 
 
     
     /**
@@ -567,7 +562,7 @@ public class OperServ extends Service {
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         } else {
-            this.executor.parse ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         }
         
     }
@@ -916,19 +911,6 @@ public class OperServ extends Service {
      * @return
      */
 
-    
-    public int getAkillCount() {
-        return akills.size();
-    }
-
-    /**
-     *
-     * @return
-     */
-    public int getIgnoreCount() {
-        return ignores.size();
-    }
-
     /**
      *
      * @param user
@@ -1110,14 +1092,6 @@ public class OperServ extends Service {
             }
         }
         return oList;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public static ArrayList<Oper> getMaster ( ) {
-        return getStaffByAccess ( 5 );
     }
 
     /**

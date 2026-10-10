@@ -111,14 +111,6 @@ public class NSAuth {
      *
      * @return
      */
-    public String getNickStr ( ) {
-        return this.nick.getString();
-    }
-
-    /**
-     *
-     * @return
-     */
     public String getAuth ( ) {
         return this.auth;
     }

@@ -18,11 +18,9 @@
 package nickserv;
 
 import core.CommandInfo;
-import core.Config;
 import core.Handler;
 import core.HashString;
 import core.Helper;
-import core.Proc;
 import core.TextFormat;
 import operserv.Oper;
 import user.User;

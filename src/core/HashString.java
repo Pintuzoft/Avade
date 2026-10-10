@@ -39,16 +39,6 @@ public class HashString {
         this.generateCode ( );
     }
     
-    /**
-     *
-     * @param str
-     * @param code
-     */
-    public HashString ( String str, BigInteger code ) {
-        this.string = str.trim();
-        this.code = code;
-    }
-    
     private void generateCode ( ) {
         try {
             /* The digest as a positive number, no detour over a hex string */
@@ -79,14 +69,7 @@ public class HashString {
     public BigInteger getCode ( ) {
         return this.code;
     }
-    
-    /**
-     *
-     * @return
-     */
-    public String getCodeStr ( ) {
-        return ""+this.code;
-    }
+
     
     /**
      *
@@ -95,6 +78,24 @@ public class HashString {
      */
     public boolean is ( HashString code ) {
         return code.getCode().compareTo(this.code) == 0;
+    }
+
+    /**
+     * The same as is ( ): two HashStrings made from the same name are equal,
+     * whatever the case of a-z. Without this Java compared the objects, so a
+     * new HashString was never found in a list, or as the key of a map.
+     * (== still compares the objects, use is ( ).)
+     * @param other
+     * @return
+     */
+    @Override
+    public boolean equals ( Object other ) {
+        return other instanceof HashString && this.code != null && this.code.equals ( ( (HashString) other ).code );
+    }
+
+    @Override
+    public int hashCode ( ) {
+        return this.code != null ? this.code.hashCode ( ) : 0;
     }
     
     /**

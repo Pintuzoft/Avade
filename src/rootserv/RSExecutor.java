@@ -51,7 +51,7 @@ public class RSExecutor extends Executor {
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd )  {
+    public void parse ( User user, String[] cmd, HashString command )  {
         Oper oper = user.getSID().getOper ( );
   
         if ( ! oper.isAtleast ( SRA )  )  {
@@ -61,7 +61,6 @@ public class RSExecutor extends Executor {
         
         this.found = true; /* Assume that everything will go correctly */
 
-        HashString command = new HashString ( cmd[3] );
         
         /* Enforce the command access levels from the config */
         if ( this.service.findCommandInfo ( command ) != null &&

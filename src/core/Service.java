@@ -148,23 +148,6 @@ import java.util.Date;
 
     /**
      *
-     * @param str
-     * @return
-     */
-    public String getCmd ( String str )  {
-        String buf;
-        try {
-            if (  ( buf = str.substring ( 1 )  )  != null )  {
-                return buf;
-            }
-        } catch ( Exception e )  {
-            Proc.log ( Service.class.getName ( ) , e );
-        }
-        return null;
-    }
-
-    /**
-     *
      * @param u
      * @param msg
      */
@@ -197,13 +180,6 @@ import java.util.Date;
         this.send ( RAW, ":"+this.name+" "+command ); 
     }
 
-    /**
-     *
-     * @param u
-     */
-    public void accessDenied ( User u ) { 
-        this.sendMsg ( u, "Access Denied.!" ); 
-    }
  
     /**
      *

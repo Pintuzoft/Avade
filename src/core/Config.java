@@ -233,10 +233,7 @@ public class Config extends HashNumeric {
     private void setCommand ( HashString command, int access ) {
         this.commands.put(command.getCode(), access);
     }
- 
-    private void parseValue ( String key, String val ) {
-        //System.out.println ( "DEBUG: key:"+key+", val:"+val );
-    }
+
     
     /* return the int value of the string input, else secure the command */
     private static int str2acc ( HashString it )  {

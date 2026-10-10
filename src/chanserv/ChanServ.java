@@ -185,15 +185,7 @@ public class ChanServ extends Service {
         this.loadChans ( );
         return loaded;
     }
-    
-    /**
-     *
-     * @param name
-     * @param settings
-     */
-    public static void attachSettings ( HashString name, ChanSetting settings ) {
-        ciList.get(name.getCode()).setSettings ( settings );
-    }
+
         
     /**
      *
@@ -217,22 +209,7 @@ public class ChanServ extends Service {
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         } else {
-            this.executor.parse ( user, cmd );
-        }
-    }
-      
-    /**
-     *
-     * @param user
-     * @param cmd
-     */
-    public void snoopAndLog ( User user, String[] cmd )  {
-        try { 
-            HashString serv = new HashString ( "NickServ" );
-            snoop.msg ( false, serv, user, cmd );
-            this.accessDenied ( user );
-        } catch ( Exception e )  {
-            Proc.log ( ChanServ.class.getName ( ) , e );
+            this.executor.parse ( user, cmd, command );
         }
     }
 
@@ -243,11 +220,6 @@ public class ChanServ extends Service {
      * @param u
      */
 
-    public void adChan ( User u )  {
-        this.sendMsg ( u, "The Chan "+f.b ( ) +u.getString ( NAME ) +f.b ( ) +" is currently not registered"      );
-        this.sendMsg ( u, "To register the channel please type:"                                                    );
-        this.sendMsg ( u, "    /ChanServ REGISTER <#channel> <Password> <description>"                              );
-    }
     
     /**
      *

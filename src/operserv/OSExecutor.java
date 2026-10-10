@@ -68,9 +68,8 @@ public class OSExecutor extends Executor {
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd )  {
+    public void parse ( User user, String[] cmd, HashString command )  {
         this.found = true; /* Assume that everything will go correctly */
-        HashString command = new HashString ( cmd[3] );
         
         if ( command.is(UINFO) ) {
             this.doUInfo ( user, cmd );
@@ -550,16 +549,6 @@ public class OSExecutor extends Executor {
          
     }
 
-
-    private ServicesBan getBan ( HashString command, HashString banId )  {
-        ServicesBan ban = null;
-        for ( ServicesBan ban2 : Handler.getOperServ().getListByCommand ( command ) ) {
-            if ( ban2.getID().is(banId) )  {
-                ban = ban2;
-            }
-        }
-        return ban;
-    }
     private void doSearchLog ( User user, String[] cmd ) {
         // :DreamHea1er PRIVMSG OperServ@services.sshd.biz :SEARCHLOG <nick|chan> [FULL]
         //            0       1                          2          3           4      5 < 6

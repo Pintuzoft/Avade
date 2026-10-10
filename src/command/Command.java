@@ -59,14 +59,7 @@ public class Command extends HashNumeric {
     public String getID ( ) {
         return this.id;
     }
-    
-    /**
-     *
-     * @return
-     */
-    public int getHashCode ( ) {
-        return this.hash;
-    }
+
     
     /**
      *

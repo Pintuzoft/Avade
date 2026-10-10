@@ -18,7 +18,6 @@
 package command;
 
 import core.Handler;
-import core.Proc;
 import core.WorkGuard;
 import core.HashNumeric;
 import core.HashString;
@@ -31,7 +30,6 @@ import java.util.LinkedList;
  */
 public class Queue extends HashNumeric {
     private LinkedList<Command>     cList;
-    private LinkedList<Command>     buf;
     private long                    time;
     
     /**

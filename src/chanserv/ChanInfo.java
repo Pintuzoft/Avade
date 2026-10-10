@@ -141,13 +141,7 @@ public class ChanInfo extends HashNumeric {
         this.updateAccessChanges ( );
         this.updateLastOpedChanges ( );
     }
-     
-    private void printStats ( ) {
-        System.out.println ( "STATS: addAccList:"+this.addAccList.size() );
-        System.out.println ( "STATS: remAccList:"+this.remAccList.size() );
-        System.out.println ( "STATS: updAccList:"+this.updAccList.size() );
-        System.out.println ( "STATS: newLogList:"+this.newLogList.size() );
-    }
+
     
     private void updateAccessChanges ( ) {
         if ( ! CSDatabase.checkConn() ) {
@@ -322,15 +316,6 @@ public class ChanInfo extends HashNumeric {
     public ChanSetting getSettings ( )  {
         return this.settings;
     }
-    
-    /**
-     *
-     * @param settings
-     */
-    public void setSettings ( ChanSetting settings )  {
-        this.settings = settings;
-        this.changed(LASTUSED);
-    }
 
     private void attachFounder ( String founder )  {
         this.founder = NickServ.findNick ( founder );
@@ -469,26 +454,7 @@ public class ChanInfo extends HashNumeric {
     /*** AKICK
      * @param in
      * @return  *******************************/
- 
-    public boolean delAkick ( String in )  {
-        HashString mask = new HashString (in);
-        CSAcc del = null;
-        
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : this.klist.entrySet() ) {
-            CSAcc akick = entry.getValue();
-            if ( akick.getMask ( ) != null )  {
-                if ( mask.is(akick.getMask()) ) {
-                    del = akick;
-                }
-            }
-        }
-        if ( del != null )  {
-            this.klist.remove ( del );
-            this.remAccList.add ( del );
-            return true;
-        } 
-        return false;
-    }    
+
    
     /**
      *
@@ -718,26 +684,6 @@ public class ChanInfo extends HashNumeric {
     /**
      *
      * @param access
-     * @return
-     */
-    public String getAccessString ( HashString access ) {
-        String buf = "";
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
-            CSAcc acc = entry.getValue();
-        
-            if ( buf.isEmpty ( ) ) {
-                buf += acc.getNick().getString ( NAME );
-            } else {
-                buf += ", "+acc.getNick().getString ( NAME );
-            }
-        }      
-        return buf;
-    }
-
-
-    /**
-     *
-     * @param access
      * @param acc
      */
   
@@ -871,21 +817,7 @@ public class ChanInfo extends HashNumeric {
         }
         return null;
     }
-     
-    /**
-     *
-     * @param access
-     * @param chanAccess
-     */
-    public void setAccessList ( HashString access, HashMap<BigInteger,CSAcc> chanAccess ) {
-        this.getAccessList(access).putAll(chanAccess);
-        for ( HashMap.Entry<BigInteger,CSAcc> entry : getAccessList(access).entrySet() ) {
-            CSAcc csa = entry.getValue();
-            if ( csa.getNick() != null ) {
-                csa.getNick().addToAccessList ( csa.getAccess(), this );
-            }
-        }
-    }
+
      
     /**
      *

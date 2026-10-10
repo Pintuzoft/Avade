@@ -32,7 +32,6 @@ import nickserv.NickServ;
 import operserv.OSLogEvent;
 import operserv.OSDatabase;
 import operserv.Oper;
-import operserv.OperServ;
 import user.User;
 
 /**
@@ -130,8 +129,6 @@ public class RootServ extends Service {
      * @param cmd
      */
     public void parse ( User user, String[] cmd )  { 
-        HashString command = new HashString ( cmd[3].substring(1) );
-        
         if ( ! user.isAtleast ( SRA ) ) {
             return;
         }
@@ -139,12 +136,13 @@ public class RootServ extends Service {
         /* :DreamHealer PRIVMSG OperServ@stats.sshd.biz :help */
         
         cmd[3] = cmd[3].substring ( 1 );
+        HashString command = new HashString ( cmd[3] );
         
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         
         } else {
-            this.executor.parse ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         }
          
     }
@@ -179,14 +177,7 @@ public class RootServ extends Service {
         }
         
     }
-    
-    /**
-     *
-     * @return
-     */
-    public static HashString getPanic ( ) {
-        return panic;
-    }
+
     
     /**
      *

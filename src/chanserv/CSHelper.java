@@ -97,10 +97,6 @@ public class CSHelper extends Helper {
         }
          
     }
-    
-    private void unknownCommand ( User user ) {
-        this.service.sendMsg ( user, "Error: No such command found." );
-    }
 
     /**
      *
@@ -524,7 +520,6 @@ public class CSHelper extends Helper {
         else if ( command.is(MAILBLOCK) )       { this.setMailBlock ( user );   }
         else if ( command.is(LEAVEOPS) )        { this.setLeaveOps ( user );    }
         else if ( command.is(AUTOAKICK) )       { this.setAutoAKick ( user );   }
-        else if ( command.is(PRIVATE) )         { this.setPrivate ( user );     }
         else if ( command.is(DYNAOP) )          { this.setDynAOP ( user );      }
         else if ( command.is(PASSWD) )          { this.setPasswd ( user );      }
         else {
@@ -811,23 +806,6 @@ public class CSHelper extends Helper {
      *
      * @param user
      */
-    public void setPrivate ( User user )  {
-        this.showStart ( user, "Set Private" );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.b ( ) +"Syntax: /ChanServ SET <#chan> PRIVATE <ON|OFF>"+f.b ( ) +""                        );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   The private option will keep the channel as private and secret ( +ps )  while keeping the" );
-        this.service.sendMsg ( user, "   topic off the channel info."                                                               );
-        this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
-        this.service.sendMsg ( user, "   To avoid the channel from being used by unwanted users and to make sure the topic"         );
-        this.service.sendMsg ( user, "   is secret in the channel info its recommended. For ordinary channels its not recommended." );
-        this.showEnd ( user );  
-    }
-    /**
-     *
-     * @param user
-     */
     public void setDynAOP ( User user )  {
         this.showStart ( user, "Set DynAOP" );
         this.service.sendMsg ( user, "   "                                                                                          );
@@ -979,11 +957,10 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   occasions as network events like if network staff is holding an open public conference"    );
         this.service.sendMsg ( user, "   like a lecture where alot of users will participate."                                      );
         this.service.sendMsg ( user, "   "                                                                                          );
-        this.service.sendMsg ( user, "   Upon setting the Auditorium mode the relay channel will be registered to the issuer."      );
-        this.service.sendMsg ( user, "   So if you set channel #avade with the Auditorium mode the channel #avade-relay will"       );
-        this.service.sendMsg ( user, "   automatically be registered to you. The channel will be set with +sp but will be open"     );
-        this.service.sendMsg ( user, "   for anyone to join to make it easier to manage. Feel free to restrict this channel."       );
-        this.service.sendMsg ( user, "   When the Auditorium mode is removed the relay channel will be dropped."                    );
+        this.service.sendMsg ( user, "   What users without voice or op say is not shown in the channel. The ircd sends it to"      );
+        this.service.sendMsg ( user, "   the relay channel when that exists: for #avade that is #avade-relay. A relay channel"      );
+        this.service.sendMsg ( user, "   can not be registered. While the mode is set ChanServ gives op(@) in it to everyone"       );
+        this.service.sendMsg ( user, "   with AOP or higher in the main channel, and removes everyone else from it."                );
         this.service.sendMsg ( user, "   "                                                                                          );
         this.service.sendMsg ( user, "   "+f.r ( ) +"Security recommendations:"+f.r ( )                                                 );
         this.service.sendMsg ( user, "   The auditorium mode should not be used on a normal channel as its behavior by filtering"   );
@@ -991,8 +968,6 @@ public class CSHelper extends Helper {
         this.service.sendMsg ( user, "   see everyone in the channel when its removed. To counter this behavior its recommended"    );
         this.service.sendMsg ( user, "   to issue a masskick on the channel after the mode is removed to make sure everyones"       );
         this.service.sendMsg ( user, "   clients will get all the joins and parts properly and so they can see all users."          );
-        this.service.sendMsg ( user, "   When it comes to the relay channel, make sure you put in some security on it perhaps"      );
-        this.service.sendMsg ( user, "   set it invite only or Oper only +O or perhaps even set restrict on."                       );
         this.showEnd ( user );  
     }
 

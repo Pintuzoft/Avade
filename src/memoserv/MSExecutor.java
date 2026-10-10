@@ -25,7 +25,6 @@ import nickserv.NickServ;
 import core.Executor;
 import core.Handler;
 import core.HashString;
-import core.Proc;
 import core.TextFormat;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -57,28 +56,11 @@ import user.User;
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd ) {
-        HashString command;
+    public void parse ( User user, String[] cmd, HashString command ) {
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
             this.help ( user );
             return; 
         }
-        
-        command = new HashString ( cmd[3] );
-
-    
-    //public void parse ( User user, String[] cmd )  {
-    //    HashString command;
-    //    try {
-    //        if ( cmd[3].isEmpty ( )  )  {
-    //            this.help ( user );
-    //            return; 
-    //        }
-    //    } catch ( Exception e )  {
-    //        this.help ( user );
-    //        return;
-    //    }
-    //    command = new HashString ( cmd[3] );
         
         if ( command.is(SEND) ) {
             this.doSend ( user, cmd );
@@ -154,6 +136,22 @@ import user.User;
         String message = Handler.cutArrayIntoString ( cmd, 5 );
         if ( message.length ( ) > MAXLEN ) {
             this.service.sendMsg ( user, "Error: The memo is too long, max "+MAXLEN+" characters." );
+            return;
+        }
+        /* Every memo is a row in the database and a mail to the receiver:
+           a full memo box takes no more, and one sender can not fill it alone */
+        if ( to.getMemos().size ( ) >= MAXMEMOS ) {
+            this.service.sendMsg ( user, "Error: The memo box of "+to.getNameStr()+" is full, the memo was not sent." );
+            return;
+        }
+        int unread = 0;
+        for ( MemoInfo m : to.getMemos ( ) ) {
+            if ( ! m.isRead ( ) && m.isFrom ( from.getName ( ) ) ) {
+                unread++;
+            }
+        }
+        if ( unread >= MAXUNREAD ) {
+            this.service.sendMsg ( user, "Error: "+to.getNameStr()+" has "+unread+" memos from you that are not read yet, the memo was not sent." );
             return;
         }
         MemoInfo memo = new MemoInfo ( to.getNameStr(), from.getNameStr(), message );
@@ -541,6 +539,8 @@ import user.User;
 
     private final static int MEMO_START               = 1551; 
     private final static int MAXLEN                   = 256;    /* memo.message in the database */
+    private final static int MAXMEMOS                 = 30;     /* memos a nick can hold */
+    private final static int MAXUNREAD                = 5;      /* unread memos from one sender to one nick */
     private final static int MEMO_BODY                = 1553; 
 
     private final static int DEL_ERROR                = 1554; 

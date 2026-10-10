@@ -18,6 +18,7 @@
 package memoserv;
 
 import core.Handler;
+import core.HashString;
 import java.util.Date;
 
 /**
@@ -32,6 +33,7 @@ public class MemoInfo {
     private long            stamp;
     private boolean         read;
     private String          stampString;
+    private HashString      senderHash;     /* made when first needed */
 
     /**
      *
@@ -103,6 +105,17 @@ public class MemoInfo {
     public String getSender ( ) { 
         return this.sender;
     } 
+
+    /**
+     * @param nick
+     * @return true when this memo was sent by that nick
+     */
+    public boolean isFrom ( HashString nick ) {
+        if ( this.senderHash == null ) {
+            this.senderHash = new HashString ( this.sender );
+        }
+        return this.senderHash.is ( nick );
+    }
     
     /**
      *

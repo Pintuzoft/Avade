@@ -205,7 +205,7 @@ public class NickServ extends Service {
         if ( command.is(HELP) ) {
             this.helper.parse ( user, cmd );
         } else {
-            this.executor.parse ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         }
          
     }
@@ -265,17 +265,6 @@ public class NickServ extends Service {
         niList.put ( ni.getName().getCode(), ni ); 
     }
 
-    /**
-     *
-     */
-    public static void listNicks ( ) {
-        if ( ! is ) {
-            return;
-        }
-        for ( HashMap.Entry<BigInteger,NickInfo> entry : niList.entrySet() ) {
-            System.out.println ( "NICKLIST: "+entry.getValue().getString ( FULLMASK ) );
-        }
-    }
  
     /* Ownership messages */
 
@@ -520,19 +509,6 @@ public class NickServ extends Service {
     }
     static void addNewFullAuth ( NSAuth mail ) {
         newFullAuthList.add ( mail );
-    }
-    
-    /**
-     *
-     * @param user
-     * @param cmd
-     */
-    public void snoopAndLog ( User user, String[] cmd )  {
-        try { 
-            this.accessDenied ( user );
-        } catch ( Exception e )  {
-            Proc.log ( NickServ.class.getName ( ) , e );
-        }
     }
 
     /* Send advertisement for this unregged nick */

@@ -45,7 +45,6 @@ public class NickSetting extends HashNumeric {
     private boolean showEmail;
     private boolean showHost;
     private boolean auth;
-    private int access;
     /* Oper */
     private String mark;
     private String freeze;
@@ -230,21 +229,6 @@ public class NickSetting extends HashNumeric {
         else {
             return "";
         }    
-    }
-    
-    /**
-     *
-     */
-    public void printSettings ( ) {
-        System.out.println ( "NickSetting Mailblock: "+this.mailBlock );
-        System.out.println ( "NickSetting NeverOp: "+this.neverOp );
-        System.out.println ( "NickSetting NoOp: "+this.noOp );
-        System.out.println ( "NickSetting ShowEmail: "+this.showEmail );
-        System.out.println ( "NickSetting ShowHost: "+this.showHost );
-        System.out.println ( "NickSetting Mark: "+this.mark );
-        System.out.println ( "NickSetting Freeze: "+this.freeze );
-        System.out.println ( "NickSetting Hold: "+this.hold );
-        System.out.println ( "NickSetting NoGhost: "+this.noghost );
     }
 }
  

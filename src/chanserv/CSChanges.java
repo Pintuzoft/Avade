@@ -28,7 +28,6 @@ public class CSChanges extends Changes {
     private boolean freeze;
     private boolean mark;
     private boolean hold;
-    private boolean pass;
     private boolean mailblock;
 
     private boolean close;
@@ -299,34 +298,5 @@ public class CSChanges extends Changes {
             this.changed = true;
         }  
     }
-    
-    /**
-     * printChanges
-     */
-    public void printChanges ( ) {
-        System.out.println("***** Changes *****");
-        if ( this.freeze )          { System.out.println("Changes: freeze!");       }
-        if ( this.mark )            { System.out.println("Changes: mark!");         }
-        if ( this.hold )            { System.out.println("Changes: hold!");         }
-        if ( this.pass )            { System.out.println("Changes: pass!");         }
-        if ( this.mailblock )       { System.out.println("Changes: mailblock!");    }
-        if ( this.changed )         { System.out.println("Changes: changed!");      }
-        if ( this.changed )         { System.out.println("Changes: changed!");      }
-        if ( this.close )           { System.out.println("Changes: close!");        }
-        if ( this.auditorium )      { System.out.println("Changes: auditorium!");   }
-        if ( this.topic )           { System.out.println("Changes: topic!");        }
-        if ( this.lastused )        { System.out.println("Changes: lastused!");     }
-        if ( this.description )     { System.out.println("Changes: description!");  }
-        if ( this.topiclock )       { System.out.println("Changes: topiclock!");    }
-        if ( this.modelock )        { System.out.println("Changes: modelock!");     }
-        if ( this.keeptopic )       { System.out.println("Changes: keeptopic!");    }
-        if ( this.ident )           { System.out.println("Changes: ident!");        }
-        if ( this.restrict )        { System.out.println("Changes: restrict!");     }
-        if ( this.verbose )         { System.out.println("Changes: verbose!");      }
-        if ( this.leaveops )        { System.out.println("Changes: leaveops!");     }
-        if ( this.autoakick )       { System.out.println("Changes: autoakick!");    }
-        if ( this.dynaop )          { System.out.println("Changes: dynaop!");       }
-    }
-
     
 }

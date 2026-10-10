@@ -2873,14 +2873,4 @@ public abstract class HashNumeric extends TextFormat {
      *
      */
     public final static HashString TRUE = new HashString ( "TRUE" );
-
-    /**
-     *
-     * @param str1
-     * @param str2
-     * @return bool
-     */
-    public boolean iCmp ( String str1, String str2 )  {
-        return  ( str1.equalsIgnoreCase ( str2 ) );
-    }
 }

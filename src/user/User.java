@@ -99,13 +99,7 @@ public class User extends HashNumeric {
     public User ( HashString code )  {
         this.name = code;
     }
-  
-    /**
-     *
-     */
-    public void serverConnect ( )  {
-        this.server.addUser ( this ); /* We are connected so lets add ourself to the server */ 
-    }
+
  
     /**
      *
@@ -307,7 +301,10 @@ public class User extends HashNumeric {
      * @param chan
      */
     public void addChan ( Chan chan ) { 
-        this.cList.add ( chan );
+        /* A user can be named in more than one SJOIN for the same channel */
+        if ( ! this.cList.contains ( chan ) ) {
+            this.cList.add ( chan );
+        }
     }
 
     /**
@@ -445,10 +442,6 @@ public class User extends HashNumeric {
      * @param sid
      */
 
-    public void attachSid ( ServicesID sid )    {         
-        this.sid = sid; 
-    }
-
     
     
     /* Return sid */
@@ -469,10 +462,6 @@ public class User extends HashNumeric {
      *
      * @return
      */
-    
-    public int getState ( ) { 
-        return this.state;
-    }
 
     /**
      *
@@ -505,16 +494,6 @@ public class User extends HashNumeric {
      * @return
      */
 
-
-    public boolean hasAccess ( HashString access )  {
-        int numacc = Oper.hashToAccess ( access );
-        for ( NickInfo ni : this.sid.getNiList() ) {
-            if ( ni.getOper().getAccess() >= numacc ) {
-                return true;        
-            }
-        }
-        return false;
-    }
     
     /**
      *

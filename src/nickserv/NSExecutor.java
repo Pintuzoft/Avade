@@ -66,14 +66,11 @@ import java.util.regex.Pattern;
      * @param user
      * @param cmd
      */
-    public void parse ( User user, String[] cmd ) {
-        HashString command;
+    public void parse ( User user, String[] cmd, HashString command ) {
         if ( cmd == null || cmd[3].isEmpty ( ) ) {
             this.help ( user );
             return; 
         }
-        
-        command = new HashString ( cmd[3] );
         
         if ( command.is(REGISTER) ) {
             this.register ( user, cmd );
@@ -469,7 +466,7 @@ import java.util.regex.Pattern;
         
         CMDResult result = this.validateCommandData ( user, GHOST, cmd );
  
-        if ( result.getStatus() != SYNTAX_ERROR )  {
+        if ( ! result.is ( SYNTAX_ERROR ) )  {
             nick = cmd[4];       
             cmd[5] = "pass_redacted";
         }

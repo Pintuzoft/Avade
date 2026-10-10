@@ -26,8 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import monitor.SnoopLog;
 import nickserv.NickInfo;
 import nickserv.NickServ;
@@ -99,11 +97,15 @@ public class Database extends HashNumeric {
                     lastConnectAttempt = System.currentTimeMillis();
                     closeQuietly ( );
                     /* Timeouts so a database that stops answering can never
-                       block services (and make the hub ping us out) for long */
+                       block services (and make the hub ping us out) for long.
+                       dontTrackOpenResources: the connection keeps no list of
+                       its statements, so one that is not closed after an error
+                       is garbage like any other object. With the list they
+                       piled up until the connection was replaced */
                     sql = DriverManager.getConnection ( 
                             "jdbc:mysql://"+Proc.getConf().get(MYSQLHOST)+":"+Integer.parseInt( Proc.getConf().get(MYSQLPORT).getString() )+"/"+Proc.getConf().get(MYSQLDB).getString()
                             +"?characterEncoding=UTF-8&connectionCollation=utf8mb4_swedish_ci"
-                            +"&connectTimeout=5000&socketTimeout=20000&tcpKeepAlive=true", 
+                            +"&connectTimeout=5000&socketTimeout=20000&tcpKeepAlive=true&dontTrackOpenResources=true", 
                             Proc.getConf().get(MYSQLUSER).getString(), 
                             Proc.getConf().get(MYSQLPASS).getString()
                     );           
@@ -258,7 +260,6 @@ public class Database extends HashNumeric {
      */
     public final static int MODERATED       = 24;
     
-    private final static int MODE_COUNT     = 24;
     
     /**
      *

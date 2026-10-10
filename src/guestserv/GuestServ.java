@@ -29,7 +29,6 @@ import java.util.Random;
  */
 public class GuestServ extends Service {
     private Random rand;
-    private int index;
 
     /**
      *

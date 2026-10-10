@@ -23,20 +23,17 @@ import core.Handler;
 import core.HashNumeric;
 import core.HashString;
 import core.Throttle;
-import memoserv.MSDatabase;
 import memoserv.MemoInfo;
 import operserv.Oper;
 import security.Hash;
 import user.User;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Random;
 
 
 /**
@@ -48,7 +45,6 @@ public class NickInfo extends HashNumeric {
     private HashString              user;
     private HashString              host;
     private HashString              ip;
-    private InetAddress             iNet; 
     private HashString              hashMask;       /* Integer representation of user@mask */ 
     private String                  pass;           /* hash, see security.Hash */
     private String                  mail; 
@@ -436,14 +432,6 @@ public class NickInfo extends HashNumeric {
     public Oper getOper ( ) {
         return this.oper;
     }
-    
-    /**
-     *
-     * @return str
-     */
-    public String getIDOper ( ) {
-        return  ( this.oper != null ) ? this.oper.getString ( NAME ) : null;
-    }
 
     /**
      *
@@ -509,15 +497,6 @@ public class NickInfo extends HashNumeric {
      */
     public void setOper ( Oper oper ) {
         this.oper = oper;
-    }
-    
-    /**
-     *
-     * @param setting
-     * @return bool
-     */
-    public boolean isSetting ( HashString setting ) {
-        return this.settings.is ( setting );
     }
 
     /**

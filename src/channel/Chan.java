@@ -536,9 +536,7 @@ public class Chan extends HashNumeric {
     public String getKey ( )                    { return this.key;      }
     public void clearKey ( )                    { this.key = null;      }
     public int getLimit ( )                     { return this.limit;    }
-    public ArrayList<String> getBans ( )        { return this.bans;     }
-    public ArrayList<String> getExcepts ( )     { return this.excepts;  }
-    public ArrayList<String> getInvites ( )     { return this.invites;  }
+
     
     public static boolean takesParam ( char mode, boolean adding ) {
         switch ( mode ) {
@@ -687,14 +685,7 @@ public class Chan extends HashNumeric {
     public boolean isVo ( User user )  {
         return this.vList.contains ( user );
     }
-    
-    /**
-     * @param user
-     * @return true if the user is in the channel without any status
-     */
-    public boolean isUser ( User user )  {
-        return this.members.contains ( user ) && ! this.isOp ( user ) && ! this.isHop ( user ) && ! this.isVo ( user );
-    }
+
      
     /**
      *

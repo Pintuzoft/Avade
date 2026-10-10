@@ -120,10 +120,11 @@ normal conversation with the user.
 
 #### Auditorium chanflag
 
-IRC operators are able to enable the auditorium flag on a channel. The 
-funcationality in services will automatically do some initial checks and then 
-register the relay channel as "#channame-relay" for where chat from regular users 
-(-ov) will end up. The +A channel mode will then be applied to the main channel.
+IRC operators are able to enable the auditorium flag on a channel. The +A channel 
+mode is then applied to the main channel, and chat from regular users (-ov) ends up 
+in "#channame-relay". A relay channel can not be registered: while the flag is set 
+ChanServ gives op in it to everyone with AOP or higher in the main channel, and 
+removes everyone else from it.
 
 #### Join requests
 
@@ -158,11 +159,13 @@ been violated network rules or other types of abuse using the channel topic.
 
 - Help           - Show help
 - Register       - Register nick
+- Auth           - Confirm an email address or a new password
 - Identify       - Identify nick
 - SIdentify      - Silently identify nick
 - Ghost          - Kill ghost nick
 - ResetPass      - New password with a code sent to the confirmed email
 - SET            - Set nick options
+- Info           - Show info about a nick
 - Drop           - Drop registered nick
   
 --- IRCop---
@@ -183,7 +186,8 @@ been violated network rules or other types of abuse using the channel topic.
 - Register       - Register channel
 - Identify       - Identify channel
 - Set            - Set channel options
-- Info           - Show info about a nick
+- Chanflag       - Set extended channel flags of the ircd (flood limits, join requests ..)
+- Info           - Show info about a channel
 - AOP            - Manage AOP list
 - SOP            - Manage SOP list
 - HOP            - Manage HOP (halfop) list
@@ -199,6 +203,7 @@ been violated network rules or other types of abuse using the channel topic.
 - Mkick          - Mass kick channel
 - Drop           - Drop registered channel
 - Accesslog      - View SOP/AOP/AKICK logs
+- Listops        - View the founder and the SOP/AOP lists
   
 --- IRCop ---
   
@@ -230,23 +235,41 @@ been violated network rules or other types of abuse using the channel topic.
 - Global         - Send global message
 - Uinfo          - Show debug information regarding a user
 - Cinfo          - Show debug information regarding a channel
+- Ninfo          - Show debug information regarding a nick
+- Sinfo          - Show debug information regarding a server
 - Ulist          - Show user map (use only on smaller networks)
+- Clist          - Show the channels on the network
+- Slist          - Show the servers on the network
 - Uptime         - Show uptime information
 - Akill          - Manage AKill list
+- Makill         - Add many akills at once
+- Banlog         - Search the log of services bans
 - Searchlog      - Show ownership events and comments for a nick or channel
+- Snooplog       - Search the snoop logs for a nick or channel
 - Audit          - Show staff events
 - Comment        - Attach a comment to a nick or channel
 - Ignore         - Manage the ignore list
 - Sqline         - Manage the SQline (restricted nick) list
 - Sgline         - Manage the SGline (restricted gcos) list
+- Spamfilter     - Manage the spam filters of the network
+- Forcenick      - Change the nick of a user
+- Vhost          - Set or remove the vhost of a nick
+- Clone          - Manage clone limits for ips and ranges
+- Uhm            - Control user host-masking on the network
+- Sjr            - Control services join requests on the network
 - Jupe           - Jupiter a server to prevent it from linking
 - Server         - Serverlist purposed as missing server list (auto-populated)
+- Bahamut        - Show the bahamut version services are made for
   
   
 #### RootServ :
   
 - Rehash         - Re-read the services configuration file
+- Showconfig     - Show the services configuration (passwords and the salt are hidden)
 - Sraw           - Send a raw services command to the network
+- Sra            - Manage the Services Root Admin list
+- Panic          - Limit who can use services commands
+- Stop           - Stop services, pending changes are written first
   
   
 

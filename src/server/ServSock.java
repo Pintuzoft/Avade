@@ -21,7 +21,6 @@ import core.Handler;
 import core.Proc;
 import core.HashNumeric;
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,13 +46,13 @@ public class ServSock extends HashNumeric {
     private static PrintWriter out;
     private InputStream in;
     private final ByteArrayOutputStream lineBuf = new ByteArrayOutputStream ( 512 );
-    private BufferedReader stdIn;
     private String buf;
     private long last;
-    private static long pingTime;
     private static long lastPing;
     private static long defaultPing = 120000;
     private volatile boolean closed = false;
+    /* A PrintWriter never throws, it only remembers that a write failed */
+    private static volatile boolean broken = false;
 
     /**
      *
@@ -67,6 +66,7 @@ public class ServSock extends HashNumeric {
             this.sock.setKeepAlive(true);
             this.sock.setSoTimeout(200);
             out = new PrintWriter(new OutputStreamWriter(this.sock.getOutputStream(), StandardCharsets.UTF_8), true);
+            broken = false;
             this.in = new BufferedInputStream(this.sock.getInputStream());
 
         } catch (UnknownHostException e) {
@@ -94,6 +94,10 @@ public class ServSock extends HashNumeric {
      * @return true when the link to the hub is gone
      */
     public boolean isClosed() {
+        if (broken && !this.closed) {
+            /* A write failed: close the socket too, the main loop relinks */
+            this.disconnect();
+        }
         return this.closed;
     }
 
@@ -152,6 +156,7 @@ public class ServSock extends HashNumeric {
      */
     public void disconnect() {
         this.closed = true;
+        broken = true;      /* nothing more is written to this link */
         try {
             this.sock.close();
             out.close();
@@ -170,8 +175,13 @@ public class ServSock extends HashNumeric {
             if (!cmd.contains("PONG")) {
                 //System.out.println ( "Sending: "+cmd );
             }
-            if (out != null) {
+            if (out != null && !broken) {
                 out.println (cmd);
+                /* Without asking, a dead link is only noticed at the ping timeout */
+                if (out.checkError()) {
+                    broken = true;
+                    Proc.log("Could not write to the hub, dropping the link");
+                }
             }
         } catch (Exception e) {
             Proc.log(ServSock.class.getName(), e);

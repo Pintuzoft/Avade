@@ -37,7 +37,6 @@ public class CMDResult {
     private HashString      sub2;
     private ServicesBan     ban;
     private NetServer       server1;
-    private String[]        cmd;
     private ArrayList<String> makill = new ArrayList<>();
     
     /**
@@ -231,22 +230,7 @@ public class CMDResult {
     public NetServer getServer ( ) {
         return this.server1;
     }
-    
-    /**
-     *
-     * @param cmd
-     */
-    public void setCmd ( String[] cmd ) {
-        this.cmd = cmd;
-    }
-    
-    /**
-     *
-     * @return
-     */
-    public String[] getCmd ( ) {
-        return this.cmd;
-    }
+
     
     /* MAKILL */
 

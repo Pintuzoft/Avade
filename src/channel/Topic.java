@@ -128,23 +128,8 @@ public class Topic {
      */
     public String getTimeStr ( ) {
         return this.timeStr;
-    } 
+    }
 
-    /**
-     *
-     * @param topic
-     */
-    public void setText ( String topic ) { 
-        this.text = stripColon ( topic );
-    } 
-    
-    /**
-     *
-     * @param setter
-     */
-    public void setSetter ( String setter ) { 
-        this.setter = setter;
-    } 
     
     /**
      *

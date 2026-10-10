@@ -17,17 +17,14 @@
  */
 package memoserv;
 
-import nickserv.NSDatabase;
 import nickserv.NickServ;
 import nickserv.NickInfo;
 import core.Database;
-import core.Handler;
 import core.HashString;
 import core.Proc;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 
 /**
@@ -36,9 +33,7 @@ import java.util.ArrayList;
  */
 
 public class MSDatabase extends Database {
-    private static Statement            s;
     private static ResultSet            res;
-    private static ResultSet            res2;
     private static PreparedStatement    ps;
 
     /* NickServ Methods */

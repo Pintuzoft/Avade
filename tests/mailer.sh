@@ -28,7 +28,11 @@ stop() {
 smtp() {
     mkdir -p "$M/smtp"
     [ -n "$(smtp_pids)" ] || ( setsid python3 "$TESTS/smtp.py" "$SMTP_PORT" "$M/smtp" < /dev/null > "$M/smtp.out" 2>&1 & )
-    sleep 0.5
+    # Wait until it answers: the setup of the mailer sends its test mail right after this
+    for i in $(seq 1 50); do
+        ( exec 3<>"/dev/tcp/127.0.0.1/$SMTP_PORT" && read -r -t 2 greeting <&3 ) 2>/dev/null && break
+        sleep 0.2
+    done
 }
 start() {
     smtp

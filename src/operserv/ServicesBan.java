@@ -130,35 +130,6 @@ public class ServicesBan extends HashNumeric {
 
     }
 
-    /**
-     *
-     */
-    public void printData() {
-        System.out.println("BAN: id: "+this.id.getString());
-        System.out.println("BAN: nick:"+this.nick);
-        System.out.println("BAN: user:"+this.user);
-        System.out.println("BAN: host:"+this.host);
-        System.out.println("BAN: mask: "+this.mask.getString());
-        System.out.println("BAN: isCidr:"+(this.cidr != null?"1":"0") );
-        
-        if ( this.cidr != null ) {
-            System.out.println("BAN: cidr-NETADDR:"+this.cidr.getNetworkAddress());
-            System.out.println("BAN: cidr-BROADADDR:"+this.cidr.getBroadcastAddress());
-        }
-        
-        System.out.println ( "BAN: instater:"+this.instater );
-        System.out.println ( "BAN: reason:"+this.reason );
-        if ( this.time == null ) {
-            System.out.println ( "BAN: time:-" );
-        } else {
-            System.out.println ( "BAN: time:"+dateFormat.format ( this.time ) );
-        }     
-        if ( this.expire == null ) {
-            System.out.println ( "BAN: expire:-" );
-        } else {
-            System.out.println ( "BAN: expire:"+dateFormat.format ( this.expire ) );
-        }
-   }
     
     /**
      *
@@ -168,16 +139,7 @@ public class ServicesBan extends HashNumeric {
     public boolean match ( String fullmask )  {
         return StringMatch.matches ( fullmask, this.mask.getString() );
     }
-    
-    /**
-     *
-     * @param fullmask
-     * @return
-     */
-    public boolean matchNoWild ( String fullmask )  {
-        HashString it = new HashString ( fullmask );
-        return it.is(this.mask);
-    }
+
     
     /**
      *
@@ -288,14 +250,7 @@ public class ServicesBan extends HashNumeric {
     public HashString getUser ( ) { 
         return this.user;
     }
- 
-    /**
-     *
-     * @param id
-     */
-    public void setId ( HashString id ) { 
-        this.id = id;
-    }
+
     
     /**
      *
@@ -318,13 +273,6 @@ public class ServicesBan extends HashNumeric {
         this.setExpireStamp ( );
     }
 
-    /**
-     *
-     * @return
-     */
-    public long getExpireStamp() {
-        return this.expireStamp;
-    }
     
     /**
      *
@@ -336,16 +284,6 @@ public class ServicesBan extends HashNumeric {
     
     private void setExpireStamp() {
         this.expireStamp = ( long ) this.expire.getTime ( ) / 1000;
-    }
-
-    private static String getTypeStr ( HashString type ) {
-        if      ( type.is(AKILL) )          { return "AK"; }
-        else if ( type.is(SQLINE) )         { return "SQ"; }
-        else if ( type.is(SGLINE) )         { return "SG"; }
-        else if ( type.is(IGNORE) )         { return "IG"; }
-        else {
-            return "AK";
-        }
     }
 
     /**

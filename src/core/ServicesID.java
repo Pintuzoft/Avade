@@ -251,22 +251,8 @@ public class ServicesID extends HashNumeric {
      */
     public void setCiList ( ArrayList<ChanInfo> ciList ) { 
         this.ciList = ciList;
-    }  
-
-    /**
-     *
-     */
-    public void printSID ( )  {
-        System.out.println ( "ServicesID ( "+this.id+" )  {" );
-        System.out.println ( "    niList ( "+this.niList.size ( ) +" ) " );
-        System.out.println ( "    ciList ( "+this.ciList.size ( ) +" ) " );
-        if ( this.user != null )  {
-            System.out.println ( "    User ( "+user.getString ( NAME ) +" ) " );
-        } else {
-            //System.out.println ( "    User ( NULL ) " );
-        }
-        System.out.println ( "}" );
     }
+
     
     /**
      *
@@ -380,12 +366,4 @@ public class ServicesID extends HashNumeric {
      *
      * @return
      */
-
-    public boolean timeToExpire() {
-        return this.hasExpired();
-//        System.out.println("timeToExpire: now:"+System.currentTimeMillis()+", splitExpire:"+this.splitExpire);
-//        return System.currentTimeMillis() > this.splitExpire;
-    }
-
-
 }

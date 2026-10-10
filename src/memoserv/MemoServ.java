@@ -19,7 +19,6 @@ package memoserv;
 
 import core.Handler;
 import core.HashString;
-import core.Proc;
 import core.Service;
 import core.TextFormat;
 import nickserv.NickInfo;
@@ -78,7 +77,7 @@ public class MemoServ extends Service {
             this.helper.parse ( user, cmd );
         
         } else {
-            this.doDefault ( user, cmd );
+            this.executor.parse ( user, cmd, command );
         } 
          
     }
@@ -120,15 +119,6 @@ public class MemoServ extends Service {
         this.sendMsg ( u, "You have "+f.b ( ) +count+f.b ( ) +" new memo"+ ( count==1?"":"s" ) +"." );
     }
  
-    /**
-     *
-     * @param user
-     * @param cmd
-     */
-    public void doDefault ( User user, String[] cmd )  {
-        /** We are suppose to execute **/
-        this.executor.parse ( user, cmd );
-    } 
     
     /**
      *
