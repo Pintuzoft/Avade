@@ -549,6 +549,20 @@ the firewall has to let it in on the database port, from that machine only.
 2. In that folder, copy config-template.php to config.php and fill it in: the
    name of the network, a link back to your site, and the database.
 
+   The web server has to be able to enter the folder and to read both files.
+   Files that were copied there often belong to root with no access for
+   others, and PHP then answers "Access denied." or "File not found." before
+   the page has run at all:
+
+       chmod 755 auth
+       chmod 644 auth/index.php
+       chgrp <the group PHP runs as> auth/config.php
+       chmod 640 auth/config.php
+
+   config.php has the password of the database, so PHP and nobody else
+   should read it. On a machine with SELinux also: restorecon -Rv auth.
+   config-template.php is not needed on the web server.
+
 3. Give the page a database account of its own, that can do nothing but read
    the codes and leave its message. As the admin of the database (use the
    address of the web server instead of webhost, and your own database name
