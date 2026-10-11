@@ -139,28 +139,64 @@ jobs:
 
             1. Read what changed in bahamut between v${{ steps.find.outputs.current }} and
                v${{ steps.find.outputs.version }}: clone https://github.com/DALnet/bahamut into
-               /tmp/bahamut, read CHANGES and `git diff`. Look for what touches services: the
-               server protocol (NICK, SJOIN, MODE, TOPIC, CAPAB, numerics), SVS* commands,
-               user and channel modes, chanflags (SVSXCF), anything services can or must
-               control, and changes that explain failing tests. Also what decides a join
-               (can_join and m_join in src/channel.c): for join requests Avade does those
-               checks itself, in Chan.joinRefusal, and must follow every change there.
-            2. Decide if Avade needs changes: protocol changes it must follow, or new things
-               the network wants to control through services.
-            3. If no change is needed and the tests passed, change nothing.
+               /tmp/bahamut, read CHANGES and `git diff`. CHANGES is what the authors say, the
+               diff is what happened: read both. Go through every point of this list, every
+               time, also when CHANGES says nothing about it:
+
+               a. The server protocol: CAPAB, SERVER and SVINFO, the order of the burst
+                  (NICK, SJOIN, TOPIC), and numerics that services get.
+               b. The status of members: the prefixes in SJOIN (@ % +) and the status modes
+                  in MODE (o h v). A new one has to be known to Chan.addUserList and
+                  Chan.chMode, or its users are not members to Avade at all.
+               c. Channel modes: new letters, which ones take a parameter (Chan.takesParam),
+                  list modes. ChanMode and the mode lock follow them.
+               d. User modes: new ones, and which only services may set.
+               e. Chanflags (SVSXCF): CSFlag, the CHANFLAG command, the database, the help.
+               f. SVS* commands and the other commands services send or get (SVSMODE,
+                  SVSNICK, SVSHOLD, SVSCTRL, SVSHOST, AJ and SJR, CHANKILL, AKILL, SQLINE,
+                  SGLINE): new ones, and changed parameters or answers.
+               g. What decides a join: can_join and m_join in src/channel.c. For join
+                  requests Avade does those checks itself, in Chan.joinRefusal, and must
+                  follow every change there.
+               h. Host masking: that bahamut-module/avade_uhm.c still builds against the new
+                  source (hooks, MODULE_INTERFACE_VERSION) and gives the mask Avade computes.
+               i. What the ircd does not send back to services (their own kills, modes,
+                  bans, joins): Avade keeps its own state for those.
+               j. Build and config: new build options, or settings in ircd.conf that the
+                  test network (tests/ircd.sh) needs.
+               k. The tests: for every check that fails, the change in bahamut that explains it.
+
+            2. Sort what you found. Everything that touches services is one of three kinds,
+               and the kind says what Avade has to do:
+               - CHANGED: something that was there works in another way. Avade has to follow
+                 it where it sends or reads it. A workaround in Avade may no longer be needed.
+               - NEW: something that was not there. Decide whether the network wants to see
+                 or control it through services, and if so build the support.
+               - GONE: something that was removed, or is deprecated. Avade stops sending and
+                 offering what is removed: commands, help pages, settings, tests. What is only
+                 deprecated keeps working in Avade, and the report says that it will go.
+                 Never remove data from the database for it: say what is left there instead.
+               Changes that do not touch services at all need one line together, not a list.
+            3. If nothing is CHANGED, NEW or GONE for services and the tests passed, change nothing.
             4. Otherwise build it as CLAUDE.md describes: commands, config and access levels
                (template.conf and reference.conf), help pages, logs and snoop, DBChanges for
                database changes, checks in tests/run_tests.py, and a line in
-               docs/AUDIT-2026-09.md. Do not change the bahamut version in Version.java or
+               docs/AUDIT-2026-09.md. Where there is a choice only the owner of the network
+               can make (the name of a command, who may use it, a new access list), build what
+               is closest to how Avade does the same for what exists, and name the choice in
+               the pull request. Do not change the bahamut version in Version.java or
                tests/env.sh, the release does that. Run the test suite against
                ${{ steps.find.outputs.version }} (tests/start.sh ${{ steps.find.outputs.version }},
                tests/run_tests.py, tests/stop.sh) until it passes. Rebuild dist/Avade.jar.
                Unless it is a dry run: commit on a new branch bahamut-${{ steps.find.outputs.version }},
                push it, and open a pull request to the default branch with gh. Never push to the
                default branch itself. Write the pull
-               request in English: what changed in bahamut, what you built and why, the test result,
-               and what a person must check before merging.
-            5. Answer with the structured output. summary: 2-6 sentences in English.
+               request in English: the report of point 5, what you built and why, the test result,
+               the choices that are the owner's, and what a person must check before merging.
+            5. Answer with the structured output. summary is the report, in English, as a
+               Markdown list with one line for each point a to k: "nothing", or the kind
+               (CHANGED, NEW or GONE), what it is, and what you did about it. A reader must
+               be able to see from it that every point was looked at.
           claude_args: |
             --model claude-opus-5-5
             --max-turns 300
@@ -221,7 +257,7 @@ jobs:
             echo "$SUMMARY"
             echo '```'
             [ "$MAJOR_OK" != "true" ] && echo "A new major version: never released automatically." && echo
-            if [ -n "$analysis" ]; then echo "**Claude:** $analysis"; echo; fi
+            if [ -n "$analysis" ]; then echo "**What Claude found, point by point:**"; echo; echo "$analysis"; echo; fi
             [ -n "$pr" ] && echo "**Pull request:** $pr" && echo
             [ "$CLAUDE" == "failure" ] && echo "The Claude step failed, see the run." && echo
             [ "$HAS_CLAUDE" != "true" ] && echo "The changes were not read (no Claude secret)." && echo
