@@ -56,7 +56,9 @@ What it finds is one of three kinds, and the kind says what Avade has to do:
 The answer is a report with one line for each of the eleven points: "nothing",
 or the kind, what it is and what was done. It is in the pull request, in the
 issue, or in the notes of the automatic release, so it can be seen that every
-point was looked at. Where there is a choice only you can make (the name of a
+point was looked at. In the issue the lines are boxes to tick off while you
+review the pull request; the points with nothing to do are ticked already.
+There is one issue and one pull request for a version, not one for each thing. Where there is a choice only you can make (the name of a
 command, who may use it, a new access list), Claude builds what is closest to
 how Avade does the same today and names the choice in the pull request.
 
