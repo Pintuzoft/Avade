@@ -1675,7 +1675,7 @@ import java.util.regex.Pattern;
             return "The password for "+args[0]+" is now fully set and authorized.";
         
         } else if ( code.is(PASS_AUTHED_UNIDENT) ) {
-            return "You have been unindentified from nick "+args[0]+" as a new password has been set.";
+            return "You have been unidentified from nick "+args[0]+" as a new password has been set.";
         
         } else if ( code.is(NO_AUTH_FOUND) ) {
             return "The authcode you provided did not match any pending objects.";
@@ -1684,7 +1684,7 @@ import java.util.regex.Pattern;
             return "Last login from "+args[0]+".";
         
         } else if ( code.is(IDENT_NICK_DELETED) ) {
-            return "You have been unindentified from nick "+args[0]+" as it was deleted from services.";
+            return "You have been unidentified from nick "+args[0]+" as it was deleted from services.";
         
         } else if ( code.is(NICK_DELETED) ) {
             return "Nickname "+args[0]+" has been deleted from services.";
