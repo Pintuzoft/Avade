@@ -199,7 +199,7 @@ def wait_db(query, timeout=90):
 def auth_code(email, timeout=90):
     """The mail confirmation code Avade put in the mailbox for a new nick."""
     body = wait_db("select body from mailbox where mail = '%s' order by id desc limit 1" % email, timeout)
-    m = re.search(r'auth/([0-9a-f]{32})', body)
+    m = re.search(r'auth/(?:\?code=)?([0-9a-f]{32})', body)
     return m.group(1) if m else None
 
 

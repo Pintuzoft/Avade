@@ -31,6 +31,12 @@ failed). `mailer/build.sh` builds `dist/AvadeMailer.jar`, which is committed
 like `dist/Avade.jar`. Docs: "Mail" in `INSTALL`. In the tests it sends to
 `tests/smtp.py`.
 
+The mails that confirm an address or a password have a link, `authurl` plus a
+code, and the same code as `/NickServ AUTH <code>`. `web/auth/index.php` is
+the page behind the link (PHP, for the admin's web server): it asks for a
+click and puts a row in the `command` table, which `command/Queue` reads
+every five seconds. `test_auth_page` runs it in Docker.
+
 ## Config files
 
 `template.conf` is what a new `services.conf` starts from, `reference.conf`

@@ -232,6 +232,13 @@ nothing is given up on because the server could not take it right then. The test
 suite stops the database in the middle of all that and looks for every change 
 afterwards.
 
+#### Mail confirmation with one click
+
+A new nick, a new mail address and a new password are confirmed by mail. The mail 
+has a link to a small page that comes with Avade (`web/auth/`, PHP): one click 
+there, and services make the change and tell the user on IRC a few seconds later. 
+The same mail has a command for those who rather type it: `/NickServ AUTH <code>`.
+
 #### Tested against a real bahamut
 
 `tests/` starts a network of its own, a bahamut hub and leaf, MariaDB, Avade and the 

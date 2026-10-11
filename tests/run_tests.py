@@ -872,6 +872,11 @@ def test_nick_privacy_and_mail():
     r = c.svc('NickServ', 'SET EMAIL %s carol-new@test.net' % pw('Carol'))
     mail = wait_db("select subject from mailbox where mail = 'carol-new@test.net'", 150)
     check(mail != '', 'SET EMAIL sends a confirmation mail to the new address', (r, mail))
+    body = db("select body from mailbox where mail = 'carol-new@test.net' order by id desc limit 1")
+    link = re.search(r'auth/(?:\?code=)?([0-9a-f]{32})', body)
+    irc = re.search(r'/NickServ AUTH ([0-9a-f]{32})', body)
+    check(link and irc and link.group(1) == irc.group(1) and 'nickname Carol' in body,
+          'the mail has the link and the same code as a command for IRC, for networks without a page behind the link', body[-200:])
     r = c.svc('NickServ', 'SET EMAIL %s carol@test.online' % pw('Carol'))
     check(not has(r, 'not a valid'), 'an address with a long top level domain (.online) is valid', r)
     close(a, c)
@@ -1618,6 +1623,120 @@ def test_flood_protection():
     close(mm, u, u2, a)
 
 
+def test_auth_page():
+    """The page behind the link in the mails (web/auth/): it asks for a click, tells services, and they make the change."""
+    import shutil
+    import urllib.error
+    import urllib.request
+    image, name, port = 'avade-test-php', 'avade-test-web', 8099
+    if subprocess.run(['docker', 'image', 'inspect', image], capture_output=True).returncode != 0:
+        built = subprocess.run(['docker', 'build', '-q', '-t', image, '-'], capture_output=True,
+                               input=b'FROM php:8.3-cli\nRUN docker-php-ext-install mysqli > /dev/null\n')
+        if built.returncode != 0:
+            print('    skip  no PHP with mysqli to run the page with (docker build failed)')
+            return
+
+    def root(query):
+        return subprocess.run(['docker', 'exec', ENV['DB_CONTAINER'], 'sh', '-c',
+                               'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e "%s"' % query], capture_output=True)
+
+    def page(code, post=False):
+        """(status, text) of the page for a code."""
+        url = 'http://127.0.0.1:%d/auth/' % port
+        data = ('code=' + code).encode() if post else None
+        try:
+            with urllib.request.urlopen(url if post else url + '?code=' + code, data=data, timeout=30) as r:
+                return r.status, r.read().decode()
+        except urllib.error.HTTPError as e:
+            return e.code, e.read().decode()
+
+    def keep(state, text):
+        """Save a page next to the test files, to look at in a browser: tests/.work/web/preview-<state>.html"""
+        open(os.path.join(WORK, 'web', 'preview-%s.html' % state), 'w').write(text)
+
+    # The page as an admin would set it up: its own folder, config.php, and an account with the grants from INSTALL
+    repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    web = os.path.join(WORK, 'web', 'auth')
+    shutil.rmtree(os.path.join(WORK, 'web'), ignore_errors=True)
+    os.makedirs(web)
+    shutil.copy(os.path.join(repo, 'web', 'auth', 'index.php'), web)
+    template = open(os.path.join(repo, 'web', 'auth', 'config-template.php')).read()
+    for old, new in (("'ExampleNet'", "'TestNet'"), ('3306', ENV['DB_PORT']), ("'avade'", "'%s'" % ENV['DB_NAME']), ("'CHANGE-THIS'", "'webpw12345'")):
+        template = template.replace(old, new)
+    open(os.path.join(web, 'config.php'), 'w').write(template)
+    root("drop user if exists 'avadeweb'@'%'")
+    root("create user 'avadeweb'@'%%' identified by 'webpw12345'; "
+         "grant select (nick, auth, stamp) on %(d)s.maillog to 'avadeweb'@'%%'; "
+         "grant select (nick, auth, stamp) on %(d)s.passlog to 'avadeweb'@'%%'; "
+         "grant select (name, regstamp) on %(d)s.nick to 'avadeweb'@'%%'; "
+         "grant select, insert on %(d)s.command to 'avadeweb'@'%%'" % {'d': ENV['DB_NAME']})
+    subprocess.run(['docker', 'rm', '-f', name], capture_output=True)
+    subprocess.run(['docker', 'run', '-d', '--rm', '--name', name, '--network', 'host', '-v', os.path.join(WORK, 'web') + ':/web:ro',
+                    image, 'php', '-S', '127.0.0.1:%d' % port, '-t', '/web'], capture_output=True)
+    mm = master()
+    mm.svc('NickServ', 'DELETE Webauth')        # whatever a run that was stopped left behind
+    try:
+        for i in range(30):
+            try:
+                if page('x')[0] == 400:
+                    break
+            except OSError:
+                time.sleep(0.5)
+        status, text = page('x')
+        check(status == 400 and 'not complete' in text, 'a link without a whole code gets a page that says so', (status, text[-200:]))
+        status, text = page('0123456789abcdef0123456789abcdef')
+        check(status == 404 and 'does not work any more' in text, 'a code that is not known is refused', status)
+        keep('stop', text)
+
+        # a mail address
+        u = Client('Webauth')
+        u.svc('NickServ', 'REGISTER webpw12345 webauth@test.net')
+        code = auth_code('webauth@test.net', 60)
+        check(code, '(the mail of a new nick has a link with a code)')
+        status, text = page(code)
+        check(status == 200 and 'Confirm the mail address' in text and '<b>Webauth</b>' in text and '<button' in text,
+              'the link shows whose mail address it is about and asks for a click', (status, text[-300:]))
+        keep('ask', text)
+        time.sleep(6)
+        check(db("select count(*) from command") == '0' and db("select count(*) from maillog where nick = 'Webauth' and auth is null and stamp >= (select regstamp from nick where name = 'Webauth')") == '0',
+              'opening the link changes nothing: a mail scanner that follows it confirms nothing')
+        m = u.mark()
+        status, text = page(code, post=True)
+        check(status == 200 and 'The mail address is confirmed.' in text, 'the click tells services, and the page waits until they have done it', (status, text[-300:]))
+        keep('ok', text)
+        check(u.saw(r'email for Webauth is now fully set', m, 5), 'services tell the user on IRC')
+        check(db("select count(*) from maillog where nick = 'Webauth' and auth is null and stamp >= (select regstamp from nick where name = 'Webauth')") == '1', 'and the address is confirmed in the database')
+        row = db("select usermask from nicklog where name = 'Webauth' order by id desc limit 1")
+        check('web!web@127.0.0.1' in row, 'the log has the address of the visitor', row)
+        status, text = page(code, post=True)
+        check(status == 404, 'the same link does not work a second time', status)
+
+        # a new password
+        r = u.svc('NickServ', 'SET PASSWD webpw12345 nyttwebpw99')
+        code2 = ''
+        for i in range(40):
+            body = db("select body from mailbox where mail = 'webauth@test.net' and subject like '%%password%%' order by id desc limit 1")
+            found = re.search(r'code=([0-9a-f]{32})|auth/([0-9a-f]{32})', body)
+            if found:
+                code2 = found.group(1) or found.group(2)
+                break
+            time.sleep(1)
+        check(code2 and code2 != code, '(a password change is mailed with a code of its own)', r)
+        status, text = page(code2)
+        check(status == 200 and 'Confirm the new password' in text, 'the link of a password change says so', (status, text[-300:]))
+        status, text = page(code2, post=True)
+        check(status == 200 and 'The new password is in use.' in text, 'and the click makes services use it', (status, text[-300:]))
+        close(u)
+        u = Client('Webauth')
+        check(has(u.svc('NickServ', 'IDENTIFY nyttwebpw99'), 'Password accepted'), 'the new password works')
+        close(u)
+    finally:
+        subprocess.run(['docker', 'rm', '-f', name], capture_output=True)
+        root("drop user if exists 'avadeweb'@'%'")
+        mm.svc('NickServ', 'DELETE Webauth')
+        close(mm)
+
+
 def test_bans():
     mm = master()
     mm.svc('OperServ', 'AKILL TIME 60d *!*@203.0.113.7 test of 60 days')
@@ -1766,7 +1885,7 @@ TESTS = [test_config_files, test_setup, test_identify, test_throttle, test_acces
          test_akick_kicks, test_common_errors, test_mask_rank, test_dash_in_channel_name, test_memo, test_memo_limits, test_nick_privacy_and_mail,
          test_oper_checks, test_dropped_nick_memos, test_help_and_last_login, test_modelock_key, test_uhm, test_host_masking, test_ban_follows, test_passwords, test_mailer, test_log_file,
          test_services_own_kill, test_codes_of_a_former_owner, test_channel_identify_is_stored, test_web_command_without_nick,
-         test_snoop_hides_passwords, test_mkick_forgets_channel, test_database_down, test_flood_protection, test_bans,
+         test_snoop_hides_passwords, test_mkick_forgets_channel, test_database_down, test_flood_protection, test_auth_page, test_bans,
          test_drop_and_hold, test_split_keeps_identification, test_changed_while_split, test_leaf_split, test_services_relink, test_hub_restart]
 
 

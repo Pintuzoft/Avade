@@ -101,7 +101,7 @@ public class Setup {
         this.conf.put ( "name",         "services."+domain );
         this.conf.put ( "stats",        "stats."+domain );
         this.conf.put ( "servicehost",  domain );
-        this.conf.put ( "authurl",      "https://"+domain+"/auth/" );
+        this.conf.put ( "authurl",      "https://"+domain+"/auth/?code=" );
     }
 
     /* 2/3 */

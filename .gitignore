@@ -26,3 +26,6 @@ hs_err_pid*
 /tests/.work/
 __pycache__/
 bahamut-module/*.so
+
+# The settings of the confirmation page, made from config-template.php
+web/auth/config.php
