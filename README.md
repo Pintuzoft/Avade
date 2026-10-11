@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" width="300" alt="Avade"></p>
+
 # Avade
 ## Avade IRC Services
 
