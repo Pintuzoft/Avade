@@ -519,6 +519,67 @@ network needs it.
 
 
 
+13. The confirmation page (optional)
+
+When someone registers a nick, changes its mail address or asks for a new
+password, services send a mail with a link. The link is "authurl" from
+services.conf with a code after it:
+
+    https://example.net/auth/?code=3f9c...
+
+The page behind that link is in web/auth/. It is a small PHP page for your web
+server. It looks the code up, asks the visitor to click a button, and leaves a
+row in the table "command". Services read that table every five seconds, check
+the code again, make the change and tell the user on IRC. The page waits for
+that and says so.
+
+Without the page nothing breaks: every mail also has the command for IRC,
+/NickServ AUTH <code>, which does the same.
+
+What the web server needs: PHP 7.4 or newer with the mysqli extension, and a
+way to reach the database of services. It does not have to be the machine
+services run on, and it never talks to services: the database is all the two
+have in common. When the web server is another machine, the database has to
+listen on an address it can reach (bind-address in the config of MariaDB) and
+the firewall has to let it in on the database port, from that machine only.
+
+1. Copy the folder web/auth/ to the web server, so that it answers on the
+   address in authurl (https://example.net/auth/).
+
+2. In that folder, copy config-template.php to config.php and fill it in: the
+   name of the network, a link back to your site, and the database.
+
+3. Give the page a database account of its own, that can do nothing but read
+   the codes and leave its message. As the admin of the database (use the
+   address of the web server instead of webhost, and your own database name
+   and password):
+
+       CREATE USER 'avadeweb'@'webhost' IDENTIFIED BY 'a-password';
+       GRANT SELECT (nick, auth, stamp) ON avade.maillog TO 'avadeweb'@'webhost';
+       GRANT SELECT (nick, auth, stamp) ON avade.passlog TO 'avadeweb'@'webhost';
+       GRANT SELECT (name, regstamp) ON avade.nick TO 'avadeweb'@'webhost';
+       GRANT SELECT, INSERT ON avade.command TO 'avadeweb'@'webhost';
+
+   It can not read a mail address or a password hash, and it can not change
+   anything else.
+
+4. Set authurl in services.conf to the address of the page, ending in
+   "?code=", and tell services: /RootServ REHASH
+
+       authurl: https://example.net/auth/?code=
+
+5. Try it: register a nick with your own mail address and follow the link.
+
+Use https. The code in the link is all it takes to confirm, so it should not
+travel in clear text.
+
+A page of your own works too. It has to put a row in "command" with the nick
+in target, NICKINFO in targettype, AUTH (a mail address, the code is in
+maillog) or PASS (a password, passlog) in command, the code in extra and the
+address of the visitor in extra2. Without the code in extra services do
+nothing.
+
+
 ############
 ### HELP ###
 ############

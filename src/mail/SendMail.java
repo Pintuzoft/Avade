@@ -84,14 +84,14 @@ public class SendMail extends HashNumeric {
             subject = "Confirm your new email address";
             body    = "Hello "+ni.getNameStr()+"\n\nYou asked to change the email address of the "+
                       "nickname: "+ni.getNameStr()+" to this address.\n"+
-                      "To confirm the change please follow this link: "+link+sign;
+                      "To confirm the change please follow this link: "+link+onIrc ( ni.getNameStr ( ), auth.getAuth ( ) )+sign;
 
         } else if ( ni.isAuth ( ) ) {
             to      = ni.getString ( MAIL );
             subject = "Confirm your new password";
             body    = "Hello "+ni.getNameStr()+"\n\nYou asked to change the password of the "+
                       "nickname: "+ni.getNameStr()+".\n"+
-                      "To confirm the change please follow this link: "+link+"\n\n"+
+                      "To confirm the change please follow this link: "+link+onIrc ( ni.getNameStr ( ), auth.getAuth ( ) )+"\n\n"+
                       "If you did not ask for this you can ignore this mail, the password stays as it is."+sign;
 
         } else {
@@ -164,13 +164,21 @@ public class SendMail extends HashNumeric {
         MXDatabase.sendMail ( mail );
     }
     
+    /* The same without a web page: the code works on IRC too, from the nick
+       it is for. A network that has no page behind authurl needs this, and
+       so does anyone whose mail program hides or breaks the link. */
+    private static String onIrc ( String nick, String code ) {
+        return "\n\nYou can also do it on IRC. Use the nickname "+nick+" and type:\n\n"+
+               "/NickServ AUTH "+code;
+    }
+
     /* MAIL STRINGS */
     private static String mailStr ( HashString it, String... args )  {
         if ( it.is(NICKREG_BODY) ) {
             return  "Hello "+args[0]+"\n\nYou recently registered the "+
                     "nickname: "+args[0]+" using this email address. \n"+
                     "To fully register your nickname please follow this "+
-                    "link: "+args[1]+args[2]+"\n\nRegards\n\n"+
+                    "link: "+args[1]+args[2]+onIrc ( args[0], args[2] )+"\n\nRegards\n\n"+
                     "/"+Proc.getConf().get ( NETNAME ); 
         
         } else if ( it.is(NICKREG_SUBJECT) ) {
