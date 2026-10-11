@@ -22,6 +22,44 @@ When there is a new version:
      test suite and opens a pull request, and an issue tells what happened. A
      person reviews and merges, and the release is made by hand.
 
+## What is looked at, every time
+
+Claude reads both `CHANGES` (what the authors of bahamut say) and the diff of
+the source (what happened), and goes through the same list for every version,
+also when `CHANGES` says nothing about a point:
+
+1. The server protocol: CAPAB, SERVER and SVINFO, the order of the burst, and
+   numerics that services get.
+2. The status of members: the prefixes in SJOIN (`@ % +`) and the status modes
+   in MODE. A new one that Avade does not know makes its users no members at all.
+3. Channel modes: new letters, which take a parameter, list modes.
+4. User modes: new ones, and which only services may set.
+5. Chanflags (SVSXCF).
+6. SVS* commands and the other commands services send or get.
+7. What decides a join (`can_join`, `m_join`), which Avade repeats for join
+   requests.
+8. Host masking: that the `avade_uhm` module still builds and gives the mask
+   Avade computes.
+9. What the ircd does not send back to services.
+10. Build options and settings the test network needs.
+11. The tests: every failing check, with the change that explains it.
+
+What it finds is one of three kinds, and the kind says what Avade has to do:
+
+- **Changed:** something that was there works in another way. Avade follows it.
+- **New:** something that was not there. If the network wants to see or control
+  it through services, the support is built.
+- **Gone:** something that was removed or is deprecated. Avade stops sending and
+  offering what is removed. What is only deprecated keeps working, and the
+  report says that it will go. Nothing is removed from the database for it.
+
+The answer is a report with one line for each of the eleven points: "nothing",
+or the kind, what it is and what was done. It is in the pull request, in the
+issue, or in the notes of the automatic release, so it can be seen that every
+point was looked at. Where there is a choice only you can make (the name of a
+command, who may use it, a new access list), Claude builds what is closest to
+how Avade does the same today and names the choice in the pull request.
+
 A new major version (for example 3.0) is never released automatically. It only
 gets an issue and a pull request.
 
