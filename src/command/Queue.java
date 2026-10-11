@@ -46,7 +46,11 @@ public class Queue extends HashNumeric {
         if ( time > System.currentTimeMillis ( ) || ! Handler.isDataLoaded ( ) ) {
             return;
         }
-        time = System.currentTimeMillis ( ) + 5000;
+        /* Every second: someone has just clicked in a web page and waits
+           there for the answer. The table is nearly always empty. (A little
+           under the second this is called with, or every other call would
+           come a moment too early and be skipped.) */
+        time = System.currentTimeMillis ( ) + 900;
         this.cList = CMDDatabase.getCommands ( );
         while ( ! this.cList.isEmpty ( ) ) {
             this.execute ( this.cList.pop ( ) );

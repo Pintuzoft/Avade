@@ -1700,9 +1700,12 @@ def test_auth_page():
         time.sleep(6)
         check(db("select count(*) from command") == '0' and db("select count(*) from maillog where nick = 'Webauth' and auth is null and stamp >= (select regstamp from nick where name = 'Webauth')") == '0',
               'opening the link changes nothing: a mail scanner that follows it confirms nothing')
+        check('<script>' in text and "Confirming..." in text, 'the button says that the click was taken while the answer is on its way')
         m = u.mark()
+        t0 = time.time()
         status, text = page(code, post=True)
         check(status == 200 and 'The mail address is confirmed.' in text, 'the click tells services, and the page waits until they have done it', (status, text[-300:]))
+        check(time.time() - t0 < 3.5, 'services take a click within a second or two', time.time() - t0)
         keep('ok', text)
         check(u.saw(r'email for Webauth is now fully set', m, 5), 'services tell the user on IRC')
         check(db("select count(*) from maillog where nick = 'Webauth' and auth is null and stamp >= (select regstamp from nick where name = 'Webauth')") == '1', 'and the address is confirmed in the database')

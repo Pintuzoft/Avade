@@ -32,12 +32,20 @@
  */
 declare ( strict_types = 1 );
 
+/* The only script of the page: the moment the button is clicked it says so
+   and can not be clicked again. The answer takes a second or two, and a page
+   that does nothing in between looks broken. Without scripts the page works
+   the same, only without that sign. */
+const BUSY = "document.addEventListener('submit',function(e){var b=e.target.querySelector('button');".
+             "if(b){b.disabled=true;b.className='busy';b.textContent='Confirming...';}});";
+
 header ( 'Content-Type: text/html; charset=utf-8' );
 header ( 'Cache-Control: no-store' );
 header ( 'Referrer-Policy: no-referrer' );       /* the code is in the address */
 header ( 'X-Robots-Tag: noindex, nofollow' );
 header ( 'X-Content-Type-Options: nosniff' );
-header ( "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'" );
+header ( "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; script-src 'sha256-".base64_encode ( hash ( 'sha256', BUSY, true ) )."'; ".
+         "form-action 'self'; base-uri 'none'; frame-ancestors 'none'" );
 
 $config  = is_file ( __DIR__.'/config.php' ) ? require __DIR__.'/config.php' : null;
 $network = is_array ( $config ) ? (string) ( $config['network'] ?? 'IRC' ) : 'IRC';
@@ -87,6 +95,11 @@ function page ( string $state, string $title, string $text, string $form = '', i
   button { margin: 6px 0 14px; width: 100%; padding: 12px 16px; border: 0; border-radius: 7px; cursor: pointer;
            background: var(--ask); color: #fff; font: inherit; font-weight: 600; }
   button:hover, button:focus-visible { filter: brightness(1.08); }
+  button:disabled { cursor: wait; filter: none; opacity: .85; }
+  .busy::before { content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 9px; vertical-align: -2px;
+                  border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%;
+                  animation: turn .7s linear infinite; }
+  @keyframes turn { to { transform: rotate(360deg); } }
   footer { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--soft); }
   a { color: inherit; }
 </style>
@@ -150,7 +163,7 @@ try {
         page ( 'ask', 'Confirm '.$found['what'],
                '<p>This confirms '.h ( $found['what'] ).' of the nickname '.$nick.'.</p>',
                '<form method="post"><input type="hidden" name="code" value="'.h ( $code ).'">'.
-               '<button type="submit">Confirm</button></form>'.
+               '<button type="submit">Confirm</button></form><script>'.BUSY.'</script>'.
                '<p>Not you? Then close this page, nothing has been changed.</p>' );
     }
 
@@ -168,12 +181,12 @@ try {
         $add->close ( );
     }
 
-    /* Services take it within five seconds and clear the code. Wait for
-       that, so the page says what really happened. */
+    /* Services take it within a second or two (five before 1.2610-4) and
+       clear the code. Wait for that, so the page says what really happened. */
     $done = false;
     $gone = $db->prepare ( 'select 1 from '.$found['table'].' where auth = ? limit 1' );
-    for ( $i = 0; $i < 18 && ! $done; $i++ ) {
-        usleep ( 500000 );
+    for ( $i = 0; $i < 36 && ! $done; $i++ ) {
+        usleep ( 250000 );
         $gone->bind_param ( 's', $code );
         $gone->execute ( );
         $done = ! $gone->fetch ( );
